@@ -1,0 +1,46 @@
+# fly.toml app configuration file generated for atphoto on 2025-04-18T17:11:40-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'atphoto'
+primary_region = 'sea'
+
+[build]
+  dockerfile = './Dockerfile'
+
+[env]
+  BFF_DATABASE_URL = '/litefs/sqlite.db'
+  # BFF_QUEUE_DATABASE_URL = '/litefs/my.db'
+  BFF_LEXICON_DIR = './__generated__'
+  BFF_PORT = '8081'
+  BFF_PUBLIC_URL = 'https://atphoto.fly.dev'
+
+[[mounts]]
+  source = "litefs"
+  destination = "/var/lib/litefs"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  processes = ["app"]
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "1s"
+    restart_limit = 0
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

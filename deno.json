@@ -1,0 +1,27 @@
+{
+  "imports": {
+    "$lexicon/": "./__generated__/",
+    "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.5",
+    "@gfx/canvas": "jsr:@gfx/canvas@^0.5.8",
+    "@tailwindcss/cli": "npm:@tailwindcss/cli@^4.1.4",
+    "date-fns": "npm:date-fns@^4.1.0",
+    "popmotion": "npm:popmotion@^11.0.5",
+    "preact": "npm:preact@^10.26.5",
+    "tailwindcss": "npm:tailwindcss@^4.1.4",
+    "typed-htmx": "npm:typed-htmx@^0.3.1"
+  },
+  "tasks": {
+    "start": "deno run -A --unstable-kv --unstable-ffi main.tsx",
+    "dev": "deno run \"dev:*\"",
+    "dev:server": "deno run -A --unstable-kv --unstable-ffi --env-file=.env --watch ./main.tsx",
+    "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./input.css -o ./static/styles.css --watch",
+    "codegen": "deno run -A ../../packages/bff-cli/mod.ts lex"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxPrecompileSkipElements": ["a", "label"],
+    "jsxImportSource": "preact"
+  },
+  "nodeModulesDir": "auto"
+}
