@@ -44,9 +44,12 @@ import {
   Textarea,
 } from "@bigmoves/bff/components";
 import { createCanvas, Image } from "@gfx/canvas";
+import { join } from "@std/path";
 import { formatDistanceStrict } from "date-fns";
 import { wrap } from "popmotion";
 import { ComponentChildren, JSX, VNode } from "preact";
+
+let cssContentHash: string = "";
 
 bff({
   appName: "Grain Social",
@@ -60,6 +63,18 @@ bff({
   jetstreamUrl: JETSTREAM.WEST_1,
   lexicons,
   rootElement: Root,
+  onListen: async () => {
+    const cssFileContent = await Deno.readFile(
+      join(Deno.cwd(), "static", "styles.css"),
+    );
+    const hashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      cssFileContent,
+    );
+    cssContentHash = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  },
   onError: (err) => {
     if (err instanceof UnauthorizedError) {
       const ctx = err.ctx;
@@ -91,7 +106,12 @@ bff({
           <Login hx-target="#login" error={error} errorClass="text-white" />
           <div class="absolute bottom-2 right-2 text-white text-sm">
             Photo by{" "}
-            <a href={profileLink("chadtmiller.com")}>@chadtmiller.com</a>
+            <a
+              href={profileLink("chadtmiller.com")}
+              class="hover:underline font-semibold"
+            >
+              @chadtmiller.com
+            </a>
           </div>
         </div>
       ),
@@ -145,7 +165,6 @@ bff({
         <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
       );
     }),
-
     route("/upload", (_req, _params, ctx) => {
       requireAuth(ctx);
       const photos = getActorPhotos(ctx.currentUser.did, ctx);
@@ -278,7 +297,6 @@ bff({
       const formData = await req.formData();
       const title = formData.get("title") as string;
       const description = formData.get("description") as string;
-      const cids = formData.getAll("cids") as string[];
       const url = new URL(req.url);
       const searchParams = new URLSearchParams(url.search);
       const uri = searchParams.get("uri");
@@ -922,7 +940,7 @@ function Root(props: Readonly<RootProps<State>>) {
         <script src="https://unpkg.com/htmx.org@1.9.10" />
         <script src="https://unpkg.com/hyperscript.org@0.9.14" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
-        <link rel="stylesheet" href="/static/styles.css" />
+        <link rel="stylesheet" href={`/static/styles.css?${cssContentHash}`} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -932,8 +950,7 @@ function Root(props: Readonly<RootProps<State>>) {
         <link
           href="https://fonts.googleapis.com/css2?family=Jersey+20&display=swap"
           rel="stylesheet"
-        >
-        </link>
+        />
         <link
           rel="stylesheet"
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
@@ -943,16 +960,17 @@ function Root(props: Readonly<RootProps<State>>) {
           ? <script src="/static/image_dialog.js" />
           : null}
       </head>
-      <body class="h-full w-full">
-        <Layout id="layout">
+      <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
+        <Layout id="layout" class="dark:border-zinc-800">
           <Layout.Nav
             title={
-              <h1 class="font-['Jersey_20'] text-4xl text-gray-900">
+              <h1 class="font-['Jersey_20'] text-4xl text-zinc-900 dark:text-white">
                 grain
                 <sub class="bottom-[0.75rem] text-[1rem]">beta</sub>
               </h1>
             }
             profile={profile}
+            class="dark:border-zinc-800"
           />
           <Layout.Content>{props.children}</Layout.Content>
         </Layout>
@@ -1031,7 +1049,7 @@ function Timeline({ items }: Readonly<{ items: TimelineItem[] }>) {
 function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   return (
     <li class="space-y-2">
-      <div class="bg-gray-100 w-fit p-2">
+      <div class="bg-zinc-100 dark:bg-zinc-900 w-fit p-2">
         <a
           href={profileLink(item.actor.handle)}
           class="font-semibold hover:underline"
@@ -1044,7 +1062,7 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
             item.gallery.creator.handle,
             new AtUri(item.gallery.uri).rkey,
           )}
-          class="font-semibold"
+          class="font-semibold hover:underline"
         >
           {(item.gallery.record as Gallery).title}
         </a>
@@ -1082,7 +1100,9 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
                         class="w-full h-full object-cover"
                       />
                     )
-                    : <div className="w-full h-full bg-gray-200" />}
+                    : (
+                      <div className="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
+                    )}
                 </div>
                 <div class="h-1/2">
                   {item.gallery.items?.filter(isPhotoView)?.[2]
@@ -1094,7 +1114,9 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
                         class="w-full h-full object-cover"
                       />
                     )
-                    : <div className="w-full h-full bg-gray-200" />}
+                    : (
+                      <div className="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
+                    )}
                 </div>
               </div>
             </div>
@@ -1124,7 +1146,7 @@ function ProfilePage({
         <div class="flex flex-col">
           <AvatarButton profile={profile} />
           <p class="text-2xl font-bold">{profile.displayName}</p>
-          <p class="text-gray-600">@{profile.handle}</p>
+          <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
           <p class="my-2">{profile.description}</p>
         </div>
         {loggedInUserDid === profile.did
@@ -1168,7 +1190,7 @@ function ProfilePage({
           hx-swap="outerHTML"
           class={cn(
             "flex-1 py-2 px-4 cursor-pointer font-semibold",
-            !selectedTab && "bg-gray-100 font-semibold",
+            !selectedTab && "bg-zinc-100 dark:bg-zinc-800 font-semibold",
           )}
           role="tab"
           aria-selected="true"
@@ -1183,7 +1205,7 @@ function ProfilePage({
           hx-swap="outerHTML"
           class={cn(
             "flex-1 py-2 px-4 cursor-pointer font-semibold",
-            selectedTab === "galleries" && "bg-gray-100",
+            selectedTab === "galleries" && "bg-zinc-100 dark:bg-zinc-800",
           )}
           role="tab"
           aria-selected="false"
@@ -1217,11 +1239,17 @@ function ProfilePage({
                       )}
                       class="cursor-pointer relative aspect-square"
                     >
-                      <img
-                        src={gallery.items?.filter(isPhotoView)?.[0]?.thumb}
-                        alt={gallery.items?.filter(isPhotoView)?.[0]?.alt}
-                        class="w-full h-full object-cover"
-                      />
+                      {gallery.items?.length
+                        ? (
+                          <img
+                            src={gallery.items?.filter(isPhotoView)?.[0]?.thumb}
+                            alt={gallery.items?.filter(isPhotoView)?.[0]?.alt}
+                            class="w-full h-full object-cover"
+                          />
+                        )
+                        : (
+                          <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
+                        )}
                       <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2">
                         {(gallery.record as Gallery).title}
                       </div>
@@ -1286,7 +1314,7 @@ function ProfileDialog({
 }>) {
   return (
     <Dialog>
-      <Dialog.Content>
+      <Dialog.Content class="dark:bg-zinc-950">
         <Dialog.Title>Edit my profile</Dialog.Title>
         <div>
           <AvatarForm src={profile.avatar} alt={profile.handle} />
@@ -1306,7 +1334,7 @@ function ProfileDialog({
               required
               id="displayName"
               name="displayName"
-              class="input"
+              class="dark:bg-zinc-800 dark:text-white"
               value={profile.displayName}
             />
           </div>
@@ -1316,7 +1344,7 @@ function ProfileDialog({
               id="description"
               name="description"
               rows={4}
-              class="input"
+              class="dark:bg-zinc-800 dark:text-white"
             >
               {profile.description}
             </Textarea>
@@ -1404,7 +1432,9 @@ function GalleryPage({
             >
               <span class="font-semibold">{gallery.creator.displayName}</span>
               {" "}
-              <span class="text-gray-600">@{gallery.creator.handle}</span>
+              <span class="text-zinc-600 dark:text-zinc-500">
+                @{gallery.creator.handle}
+              </span>
             </a>
           </div>
           {(gallery.record as Gallery).description}
@@ -1530,7 +1560,7 @@ function GalleryCreateEditDialog({
 }: Readonly<{ gallery?: GalleryView | null }>) {
   return (
     <Dialog id="gallery-dialog" class="z-30">
-      <Dialog.Content>
+      <Dialog.Content class="dark:bg-zinc-950">
         <Dialog.Title>
           {gallery ? "Edit gallery" : "Create a new gallery"}
         </Dialog.Title>
@@ -1551,7 +1581,7 @@ function GalleryCreateEditDialog({
               type="text"
               id="title"
               name="title"
-              class="input"
+              class="dark:bg-zinc-800 dark:text-white"
               required
               value={(gallery?.record as Gallery)?.title}
               autofocus
@@ -1563,7 +1593,7 @@ function GalleryCreateEditDialog({
               id="description"
               name="description"
               rows={4}
-              class="input"
+              class="dark:bg-zinc-800 dark:text-white"
             >
               {(gallery?.record as Gallery)?.description}
             </Textarea>
@@ -1626,7 +1656,7 @@ function PhotoPreview({
   uri?: string;
 }>) {
   return (
-    <div class="relative aspect-square">
+    <div class="relative aspect-square dark:bg-zinc-900">
       {uri
         ? (
           <button
@@ -1679,7 +1709,7 @@ function PhotoDialog({
   prevImage?: PhotoView;
 }>) {
   return (
-    <Dialog id="photo-dialog" class="bg-black z-30">
+    <Dialog id="photo-dialog" class="bg-zinc-950 z-30">
       {nextImage
         ? (
           <div
@@ -1732,9 +1762,9 @@ function PhotoAltDialog({
 }>) {
   return (
     <Dialog id="photo-alt-dialog" class="z-30">
-      <Dialog.Content>
+      <Dialog.Content class="dark:bg-zinc-950">
         <Dialog.Title>Add alt text</Dialog.Title>
-        <div class="aspect-square relative bg-gray-100">
+        <div class="aspect-square relative bg-zinc-100 dark:bg-zinc-900">
           <img
             src={photo.fullsize}
             alt={photo.alt}
@@ -1755,6 +1785,7 @@ function PhotoAltDialog({
               rows={4}
               defaultValue={photo.alt}
               placeholder="Alt text"
+              class="dark:bg-zinc-800 dark:text-white"
             />
           </div>
           <div class="w-full flex flex-col gap-2 mt-2">
@@ -1782,7 +1813,7 @@ function PhotoSelectDialog({
 }>) {
   return (
     <Dialog id="photo-select-dialog" class="z-30">
-      <Dialog.Content class="w-full max-w-5xl">
+      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950">
         <Dialog.Title>Add photos</Dialog.Title>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-4">
           {photos.map((photo) => (

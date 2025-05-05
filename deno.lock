@@ -2,7 +2,7 @@
   "version": "4",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.1": "0.1.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.7": "0.3.0-beta.7",
+    "jsr:@bigmoves/bff@0.3.0-beta.8": "0.3.0-beta.8",
     "jsr:@denosaurs/plug@1": "1.0.5",
     "jsr:@denosaurs/plug@1.0.5": "1.0.5",
     "jsr:@gfx/canvas@~0.5.8": "0.5.8",
@@ -70,8 +70,8 @@
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.7": {
-      "integrity": "cf9b6469e239abaad539aa5e06c786018731c1c0ab8b59debdbb8e83eebb6e83",
+    "@bigmoves/bff@0.3.0-beta.8": {
+      "integrity": "9f4193d02b9ff1a16f600fbb1ad5323c75285848457429172914a2b797787055",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.12",
@@ -1609,8 +1609,9 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.7",
+      "jsr:@bigmoves/bff@0.3.0-beta.8",
       "jsr:@gfx/canvas@~0.5.8",
+      "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",
       "npm:@tailwindcss/cli@^4.1.4",
       "npm:date-fns@^4.1.0",
