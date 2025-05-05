@@ -160,7 +160,7 @@ bff({
       }
       if (!gallery) return ctx.next();
       ctx.state.meta = getGalleryMeta(gallery);
-      ctx.state.scripts = ["image_dialog.js"];
+      ctx.state.scripts = ["photo_dialog.js"];
       return ctx.render(
         <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
       );
@@ -956,8 +956,8 @@ function Root(props: Readonly<RootProps<State>>) {
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
           preload
         />
-        {scripts?.includes("image_dialog.js")
-          ? <script src="/static/image_dialog.js" />
+        {scripts?.includes("photo_dialog.js")
+          ? <script src="/static/photo_dialog.js" />
           : null}
       </head>
       <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
