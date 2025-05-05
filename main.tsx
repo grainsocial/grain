@@ -160,7 +160,7 @@ bff({
       }
       if (!gallery) return ctx.next();
       ctx.state.meta = getGalleryMeta(gallery);
-      ctx.state.scripts = ["photo_dialog.js"];
+      ctx.state.scripts = ["photo_dialog.js", "masonry.js"];
       return ctx.render(
         <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
       );
@@ -374,7 +374,7 @@ bff({
         ];
         return ctx.html(
           <>
-            <div hx-swap-oob="beforeend:#gallery-photo-grid">
+            <div hx-swap-oob="beforeend:#masonry-container">
               <PhotoButton
                 key={photo.cid}
                 photo={photoToView(photo.did, photo)}
@@ -956,9 +956,7 @@ function Root(props: Readonly<RootProps<State>>) {
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
           preload
         />
-        {scripts?.includes("photo_dialog.js")
-          ? <script src="/static/photo_dialog.js" />
-          : null}
+        {scripts?.map((file) => <script key={file} src={`/static/${file}`} />)}
       </head>
       <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
         <Layout id="layout" class="dark:border-zinc-800">
@@ -1378,8 +1376,8 @@ function AvatarForm({ src, alt }: Readonly<{ src?: string; alt?: string }>) {
     >
       <label htmlFor="file">
         <span class="sr-only">Upload avatar</span>
-        <div class="border rounded-full border-slate-900 w-16 h-16 mx-auto mb-2 relative my-2 cursor-pointer">
-          <div class="absolute bottom-0 right-0 bg-slate-800 rounded-full w-5 h-5 flex items-center justify-center z-10">
+        <div class="border rounded-full border-zinc-900 w-16 h-16 mx-auto mb-2 relative my-2 cursor-pointer">
+          <div class="absolute bottom-0 right-0 bg-zinc-800 rounded-full w-5 h-5 flex items-center justify-center z-10">
             <i class="fa-solid fa-camera text-white text-xs"></i>
           </div>
           <div id="image-preview" class="w-full h-full">
@@ -1474,8 +1472,9 @@ function GalleryPage({
           : null}
       </div>
       <div
-        id="gallery-photo-grid"
-        class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4"
+        id="masonry-container"
+        class="h-0 overflow-hidden relative mx-auto w-full"
+        _="on load or htmx:afterSettle call computeMasonry()"
       >
         {gallery.items?.filter(isPhotoView)?.length
           ? gallery?.items?.filter(isPhotoView)?.map((photo) => (
@@ -1507,7 +1506,9 @@ function PhotoButton({ photo, gallery, isCreator, isLoggedIn }: Readonly<{
       hx-trigger="click"
       hx-target="#layout"
       hx-swap="afterbegin"
-      class="cursor-pointer relative sm:aspect-square"
+      class="masonry-tile absolute cursor-pointer"
+      data-width={photo.aspectRatio?.width}
+      data-height={photo.aspectRatio?.height}
     >
       {isLoggedIn && isCreator
         ? <AltTextButton galleryUri={gallery.uri} cid={photo.cid} />
@@ -1515,11 +1516,11 @@ function PhotoButton({ photo, gallery, isCreator, isLoggedIn }: Readonly<{
       <img
         src={photo.fullsize}
         alt={photo.alt}
-        class="sm:absolute sm:inset-0 w-full h-full sm:object-contain"
+        class="w-full h-full object-cover"
       />
       {!isCreator && photo.alt
         ? (
-          <div class="absolute bg-zinc-950 dark:bg-zinc-900 bottom-2 right-2 sm:bottom-0 sm:right-0 text-xs text-white font-semibold py-[1px] px-[3px]">
+          <div class="absolute bg-zinc-950 dark:bg-zinc-900 bottom-1 right-1 sm:bottom-1 sm:right-1 text-xs text-white font-semibold py-[1px] px-[3px]">
             ALT
           </div>
         )
@@ -1685,7 +1686,7 @@ function AltTextButton({
 }: Readonly<{ galleryUri: string; cid: string }>) {
   return (
     <div
-      class="bg-zinc-950 dark:bg-zinc-900 py-[1px] px-[3px] absolute top-2 left-2 sm:top-0 sm:left-0 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
+      class="bg-zinc-950 dark:bg-zinc-900 py-[1px] px-[3px] absolute top-1 left-1 sm:top-1 sm:left-1 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
       hx-get={`/dialogs/image-alt?galleryUri=${galleryUri}&imageCid=${cid}`}
       hx-trigger="click"
       hx-target="#layout"
@@ -1785,6 +1786,7 @@ function PhotoAltDialog({
               rows={4}
               defaultValue={photo.alt}
               placeholder="Alt text"
+              autoFocus
               class="dark:bg-zinc-800 dark:text-white"
             />
           </div>
