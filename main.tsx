@@ -879,7 +879,7 @@ function getGalleryFavs(galleryUri: string, ctx: BffContext) {
     {
       where: [
         {
-          field: "gallery",
+          field: "subject",
           equals: `at://${atUri.hostname}/social.grain.gallery/${atUri.rkey}`,
         },
       ],
