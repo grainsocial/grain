@@ -1519,7 +1519,7 @@ function PhotoButton({ photo, gallery, isCreator, isLoggedIn }: Readonly<{
       />
       {!isCreator && photo.alt
         ? (
-          <div class="absolute bg-black/80 bottom-2 right-2 sm:bottom-0 sm:right-0 text-xs text-white font-semibold py-[1px] px-[3px]">
+          <div class="absolute bg-zinc-950 dark:bg-zinc-900 bottom-2 right-2 sm:bottom-0 sm:right-0 text-xs text-white font-semibold py-[1px] px-[3px]">
             ALT
           </div>
         )
@@ -1662,7 +1662,7 @@ function PhotoPreview({
           <button
             type="button"
             hx-delete={`/actions/photo/${new AtUri(uri).rkey}`}
-            class="bg-black/80 z-10 absolute top-0 right-0 cursor-pointer size-4 flex items-center justify-center"
+            class="bg-zinc-950 z-10 absolute top-2 right-2 cursor-pointer size-4 flex items-center justify-center"
             _="on htmx:afterOnLoad remove me.parentNode"
           >
             <i class="fas fa-close text-white"></i>
@@ -1685,7 +1685,7 @@ function AltTextButton({
 }: Readonly<{ galleryUri: string; cid: string }>) {
   return (
     <div
-      class="bg-black/80 py-[1px] px-[3px] absolute top-2 left-2 sm:top-0 sm:left-0 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
+      class="bg-zinc-950 dark:bg-zinc-900 py-[1px] px-[3px] absolute top-2 left-2 sm:top-0 sm:left-0 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
       hx-get={`/dialogs/image-alt?galleryUri=${galleryUri}&imageCid=${cid}`}
       hx-trigger="click"
       hx-target="#layout"
@@ -1764,7 +1764,7 @@ function PhotoAltDialog({
     <Dialog id="photo-alt-dialog" class="z-30">
       <Dialog.Content class="dark:bg-zinc-950">
         <Dialog.Title>Add alt text</Dialog.Title>
-        <div class="aspect-square relative bg-zinc-100 dark:bg-zinc-900">
+        <div class="aspect-square relative">
           <img
             src={photo.fullsize}
             alt={photo.alt}
