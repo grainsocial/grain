@@ -3,21 +3,22 @@
  */
 import { type ValidationResult, BlobRef } from "npm:@atproto/lexicon"
 import { CID } from "npm:multiformats/cid"
-import { validate as _validate } from '../../../../../lexicons.ts'
+import { validate as _validate } from '../../../../lexicons.ts'
 import {
   type $Typed,
   is$typed as _is$typed,
   type OmitKey,
-} from '../../../../../util.ts'
+} from '../../../../util.ts'
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'social.grain.v0.gallery.star'
+const id = 'social.grain.gallery.item'
 
 export interface Record {
-  $type: 'social.grain.v0.gallery.star'
+  $type: 'social.grain.gallery.item'
   createdAt: string
-  subject: string
+  gallery: string
+  item: string
   [k: string]: unknown
 }
 

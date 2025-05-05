@@ -2,7 +2,7 @@
   "version": "4",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.1": "0.1.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.5": "0.3.0-beta.5",
+    "jsr:@bigmoves/bff@0.3.0-beta.7": "0.3.0-beta.7",
     "jsr:@denosaurs/plug@1": "1.0.5",
     "jsr:@denosaurs/plug@1.0.5": "1.0.5",
     "jsr:@gfx/canvas@~0.5.8": "0.5.8",
@@ -48,7 +48,7 @@
     "npm:clsx@^2.1.1": "2.1.1",
     "npm:date-fns@^4.1.0": "4.1.0",
     "npm:jose@5.9.6": "5.9.6",
-    "npm:multiformats@*": "13.3.2",
+    "npm:multiformats@*": "9.9.0",
     "npm:multiformats@^13.3.2": "13.3.2",
     "npm:popmotion@^11.0.5": "11.0.5",
     "npm:preact-render-to-string@^6.5.13": "6.5.13_preact@10.26.5",
@@ -70,8 +70,8 @@
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.5": {
-      "integrity": "e9de02ccf1b90c2b97e10511c7975d04c824a750822fb2486e350f3cc5e5717d",
+    "@bigmoves/bff@0.3.0-beta.7": {
+      "integrity": "cf9b6469e239abaad539aa5e06c786018731c1c0ab8b59debdbb8e83eebb6e83",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.12",
@@ -88,6 +88,7 @@
         "npm:multiformats@^13.3.2",
         "npm:preact",
         "npm:preact-render-to-string",
+        "npm:sharp",
         "npm:tailwind-merge"
       ]
     },
@@ -1608,7 +1609,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.5",
+      "jsr:@bigmoves/bff@0.3.0-beta.7",
       "jsr:@gfx/canvas@~0.5.8",
       "npm:@atproto/syntax@0.4",
       "npm:@tailwindcss/cli@^4.1.4",

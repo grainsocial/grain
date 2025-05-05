@@ -13,7 +13,7 @@ const onTouchEnd = (e) => {
   }
 };
 const observer = new MutationObserver(() => {
-  const modal = document.getElementById("image-dialog");
+  const modal = document.getElementById("photo-dialog");
   if (!modal) {
     console.log("Image Dialog not found, removing event listeners");
     document.body.removeEventListener("touchstart", onTouchStart);
@@ -22,7 +22,7 @@ const observer = new MutationObserver(() => {
   }
 });
 htmx.onLoad((evt) => {
-  if (evt.id === "image-dialog") {
+  if (evt.id === "photo-dialog") {
     document.body.addEventListener("touchstart", onTouchStart);
     document.body.addEventListener("touchend", onTouchEnd);
   }

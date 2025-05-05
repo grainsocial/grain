@@ -2270,9 +2270,9 @@ export const schemaDict = {
       },
     },
   },
-  SocialGrainV0GalleryDefs: {
+  SocialGrainDefs: {
     lexicon: 1,
-    id: 'social.grain.v0.gallery.defs',
+    id: 'social.grain.defs',
     defs: {
       aspectRatio: {
         type: 'object',
@@ -2290,6 +2290,40 @@ export const schemaDict = {
           },
         },
       },
+    },
+  },
+  SocialGrainGalleryItem: {
+    lexicon: 1,
+    id: 'social.grain.gallery.item',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['createdAt', 'gallery', 'item'],
+          properties: {
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            gallery: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            item: {
+              type: 'string',
+              format: 'at-uri',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGalleryDefs: {
+    lexicon: 1,
+    id: 'social.grain.gallery.defs',
+    defs: {
       galleryView: {
         type: 'object',
         required: ['uri', 'cid', 'creator', 'record', 'indexedAt'],
@@ -2304,16 +2338,16 @@ export const schemaDict = {
           },
           creator: {
             type: 'ref',
-            ref: 'lex:social.grain.v0.actor.defs#profileView',
+            ref: 'lex:social.grain.actor.defs#profileView',
           },
           record: {
             type: 'unknown',
           },
-          images: {
+          items: {
             type: 'array',
             items: {
-              type: 'ref',
-              ref: 'lex:social.grain.v0.gallery.defs#viewImage',
+              type: 'union',
+              refs: ['lex:social.grain.photo.defs#photoView'],
             },
           },
           indexedAt: {
@@ -2322,62 +2356,11 @@ export const schemaDict = {
           },
         },
       },
-      image: {
-        type: 'object',
-        required: ['image', 'alt'],
-        properties: {
-          image: {
-            type: 'blob',
-            accept: ['image/*'],
-            maxSize: 1000000,
-          },
-          alt: {
-            type: 'string',
-            description:
-              'Alt text description of the image, for accessibility.',
-          },
-          aspectRatio: {
-            type: 'ref',
-            ref: 'lex:social.grain.v0.gallery.defs#aspectRatio',
-          },
-        },
-      },
-      viewImage: {
-        type: 'object',
-        required: ['cid', 'thumb', 'fullsize', 'alt'],
-        properties: {
-          cid: {
-            type: 'string',
-            format: 'cid',
-          },
-          thumb: {
-            type: 'string',
-            format: 'uri',
-            description:
-              'Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View.',
-          },
-          fullsize: {
-            type: 'string',
-            format: 'uri',
-            description:
-              'Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View.',
-          },
-          alt: {
-            type: 'string',
-            description:
-              'Alt text description of the image, for accessibility.',
-          },
-          aspectRatio: {
-            type: 'ref',
-            ref: 'lex:social.grain.v0.gallery.defs#aspectRatio',
-          },
-        },
-      },
     },
   },
-  SocialGrainV0Gallery: {
+  SocialGrainGallery: {
     lexicon: 1,
-    id: 'social.grain.v0.gallery',
+    id: 'social.grain.gallery',
     defs: {
       main: {
         type: 'record',
@@ -2394,14 +2377,6 @@ export const schemaDict = {
               type: 'string',
               maxLength: 1000,
             },
-            images: {
-              type: 'array',
-              items: {
-                type: 'ref',
-                ref: 'lex:social.grain.v0.gallery.defs#image',
-              },
-              maxLength: 10,
-            },
             createdAt: {
               type: 'string',
               format: 'datetime',
@@ -2411,9 +2386,9 @@ export const schemaDict = {
       },
     },
   },
-  SocialGrainV0GalleryStar: {
+  SocialGrainFavorite: {
     lexicon: 1,
-    id: 'social.grain.v0.gallery.star',
+    id: 'social.grain.favorite',
     defs: {
       main: {
         type: 'record',
@@ -2435,9 +2410,9 @@ export const schemaDict = {
       },
     },
   },
-  SocialGrainV0ActorDefs: {
+  SocialGrainActorDefs: {
     lexicon: 1,
-    id: 'social.grain.v0.actor.defs',
+    id: 'social.grain.actor.defs',
     defs: {
       profileView: {
         type: 'object',
@@ -2473,9 +2448,9 @@ export const schemaDict = {
       },
     },
   },
-  SocialGrainV0ActorProfile: {
+  SocialGrainActorProfile: {
     lexicon: 1,
-    id: 'social.grain.v0.actor.profile',
+    id: 'social.grain.actor.profile',
     defs: {
       main: {
         type: 'record',
@@ -2501,6 +2476,81 @@ export const schemaDict = {
                 "Small image to be displayed next to posts from account. AKA, 'profile picture'",
               accept: ['image/png', 'image/jpeg'],
               maxSize: 1000000,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainPhotoDefs: {
+    lexicon: 1,
+    id: 'social.grain.photo.defs',
+    defs: {
+      photoView: {
+        type: 'object',
+        required: ['uri', 'cid', 'thumb', 'fullsize', 'alt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          thumb: {
+            type: 'string',
+            format: 'uri',
+            description:
+              'Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View.',
+          },
+          fullsize: {
+            type: 'string',
+            format: 'uri',
+            description:
+              'Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View.',
+          },
+          alt: {
+            type: 'string',
+            description:
+              'Alt text description of the image, for accessibility.',
+          },
+          aspectRatio: {
+            type: 'ref',
+            ref: 'lex:social.grain.defs#aspectRatio',
+          },
+        },
+      },
+    },
+  },
+  SocialGrainPhoto: {
+    lexicon: 1,
+    id: 'social.grain.photo',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['photo', 'alt'],
+          properties: {
+            photo: {
+              type: 'blob',
+              accept: ['image/*'],
+              maxSize: 1000000,
+            },
+            alt: {
+              type: 'string',
+              description:
+                'Alt text description of the image, for accessibility.',
+            },
+            aspectRatio: {
+              type: 'ref',
+              ref: 'lex:social.grain.defs#aspectRatio',
             },
             createdAt: {
               type: 'string',
@@ -2758,11 +2808,15 @@ export const ids = {
   AppBskyActorDefs: 'app.bsky.actor.defs',
   AppBskyActorProfile: 'app.bsky.actor.profile',
   AppBskyLabelerDefs: 'app.bsky.labeler.defs',
-  SocialGrainV0GalleryDefs: 'social.grain.v0.gallery.defs',
-  SocialGrainV0Gallery: 'social.grain.v0.gallery',
-  SocialGrainV0GalleryStar: 'social.grain.v0.gallery.star',
-  SocialGrainV0ActorDefs: 'social.grain.v0.actor.defs',
-  SocialGrainV0ActorProfile: 'social.grain.v0.actor.profile',
+  SocialGrainDefs: 'social.grain.defs',
+  SocialGrainGalleryItem: 'social.grain.gallery.item',
+  SocialGrainGalleryDefs: 'social.grain.gallery.defs',
+  SocialGrainGallery: 'social.grain.gallery',
+  SocialGrainFavorite: 'social.grain.favorite',
+  SocialGrainActorDefs: 'social.grain.actor.defs',
+  SocialGrainActorProfile: 'social.grain.actor.profile',
+  SocialGrainPhotoDefs: 'social.grain.photo.defs',
+  SocialGrainPhoto: 'social.grain.photo',
   ComAtprotoLabelDefs: 'com.atproto.label.defs',
   ComAtprotoRepoStrongRef: 'com.atproto.repo.strongRef',
 } as const

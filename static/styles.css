@@ -7,6 +7,7 @@
       "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
+    --color-sky-500: oklch(68.5% 0.169 237.323);
     --color-slate-800: oklch(27.9% 0.041 260.031);
     --color-slate-900: oklch(20.8% 0.042 265.755);
     --color-gray-100: oklch(96.7% 0.003 264.542);
@@ -201,6 +202,9 @@
   .inset-0 {
     inset: calc(var(--spacing) * 0);
   }
+  .top-0 {
+    top: calc(var(--spacing) * 0);
+  }
   .top-2 {
     top: calc(var(--spacing) * 2);
   }
@@ -248,6 +252,9 @@
   }
   .mr-1 {
     margin-right: calc(var(--spacing) * 1);
+  }
+  .mr-2 {
+    margin-right: calc(var(--spacing) * 2);
   }
   .mb-2 {
     margin-bottom: calc(var(--spacing) * 2);
@@ -323,6 +330,9 @@
   .w-full {
     width: 100%;
   }
+  .max-w-5xl {
+    max-width: var(--container-5xl);
+  }
   .max-w-md {
     max-width: var(--container-md);
   }
@@ -338,8 +348,8 @@
   .grid-cols-1 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-  .grid-cols-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .flex-col {
     flex-direction: column;
@@ -349,9 +359,6 @@
   }
   .justify-center {
     justify-content: center;
-  }
-  .gap-1 {
-    gap: calc(var(--spacing) * 1);
   }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
@@ -441,6 +448,9 @@
   .py-\[1px\] {
     padding-block: 1px;
   }
+  .pt-4 {
+    padding-top: calc(var(--spacing) * 4);
+  }
   .text-left {
     text-align: left;
   }
@@ -487,17 +497,39 @@
   .text-gray-900 {
     color: var(--color-gray-900);
   }
+  .text-sky-500 {
+    color: var(--color-sky-500);
+  }
   .text-white {
     color: var(--color-white);
   }
   .lowercase {
     text-transform: lowercase;
   }
+  .ring-sky-500 {
+    --tw-ring-color: var(--color-sky-500);
+  }
+  .group-data-\[added\=true\]\:block {
+    &:is(:where(.group)[data-added="true"] *) {
+      display: block;
+    }
+  }
   .hover\:underline {
     &:hover {
       @media (hover: hover) {
         text-decoration-line: underline;
       }
+    }
+  }
+  .disabled\:opacity-50 {
+    &:disabled {
+      opacity: 50%;
+    }
+  }
+  .data-\[added\=true\]\:ring-2 {
+    &[data-added="true"] {
+      --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
+      box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
   }
   .data-\[state\=pending\]\:opacity-50 {
@@ -555,6 +587,11 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
+  .sm\:grid-cols-5 {
+    @media (width >= 40rem) {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
   .sm\:flex-row {
     @media (width >= 40rem) {
       flex-direction: row;
@@ -610,6 +647,71 @@
   syntax: "*";
   inherits: false;
 }
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%;
+}
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff;
+}
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000;
+}
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
     *, ::before, ::after, ::backdrop {
@@ -617,6 +719,20 @@
       --tw-space-x-reverse: 0;
       --tw-border-style: solid;
       --tw-font-weight: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
     }
   }
 }

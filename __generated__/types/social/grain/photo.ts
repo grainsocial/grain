@@ -3,24 +3,20 @@
  */
 import { type ValidationResult, BlobRef } from "npm:@atproto/lexicon"
 import { CID } from "npm:multiformats/cid"
-import { validate as _validate } from '../../../../../lexicons.ts'
-import {
-  type $Typed,
-  is$typed as _is$typed,
-  type OmitKey,
-} from '../../../../../util.ts'
+import { validate as _validate } from '../../../lexicons.ts'
+import { type $Typed, is$typed as _is$typed, type OmitKey } from '../../../util.ts'
+import type * as SocialGrainDefs from './defs.ts'
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'social.grain.v0.actor.profile'
+const id = 'social.grain.photo'
 
 export interface Record {
-  $type: 'social.grain.v0.actor.profile'
-  displayName?: string
-  /** Free-form profile description text. */
-  description?: string
-  /** Small image to be displayed next to posts from account. AKA, 'profile picture' */
-  avatar?: BlobRef
+  $type: 'social.grain.photo'
+  photo: BlobRef
+  /** Alt text description of the image, for accessibility. */
+  alt: string
+  aspectRatio?: SocialGrainDefs.AspectRatio
   createdAt?: string
   [k: string]: unknown
 }

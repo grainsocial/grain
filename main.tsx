@@ -1,15 +1,20 @@
 import { lexicons } from "$lexicon/lexicons.ts";
 import { Record as BskyProfile } from "$lexicon/types/app/bsky/actor/profile.ts";
-import { ProfileView } from "$lexicon/types/social/grain/v0/actor/defs.ts";
-import { Record as Profile } from "$lexicon/types/social/grain/v0/actor/profile.ts";
-import { Record as Gallery } from "$lexicon/types/social/grain/v0/gallery.ts";
+import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
+import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
+import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
+import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
+import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import {
-  GalleryView,
-  Image as GalleryImage,
-  ViewImage,
-} from "$lexicon/types/social/grain/v0/gallery/defs.ts";
-import { Record as Star } from "$lexicon/types/social/grain/v0/gallery/star.ts";
-import { Un$Typed } from "$lexicon/util.ts";
+  isRecord as isPhoto,
+  Record as Photo,
+} from "$lexicon/types/social/grain/photo.ts";
+import {
+  isPhotoView,
+  PhotoView,
+} from "$lexicon/types/social/grain/photo/defs.ts";
+import { $Typed, Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import {
   bff,
@@ -45,7 +50,13 @@ import { ComponentChildren, JSX, VNode } from "preact";
 
 bff({
   appName: "Grain Social",
-  collections: ["social.grain.gallery", "social.grain.actor.profile"],
+  collections: [
+    "social.grain.gallery",
+    "social.grain.actor.profile",
+    "social.grain.photo",
+    "social.grain.favorite",
+    "social.grain.gallery.item",
+  ],
   jetstreamUrl: JETSTREAM.WEST_1,
   lexicons,
   rootElement: Root,
@@ -120,33 +131,41 @@ bff({
     }),
     route("/profile/:handle/:rkey", (_req, params, ctx: BffContext<State>) => {
       const did = ctx.currentUser?.did;
-      let stars: WithBffMeta<Star>[] = [];
+      let favs: WithBffMeta<Favorite>[] = [];
       const handle = params.handle;
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
       if (did && gallery) {
-        stars = getGalleryStars(gallery.uri, ctx);
+        favs = getGalleryFavs(gallery.uri, ctx);
       }
       if (!gallery) return ctx.next();
       ctx.state.meta = getGalleryMeta(gallery);
       ctx.state.scripts = ["image_dialog.js"];
       return ctx.render(
-        <GalleryPage stars={stars} gallery={gallery} currentUserDid={did} />,
+        <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
       );
     }),
-    route("/profile/:handle/:rkey/edit", (_req, params, ctx) => {
+
+    route("/upload", (_req, _params, ctx) => {
       requireAuth(ctx);
-      const handle = params.handle;
+      const photos = getActorPhotos(ctx.currentUser.did, ctx);
+      return ctx.render(
+        <UploadPage photos={photos} />,
+      );
+    }),
+    route("/dialogs/gallery/new", (_req, _params, ctx) => {
+      requireAuth(ctx);
+      return ctx.html(
+        <GalleryCreateEditDialog />,
+      );
+    }),
+    route("/dialogs/gallery/:rkey", (_req, params, ctx) => {
+      requireAuth(ctx);
+      const handle = ctx.currentUser.handle;
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
-      return ctx.render(
-        <GalleryCreateEditPage userHandle={handle} gallery={gallery} />,
-      );
-    }),
-    route("/gallery/new", (_req, _params, ctx) => {
-      requireAuth(ctx);
-      return ctx.render(
-        <GalleryCreateEditPage userHandle={ctx.currentUser.handle} />,
+      return ctx.html(
+        <GalleryCreateEditDialog gallery={gallery} />,
       );
     }),
     route("/onboard", (_req, _params, ctx) => {
@@ -195,22 +214,24 @@ bff({
       const galleryDid = atUri.hostname;
       const galleryRkey = atUri.rkey;
       const gallery = getGallery(galleryDid, galleryRkey, ctx);
-      if (!gallery?.images) return ctx.next();
-      const image = gallery?.images?.find((image) => {
-        return image.cid === imageCid;
+      if (!gallery?.items) return ctx.next();
+      const image = gallery.items.filter(isPhotoView).find((item) => {
+        return item.cid === imageCid;
       });
-      const imageAtIndex = gallery.images.findIndex((image) => {
-        return image.cid === imageCid;
-      });
-      const next = wrap(0, gallery.images.length, imageAtIndex + 1);
-      const prev = wrap(0, gallery.images.length, imageAtIndex - 1);
+      const imageAtIndex = gallery.items.filter(isPhotoView).findIndex(
+        (image) => {
+          return image.cid === imageCid;
+        },
+      );
+      const next = wrap(0, gallery.items.length, imageAtIndex + 1);
+      const prev = wrap(0, gallery.items.length, imageAtIndex - 1);
       if (!image) return ctx.next();
       return ctx.html(
-        <ImageDialog
+        <PhotoDialog
           gallery={gallery}
           image={image}
-          nextImage={gallery.images.at(next)}
-          prevImage={gallery.images.at(prev)}
+          nextImage={gallery.items.filter(isPhotoView).at(next)}
+          prevImage={gallery.items.filter(isPhotoView).at(prev)}
         />,
       );
     }),
@@ -223,12 +244,33 @@ bff({
       const galleryDid = atUri.hostname;
       const galleryRkey = atUri.rkey;
       const gallery = getGallery(galleryDid, galleryRkey, ctx);
-      const image = gallery?.images?.find((image) => {
-        return image.cid === imageCid;
+      const photo = gallery?.items?.filter(isPhotoView).find((photo) => {
+        return photo.cid === imageCid;
       });
-      if (!image || !gallery) return ctx.next();
+      if (!photo || !gallery) return ctx.next();
       return ctx.html(
-        <ImageAltDialog galleryUri={gallery.uri} image={image} />,
+        <PhotoAltDialog galleryUri={gallery.uri} photo={photo} />,
+      );
+    }),
+    route("/dialogs/photo-select/:galleryRkey", (_req, params, ctx) => {
+      requireAuth(ctx);
+      const photos = getActorPhotos(ctx.currentUser.did, ctx);
+      const galleryUri =
+        `at://${ctx.currentUser.did}/social.grain.gallery/${params.galleryRkey}`;
+      const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(
+        galleryUri,
+      );
+      if (!gallery) return ctx.next();
+      const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, [gallery]);
+      const itemUris = galleryPhotosMap.get(galleryUri)?.map((photo) =>
+        photo.uri
+      ) ?? [];
+      return ctx.html(
+        <PhotoSelectDialog
+          galleryUri={galleryUri}
+          itemUris={itemUris}
+          photos={photos}
+        />,
       );
     }),
     route("/actions/create-edit", ["POST"], async (req, _params, ctx) => {
@@ -242,34 +284,14 @@ bff({
       const uri = searchParams.get("uri");
       const handle = ctx.currentUser?.handle;
 
-      let images: GalleryImage[] = [];
-      for (const cid of cids) {
-        const blobMeta = ctx.blobMetaCache.get(cid);
-        if (!blobMeta?.blobRef) {
-          continue;
-        }
-        images.push({
-          image: blobMeta.blobRef,
-          alt: "",
-          aspectRatio: blobMeta.dimensions?.width && blobMeta.dimensions?.height
-            ? {
-              width: blobMeta.dimensions.width,
-              height: blobMeta.dimensions.height,
-            }
-            : undefined,
-        });
-      }
-
       if (uri) {
         const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(uri);
         if (!gallery) return ctx.next();
-        images = mergeUniqueImages(gallery.images, images, cids);
         const rkey = new AtUri(uri).rkey;
         try {
           await ctx.updateRecord<Gallery>("social.grain.gallery", rkey, {
             title,
             description,
-            images,
             createdAt: gallery.createdAt,
           });
         } catch (e) {
@@ -287,82 +309,173 @@ bff({
         {
           title,
           description,
-          images,
           createdAt: new Date().toISOString(),
         },
       );
       return ctx.redirect(galleryLink(handle, new AtUri(createdUri).rkey));
     }),
-    route("/actions/delete", ["POST"], async (req, _params, ctx) => {
+    route("/actions/gallery/delete", ["POST"], async (req, _params, ctx) => {
       requireAuth(ctx);
       const formData = await req.formData();
       const uri = formData.get("uri") as string;
       await ctx.deleteRecord(uri);
       return ctx.redirect("/");
     }),
-    route("/actions/image-alt", ["POST"], async (req, _params, ctx) => {
+    route(
+      "/actions/gallery/:galleryRkey/add-photo/:photoRkey",
+      ["PUT"],
+      async (_req, params, ctx) => {
+        requireAuth(ctx);
+        const galleryRkey = params.galleryRkey;
+        const photoRkey = params.photoRkey;
+        const galleryUri =
+          `at://${ctx.currentUser.did}/social.grain.gallery/${galleryRkey}`;
+        const photoUri =
+          `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+        const gallery = getGallery(ctx.currentUser.did, galleryRkey, ctx);
+        const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
+        if (!gallery || !photo) return ctx.next();
+        if (
+          gallery.items?.filter(isPhotoView).some((item) =>
+            item.uri === photoUri
+          )
+        ) {
+          return new Response(null, { status: 500 });
+        }
+        await ctx.createRecord<Gallery>(
+          "social.grain.gallery.item",
+          {
+            gallery: galleryUri,
+            item: photoUri,
+            createdAt: new Date().toISOString(),
+          },
+        );
+        gallery.items = [
+          ...(gallery.items ?? []),
+          photoToView(photo.did, photo),
+        ];
+        return ctx.html(
+          <>
+            <div hx-swap-oob="beforeend:#gallery-photo-grid">
+              <PhotoButton
+                key={photo.cid}
+                photo={photoToView(photo.did, photo)}
+                gallery={gallery}
+                isCreator={ctx.currentUser.did === gallery.creator.did}
+                isLoggedIn={!!ctx.currentUser.did}
+              />
+            </div>
+            <PhotoSelectButton
+              galleryUri={galleryUri}
+              itemUris={gallery.items?.filter(isPhotoView).map((item) =>
+                item.uri
+              ) ?? []}
+              photo={photoToView(photo.did, photo)}
+            />
+          </>,
+        );
+      },
+    ),
+    route(
+      "/actions/gallery/:galleryRkey/remove-photo/:photoRkey",
+      ["PUT"],
+      async (_req, params, ctx) => {
+        requireAuth(ctx);
+        const galleryRkey = params.galleryRkey;
+        const photoRkey = params.photoRkey;
+        const galleryUri =
+          `at://${ctx.currentUser.did}/social.grain.gallery/${galleryRkey}`;
+        const photoUri =
+          `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+        if (!galleryRkey || !photoRkey) return ctx.next();
+        const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
+        if (!photo) return ctx.next();
+        const { items: [item] } = ctx.indexService.getRecords<
+          WithBffMeta<GalleryItem>
+        >(
+          "social.grain.gallery.item",
+          {
+            where: [
+              {
+                field: "gallery",
+                equals: galleryUri,
+              },
+              {
+                field: "item",
+                equals: photoUri,
+              },
+            ],
+          },
+        );
+        if (!item) return ctx.next();
+        await ctx.deleteRecord(
+          item.uri,
+        );
+        const gallery = getGallery(ctx.currentUser.did, galleryRkey, ctx);
+        if (!gallery) return ctx.next();
+        return ctx.html(
+          <PhotoSelectButton
+            galleryUri={galleryUri}
+            itemUris={gallery.items?.filter(isPhotoView).map((item) =>
+              item.uri
+            ) ?? []}
+            photo={photoToView(photo.did, photo)}
+          />,
+        );
+      },
+    ),
+    route("/actions/photo/:rkey", ["PUT"], async (req, params, ctx) => {
       requireAuth(ctx);
+      const photoRkey = params.rkey;
       const formData = await req.formData();
       const alt = formData.get("alt") as string;
-      const cid = formData.get("cid") as string;
-      const galleryUri = formData.get("galleryUri") as string;
-      const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(
-        galleryUri,
-      );
-      if (!gallery) return ctx.next();
-      const images = gallery?.images?.map((image) => {
-        if (image.image.ref.toString() === cid) {
-          return {
-            ...image,
-            alt,
-          };
-        }
-        return image;
-      });
-      const rkey = new AtUri(galleryUri).rkey;
-      await ctx.updateRecord<Gallery>("social.grain.gallery", rkey, {
-        title: gallery.title,
-        description: gallery.description,
-        images,
-        createdAt: gallery.createdAt,
+      const photoUri =
+        `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+      const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
+      if (!photo) return ctx.next();
+      await ctx.updateRecord<Photo>("social.grain.photo", photoRkey, {
+        photo: photo.photo,
+        aspectRatio: photo.aspectRatio,
+        alt,
+        createdAt: photo.createdAt,
       });
       return new Response(null, { status: 200 });
     }),
-    route("/actions/star", ["POST"], async (req, _params, ctx) => {
+    route("/actions/favorite", ["POST"], async (req, _params, ctx) => {
       requireAuth(ctx);
       const url = new URL(req.url);
       const searchParams = new URLSearchParams(url.search);
       const galleryUri = searchParams.get("galleryUri");
-      const starUri = searchParams.get("starUri") ?? undefined;
+      const favUri = searchParams.get("favUri") ?? undefined;
       if (!galleryUri) return ctx.next();
 
-      if (starUri) {
-        await ctx.deleteRecord(starUri);
-        const stars = getGalleryStars(galleryUri, ctx);
+      if (favUri) {
+        await ctx.deleteRecord(favUri);
+        const favs = getGalleryFavs(galleryUri, ctx);
         return ctx.html(
-          <StarButton
+          <FavoriteButton
             currentUserDid={ctx.currentUser.did}
-            stars={stars}
+            favs={favs}
             galleryUri={galleryUri}
           />,
         );
       }
 
-      await ctx.createRecord<WithBffMeta<Star>>(
-        "social.grain.gallery.star",
+      await ctx.createRecord<WithBffMeta<Favorite>>(
+        "social.grain.favorite",
         {
           subject: galleryUri,
           createdAt: new Date().toISOString(),
         },
       );
 
-      const stars = getGalleryStars(galleryUri, ctx);
+      const favs = getGalleryFavs(galleryUri, ctx);
 
       return ctx.html(
-        <StarButton
+        <FavoriteButton
           currentUserDid={ctx.currentUser.did}
           galleryUri={galleryUri}
-          stars={stars}
+          favs={favs}
         />,
       );
     }),
@@ -389,7 +502,14 @@ bff({
 
       return ctx.redirect(`/profile/${ctx.currentUser.handle}`);
     }),
-    ...imageUploadRoutes(),
+    route("/actions/photo/:rkey", ["DELETE"], (_req, params, ctx) => {
+      requireAuth(ctx);
+      ctx.deleteRecord(
+        `at://${ctx.currentUser.did}/social.grain.photo/${params.rkey}`,
+      );
+      return new Response(null, { status: 200 });
+    }),
+    ...photoUploadRoutes(),
     ...avatarUploadRoutes(),
   ],
 });
@@ -458,18 +578,66 @@ async function compressImageForPreview(file: File): Promise<string> {
   return canvas.toDataURL(format);
 }
 
-type TimelineItemType = "gallery" | "star";
+type TimelineItemType = "gallery" | "favorite";
 
-interface TimelineItem {
+type TimelineItem = {
   createdAt: string;
   itemType: TimelineItemType;
   itemUri: string;
   actor: Un$Typed<ProfileView>;
   gallery: GalleryView;
-}
+};
 
-interface TimelineOptions {
+type TimelineOptions = {
   actorDid?: string;
+};
+
+function getGalleryItemsAndPhotos(
+  ctx: BffContext,
+  galleries: WithBffMeta<Gallery>[],
+): Map<string, WithBffMeta<Photo>[]> {
+  const galleryUris = galleries.map((gallery) =>
+    `at://${gallery.did}/social.grain.gallery/${new AtUri(gallery.uri).rkey}`
+  );
+
+  if (galleryUris.length === 0) return new Map();
+
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >("social.grain.gallery.item", {
+    where: [{ field: "gallery", in: galleryUris }],
+  });
+
+  const photoUris = galleryItems.map((item) => item.item).filter(Boolean);
+  if (photoUris.length === 0) return new Map();
+
+  const { items: photos } = ctx.indexService.getRecords<WithBffMeta<Photo>>(
+    "social.grain.photo",
+    {
+      where: [{ field: "uri", in: photoUris }],
+    },
+  );
+
+  const photosMap = new Map<string, WithBffMeta<Photo>>();
+  for (const photo of photos) {
+    photosMap.set(photo.uri, photo);
+  }
+
+  const galleryPhotosMap = new Map<string, WithBffMeta<Photo>[]>();
+  for (const item of galleryItems) {
+    const galleryUri = item.gallery;
+    const photo = photosMap.get(item.item);
+
+    if (!galleryPhotosMap.has(galleryUri)) {
+      galleryPhotosMap.set(galleryUri, []);
+    }
+
+    if (photo) {
+      galleryPhotosMap.get(galleryUri)?.push(photo);
+    }
+  }
+
+  return galleryPhotosMap;
 }
 
 function processGalleries(
@@ -489,13 +657,23 @@ function processGalleries(
     where: whereClause,
   });
 
+  if (galleries.length === 0) return items;
+
+  // Get photos for all galleries
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
+
   for (const gallery of galleries) {
     const actor = ctx.indexService.getActor(gallery.did);
     if (!actor) continue;
     const profile = getActorProfile(actor.did, ctx);
     if (!profile) continue;
 
-    const galleryView = galleryToView(gallery, profile);
+    const galleryUri = `at://${gallery.did}/social.grain.gallery/${
+      new AtUri(gallery.uri).rkey
+    }`;
+    const galleryPhotos = galleryPhotosMap.get(galleryUri) || [];
+
+    const galleryView = galleryToView(gallery, profile, galleryPhotos);
     items.push({
       itemType: "gallery",
       createdAt: gallery.createdAt,
@@ -518,25 +696,54 @@ function processStars(
     ? [{ field: "did", equals: options.actorDid }]
     : undefined;
 
-  const { items: stars } = ctx.indexService.getRecords<WithBffMeta<Star>>(
-    "social.grain.gallery.star",
+  const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
+    "social.grain.favorite",
     {
       orderBy: { field: "createdAt", direction: "desc" },
       where: whereClause,
     },
   );
 
-  for (const star of stars) {
-    if (!star.subject) continue;
+  if (favs.length === 0) return items;
+
+  // Collect all gallery references from favorites
+  const galleryRefs = new Map<string, WithBffMeta<Gallery>>();
+
+  for (const favorite of favs) {
+    if (!favorite.subject) continue;
 
     try {
-      const atUri = new AtUri(star.subject);
+      const atUri = new AtUri(favorite.subject);
       const galleryDid = atUri.hostname;
       const galleryRkey = atUri.rkey;
+      const galleryUri =
+        `at://${galleryDid}/social.grain.gallery/${galleryRkey}`;
 
       const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(
-        `at://${galleryDid}/social.grain.gallery/${galleryRkey}`,
+        galleryUri,
       );
+      if (gallery) {
+        galleryRefs.set(galleryUri, gallery);
+      }
+    } catch (e) {
+      console.error("Error processing favorite:", e);
+    }
+  }
+
+  const galleries = Array.from(galleryRefs.values());
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
+
+  for (const favorite of favs) {
+    if (!favorite.subject) continue;
+
+    try {
+      const atUri = new AtUri(favorite.subject);
+      const galleryDid = atUri.hostname;
+      const galleryRkey = atUri.rkey;
+      const galleryUri =
+        `at://${galleryDid}/social.grain.gallery/${galleryRkey}`;
+
+      const gallery = galleryRefs.get(galleryUri);
       if (!gallery) continue;
 
       const galleryActor = ctx.indexService.getActor(galleryDid);
@@ -544,21 +751,23 @@ function processStars(
       const galleryProfile = getActorProfile(galleryActor.did, ctx);
       if (!galleryProfile) continue;
 
-      const starActor = ctx.indexService.getActor(star.did);
-      if (!starActor) continue;
-      const starProfile = getActorProfile(starActor.did, ctx);
-      if (!starProfile) continue;
+      const favActor = ctx.indexService.getActor(favorite.did);
+      if (!favActor) continue;
+      const favProfile = getActorProfile(favActor.did, ctx);
+      if (!favProfile) continue;
 
-      const galleryView = galleryToView(gallery, galleryProfile);
+      const galleryPhotos = galleryPhotosMap.get(galleryUri) || [];
+      const galleryView = galleryToView(gallery, galleryProfile, galleryPhotos);
+
       items.push({
-        itemType: "star",
-        createdAt: star.createdAt,
-        itemUri: star.uri,
-        actor: starProfile,
+        itemType: "favorite",
+        createdAt: favorite.createdAt,
+        itemUri: favorite.uri,
+        actor: favProfile,
         gallery: galleryView,
       });
     } catch (e) {
-      console.error("Error processing star:", e);
+      console.error("Error processing favorite:", e);
       continue;
     }
   }
@@ -571,8 +780,8 @@ function getTimelineItems(
   options?: TimelineOptions,
 ): TimelineItem[] {
   const galleryItems = processGalleries(ctx, options);
-  const starItems = processStars(ctx, options);
-  const timelineItems = [...galleryItems, ...starItems];
+  const favsItems = processStars(ctx, options);
+  const timelineItems = [...galleryItems, ...favsItems];
 
   return timelineItems.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -595,6 +804,25 @@ function getActorTimeline(handleOrDid: string, ctx: BffContext) {
   return getTimelineItems(ctx, { actorDid: did });
 }
 
+function getActorPhotos(handleOrDid: string, ctx: BffContext) {
+  let did: string;
+  if (handleOrDid.includes("did:")) {
+    did = handleOrDid;
+  } else {
+    const actor = ctx.indexService.getActorByHandle(handleOrDid);
+    if (!actor) return [];
+    did = actor.did;
+  }
+  const photos = ctx.indexService.getRecords<WithBffMeta<Photo>>(
+    "social.grain.photo",
+    {
+      where: [{ field: "did", equals: did }],
+      orderBy: { field: "createdAt", direction: "desc" },
+    },
+  );
+  return photos.items.map((photo) => photoToView(photo.did, photo));
+}
+
 function getActorGalleries(handleOrDid: string, ctx: BffContext) {
   let did: string;
   if (handleOrDid.includes("did:")) {
@@ -604,16 +832,21 @@ function getActorGalleries(handleOrDid: string, ctx: BffContext) {
     if (!actor) return [];
     did = actor.did;
   }
-  const galleries = ctx.indexService.getRecords<WithBffMeta<Gallery>>(
+  const { items: galleries } = ctx.indexService.getRecords<
+    WithBffMeta<Gallery>
+  >(
     "social.grain.gallery",
     {
       where: [{ field: "did", equals: did }],
       orderBy: { field: "createdAt", direction: "desc" },
     },
   );
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
   const creator = getActorProfile(did, ctx);
   if (!creator) return [];
-  return galleries.items.map((gallery) => galleryToView(gallery, creator));
+  return galleries.map((gallery) =>
+    galleryToView(gallery, creator, galleryPhotosMap.get(gallery.uri) ?? [])
+  );
 }
 
 function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
@@ -629,19 +862,24 @@ function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
     `at://${did}/social.grain.gallery/${rkey}`,
   );
   if (!gallery) return null;
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, [gallery]);
   const profile = getActorProfile(did, ctx);
   if (!profile) return null;
-  return galleryToView(gallery, profile);
+  return galleryToView(
+    gallery,
+    profile,
+    galleryPhotosMap.get(gallery.uri) ?? [],
+  );
 }
 
-function getGalleryStars(galleryUri: string, ctx: BffContext) {
+function getGalleryFavs(galleryUri: string, ctx: BffContext) {
   const atUri = new AtUri(galleryUri);
-  const results = ctx.indexService.getRecords<WithBffMeta<Star>>(
-    "social.grain.gallery.star",
+  const results = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
+    "social.grain.favorite",
     {
       where: [
         {
-          field: "subject",
+          field: "gallery",
           equals: `at://${atUri.hostname}/social.grain.gallery/${atUri.rkey}`,
         },
       ],
@@ -665,7 +903,10 @@ function getGalleryMeta(gallery: GalleryView): MetaProps[] {
       property: "og:description",
       content: (gallery.record as Gallery).description,
     },
-    { property: "og:image", content: gallery?.images?.[0].thumb },
+    {
+      property: "og:image",
+      content: gallery?.items?.filter(isPhotoView)?.[0]?.thumb,
+    },
   ];
 }
 
@@ -797,7 +1038,7 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
         >
           @{item.actor.handle}
         </a>{" "}
-        {item.itemType === "star" ? "starred" : "created"}{" "}
+        {item.itemType === "favorite" ? "favorited" : "created"}{" "}
         <a
           href={galleryLink(
             item.gallery.creator.handle,
@@ -820,34 +1061,36 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
         )}
         class="w-fit flex"
       >
-        {item.gallery.images?.length
+        {item.gallery.items?.filter(isPhotoView).length
           ? (
             <div class="flex w-full max-w-md mx-auto aspect-[3/2] overflow-hidden gap-2">
               <div class="w-2/3 h-full">
                 <img
-                  src={item.gallery.images[0].thumb}
-                  alt={item.gallery.images[0].alt}
+                  src={item.gallery.items?.filter(isPhotoView)[0].thumb}
+                  alt={item.gallery.items?.filter(isPhotoView)[0].alt}
                   class="w-full h-full object-cover"
                 />
               </div>
               <div class="w-1/3 flex flex-col h-full gap-2">
                 <div class="h-1/2">
-                  {item.gallery.images?.[1]
+                  {item.gallery.items?.filter(isPhotoView)?.[1]
                     ? (
                       <img
-                        src={item.gallery.images?.[1]?.thumb}
-                        alt={item.gallery.images?.[1]?.alt}
+                        src={item.gallery.items?.filter(isPhotoView)?.[1]
+                          ?.thumb}
+                        alt={item.gallery.items?.filter(isPhotoView)?.[1]?.alt}
                         class="w-full h-full object-cover"
                       />
                     )
                     : <div className="w-full h-full bg-gray-200" />}
                 </div>
                 <div class="h-1/2">
-                  {item.gallery.images?.[2]
+                  {item.gallery.items?.filter(isPhotoView)?.[2]
                     ? (
                       <img
-                        src={item.gallery.images?.[2]?.thumb}
-                        alt={item.gallery.images?.[2]?.alt}
+                        src={item.gallery.items?.filter(isPhotoView)?.[2]
+                          ?.thumb}
+                        alt={item.gallery.items?.filter(isPhotoView)?.[2]?.alt}
                         class="w-full h-full object-cover"
                       />
                     )
@@ -887,6 +1130,12 @@ function ProfilePage({
         {loggedInUserDid === profile.did
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
+              <Button variant="secondary" class="w-full sm:w-fit" asChild>
+                <a href="/upload">
+                  <i class="fa-solid fa-upload mr-2" />
+                  Upload
+                </a>
+              </Button>
               <Button
                 variant="primary"
                 type="button"
@@ -897,8 +1146,15 @@ function ProfilePage({
               >
                 Edit Profile
               </Button>
-              <Button variant="primary" class="w-full sm:w-fit" asChild>
-                <a href="/gallery/new">Create Gallery</a>
+              <Button
+                variant="primary"
+                type="button"
+                class="w-full sm:w-fit"
+                hx-get="/dialogs/gallery/new"
+                hx-target="#layout"
+                hx-swap="afterbegin"
+              >
+                Create Gallery
               </Button>
             </div>
           )
@@ -940,9 +1196,11 @@ function ProfilePage({
         {!selectedTab
           ? (
             <ul class="space-y-4 relative">
-              {timelineItems.map((item) => (
-                <TimelineItem item={item} key={item.itemUri} />
-              ))}
+              {timelineItems.length
+                ? timelineItems.map((item) => (
+                  <TimelineItem item={item} key={item.itemUri} />
+                ))
+                : <li>No activity yet.</li>}
             </ul>
           )
           : null}
@@ -960,8 +1218,8 @@ function ProfilePage({
                       class="cursor-pointer relative aspect-square"
                     >
                       <img
-                        src={gallery.images?.[0]?.thumb}
-                        alt={gallery.images?.[0]?.alt}
+                        src={gallery.items?.filter(isPhotoView)?.[0]?.thumb}
+                        alt={gallery.items?.filter(isPhotoView)?.[0]?.alt}
                         class="w-full h-full object-cover"
                       />
                       <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2">
@@ -970,10 +1228,50 @@ function ProfilePage({
                     </a>
                   ))
                 )
-                : <p>No galleries found</p>}
+                : <p>No galleries yet.</p>}
             </div>
           )
           : null}
+      </div>
+    </div>
+  );
+}
+
+function UploadPage({ photos }: Readonly<{ photos: PhotoView[] }>) {
+  return (
+    <div class="px-4 pt-4 mb-4">
+      <Button variant="primary" class="mb-2" asChild>
+        <label class="w-fit">
+          <i class="fa fa-plus"></i> Add photos
+          <input
+            class="hidden"
+            type="file"
+            multiple
+            accept="image/*"
+            _="on change
+                set fileList to me.files
+                if fileList.length > 10
+                  alert('You can only upload 10 photos')
+                  halt
+                end
+                for file in fileList
+                  make a FormData called fd
+                  fd.append('file', file)
+                  fetch /actions/photo/upload-start with { method:'POST', body:fd }
+                  then put it at the start of #image-preview
+                  then call htmx.process(#image-preview)
+                end
+                set me.value to ''"
+          />
+        </label>
+      </Button>
+      <div
+        id="image-preview"
+        class="w-full h-full grid grid-cols-2 sm:grid-cols-5 gap-2"
+      >
+        {photos.map((photo) => (
+          <PhotoPreview key={photo.cid} src={photo.thumb} uri={photo.uri} />
+        ))}
       </div>
     </div>
   );
@@ -1082,11 +1380,11 @@ function AvatarForm({ src, alt }: Readonly<{ src?: string; alt?: string }>) {
 
 function GalleryPage({
   gallery,
-  stars = [],
+  favs = [],
   currentUserDid,
 }: Readonly<{
   gallery: GalleryView;
-  stars: WithBffMeta<Star>[];
+  favs: WithBffMeta<Favorite>[];
   currentUserDid?: string;
 }>) {
   const isCreator = currentUserDid === gallery.creator.did;
@@ -1113,62 +1411,51 @@ function GalleryPage({
         </div>
         {isLoggedIn && isCreator
           ? (
-            <Button
-              variant="primary"
-              class="self-start w-full sm:w-fit"
-              asChild
-            >
-              <a
-                href={`${
-                  galleryLink(
-                    gallery.creator.handle,
-                    new AtUri(gallery.uri).rkey,
-                  )
-                }/edit`}
+            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
+              <Button
+                hx-get={`/dialogs/photo-select/${new AtUri(gallery.uri).rkey}`}
+                hx-target="#layout"
+                hx-swap="afterbegin"
+                variant="primary"
+                class="self-start w-full sm:w-fit"
+              >
+                Add photos
+              </Button>
+              <Button
+                variant="primary"
+                class="self-start w-full sm:w-fit"
+                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}`}
+                hx-target="#layout"
+                hx-swap="afterbegin"
               >
                 Edit
-              </a>
-            </Button>
+              </Button>
+            </div>
           )
           : null}
         {!isCreator
           ? (
-            <StarButton
+            <FavoriteButton
               currentUserDid={currentUserDid}
-              stars={stars}
+              favs={favs}
               galleryUri={gallery.uri}
             />
           )
           : null}
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-        {gallery.images?.length
-          ? gallery?.images?.map((image) => (
-            <button
-              key={image.fullsize}
-              type="button"
-              hx-get={imageDialogLink(gallery, image)}
-              hx-trigger="click"
-              hx-target="#layout"
-              hx-swap="afterbegin"
-              class="cursor-pointer relative sm:aspect-square"
-            >
-              {isLoggedIn && isCreator
-                ? <AltTextButton galleryUri={gallery.uri} cid={image.cid} />
-                : null}
-              <img
-                src={image.fullsize}
-                alt={image.alt}
-                class="sm:absolute sm:inset-0 w-full h-full sm:object-contain"
-              />
-              {!isCreator && image.alt
-                ? (
-                  <div class="absolute bg-black/80 bottom-2 right-2 sm:bottom-0 sm:right-0 text-xs text-white font-semibold py-[1px] px-[3px]">
-                    ALT
-                  </div>
-                )
-                : null}
-            </button>
+      <div
+        id="gallery-photo-grid"
+        class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4"
+      >
+        {gallery.items?.filter(isPhotoView)?.length
+          ? gallery?.items?.filter(isPhotoView)?.map((photo) => (
+            <PhotoButton
+              key={photo.cid}
+              photo={photo}
+              gallery={gallery}
+              isCreator={isCreator}
+              isLoggedIn={isLoggedIn}
+            />
           ))
           : null}
       </div>
@@ -1176,182 +1463,177 @@ function GalleryPage({
   );
 }
 
-function StarButton({
+function PhotoButton({ photo, gallery, isCreator, isLoggedIn }: Readonly<{
+  photo: PhotoView;
+  gallery: GalleryView;
+  isCreator: boolean;
+  isLoggedIn: boolean;
+}>) {
+  return (
+    <button
+      id={`photo-${new AtUri(photo.uri).rkey}`}
+      type="button"
+      hx-get={photoDialogLink(gallery, photo)}
+      hx-trigger="click"
+      hx-target="#layout"
+      hx-swap="afterbegin"
+      class="cursor-pointer relative sm:aspect-square"
+    >
+      {isLoggedIn && isCreator
+        ? <AltTextButton galleryUri={gallery.uri} cid={photo.cid} />
+        : null}
+      <img
+        src={photo.fullsize}
+        alt={photo.alt}
+        class="sm:absolute sm:inset-0 w-full h-full sm:object-contain"
+      />
+      {!isCreator && photo.alt
+        ? (
+          <div class="absolute bg-black/80 bottom-2 right-2 sm:bottom-0 sm:right-0 text-xs text-white font-semibold py-[1px] px-[3px]">
+            ALT
+          </div>
+        )
+        : null}
+    </button>
+  );
+}
+
+function FavoriteButton({
   currentUserDid,
-  stars = [],
+  favs = [],
   galleryUri,
 }: Readonly<{
   currentUserDid?: string;
-  stars: WithBffMeta<Star>[];
+  favs: WithBffMeta<Favorite>[];
   galleryUri: string;
 }>) {
-  const starUri = stars.find((s) => currentUserDid === s.did)?.uri;
+  const favUri = favs.find((s) => currentUserDid === s.did)?.uri;
   return (
     <Button
       variant="primary"
       class="self-start w-full sm:w-fit"
       type="button"
-      hx-post={`/actions/star?galleryUri=${galleryUri}${
-        starUri ? "&starUri=" + starUri : ""
+      hx-post={`/actions/favorite?galleryUri=${galleryUri}${
+        favUri ? "&favUri=" + favUri : ""
       }`}
-      hx-trigger="click"
       hx-target="this"
       hx-swap="outerHTML"
     >
-      <i class={cn("fa-star", starUri ? "fa-solid" : "fa-regular")}></i>{" "}
-      {stars.length}
+      <i class={cn("fa-heart", favUri ? "fa-solid" : "fa-regular")}></i>{" "}
+      {favs.length}
     </Button>
   );
 }
 
-function BackBtn({ href }: Readonly<{ href: string }>) {
-  return (
-    <a href={href} class="w-fit flex items-center gap-1 mb-2">
-      <i class="fas fa-arrow-left"></i> Back
-    </a>
-  );
-}
-
-function GalleryCreateEditPage({
-  userHandle,
+function GalleryCreateEditDialog({
   gallery,
-}: Readonly<{ userHandle: string; gallery?: GalleryView | null }>) {
+}: Readonly<{ gallery?: GalleryView | null }>) {
   return (
-    <div class="p-4">
-      <BackBtn
-        href={gallery
-          ? galleryLink(gallery.creator.handle, new AtUri(gallery.uri).rkey)
-          : profileLink(userHandle)}
-      />
-      <Header class="mb-2">
-        {gallery ? "Edit gallery" : "Create a new gallery"}
-      </Header>
-      <form
-        id="gallery-form"
-        class="max-w-xl"
-        hx-post={`/actions/create-edit${gallery ? "?uri=" + gallery?.uri : ""}`}
-        hx-swap="none"
-        _="on htmx:afterOnLoad
+    <Dialog id="gallery-dialog" class="z-30">
+      <Dialog.Content>
+        <Dialog.Title>
+          {gallery ? "Edit gallery" : "Create a new gallery"}
+        </Dialog.Title>
+        <form
+          id="gallery-form"
+          class="max-w-xl"
+          hx-post={`/actions/create-edit${
+            gallery ? "?uri=" + gallery?.uri : ""
+          }`}
+          hx-swap="none"
+          _="on htmx:afterOnLoad
             if event.detail.xhr.status != 200
               alert('Error: ' + event.detail.xhr.responseText)"
-      >
-        <div id="image-cids">
-          {(gallery?.record as Gallery).images?.map((image) => (
-            <input
-              type="hidden"
-              name="cids"
-              value={image.image.ref.toString()}
+        >
+          <div class="mb-4 relative">
+            <label htmlFor="title">Gallery name</label>
+            <Input
+              type="text"
+              id="title"
+              name="title"
+              class="input"
+              required
+              value={(gallery?.record as Gallery)?.title}
+              autofocus
             />
-          ))}
-        </div>
-        <div class="mb-4 relative">
-          <label htmlFor="title">Gallery name</label>
-          <Input
-            type="text"
-            id="title"
-            name="title"
-            class="input"
-            required
-            value={(gallery?.record as Gallery)?.title}
+          </div>
+          <div class="mb-2 relative">
+            <label htmlFor="description">Description</label>
+            <Textarea
+              id="description"
+              name="description"
+              rows={4}
+              class="input"
+            >
+              {(gallery?.record as Gallery)?.description}
+            </Textarea>
+          </div>
+        </form>
+        <div class="max-w-xl">
+          <input
+            type="button"
+            name="galleryUri"
+            value={gallery?.uri}
+            class="hidden"
           />
         </div>
-        <div class="mb-2 relative">
-          <label htmlFor="description">Description</label>
-          <Textarea id="description" name="description" rows={4} class="input">
-            {(gallery?.record as Gallery)?.description}
-          </Textarea>
-        </div>
-      </form>
-      <div class="max-w-xl">
-        <input
-          type="button"
-          name="galleryUri"
-          value={gallery?.uri}
-          class="hidden"
-        />
-        <Button variant="primary" class="mb-2" asChild>
-          <label class="w-fit">
-            <i class="fa fa-plus"></i> Add images
-            <input
-              class="hidden"
-              type="file"
-              multiple
-              accept="image/*"
-              _="on change
-                set fileList to me.files
-                if fileList.length > 10
-                  alert('You can only upload 10 images')
-                  halt
-                end
-                for file in fileList
-                  make a FormData called fd
-                  fd.append('file', file)
-                  fetch /actions/images/upload-start with { method:'POST', body:fd }
-                  then put it at the end of #image-preview
-                  then call htmx.process(#image-preview)
-                end
-                set me.value to ''"
-            />
-          </label>
-        </Button>
-        <div id="image-preview" class="w-full h-full grid grid-cols-5 gap-2">
-          {gallery?.images?.map((image) => (
-            <ImagePreview key={image.cid} src={image.thumb} cid={image.cid} />
-          ))}
-        </div>
-      </div>
-      <form id="delete-form" hx-post={`/actions/delete?uri=${gallery?.uri}`}>
-        <input type="hidden" name="uri" value={gallery?.uri} />
-      </form>
-      <div class="flex flex-col gap-2 mt-2">
-        <Button
-          variant="primary"
-          form="gallery-form"
-          type="submit"
-          class="w-fit"
+        <form
+          id="delete-form"
+          hx-post={`/actions/gallery/delete?uri=${gallery?.uri}`}
         >
-          {gallery ? "Update gallery" : "Create gallery"}
-        </Button>
-
-        {gallery
-          ? (
-            <Button
-              variant="destructive"
-              form="delete-form"
-              type="submit"
-              class="w-fit"
-            >
-              Delete gallery
-            </Button>
-          )
-          : null}
-      </div>
-    </div>
+          <input type="hidden" name="uri" value={gallery?.uri} />
+        </form>
+        <div class="flex flex-col gap-2 mt-2">
+          <Button
+            variant="primary"
+            form="gallery-form"
+            type="submit"
+            class="w-full"
+          >
+            {gallery ? "Update gallery" : "Create gallery"}
+          </Button>
+          {gallery
+            ? (
+              <Button
+                variant="destructive"
+                form="delete-form"
+                type="submit"
+                class="w-full"
+              >
+                Delete gallery
+              </Button>
+            )
+            : null}
+          <Button
+            variant="secondary"
+            type="button"
+            class="w-full"
+            _={Dialog._closeOnClick}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Dialog.Content>
+    </Dialog>
   );
 }
 
-function ImagePreview({
+function PhotoPreview({
   src,
-  cid,
+  uri,
 }: Readonly<{
   src: string;
-  cid?: string;
+  uri?: string;
 }>) {
   return (
-    <div class="relative">
-      {cid
+    <div class="relative aspect-square">
+      {uri
         ? (
           <button
             type="button"
-            class="bg-black/80 z-10 absolute top-2 right-2 cursor-pointer size-4 flex items-center justify-center"
-            _={`on click
-              set input to <input[value='${cid}']/>
-              if input exists
-                remove input
-              end
-              remove me.parentNode
-              halt
-            `}
+            hx-delete={`/actions/photo/${new AtUri(uri).rkey}`}
+            class="bg-black/80 z-10 absolute top-0 right-0 cursor-pointer size-4 flex items-center justify-center"
+            _="on htmx:afterOnLoad remove me.parentNode"
           >
             <i class="fas fa-close text-white"></i>
           </button>
@@ -1360,8 +1642,8 @@ function ImagePreview({
       <img
         src={src}
         alt=""
-        data-state={cid ? "complete" : "pending"}
-        class="w-full h-full object-cover aspect-square data-[state=pending]:opacity-50"
+        data-state={uri ? "complete" : "pending"}
+        class="absolute inset-0 w-full h-full object-contain data-[state=pending]:opacity-50"
       />
     </div>
   );
@@ -1385,25 +1667,25 @@ function AltTextButton({
   );
 }
 
-function ImageDialog({
+function PhotoDialog({
   gallery,
   image,
   nextImage,
   prevImage,
 }: Readonly<{
   gallery: GalleryView;
-  image: ViewImage;
-  nextImage?: ViewImage;
-  prevImage?: ViewImage;
+  image: PhotoView;
+  nextImage?: PhotoView;
+  prevImage?: PhotoView;
 }>) {
   return (
-    <Dialog id="image-dialog" class="bg-black z-30">
+    <Dialog id="photo-dialog" class="bg-black z-30">
       {nextImage
         ? (
           <div
-            hx-get={imageDialogLink(gallery, nextImage)}
+            hx-get={photoDialogLink(gallery, nextImage)}
             hx-trigger="keyup[key=='ArrowRight'] from:body, swipeleft from:body"
-            hx-target="#image-dialog"
+            hx-target="#photo-dialog"
             hx-swap="innerHTML"
           />
         )
@@ -1411,9 +1693,9 @@ function ImageDialog({
       {prevImage
         ? (
           <div
-            hx-get={imageDialogLink(gallery, prevImage)}
+            hx-get={photoDialogLink(gallery, prevImage)}
             hx-trigger="keyup[key=='ArrowLeft'] from:body, swiperight from:body"
-            hx-target="#image-dialog"
+            hx-target="#photo-dialog"
             hx-swap="innerHTML"
           />
         )
@@ -1441,37 +1723,37 @@ function ImageDialog({
   );
 }
 
-function ImageAltDialog({
-  image,
+function PhotoAltDialog({
+  photo,
   galleryUri,
 }: Readonly<{
-  image: ViewImage;
+  photo: PhotoView;
   galleryUri: string;
 }>) {
   return (
-    <Dialog id="image-alt-dialog" class="z-30">
+    <Dialog id="photo-alt-dialog" class="z-30">
       <Dialog.Content>
         <Dialog.Title>Add alt text</Dialog.Title>
         <div class="aspect-square relative bg-gray-100">
           <img
-            src={image.fullsize}
-            alt={image.alt}
+            src={photo.fullsize}
+            alt={photo.alt}
             class="absolute inset-0 w-full h-full object-contain"
           />
         </div>
         <form
-          hx-post="/actions/image-alt"
-          _="on htmx:afterOnLoad[successful] trigger closeDialog"
+          hx-put={`/actions/photo/${new AtUri(photo.uri).rkey}`}
+          _="on htmx:afterOnLoad trigger closeDialog"
         >
           <input type="hidden" name="galleryUri" value={galleryUri} />
-          <input type="hidden" name="cid" value={image.cid} />
+          <input type="hidden" name="cid" value={photo.cid} />
           <div class="my-2">
             <label htmlFor="alt">Descriptive alt text</label>
             <Textarea
               id="alt"
               name="alt"
               rows={4}
-              defaultValue={image.alt}
+              defaultValue={photo.alt}
               placeholder="Alt text"
             />
           </div>
@@ -1489,11 +1771,76 @@ function ImageAltDialog({
   );
 }
 
-function UploadOob({ cid }: Readonly<{ cid: string }>) {
+function PhotoSelectDialog({
+  galleryUri,
+  itemUris,
+  photos,
+}: Readonly<{
+  galleryUri: string;
+  itemUris: string[];
+  photos: PhotoView[];
+}>) {
   return (
-    <div hx-swap-oob="beforeend:#image-cids">
-      {cid ? <input key={cid} type="hidden" name="cids" value={cid} /> : null}
-    </div>
+    <Dialog id="photo-select-dialog" class="z-30">
+      <Dialog.Content class="w-full max-w-5xl">
+        <Dialog.Title>Add photos</Dialog.Title>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-4">
+          {photos.map((photo) => (
+            <PhotoSelectButton
+              key={photo.cid}
+              galleryUri={galleryUri}
+              itemUris={itemUris}
+              photo={photo}
+            />
+          ))}
+        </div>
+        <div class="w-full flex flex-col gap-2 mt-2">
+          <Dialog.Close class="w-full">
+            Close
+          </Dialog.Close>
+        </div>
+      </Dialog.Content>
+    </Dialog>
+  );
+}
+
+function PhotoSelectButton({
+  galleryUri,
+  itemUris,
+  photo,
+}: Readonly<{
+  galleryUri: string;
+  itemUris: string[];
+  photo: PhotoView;
+}>) {
+  return (
+    <button
+      hx-put={`/actions/gallery/${new AtUri(galleryUri).rkey}/${
+        itemUris.includes(photo.uri) ? "remove-photo" : "add-photo"
+      }/${new AtUri(photo.uri).rkey}`}
+      hx-swap="outerHTML"
+      type="button"
+      data-added={itemUris.includes(photo.uri) ? "true" : "false"}
+      class="group cursor-pointer relative aspect-square data-[added=true]:ring-2 ring-sky-500 disabled:opacity-50"
+      _={`on htmx:beforeRequest add @disabled to me
+     then on htmx:afterOnLoad
+       remove @disabled from me
+       if @data-added == 'true'
+         set @data-added to 'false' 
+         remove #photo-${new AtUri(photo.uri).rkey}
+       else
+         set @data-added to 'true'
+       end`}
+    >
+      <div class="hidden group-data-[added=true]:block absolute top-2 right-2">
+        <i class="fa-check fa-solid text-sky-500 z-10" />
+      </div>
+      <img
+        src={photo.fullsize}
+        alt={photo.alt}
+        class="absolute inset-0 w-full h-full object-contain"
+      />
+    </button>
   );
 }
 
@@ -1509,28 +1856,46 @@ function getActorProfile(did: string, ctx: BffContext) {
 function galleryToView(
   record: WithBffMeta<Gallery>,
   creator: Un$Typed<ProfileView>,
+  items: Photo[],
 ): Un$Typed<GalleryView> {
   return {
     uri: record.uri,
     cid: record.cid,
     creator,
     record,
-    images: record?.images?.map((image) =>
-      imageToView(new AtUri(record.uri).hostname, image)
+    items: items?.map((item) => itemToView(record.did, item)).filter(
+      isPhotoView,
     ),
     indexedAt: record.indexedAt,
   };
 }
 
-function imageToView(did: string, image: GalleryImage): Un$Typed<ViewImage> {
+function itemToView(
+  did: string,
+  item: WithBffMeta<Photo> | {
+    $type: string;
+  },
+): Un$Typed<PhotoView> | undefined {
+  if (isPhoto(item)) {
+    return photoToView(did, item);
+  }
+  return undefined;
+}
+
+function photoToView(
+  did: string,
+  photo: WithBffMeta<Photo>,
+): $Typed<PhotoView> {
   return {
-    cid: image.image.ref.toString(),
+    $type: "social.grain.photo.defs#photoView",
+    uri: photo.uri,
+    cid: photo.photo.ref.toString(),
     thumb:
-      `https://cdn.bsky.app/img/feed_thumbnail/plain/${did}/${image.image.ref.toString()}@webp`,
+      `https://cdn.bsky.app/img/feed_thumbnail/plain/${did}/${photo.photo.ref.toString()}@webp`,
     fullsize:
-      `https://cdn.bsky.app/img/feed_fullsize/plain/${did}/${image.image.ref.toString()}@webp`,
-    alt: image.alt,
-    aspectRatio: image.aspectRatio,
+      `https://cdn.bsky.app/img/feed_fullsize/plain/${did}/${photo.photo.ref.toString()}@webp`,
+    alt: photo.alt,
+    aspectRatio: photo.aspectRatio,
   };
 }
 
@@ -1557,33 +1922,8 @@ function galleryLink(handle: string, galleryRkey: string) {
   return `/profile/${handle}/${galleryRkey}`;
 }
 
-function imageDialogLink(gallery: GalleryView, image: ViewImage) {
+function photoDialogLink(gallery: GalleryView, image: PhotoView) {
   return `/dialogs/image?galleryUri=${gallery.uri}&imageCid=${image.cid}`;
-}
-
-function mergeUniqueImages(
-  existingImages: GalleryImage[] | undefined,
-  newImages: GalleryImage[],
-  validCids?: string[],
-): GalleryImage[] {
-  if (!existingImages || existingImages.length === 0) {
-    return validCids
-      ? newImages.filter((img) => validCids.includes(img.image.ref.toString()))
-      : newImages;
-  }
-  const uniqueImagesMap = new Map<string, GalleryImage>();
-  existingImages.forEach((img) => {
-    const key = img.image.ref.toString();
-    uniqueImagesMap.set(key, img);
-  });
-  newImages.forEach((img) => {
-    const key = img.image.ref.toString();
-    uniqueImagesMap.set(key, img);
-  });
-  const mergedImages = [...uniqueImagesMap.values()];
-  return validCids
-    ? mergedImages.filter((img) => validCids.includes(img.image.ref.toString()))
-    : mergedImages;
 }
 
 async function onSignedIn({ actor, ctx }: onSignedInArgs) {
@@ -1691,7 +2031,7 @@ function uploadCheckStatus(
   };
 }
 
-function uploadDone(
+function avatarUploadDone(
   cb: (params: { dataUrl: string; cid: string }) => VNode,
 ): RouteHandler {
   return (req, _params, ctx) => {
@@ -1708,34 +2048,65 @@ function uploadDone(
   };
 }
 
-function imageUploadRoutes(): BffMiddleware[] {
+function photoUploadDone(
+  cb: (params: { dataUrl: string; uri: string }) => VNode,
+): RouteHandler {
+  return async (req, _params, ctx) => {
+    requireAuth(ctx);
+    const url = new URL(req.url);
+    const searchParams = new URLSearchParams(url.search);
+    const uploadId = searchParams.get("uploadId");
+    if (!uploadId) return ctx.next();
+    const meta = ctx.blobMetaCache.get(uploadId);
+    if (!meta?.dataUrl || !meta?.blobRef) return ctx.next();
+    const photoUri = await ctx.createRecord<Photo>(
+      "social.grain.photo",
+      {
+        photo: meta.blobRef,
+        aspectRatio: meta.dimensions?.width && meta.dimensions?.height
+          ? {
+            width: meta.dimensions.width,
+            height: meta.dimensions.height,
+          }
+          : undefined,
+        alt: "",
+        createdAt: new Date().toISOString(),
+      },
+    );
+    return ctx.html(
+      cb({ dataUrl: meta.dataUrl, uri: photoUri }),
+    );
+  };
+}
+
+function photoUploadRoutes(): BffMiddleware[] {
   return [
     route(
-      `/actions/images/upload-start`,
+      `/actions/photo/upload-start`,
       ["POST"],
       uploadStart(
-        "images",
-        ({ dataUrl }) => <ImagePreview src={dataUrl ?? ""} />,
+        "photo",
+        ({ dataUrl }) => <PhotoPreview src={dataUrl ?? ""} />,
       ),
     ),
     route(
-      `/actions/images/upload-check-status`,
+      `/actions/photo/upload-check-status`,
       ["GET"],
       uploadCheckStatus(({ uploadId, dataUrl }) => (
         <>
           <input type="hidden" name="uploadId" value={uploadId} />
-          <ImagePreview src={dataUrl} />
+          <PhotoPreview src={dataUrl} />
         </>
       )),
     ),
     route(
-      `/actions/images/upload-done`,
+      `/actions/photo/upload-done`,
       ["GET"],
-      uploadDone(({ dataUrl, cid }) => (
-        <>
-          <UploadOob cid={cid} />
-          <ImagePreview src={dataUrl} cid={cid} />
-        </>
+      photoUploadDone(({ dataUrl, uri }) => (
+        <PhotoPreview
+          src={dataUrl}
+          uri={uri}
+        />
       )),
     ),
   ];
@@ -1773,7 +2144,7 @@ function avatarUploadRoutes(): BffMiddleware[] {
     route(
       `/actions/avatar/upload-done`,
       ["GET"],
-      uploadDone(({ dataUrl, cid }) => (
+      avatarUploadDone(({ dataUrl, cid }) => (
         <>
           <div hx-swap-oob="innerHTML:#image-input">
             <input type="hidden" name="avatarCid" value={cid} />

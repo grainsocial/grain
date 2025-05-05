@@ -2,15 +2,6 @@
   "lexicon": 1,
   "id": "social.grain.gallery.defs",
   "defs": {
-    "aspectRatio": {
-      "type": "object",
-      "description": "width:height represents an aspect ratio. It may be approximate, and may not correspond to absolute dimensions in any given unit.",
-      "required": ["width", "height"],
-      "properties": {
-        "width": { "type": "integer", "minimum": 1 },
-        "height": { "type": "integer", "minimum": 1 }
-      }
-    },
     "galleryView": {
       "type": "object",
       "required": ["uri", "cid", "creator", "record", "indexedAt"],
@@ -22,58 +13,16 @@
           "ref": "social.grain.actor.defs#profileView"
         },
         "record": { "type": "unknown" },
-        "images": {
+        "items": {
           "type": "array",
-          "items": { "type": "ref", "ref": "#viewImage" }
+          "items": {
+            "type": "union",
+            "refs": [
+              "social.grain.photo.defs#photoView"
+            ]
+          }
         },
         "indexedAt": { "type": "string", "format": "datetime" }
-      }
-    },
-    "image": {
-      "type": "object",
-      "required": ["image", "alt"],
-      "properties": {
-        "image": {
-          "type": "blob",
-          "accept": ["image/*"],
-          "maxSize": 1000000
-        },
-        "alt": {
-          "type": "string",
-          "description": "Alt text description of the image, for accessibility."
-        },
-        "aspectRatio": {
-          "type": "ref",
-          "ref": "social.grain.gallery.defs#aspectRatio"
-        }
-      }
-    },
-    "viewImage": {
-      "type": "object",
-      "required": ["cid", "thumb", "fullsize", "alt"],
-      "properties": {
-        "cid": {
-          "type": "string",
-          "format": "cid"
-        },
-        "thumb": {
-          "type": "string",
-          "format": "uri",
-          "description": "Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View."
-        },
-        "fullsize": {
-          "type": "string",
-          "format": "uri",
-          "description": "Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View."
-        },
-        "alt": {
-          "type": "string",
-          "description": "Alt text description of the image, for accessibility."
-        },
-        "aspectRatio": {
-          "type": "ref",
-          "ref": "social.grain.gallery.defs#aspectRatio"
-        }
       }
     }
   }

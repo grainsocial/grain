@@ -14,7 +14,7 @@ primary_region = 'sea'
   # BFF_QUEUE_DATABASE_URL = '/litefs/my.db'
   BFF_LEXICON_DIR = './__generated__'
   BFF_PORT = '8081'
-  BFF_PUBLIC_URL = 'https://atphoto.fly.dev'
+  BFF_PUBLIC_URL = 'https://grain.social'
 
 [[mounts]]
   source = "litefs"

@@ -3,19 +3,19 @@
  */
 import { type ValidationResult, BlobRef } from "npm:@atproto/lexicon"
 import { CID } from "npm:multiformats/cid"
-import { validate as _validate } from '../../../../../lexicons.ts'
+import { validate as _validate } from '../../../../lexicons.ts'
 import {
   type $Typed,
   is$typed as _is$typed,
   type OmitKey,
-} from '../../../../../util.ts'
+} from '../../../../util.ts'
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'social.grain.v0.actor.defs'
+const id = 'social.grain.actor.defs'
 
 export interface ProfileView {
-  $type?: 'social.grain.v0.actor.defs#profileView'
+  $type?: 'social.grain.actor.defs#profileView'
   did: string
   handle: string
   displayName?: string

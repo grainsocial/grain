@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo.defs",
+  "defs": {
+    "photoView": {
+      "type": "object",
+      "required": ["uri", "cid", "thumb", "fullsize", "alt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "thumb": {
+          "type": "string",
+          "format": "uri",
+          "description": "Fully-qualified URL where a thumbnail of the image can be fetched. For example, CDN location provided by the App View."
+        },
+        "fullsize": {
+          "type": "string",
+          "format": "uri",
+          "description": "Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View."
+        },
+        "alt": {
+          "type": "string",
+          "description": "Alt text description of the image, for accessibility."
+        },
+        "aspectRatio": {
+          "type": "ref",
+          "ref": "social.grain.defs#aspectRatio"
+        }
+      }
+    }
+  }
+}

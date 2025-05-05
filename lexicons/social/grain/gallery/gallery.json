@@ -11,14 +11,6 @@
         "properties": {
           "title": { "type": "string", "maxLength": 100 },
           "description": { "type": "string", "maxLength": 1000 },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "ref",
-              "ref": "social.grain.gallery.defs#image"
-            },
-            "maxLength": 10
-          },
           "createdAt": { "type": "string", "format": "datetime" }
         }
       }
