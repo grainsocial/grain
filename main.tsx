@@ -176,11 +176,21 @@ bff({
         <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
       );
     }),
-    route("/upload", (_req, _params, ctx) => {
+    route("/upload", (req, _params, ctx) => {
       requireAuth(ctx);
+      const url = new URL(req.url);
+      const galleryRkey = url.searchParams.get("returnTo");
       const photos = getActorPhotos(ctx.currentUser.did, ctx);
       ctx.state.meta = [{ title: "Upload — Grain" }, getPageMeta("/upload")];
-      return ctx.render(<UploadPage photos={photos} />);
+      return ctx.render(
+        <UploadPage
+          handle={ctx.currentUser.handle}
+          photos={photos}
+          returnTo={galleryRkey
+            ? galleryLink(ctx.currentUser.handle, galleryRkey)
+            : undefined}
+        />,
+      );
     }),
     route("/dialogs/gallery/new", (_req, _params, ctx) => {
       requireAuth(ctx);
@@ -1165,7 +1175,7 @@ function ProfilePage({
         {loggedInUserDid === profile.did
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              <Button variant="secondary" class="w-full sm:w-fit" asChild>
+              <Button variant="primary" class="w-full sm:w-fit" asChild>
                 <a href="/upload">
                   <i class="fa-solid fa-upload mr-2" />
                   Upload
@@ -1280,10 +1290,30 @@ function ProfilePage({
   );
 }
 
-function UploadPage({ photos }: Readonly<{ photos: PhotoView[] }>) {
+function UploadPage(
+  { handle, photos, returnTo }: Readonly<
+    { handle: string; photos: PhotoView[]; returnTo?: string }
+  >,
+) {
   return (
-    <div class="px-4 pt-4 mb-4">
-      <Button variant="primary" class="mb-2" asChild>
+    <div class="flex flex-col px-4 pt-4 mb-4 space-y-4">
+      {returnTo
+        ? (
+          <a
+            href={returnTo}
+            class="hover:underline"
+          >
+            <i class="fa-solid fa-arrow-left mr-2" />
+            Back to gallery
+          </a>
+        )
+        : (
+          <a href={profileLink(handle)} class="hover:underline">
+            <i class="fa-solid fa-arrow-left mr-2" />
+            Back to profile
+          </a>
+        )}
+      <Button variant="primary" class="mb-4" asChild>
         <label class="w-fit">
           <i class="fa fa-plus"></i> Add photos
           <input
@@ -1434,12 +1464,12 @@ function GalleryPage({
   const isLoggedIn = !!currentUserDid;
   return (
     <div class="px-4">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4 gap-2">
-        <div>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
+        <div class="flex flex-col space-y-1">
+          <h1 class="font-bold text-2xl">
+            {(gallery.record as Gallery).title}
+          </h1>
           <div>
-            <h1 class="font-bold text-2xl">
-              {(gallery.record as Gallery).title}
-            </h1>
             Gallery by{" "}
             <a
               href={profileLink(gallery.creator.handle)}
@@ -1452,7 +1482,7 @@ function GalleryPage({
               </span>
             </a>
           </div>
-          {(gallery.record as Gallery).description}
+          <p>{(gallery.record as Gallery).description}</p>
         </div>
         {isLoggedIn && isCreator
           ? (
@@ -1837,18 +1867,38 @@ function PhotoSelectDialog({
 }>) {
   return (
     <Dialog id="photo-select-dialog" class="z-30">
-      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950">
+      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950 min-h-screen flex flex-col">
         <Dialog.Title>Add photos</Dialog.Title>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-4">
-          {photos.map((photo) => (
-            <PhotoSelectButton
-              key={photo.cid}
-              galleryUri={galleryUri}
-              itemUris={itemUris}
-              photo={photo}
-            />
-          ))}
-        </div>
+        <p class="my-2 text-center">
+          Choose photos to add/remove from your gallery. Click close when done.
+        </p>
+        {photos?.length
+          ? (
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-4 flex-1">
+              {photos.map((photo) => (
+                <PhotoSelectButton
+                  key={photo.cid}
+                  galleryUri={galleryUri}
+                  itemUris={itemUris}
+                  photo={photo}
+                />
+              ))}
+            </div>
+          )
+          : (
+            <div class="flex-1 flex justify-center items-center">
+              <p>
+                No photos yet.{" "}
+                <a
+                  href={`/upload?returnTo=${new AtUri(galleryUri).rkey}`}
+                  class="hover:underline font-semibold text-sky-500"
+                >
+                  Upload
+                </a>{" "}
+                photos and return to add.
+              </p>
+            </div>
+          )}
         <div class="w-full flex flex-col gap-2 mt-2">
           <Dialog.Close class="w-full">Close</Dialog.Close>
         </div>
