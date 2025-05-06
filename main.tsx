@@ -157,10 +157,8 @@ bff({
       const handle = params.handle;
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
-      if (did && gallery) {
-        favs = getGalleryFavs(gallery.uri, ctx);
-      }
       if (!gallery) return ctx.next();
+      favs = getGalleryFavs(gallery.uri, ctx);
       ctx.state.meta = [
         ...getPageMeta(galleryLink(handle, rkey)),
         ...getGalleryMeta(gallery),
