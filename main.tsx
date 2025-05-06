@@ -40,7 +40,7 @@ import {
   Layout,
   Login,
   Meta,
-  type MetaProps,
+  type MetaDescriptor,
   Textarea,
 } from "@bigmoves/bff/components";
 import { createCanvas, Image } from "@gfx/canvas";
@@ -48,6 +48,9 @@ import { join } from "@std/path";
 import { formatDistanceStrict } from "date-fns";
 import { wrap } from "popmotion";
 import { ComponentChildren, JSX, VNode } from "preact";
+
+const PUBLIC_URL = Deno.env.get("BFF_PUBLIC_URL") ?? "http://localhost:8080";
+const GOATCOUNTER_URL = Deno.env.get("GOATCOUNTER_URL");
 
 let cssContentHash: string = "";
 
@@ -67,10 +70,7 @@ bff({
     const cssFileContent = await Deno.readFile(
       join(Deno.cwd(), "static", "styles.css"),
     );
-    const hashBuffer = await crypto.subtle.digest(
-      "SHA-256",
-      cssFileContent,
-    );
+    const hashBuffer = await crypto.subtle.digest("SHA-256", cssFileContent);
     cssContentHash = Array.from(new Uint8Array(hashBuffer))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
@@ -118,6 +118,7 @@ bff({
     }),
     route("/", (_req, _params, ctx) => {
       const items = getTimeline(ctx);
+      ctx.state.meta = getPageMeta("");
       return ctx.render(<Timeline items={items} />);
     }),
     route("/profile/:handle", (req, params, ctx) => {
@@ -130,6 +131,7 @@ bff({
       if (!actor) return ctx.next();
       const profile = getActorProfile(actor.did, ctx);
       if (!profile) return ctx.next();
+      ctx.state.meta = getPageMeta(profileLink(handle));
       if (tab) {
         return ctx.html(
           <ProfilePage
@@ -159,7 +161,10 @@ bff({
         favs = getGalleryFavs(gallery.uri, ctx);
       }
       if (!gallery) return ctx.next();
-      ctx.state.meta = getGalleryMeta(gallery);
+      ctx.state.meta = [
+        ...getPageMeta(galleryLink(handle, rkey)),
+        ...getGalleryMeta(gallery),
+      ];
       ctx.state.scripts = ["photo_dialog.js", "masonry.js"];
       return ctx.render(
         <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
@@ -168,24 +173,19 @@ bff({
     route("/upload", (_req, _params, ctx) => {
       requireAuth(ctx);
       const photos = getActorPhotos(ctx.currentUser.did, ctx);
-      return ctx.render(
-        <UploadPage photos={photos} />,
-      );
+      ctx.state.meta = getPageMeta("/upload");
+      return ctx.render(<UploadPage photos={photos} />);
     }),
     route("/dialogs/gallery/new", (_req, _params, ctx) => {
       requireAuth(ctx);
-      return ctx.html(
-        <GalleryCreateEditDialog />,
-      );
+      return ctx.html(<GalleryCreateEditDialog />);
     }),
     route("/dialogs/gallery/:rkey", (_req, params, ctx) => {
       requireAuth(ctx);
       const handle = ctx.currentUser.handle;
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
-      return ctx.html(
-        <GalleryCreateEditDialog gallery={gallery} />,
-      );
+      return ctx.html(<GalleryCreateEditDialog gallery={gallery} />);
     }),
     route("/onboard", (_req, _params, ctx) => {
       requireAuth(ctx);
@@ -237,11 +237,11 @@ bff({
       const image = gallery.items.filter(isPhotoView).find((item) => {
         return item.cid === imageCid;
       });
-      const imageAtIndex = gallery.items.filter(isPhotoView).findIndex(
-        (image) => {
+      const imageAtIndex = gallery.items
+        .filter(isPhotoView)
+        .findIndex((image) => {
           return image.cid === imageCid;
-        },
-      );
+        });
       const next = wrap(0, gallery.items.length, imageAtIndex + 1);
       const prev = wrap(0, gallery.items.length, imageAtIndex - 1);
       if (!image) return ctx.next();
@@ -354,20 +354,17 @@ bff({
         const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
         if (!gallery || !photo) return ctx.next();
         if (
-          gallery.items?.filter(isPhotoView).some((item) =>
-            item.uri === photoUri
-          )
+          gallery.items
+            ?.filter(isPhotoView)
+            .some((item) => item.uri === photoUri)
         ) {
           return new Response(null, { status: 500 });
         }
-        await ctx.createRecord<Gallery>(
-          "social.grain.gallery.item",
-          {
-            gallery: galleryUri,
-            item: photoUri,
-            createdAt: new Date().toISOString(),
-          },
-        );
+        await ctx.createRecord<Gallery>("social.grain.gallery.item", {
+          gallery: galleryUri,
+          item: photoUri,
+          createdAt: new Date().toISOString(),
+        });
         gallery.items = [
           ...(gallery.items ?? []),
           photoToView(photo.did, photo),
@@ -408,9 +405,9 @@ bff({
         if (!galleryRkey || !photoRkey) return ctx.next();
         const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
         if (!photo) return ctx.next();
-        const { items: [item] } = ctx.indexService.getRecords<
-          WithBffMeta<GalleryItem>
-        >(
+        const {
+          items: [item],
+        } = ctx.indexService.getRecords<WithBffMeta<GalleryItem>>(
           "social.grain.gallery.item",
           {
             where: [
@@ -426,9 +423,7 @@ bff({
           },
         );
         if (!item) return ctx.next();
-        await ctx.deleteRecord(
-          item.uri,
-        );
+        await ctx.deleteRecord(item.uri);
         const gallery = getGallery(ctx.currentUser.did, galleryRkey, ctx);
         if (!gallery) return ctx.next();
         return ctx.html(
@@ -479,13 +474,10 @@ bff({
         );
       }
 
-      await ctx.createRecord<WithBffMeta<Favorite>>(
-        "social.grain.favorite",
-        {
-          subject: galleryUri,
-          createdAt: new Date().toISOString(),
-        },
-      );
+      await ctx.createRecord<WithBffMeta<Favorite>>("social.grain.favorite", {
+        subject: galleryUri,
+        createdAt: new Date().toISOString(),
+      });
 
       const favs = getGalleryFavs(galleryUri, ctx);
 
@@ -535,7 +527,7 @@ bff({
 type State = {
   profile?: ProfileView;
   scripts?: string[];
-  meta?: MetaProps[];
+  meta?: MetaDescriptor[];
 };
 
 function readFileAsDataURL(file: File): Promise<string> {
@@ -614,8 +606,9 @@ function getGalleryItemsAndPhotos(
   ctx: BffContext,
   galleries: WithBffMeta<Gallery>[],
 ): Map<string, WithBffMeta<Photo>[]> {
-  const galleryUris = galleries.map((gallery) =>
-    `at://${gallery.did}/social.grain.gallery/${new AtUri(gallery.uri).rkey}`
+  const galleryUris = galleries.map(
+    (gallery) =>
+      `at://${gallery.did}/social.grain.gallery/${new AtUri(gallery.uri).rkey}`,
   );
 
   if (galleryUris.length === 0) return new Map();
@@ -852,13 +845,10 @@ function getActorGalleries(handleOrDid: string, ctx: BffContext) {
   }
   const { items: galleries } = ctx.indexService.getRecords<
     WithBffMeta<Gallery>
-  >(
-    "social.grain.gallery",
-    {
-      where: [{ field: "did", equals: did }],
-      orderBy: { field: "createdAt", direction: "desc" },
-    },
-  );
+  >("social.grain.gallery", {
+    where: [{ field: "did", equals: did }],
+    orderBy: { field: "createdAt", direction: "desc" },
+  });
   const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
   const creator = getActorProfile(did, ctx);
   if (!creator) return [];
@@ -906,15 +896,25 @@ function getGalleryFavs(galleryUri: string, ctx: BffContext) {
   return results.items;
 }
 
-function getGalleryMeta(gallery: GalleryView): MetaProps[] {
+function getPageMeta(pageUrl: string): MetaDescriptor[] {
   return [
-    { property: "og:type", content: "website" },
-    { property: "og:site_name", content: "Atproto Image Gallery" },
+    {
+      tagName: "link",
+      property: "canonical",
+      href: `${PUBLIC_URL}${pageUrl}`,
+    },
+    { property: "og:site_name", content: "Grain Social" },
+  ];
+}
+
+function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
+  return [
+    // { property: "og:type", content: "website" },
     {
       property: "og:url",
-      content: `${
-        Deno.env.get("BFF_PUBLIC_URL") ?? "http://localhost:8080"
-      }/profile/${gallery.creator.handle}/${new AtUri(gallery.uri).rkey}`,
+      content: `${PUBLIC_URL}/profile/${gallery.creator.handle}/${
+        new AtUri(gallery.uri).rkey
+      }`,
     },
     { property: "og:title", content: (gallery.record as Gallery).title },
     {
@@ -937,6 +937,15 @@ function Root(props: Readonly<RootProps<State>>) {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <Meta meta={props.ctx.state.meta} />
+        {GOATCOUNTER_URL
+          ? (
+            <script
+              data-goatcounter={GOATCOUNTER_URL}
+              async
+              src="//gc.zgo.at/count.js"
+            />
+          )
+          : null}
         <script src="https://unpkg.com/htmx.org@1.9.10" />
         <script src="https://unpkg.com/hyperscript.org@0.9.14" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
@@ -961,7 +970,7 @@ function Root(props: Readonly<RootProps<State>>) {
       <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
         <Layout id="layout" class="dark:border-zinc-800">
           <Layout.Nav
-            title={
+            heading={
               <h1 class="font-['Jersey_20'] text-4xl text-zinc-900 dark:text-white">
                 grain
                 <sub class="bottom-[0.75rem] text-[1rem]">beta</sub>
@@ -1217,9 +1226,11 @@ function ProfilePage({
           ? (
             <ul class="space-y-4 relative">
               {timelineItems.length
-                ? timelineItems.map((item) => (
-                  <TimelineItem item={item} key={item.itemUri} />
-                ))
+                ? (
+                  timelineItems.map((item) => (
+                    <TimelineItem item={item} key={item.itemUri} />
+                  ))
+                )
                 : <li>No activity yet.</li>}
             </ul>
           )
@@ -1477,22 +1488,29 @@ function GalleryPage({
         _="on load or htmx:afterSettle call computeMasonry()"
       >
         {gallery.items?.filter(isPhotoView)?.length
-          ? gallery?.items?.filter(isPhotoView)?.map((photo) => (
-            <PhotoButton
-              key={photo.cid}
-              photo={photo}
-              gallery={gallery}
-              isCreator={isCreator}
-              isLoggedIn={isLoggedIn}
-            />
-          ))
+          ? gallery?.items
+            ?.filter(isPhotoView)
+            ?.map((photo) => (
+              <PhotoButton
+                key={photo.cid}
+                photo={photo}
+                gallery={gallery}
+                isCreator={isCreator}
+                isLoggedIn={isLoggedIn}
+              />
+            ))
           : null}
       </div>
     </div>
   );
 }
 
-function PhotoButton({ photo, gallery, isCreator, isLoggedIn }: Readonly<{
+function PhotoButton({
+  photo,
+  gallery,
+  isCreator,
+  isLoggedIn,
+}: Readonly<{
   photo: PhotoView;
   gallery: GalleryView;
   isCreator: boolean;
@@ -1794,9 +1812,7 @@ function PhotoAltDialog({
             <Button type="submit" variant="primary" class="w-full">
               Save
             </Button>
-            <Dialog.Close class="w-full">
-              Cancel
-            </Dialog.Close>
+            <Dialog.Close class="w-full">Cancel</Dialog.Close>
           </div>
         </form>
       </Dialog.Content>
@@ -1828,9 +1844,7 @@ function PhotoSelectDialog({
           ))}
         </div>
         <div class="w-full flex flex-col gap-2 mt-2">
-          <Dialog.Close class="w-full">
-            Close
-          </Dialog.Close>
+          <Dialog.Close class="w-full">Close</Dialog.Close>
         </div>
       </Dialog.Content>
     </Dialog>
@@ -1896,18 +1910,20 @@ function galleryToView(
     cid: record.cid,
     creator,
     record,
-    items: items?.map((item) => itemToView(record.did, item)).filter(
-      isPhotoView,
-    ),
+    items: items
+      ?.map((item) => itemToView(record.did, item))
+      .filter(isPhotoView),
     indexedAt: record.indexedAt,
   };
 }
 
 function itemToView(
   did: string,
-  item: WithBffMeta<Photo> | {
-    $type: string;
-  },
+  item:
+    | WithBffMeta<Photo>
+    | {
+      $type: string;
+    },
 ): Un$Typed<PhotoView> | undefined {
   if (isPhoto(item)) {
     return photoToView(did, item);
@@ -2092,23 +2108,18 @@ function photoUploadDone(
     if (!uploadId) return ctx.next();
     const meta = ctx.blobMetaCache.get(uploadId);
     if (!meta?.dataUrl || !meta?.blobRef) return ctx.next();
-    const photoUri = await ctx.createRecord<Photo>(
-      "social.grain.photo",
-      {
-        photo: meta.blobRef,
-        aspectRatio: meta.dimensions?.width && meta.dimensions?.height
-          ? {
-            width: meta.dimensions.width,
-            height: meta.dimensions.height,
-          }
-          : undefined,
-        alt: "",
-        createdAt: new Date().toISOString(),
-      },
-    );
-    return ctx.html(
-      cb({ dataUrl: meta.dataUrl, uri: photoUri }),
-    );
+    const photoUri = await ctx.createRecord<Photo>("social.grain.photo", {
+      photo: meta.blobRef,
+      aspectRatio: meta.dimensions?.width && meta.dimensions?.height
+        ? {
+          width: meta.dimensions.width,
+          height: meta.dimensions.height,
+        }
+        : undefined,
+      alt: "",
+      createdAt: new Date().toISOString(),
+    });
+    return ctx.html(cb({ dataUrl: meta.dataUrl, uri: photoUri }));
   };
 }
 
@@ -2136,10 +2147,7 @@ function photoUploadRoutes(): BffMiddleware[] {
       `/actions/photo/upload-done`,
       ["GET"],
       photoUploadDone(({ dataUrl, uri }) => (
-        <PhotoPreview
-          src={dataUrl}
-          uri={uri}
-        />
+        <PhotoPreview src={dataUrl} uri={uri} />
       )),
     ),
   ];

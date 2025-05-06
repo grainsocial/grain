@@ -15,6 +15,7 @@ primary_region = 'sea'
   BFF_LEXICON_DIR = './__generated__'
   BFF_PORT = '8081'
   BFF_PUBLIC_URL = 'https://grain.social'
+  GOATCOUNTER_URL = 'https://grain.goatcounter.com/count'
 
 [[mounts]]
   source = "litefs"
