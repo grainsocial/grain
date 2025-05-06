@@ -118,7 +118,7 @@ bff({
     }),
     route("/", (_req, _params, ctx) => {
       const items = getTimeline(ctx);
-      ctx.state.meta = getPageMeta("");
+      ctx.state.meta = [{ title: "Timeline — Grain" }, getPageMeta("")];
       return ctx.render(<Timeline items={items} />);
     }),
     route("/profile/:handle", (req, params, ctx) => {
@@ -131,7 +131,14 @@ bff({
       if (!actor) return ctx.next();
       const profile = getActorProfile(actor.did, ctx);
       if (!profile) return ctx.next();
-      ctx.state.meta = getPageMeta(profileLink(handle));
+      ctx.state.meta = [
+        {
+          title: profile.displayName
+            ? `${profile.displayName} (${profile.handle}) — Grain`
+            : `${profile.handle} — Grain`,
+        },
+        getPageMeta(profileLink(handle)),
+      ];
       if (tab) {
         return ctx.html(
           <ProfilePage
@@ -160,6 +167,7 @@ bff({
       if (!gallery) return ctx.next();
       favs = getGalleryFavs(gallery.uri, ctx);
       ctx.state.meta = [
+        { title: `${(gallery.record as Gallery).title} — Grain` },
         ...getPageMeta(galleryLink(handle, rkey)),
         ...getGalleryMeta(gallery),
       ];
@@ -171,7 +179,7 @@ bff({
     route("/upload", (_req, _params, ctx) => {
       requireAuth(ctx);
       const photos = getActorPhotos(ctx.currentUser.did, ctx);
-      ctx.state.meta = getPageMeta("/upload");
+      ctx.state.meta = [{ title: "Upload — Grain" }, getPageMeta("/upload")];
       return ctx.render(<UploadPage photos={photos} />);
     }),
     route("/dialogs/gallery/new", (_req, _params, ctx) => {
