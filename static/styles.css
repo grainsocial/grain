@@ -275,6 +275,9 @@
   .my-4 {
     margin-block: calc(var(--spacing) * 4);
   }
+  .my-30 {
+    margin-block: calc(var(--spacing) * 30);
+  }
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
   }
@@ -336,9 +339,6 @@
   }
   .h-full {
     height: 100%;
-  }
-  .min-h-screen {
-    min-height: 100vh;
   }
   .w-1\/3 {
     width: calc(1/3 * 100%);
@@ -610,6 +610,11 @@
   .sm\:h-screen {
     @media (width >= 40rem) {
       height: 100vh;
+    }
+  }
+  .sm\:min-h-screen {
+    @media (width >= 40rem) {
+      min-height: 100vh;
     }
   }
   .sm\:w-fit {

@@ -1465,7 +1465,7 @@ function GalleryPage({
   return (
     <div class="px-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
-        <div class="flex flex-col space-y-1">
+        <div class="flex flex-col space-y-1 mb-4">
           <h1 class="font-bold text-2xl">
             {(gallery.record as Gallery).title}
           </h1>
@@ -1867,12 +1867,17 @@ function PhotoSelectDialog({
 }>) {
   return (
     <Dialog id="photo-select-dialog" class="z-30">
-      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950 min-h-screen flex flex-col">
+      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950 sm:min-h-screen flex flex-col">
         <Dialog.Title>Add photos</Dialog.Title>
-        <p class="my-2 text-center">
-          Choose photos to add/remove from your gallery. Click close when done.
-        </p>
-        {photos?.length
+        {photos.length
+          ? (
+            <p class="my-2 text-center">
+              Choose photos to add/remove from your gallery. Click close when
+              done.
+            </p>
+          )
+          : null}
+        {photos.length
           ? (
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-4 flex-1">
               {photos.map((photo) => (
@@ -1886,7 +1891,7 @@ function PhotoSelectDialog({
             </div>
           )
           : (
-            <div class="flex-1 flex justify-center items-center">
+            <div class="flex-1 flex justify-center items-center my-30">
               <p>
                 No photos yet.{" "}
                 <a
