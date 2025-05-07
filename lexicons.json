@@ -3,6 +3,7 @@
     "app.feed.post",
     "app.bsky.feed.post",
     "app.bsky.actor.profile",
-    "app.bsky.actor.defs"
+    "app.bsky.actor.defs",
+    "app.bsky.graph.follow"
   ]
 }

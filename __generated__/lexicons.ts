@@ -447,6 +447,32 @@ export const schemaDict = {
       },
     },
   },
+  AppBskyGraphFollow: {
+    lexicon: 1,
+    id: 'app.bsky.graph.follow',
+    defs: {
+      main: {
+        key: 'tid',
+        type: 'record',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+        description:
+          "Record declaring a social 'follow' relationship of another account. Duplicate follows will be ignored by the AppView.",
+      },
+    },
+  },
   AppBskyGraphDefs: {
     lexicon: 1,
     id: 'app.bsky.graph.defs',
@@ -2800,6 +2826,7 @@ export const ids = {
   AppBskyEmbedRecordWithMedia: 'app.bsky.embed.recordWithMedia',
   AppBskyEmbedVideo: 'app.bsky.embed.video',
   AppBskyEmbedExternal: 'app.bsky.embed.external',
+  AppBskyGraphFollow: 'app.bsky.graph.follow',
   AppBskyGraphDefs: 'app.bsky.graph.defs',
   AppBskyFeedDefs: 'app.bsky.feed.defs',
   AppBskyFeedPostgate: 'app.bsky.feed.postgate',

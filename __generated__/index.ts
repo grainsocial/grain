@@ -63,6 +63,7 @@ export class AppNS {
 export class AppBskyNS {
   _server: Server
   embed: AppBskyEmbedNS
+  graph: AppBskyGraphNS
   feed: AppBskyFeedNS
   richtext: AppBskyRichtextNS
   actor: AppBskyActorNS
@@ -70,6 +71,7 @@ export class AppBskyNS {
   constructor(server: Server) {
     this._server = server
     this.embed = new AppBskyEmbedNS(server)
+    this.graph = new AppBskyGraphNS(server)
     this.feed = new AppBskyFeedNS(server)
     this.richtext = new AppBskyRichtextNS(server)
     this.actor = new AppBskyActorNS(server)
@@ -77,6 +79,14 @@ export class AppBskyNS {
 }
 
 export class AppBskyEmbedNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
+export class AppBskyGraphNS {
   _server: Server
 
   constructor(server: Server) {

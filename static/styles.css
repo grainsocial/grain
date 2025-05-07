@@ -444,6 +444,9 @@
     border-style: var(--tw-border-style);
     border-width: 1px;
   }
+  .border-zinc-200 {
+    border-color: var(--color-zinc-200);
+  }
   .border-zinc-900 {
     border-color: var(--color-zinc-900);
   }

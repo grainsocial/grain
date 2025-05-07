@@ -1,5 +1,6 @@
 import { lexicons } from "$lexicon/lexicons.ts";
 import { Record as BskyProfile } from "$lexicon/types/app/bsky/actor/profile.ts";
+import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
@@ -131,6 +132,14 @@ bff({
       if (!actor) return ctx.next();
       const profile = getActorProfile(actor.did, ctx);
       if (!profile) return ctx.next();
+      let follow: WithBffMeta<BskyFollow> | undefined;
+      if (ctx.currentUser) {
+        follow = getFollow(
+          profile.did,
+          ctx.currentUser.did,
+          ctx,
+        );
+      }
       ctx.state.meta = [
         {
           title: profile.displayName
@@ -142,6 +151,7 @@ bff({
       if (tab) {
         return ctx.html(
           <ProfilePage
+            followUri={follow?.uri}
             loggedInUserDid={ctx.currentUser?.did}
             timelineItems={timelineItems}
             profile={profile}
@@ -152,6 +162,7 @@ bff({
       }
       return ctx.render(
         <ProfilePage
+          followUri={follow?.uri}
           loggedInUserDid={ctx.currentUser?.did}
           timelineItems={timelineItems}
           profile={profile}
@@ -190,6 +201,33 @@ bff({
             ? galleryLink(ctx.currentUser.handle, galleryRkey)
             : undefined}
         />,
+      );
+    }),
+    route("/follow/:did", ["POST"], async (_req, params, ctx) => {
+      requireAuth(ctx);
+      const did = params.did;
+      if (!did) return ctx.next();
+      const followUri = await ctx.createRecord<BskyFollow>(
+        "app.bsky.graph.follow",
+        {
+          subject: did,
+          createdAt: new Date().toISOString(),
+        },
+      );
+      return ctx.html(
+        <FollowButton followeeDid={did} followUri={followUri} />,
+      );
+    }),
+    route("/follow/:did/:rkey", ["DELETE"], async (_req, params, ctx) => {
+      requireAuth(ctx);
+      const did = params.did;
+      const rkey = params.rkey;
+      if (!did) return ctx.next();
+      await ctx.deleteRecord(
+        `at://${ctx.currentUser.did}/app.bsky.graph.follow/${rkey}`,
+      );
+      return ctx.html(
+        <FollowButton followeeDid={did} followUri={undefined} />,
       );
     }),
     route("/dialogs/gallery/new", (_req, _params, ctx) => {
@@ -617,6 +655,27 @@ type TimelineItem = {
 type TimelineOptions = {
   actorDid?: string;
 };
+
+function getFollow(followeeDid: string, followerDid: string, ctx: BffContext) {
+  const { items: [follow] } = ctx.indexService.getRecords<
+    WithBffMeta<BskyFollow>
+  >(
+    "app.bsky.graph.follow",
+    {
+      where: [
+        {
+          field: "did",
+          equals: followerDid,
+        },
+        {
+          field: "subject",
+          equals: followeeDid,
+        },
+      ],
+    },
+  );
+  return follow;
+}
 
 function getGalleryItemsAndPhotos(
   ctx: BffContext,
@@ -1150,19 +1209,55 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   );
 }
 
+function FollowButton({
+  followeeDid,
+  followUri,
+}: Readonly<{ followeeDid: string; load?: boolean; followUri?: string }>) {
+  const isFollowing = followUri;
+  return (
+    <Button
+      variant="primary"
+      class={cn(
+        "w-full sm:w-fit",
+        isFollowing &&
+          "bg-zinc-200 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800",
+      )}
+      {...(isFollowing
+        ? {
+          children: "Following",
+          "hx-delete": `/follow/${followeeDid}/${new AtUri(followUri).rkey}`,
+        }
+        : {
+          children: (
+            <>
+              <i class="fa-solid fa-plus mr-2" />Follow
+            </>
+          ),
+          "hx-post": `/follow/${followeeDid}`,
+        })}
+      hx-trigger="click"
+      hx-target="this"
+      hx-swap="outerHTML"
+    />
+  );
+}
+
 function ProfilePage({
+  followUri,
   loggedInUserDid,
   timelineItems,
   profile,
   selectedTab,
   galleries,
 }: Readonly<{
+  followUri?: string;
   loggedInUserDid?: string;
   timelineItems: TimelineItem[];
   profile: Un$Typed<ProfileView>;
   selectedTab?: string;
   galleries?: GalleryView[];
 }>) {
+  const isCreator = loggedInUserDid === profile.did;
   return (
     <div class="px-4 mb-4" id="profile-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
@@ -1172,7 +1267,14 @@ function ProfilePage({
           <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
           <p class="my-2">{profile.description}</p>
         </div>
-        {loggedInUserDid === profile.did
+        {!isCreator && loggedInUserDid
+          ? (
+            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
+              <FollowButton followeeDid={profile.did} followUri={followUri} />
+            </div>
+          )
+          : null}
+        {isCreator
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
               <Button variant="primary" class="w-full sm:w-fit" asChild>
@@ -2039,7 +2141,11 @@ function photoDialogLink(gallery: GalleryView, image: PhotoView) {
 async function onSignedIn({ actor, ctx }: onSignedInArgs) {
   await ctx.backfillCollections(
     [actor.did],
-    [...ctx.cfg.collections!, "app.bsky.actor.profile"],
+    [
+      ...ctx.cfg.collections!,
+      "app.bsky.actor.profile",
+      "app.bsky.graph.follow",
+    ],
   );
 
   const profileResults = ctx.indexService.getRecords<Profile>(
