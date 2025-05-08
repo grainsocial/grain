@@ -390,7 +390,7 @@ bff({
       requireAuth(ctx);
       const formData = await req.formData();
       const uri = formData.get("uri") as string;
-      await ctx.deleteRecord(uri);
+      await deleteGallery(uri, ctx);
       return ctx.redirect("/");
     }),
     route(
@@ -953,6 +953,18 @@ function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
     profile,
     galleryPhotosMap.get(gallery.uri) ?? [],
   );
+}
+
+async function deleteGallery(uri: string, ctx: BffContext) {
+  await ctx.deleteRecord(uri);
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >("social.grain.gallery.item", {
+    where: [{ field: "gallery", equals: uri }],
+  });
+  for (const item of galleryItems) {
+    await ctx.deleteRecord(item.uri);
+  }
 }
 
 function getGalleryFavs(galleryUri: string, ctx: BffContext) {
@@ -1813,7 +1825,7 @@ function PhotoPreview({
   uri?: string;
 }>) {
   return (
-    <div class="relative aspect-square dark:bg-zinc-900">
+    <div class="relative aspect-square bg-zinc-200 dark:bg-zinc-900">
       {uri
         ? (
           <button
