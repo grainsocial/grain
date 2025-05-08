@@ -965,6 +965,15 @@ async function deleteGallery(uri: string, ctx: BffContext) {
   for (const item of galleryItems) {
     await ctx.deleteRecord(item.uri);
   }
+  const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
+    "social.grain.favorite",
+    {
+      where: [{ field: "subject", equals: uri }],
+    },
+  );
+  for (const fav of favs) {
+    await ctx.deleteRecord(fav.uri);
+  }
 }
 
 function getGalleryFavs(galleryUri: string, ctx: BffContext) {
