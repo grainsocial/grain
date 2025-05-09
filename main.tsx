@@ -1070,7 +1070,9 @@ function Root(props: Readonly<RootProps<State>>) {
             heading={
               <h1 class="font-['Jersey_20'] text-4xl text-zinc-900 dark:text-white">
                 grain
-                <sub class="bottom-[0.75rem] text-[1rem]">beta</sub>
+                <sub class="bottom-[0.75rem] text-[1rem] text-sky-500">
+                  beta
+                </sub>
               </h1>
             }
             profile={profile}
@@ -1153,39 +1155,16 @@ function Timeline({ items }: Readonly<{ items: TimelineItem[] }>) {
 function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   return (
     <li class="space-y-2">
-      <div class="bg-zinc-100 dark:bg-zinc-900 w-fit p-2">
-        <a
-          href={profileLink(item.actor.handle)}
-          class="font-semibold hover:underline"
-        >
-          @{item.actor.handle}
-        </a>{" "}
-        {item.itemType === "favorite" ? "favorited" : "created"}{" "}
-        <a
-          href={galleryLink(
-            item.gallery.creator.handle,
-            new AtUri(item.gallery.uri).rkey,
-          )}
-          class="font-semibold hover:underline"
-        >
-          {(item.gallery.record as Gallery).title}
-        </a>
-        <span class="ml-1">
-          {formatDistanceStrict(item.createdAt, new Date(), {
-            addSuffix: true,
-          })}
-        </span>
-      </div>
-      <a
-        href={galleryLink(
-          item.gallery.creator.handle,
-          new AtUri(item.gallery.uri).rkey,
-        )}
-        class="w-fit flex"
-      >
+      <div class="w-fit flex flex-col bg-zinc-100 dark:bg-zinc-900 p-2 gap-2">
         {item.gallery.items?.filter(isPhotoView).length
           ? (
-            <div class="flex w-full max-w-md mx-auto aspect-[3/2] overflow-hidden gap-2">
+            <a
+              href={galleryLink(
+                item.gallery.creator.handle,
+                new AtUri(item.gallery.uri).rkey,
+              )}
+              class="flex w-full max-w-md mx-auto aspect-[3/2] overflow-hidden gap-2"
+            >
               <div class="w-2/3 h-full">
                 <img
                   src={item.gallery.items?.filter(isPhotoView)[0].thumb}
@@ -1223,10 +1202,33 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
                     )}
                 </div>
               </div>
-            </div>
+            </a>
           )
           : null}
-      </a>
+        <p>
+          <a
+            href={profileLink(item.actor.handle)}
+            class="font-semibold hover:underline"
+          >
+            @{item.actor.handle}
+          </a>{" "}
+          {item.itemType === "favorite" ? "favorited" : "created"}{" "}
+          <a
+            href={galleryLink(
+              item.gallery.creator.handle,
+              new AtUri(item.gallery.uri).rkey,
+            )}
+            class="font-semibold hover:underline"
+          >
+            {(item.gallery.record as Gallery).title}
+          </a>
+          <span class="ml-1">
+            {formatDistanceStrict(item.createdAt, new Date(), {
+              addSuffix: true,
+            })}
+          </span>
+        </p>
+      </div>
     </li>
   );
 }
@@ -1391,7 +1393,8 @@ function ProfilePage({
                       {gallery.items?.length
                         ? (
                           <img
-                            src={gallery.items?.filter(isPhotoView)?.[0]?.thumb}
+                            src={gallery.items?.filter(isPhotoView)?.[0]
+                              ?.fullsize}
                             alt={gallery.items?.filter(isPhotoView)?.[0]?.alt}
                             class="w-full h-full object-cover"
                           />
