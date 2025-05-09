@@ -691,6 +691,7 @@ function getGalleryItemsAndPhotos(
   const { items: galleryItems } = ctx.indexService.getRecords<
     WithBffMeta<GalleryItem>
   >("social.grain.gallery.item", {
+    orderBy: { field: "createdAt", direction: "asc" },
     where: [{ field: "gallery", in: galleryUris }],
   });
 
@@ -1420,22 +1421,27 @@ function UploadPage(
 ) {
   return (
     <div class="flex flex-col px-4 pt-4 mb-4 space-y-4">
-      {returnTo
-        ? (
-          <a
-            href={returnTo}
-            class="hover:underline"
-          >
-            <i class="fa-solid fa-arrow-left mr-2" />
-            Back to gallery
-          </a>
-        )
-        : (
-          <a href={profileLink(handle)} class="hover:underline">
-            <i class="fa-solid fa-arrow-left mr-2" />
-            Back to profile
-          </a>
-        )}
+      <div class="flex">
+        <div class="flex-1">
+          {returnTo
+            ? (
+              <a
+                href={returnTo}
+                class="hover:underline"
+              >
+                <i class="fa-solid fa-arrow-left mr-2" />
+                Back to gallery
+              </a>
+            )
+            : (
+              <a href={profileLink(handle)} class="hover:underline">
+                <i class="fa-solid fa-arrow-left mr-2" />
+                Back to profile
+              </a>
+            )}
+        </div>
+        <div>10/100 photos</div>
+      </div>
       <Button variant="primary" class="mb-4" asChild>
         <label class="w-fit">
           <i class="fa fa-plus"></i> Add photos
@@ -1447,7 +1453,7 @@ function UploadPage(
             _="on change
                 set fileList to me.files
                 if fileList.length > 10
-                  alert('You can only upload 10 photos')
+                  alert('You can only upload 10 photos at a time')
                   halt
                 end
                 for file in fileList
