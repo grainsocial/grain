@@ -779,7 +779,7 @@ function processGalleries(
   return items;
 }
 
-function processStars(
+function processFavs(
   ctx: BffContext,
   options?: TimelineOptions,
 ): TimelineItem[] {
@@ -873,7 +873,7 @@ function getTimelineItems(
   options?: TimelineOptions,
 ): TimelineItem[] {
   const galleryItems = processGalleries(ctx, options);
-  const favsItems = processStars(ctx, options);
+  const favsItems = processFavs(ctx, options);
   const timelineItems = [...galleryItems, ...favsItems];
 
   return timelineItems.sort(
