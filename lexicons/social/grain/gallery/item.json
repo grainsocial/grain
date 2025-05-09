@@ -20,6 +20,10 @@
           "item": {
             "type": "string",
             "format": "at-uri"
+          },
+          "sort": {
+            "type": "integer",
+            "default": 0
           }
         }
       }

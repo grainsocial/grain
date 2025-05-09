@@ -182,7 +182,7 @@ bff({
         ...getPageMeta(galleryLink(handle, rkey)),
         ...getGalleryMeta(gallery),
       ];
-      ctx.state.scripts = ["photo_dialog.js", "masonry.js"];
+      ctx.state.scripts = ["photo_dialog.js", "masonry.js", "sortable.js"];
       return ctx.render(
         <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
       );
@@ -571,6 +571,12 @@ bff({
       ctx.deleteRecord(
         `at://${ctx.currentUser.did}/social.grain.photo/${params.rkey}`,
       );
+      return new Response(null, { status: 200 });
+    }),
+    route("/actions/sort-end", ["POST"], async (req, _params, ctx) => {
+      const formData = await req.formData();
+      const items = formData.getAll("item") as string[];
+      console.log(items);
       return new Response(null, { status: 200 });
     }),
     ...photoUploadRoutes(),
@@ -1045,6 +1051,7 @@ function Root(props: Readonly<RootProps<State>>) {
           : null}
         <script src="https://unpkg.com/htmx.org@1.9.10" />
         <script src="https://unpkg.com/hyperscript.org@0.9.14" />
+        <script src="https://unpkg.com/sortablejs@1.15.6" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <link rel="stylesheet" href={`/static/styles.css?${cssContentHash}`} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1632,6 +1639,15 @@ function GalleryPage({
                 hx-target="#layout"
                 hx-swap="afterbegin"
               >
+                Change Sort
+              </Button>
+              <Button
+                variant="primary"
+                class="self-start w-full sm:w-fit"
+                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}`}
+                hx-target="#layout"
+                hx-swap="afterbegin"
+              >
                 Edit
               </Button>
             </div>
@@ -1647,7 +1663,9 @@ function GalleryPage({
           )
           : null}
       </div>
-      <div
+      <SortableGrid gallery={gallery} />
+      {
+        /* <div
         id="masonry-container"
         class="h-0 overflow-hidden relative mx-auto w-full"
         _="on load or htmx:afterSettle call computeMasonry()"
@@ -1665,7 +1683,8 @@ function GalleryPage({
               />
             ))
           : null}
-      </div>
+      </div> */
+      }
     </div>
   );
 }
@@ -1709,6 +1728,38 @@ function PhotoButton({
         )
         : null}
     </button>
+  );
+}
+
+function SortableGrid({
+  gallery,
+}: Readonly<{ gallery: GalleryView }>) {
+  return (
+    <form
+      id="masonry-container"
+      class="sortable h-0 overflow-hidden relative mx-auto w-full"
+      _="on load or htmx:afterSettle call computeMasonry()"
+      // hx-post="/actions/sort-end"
+      // hx-trigger="end"
+      // hx-swap="none"
+    >
+      <div class="htmx-indicator">Updating...</div>
+      {gallery?.items?.filter(isPhotoView).map((item) => (
+        <div
+          key={item.cid}
+          class="masonry-tile absolute cursor-pointer"
+          data-width={item.aspectRatio?.width}
+          data-height={item.aspectRatio?.height}
+        >
+          <input type="hidden" name="item" value={item.uri} />
+          <img
+            src={item.fullsize}
+            alt={item.alt}
+            class="w-full h-full object-cover"
+          />
+        </div>
+      ))}
+    </form>
   );
 }
 
