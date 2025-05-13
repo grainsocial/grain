@@ -46,7 +46,12 @@ import {
 } from "@bigmoves/bff/components";
 import { createCanvas, Image } from "@gfx/canvas";
 import { join } from "@std/path";
-import { formatDistanceStrict } from "date-fns";
+import {
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  differenceInWeeks,
+} from "date-fns";
 import { wrap } from "popmotion";
 import { ComponentChildren, JSX, VNode } from "preact";
 
@@ -308,21 +313,15 @@ bff({
         />,
       );
     }),
-    route("/dialogs/image-alt", (req, _params, ctx) => {
-      const url = new URL(req.url);
-      const galleryUri = url.searchParams.get("galleryUri");
-      const imageCid = url.searchParams.get("imageCid");
-      if (!galleryUri || !imageCid) return ctx.next();
-      const atUri = new AtUri(galleryUri);
-      const galleryDid = atUri.hostname;
-      const galleryRkey = atUri.rkey;
-      const gallery = getGallery(galleryDid, galleryRkey, ctx);
-      const photo = gallery?.items?.filter(isPhotoView).find((photo) => {
-        return photo.cid === imageCid;
-      });
-      if (!photo || !gallery) return ctx.next();
+    route("/dialogs/photo/:rkey/alt", (_req, params, ctx) => {
+      requireAuth(ctx);
+      const photoRkey = params.rkey;
+      const photoUri =
+        `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+      const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
+      if (!photo) return ctx.next();
       return ctx.html(
-        <PhotoAltDialog galleryUri={gallery.uri} photo={photo} />,
+        <PhotoAltDialog photo={photoToView(ctx.currentUser.did, photo)} />,
       );
     }),
     route("/dialogs/photo-select/:galleryRkey", (_req, params, ctx) => {
@@ -430,8 +429,6 @@ bff({
                 key={photo.cid}
                 photo={photoToView(photo.did, photo)}
                 gallery={gallery}
-                isCreator={ctx.currentUser.did === gallery.creator.did}
-                isLoggedIn={!!ctx.currentUser.did}
               />
             </div>
             <PhotoSelectButton
@@ -508,6 +505,13 @@ bff({
       });
       return new Response(null, { status: 200 });
     }),
+    route("/actions/photo/:rkey", ["DELETE"], (_req, params, ctx) => {
+      requireAuth(ctx);
+      ctx.deleteRecord(
+        `at://${ctx.currentUser.did}/social.grain.photo/${params.rkey}`,
+      );
+      return new Response(null, { status: 200 });
+    }),
     route("/actions/favorite", ["POST"], async (req, _params, ctx) => {
       requireAuth(ctx);
       const url = new URL(req.url);
@@ -565,13 +569,6 @@ bff({
       });
 
       return ctx.redirect(`/profile/${ctx.currentUser.handle}`);
-    }),
-    route("/actions/photo/:rkey", ["DELETE"], (_req, params, ctx) => {
-      requireAuth(ctx);
-      ctx.deleteRecord(
-        `at://${ctx.currentUser.did}/social.grain.photo/${params.rkey}`,
-      );
-      return new Response(null, { status: 200 });
     }),
     ...photoUploadRoutes(),
     ...avatarUploadRoutes(),
@@ -1065,18 +1062,18 @@ function Root(props: Readonly<RootProps<State>>) {
         {scripts?.map((file) => <script key={file} src={`/static/${file}`} />)}
       </head>
       <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
-        <Layout id="layout" class="dark:border-zinc-800">
+        <Layout id="layout" class="border-zinc-200 dark:border-zinc-800">
           <Layout.Nav
             heading={
               <h1 class="font-['Jersey_20'] text-4xl text-zinc-900 dark:text-white">
                 grain
-                <sub class="bottom-[0.75rem] text-[1rem] text-sky-500">
+                <sub class="bottom-[0.75rem] text-[1rem]">
                   beta
                 </sub>
               </h1>
             }
             profile={profile}
-            class="dark:border-zinc-800"
+            class="border-zinc-200 dark:border-zinc-800"
           />
           <Layout.Content>{props.children}</Layout.Content>
         </Layout>
@@ -1139,6 +1136,29 @@ function AvatarDialog({
   );
 }
 
+function ActorInfo({ profile }: Readonly<{ profile: Un$Typed<ProfileView> }>) {
+  return (
+    <div class="flex items-center gap-2 min-w-0 flex-1">
+      <img
+        src={profile.avatar}
+        alt={profile.handle}
+        class="rounded-full object-cover size-7 shrink-0"
+      />
+      <a
+        href={profileLink(profile.handle)}
+        class="hover:underline text-zinc-600 dark:text-zinc-500 truncate max-w-[300px] sm:max-w-[400px]"
+      >
+        <span class="text-zinc-950 dark:text-zinc-50 font-semibold text-">
+          {profile.displayName || profile.handle}
+        </span>{" "}
+        <span class="truncate">
+          @{profile.handle}
+        </span>
+      </a>
+    </div>
+  );
+}
+
 function Timeline({ items }: Readonly<{ items: TimelineItem[] }>) {
   return (
     <div class="px-4 mb-4">
@@ -1154,8 +1174,14 @@ function Timeline({ items }: Readonly<{ items: TimelineItem[] }>) {
 
 function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   return (
-    <li class="space-y-2">
-      <div class="w-fit flex flex-col bg-zinc-100 dark:bg-zinc-900 p-2 gap-2">
+    <li>
+      <div class="w-fit flex flex-col gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div class="flex items-center justify-between gap-2 w-full">
+          <ActorInfo profile={item.actor} />
+          <span class="shrink-0">
+            {formatRelativeTime(new Date(item.createdAt))}
+          </span>
+        </div>
         {item.gallery.items?.filter(isPhotoView).length
           ? (
             <a
@@ -1206,13 +1232,7 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
           )
           : null}
         <p>
-          <a
-            href={profileLink(item.actor.handle)}
-            class="font-semibold hover:underline"
-          >
-            @{item.actor.handle}
-          </a>{" "}
-          {item.itemType === "favorite" ? "favorited" : "created"}{" "}
+          {item.itemType === "favorite" ? "Favorited" : "Created"}{" "}
           <a
             href={galleryLink(
               item.gallery.creator.handle,
@@ -1222,11 +1242,6 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
           >
             {(item.gallery.record as Gallery).title}
           </a>
-          <span class="ml-1">
-            {formatDistanceStrict(item.createdAt, new Date(), {
-              addSuffix: true,
-            })}
-          </span>
         </p>
       </div>
     </li>
@@ -1266,6 +1281,21 @@ function FollowButton({
   );
 }
 
+function formatRelativeTime(date: Date) {
+  const now = new Date();
+  const weeks = differenceInWeeks(now, date);
+  if (weeks > 0) return `${weeks}w`;
+
+  const days = differenceInDays(now, date);
+  if (days > 0) return `${days}d`;
+
+  const hours = differenceInHours(now, date);
+  if (hours > 0) return `${hours}h`;
+
+  const minutes = differenceInMinutes(now, date);
+  return `${Math.max(1, minutes)}m`;
+}
+
 function ProfilePage({
   followUri,
   loggedInUserDid,
@@ -1282,14 +1312,17 @@ function ProfilePage({
   galleries?: GalleryView[];
 }>) {
   const isCreator = loggedInUserDid === profile.did;
+  const displayName = profile.displayName || profile.handle;
   return (
     <div class="px-4 mb-4" id="profile-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
-        <div class="flex flex-col">
+        <div class="flex flex-col mb-4">
           <AvatarButton profile={profile} />
-          <p class="text-2xl font-bold">{profile.displayName}</p>
+          <p class="text-2xl font-bold">{displayName}</p>
           <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
-          <p class="my-2">{profile.description}</p>
+          {profile.description
+            ? <p class="mt-2">{profile.description}</p>
+            : null}
         </div>
         {!isCreator && loggedInUserDid
           ? (
@@ -1379,7 +1412,7 @@ function ProfilePage({
           : null}
         {selectedTab === "galleries"
           ? (
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
               {galleries?.length
                 ? (
                   galleries.map((gallery) => (
@@ -1443,10 +1476,9 @@ function UploadPage(
               </a>
             )}
         </div>
-        <div>10/100 photos</div>
       </div>
-      <Button variant="primary" class="mb-4" asChild>
-        <label class="w-fit">
+      <Button variant="primary" class="mb-4 w-full sm:w-fit" asChild>
+        <label>
           <i class="fa fa-plus"></i> Add photos
           <input
             class="hidden"
@@ -1594,40 +1626,20 @@ function GalleryPage({
 }>) {
   const isCreator = currentUserDid === gallery.creator.did;
   const isLoggedIn = !!currentUserDid;
+  const description = (gallery.record as Gallery).description;
   return (
     <div class="px-4">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
-        <div class="flex flex-col space-y-1 mb-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 mb-2">
+        <div class="flex flex-col space-y-2 mb-4">
           <h1 class="font-bold text-2xl">
             {(gallery.record as Gallery).title}
           </h1>
-          <div>
-            Gallery by{" "}
-            <a
-              href={profileLink(gallery.creator.handle)}
-              class="hover:underline"
-            >
-              <span class="font-semibold">{gallery.creator.displayName}</span>
-              {" "}
-              <span class="text-zinc-600 dark:text-zinc-500">
-                @{gallery.creator.handle}
-              </span>
-            </a>
-          </div>
-          <p>{(gallery.record as Gallery).description}</p>
+          <ActorInfo profile={gallery.creator} />
+          {description ? <p>{description}</p> : null}
         </div>
         {isLoggedIn && isCreator
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              <Button
-                hx-get={`/dialogs/photo-select/${new AtUri(gallery.uri).rkey}`}
-                hx-target="#layout"
-                hx-swap="afterbegin"
-                variant="primary"
-                class="self-start w-full sm:w-fit"
-              >
-                Add photos
-              </Button>
               <Button
                 variant="primary"
                 class="self-start w-full sm:w-fit"
@@ -1637,16 +1649,29 @@ function GalleryPage({
               >
                 Edit
               </Button>
+              <Button
+                hx-get={`/dialogs/photo-select/${new AtUri(gallery.uri).rkey}`}
+                hx-target="#layout"
+                hx-swap="afterbegin"
+                variant="primary"
+                class="self-start w-full sm:w-fit"
+              >
+                Add photos
+              </Button>
+              <ShareGalleryButton gallery={gallery} />
             </div>
           )
           : null}
         {!isCreator
           ? (
-            <FavoriteButton
-              currentUserDid={currentUserDid}
-              favs={favs}
-              galleryUri={gallery.uri}
-            />
+            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
+              <ShareGalleryButton gallery={gallery} />
+              <FavoriteButton
+                currentUserDid={currentUserDid}
+                favs={favs}
+                galleryUri={gallery.uri}
+              />
+            </div>
           )
           : null}
       </div>
@@ -1663,8 +1688,6 @@ function GalleryPage({
                 key={photo.cid}
                 photo={photo}
                 gallery={gallery}
-                isCreator={isCreator}
-                isLoggedIn={isLoggedIn}
               />
             ))
           : null}
@@ -1676,13 +1699,9 @@ function GalleryPage({
 function PhotoButton({
   photo,
   gallery,
-  isCreator,
-  isLoggedIn,
 }: Readonly<{
   photo: PhotoView;
   gallery: GalleryView;
-  isCreator: boolean;
-  isLoggedIn: boolean;
 }>) {
   return (
     <button
@@ -1696,15 +1715,12 @@ function PhotoButton({
       data-width={photo.aspectRatio?.width}
       data-height={photo.aspectRatio?.height}
     >
-      {isLoggedIn && isCreator
-        ? <AltTextButton galleryUri={gallery.uri} cid={photo.cid} />
-        : null}
       <img
         src={photo.fullsize}
         alt={photo.alt}
         class="w-full h-full object-cover"
       />
-      {!isCreator && photo.alt
+      {photo.alt
         ? (
           <div class="absolute bg-zinc-950 dark:bg-zinc-900 bottom-1 right-1 sm:bottom-1 sm:right-1 text-xs text-white font-semibold py-[1px] px-[3px]">
             ALT
@@ -1712,6 +1728,30 @@ function PhotoButton({
         )
         : null}
     </button>
+  );
+}
+
+function ShareGalleryButton({
+  gallery,
+}: Readonly<{ gallery: GalleryView }>) {
+  return (
+    <>
+      <input
+        type="hidden"
+        id="copy-text"
+        value={publicGalleryLink(gallery.creator.handle, gallery.uri)}
+      />
+      <Button
+        variant="primary"
+        _={`on click 
+      set copyText to #copy-text.value
+      writeText(copyText) on navigator.clipboard
+      alert('Copied to clipboard')`}
+      >
+        <i class="fa-solid fa-share-nodes mr-2" />
+        Share
+      </Button>
+    </>
   );
 }
 
@@ -1844,6 +1884,7 @@ function PhotoPreview({
 }>) {
   return (
     <div class="relative aspect-square bg-zinc-200 dark:bg-zinc-900">
+      {uri ? <AltTextButton photoUri={uri} /> : null}
       {uri
         ? (
           <button
@@ -1867,13 +1908,12 @@ function PhotoPreview({
 }
 
 function AltTextButton({
-  galleryUri,
-  cid,
-}: Readonly<{ galleryUri: string; cid: string }>) {
+  photoUri,
+}: Readonly<{ photoUri: string }>) {
   return (
     <div
-      class="bg-zinc-950 dark:bg-zinc-900 py-[1px] px-[3px] absolute top-1 left-1 sm:top-1 sm:left-1 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
-      hx-get={`/dialogs/image-alt?galleryUri=${galleryUri}&imageCid=${cid}`}
+      class="bg-zinc-950 dark:bg-zinc-950 py-[1px] px-[3px] absolute top-1 left-1 sm:top-1 sm:left-1 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
+      hx-get={`/dialogs/photo/${new AtUri(photoUri).rkey}/alt`}
       hx-trigger="click"
       hx-target="#layout"
       hx-swap="afterbegin"
@@ -1942,10 +1982,8 @@ function PhotoDialog({
 
 function PhotoAltDialog({
   photo,
-  galleryUri,
 }: Readonly<{
   photo: PhotoView;
-  galleryUri: string;
 }>) {
   return (
     <Dialog id="photo-alt-dialog" class="z-30">
@@ -1962,8 +2000,6 @@ function PhotoAltDialog({
           hx-put={`/actions/photo/${new AtUri(photo.uri).rkey}`}
           _="on htmx:afterOnLoad trigger closeDialog"
         >
-          <input type="hidden" name="galleryUri" value={galleryUri} />
-          <input type="hidden" name="cid" value={photo.cid} />
           <div class="my-2">
             <label htmlFor="alt">Descriptive alt text</label>
             <Textarea
@@ -2072,7 +2108,7 @@ function PhotoSelectButton({
          set @data-added to 'true'
        end`}
     >
-      <div class="hidden group-data-[added=true]:block absolute top-2 right-2">
+      <div class="hidden group-data-[added=true]:block absolute top-2 right-2 z-30">
         <i class="fa-check fa-solid text-sky-500 z-10" />
       </div>
       <img
@@ -2396,4 +2432,11 @@ function avatarUploadRoutes(): BffMiddleware[] {
       )),
     ),
   ];
+}
+
+function publicGalleryLink(
+  handle: string,
+  galleryUri: string,
+): string {
+  return `${PUBLIC_URL}/profile/${handle}/${new AtUri(galleryUri).rkey}`;
 }

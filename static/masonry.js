@@ -6,7 +6,7 @@ function computeMasonry() {
   const container = document.getElementById("masonry-container");
   if (!container) return;
 
-  const spacing = 12;
+  const spacing = 8;
   const containerWidth = container.offsetWidth;
 
   if (containerWidth === 0) {
