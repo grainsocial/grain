@@ -1,12 +1,4 @@
 @import "tailwindcss";
 
-.htmx-request.htmx-indicator {
-  display: inline;
-}
-.htmx-indicator {
-  display: none;
-}
-.htmx-request #submit-button {
-  opacity: 0.5;
-  pointer-events: none;
-}
+/* use to test light mode */
+/* @custom-variant dark (&:where(.dark, .dark *)); */

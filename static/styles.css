@@ -414,6 +414,9 @@
   .justify-center {
     justify-content: center;
   }
+  .justify-end {
+    justify-content: flex-end;
+  }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
   }
@@ -462,6 +465,9 @@
   .border-b {
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
+  }
+  .border-zinc-100 {
+    border-color: var(--color-zinc-100);
   }
   .border-zinc-200 {
     border-color: var(--color-zinc-200);
@@ -610,6 +616,16 @@
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
     }
   }
+  .data-\[selected\=false\]\:border-transparent {
+    &[data-selected="false"] {
+      border-color: transparent;
+    }
+  }
+  .data-\[selected\=false\]\:bg-transparent {
+    &[data-selected="false"] {
+      background-color: transparent;
+    }
+  }
   .data-\[state\=pending\]\:opacity-50 {
     &[data-state="pending"] {
       opacity: 50%;
@@ -720,16 +736,6 @@
       color: var(--color-zinc-500);
     }
   }
-}
-.htmx-request.htmx-indicator {
-  display: inline;
-}
-.htmx-indicator {
-  display: none;
-}
-.htmx-request #submit-button {
-  opacity: 0.5;
-  pointer-events: none;
 }
 @property --tw-space-y-reverse {
   syntax: "*";

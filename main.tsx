@@ -59,6 +59,7 @@ const PUBLIC_URL = Deno.env.get("BFF_PUBLIC_URL") ?? "http://localhost:8080";
 const GOATCOUNTER_URL = Deno.env.get("GOATCOUNTER_URL");
 
 let cssContentHash: string = "";
+const staticJsFiles = new Map<string, string>();
 
 bff({
   appName: "Grain Social",
@@ -80,6 +81,18 @@ bff({
     cssContentHash = Array.from(new Uint8Array(hashBuffer))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
+    for (const entry of Deno.readDirSync(join(Deno.cwd(), "static"))) {
+      if (entry.isFile && entry.name.endsWith(".js")) {
+        const fileContent = await Deno.readFile(
+          join(Deno.cwd(), "static", entry.name),
+        );
+        const hashBuffer = await crypto.subtle.digest("SHA-256", fileContent);
+        const hash = Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+        staticJsFiles.set(entry.name, hash);
+      }
+    }
   },
   onError: (err) => {
     if (err instanceof UnauthorizedError) {
@@ -1059,7 +1072,12 @@ function Root(props: Readonly<RootProps<State>>) {
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
           preload
         />
-        {scripts?.map((file) => <script key={file} src={`/static/${file}`} />)}
+        {scripts?.map((file) => (
+          <script
+            key={file}
+            src={`/static/${file}?${staticJsFiles.get(file)}`}
+          />
+        ))}
       </head>
       <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
         <Layout id="layout" class="border-zinc-200 dark:border-zinc-800">
@@ -1675,10 +1693,111 @@ function GalleryPage({
           )
           : null}
       </div>
+      <div class="flex justify-end mb-2">
+        <Button
+          id="justified-button"
+          variant="primary"
+          class="flex justify-center w-full sm:w-fit bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 data-[selected=false]:bg-transparent data-[selected=false]:border-transparent text-zinc-950 dark:text-zinc-50"
+          _="on click call toggleLayout('justified')
+            set @data-selected to 'true'
+            set #masonry-button's @data-selected to 'false'"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="2" y="2" width="8" height="6" fill="currentColor" rx="1" />
+            <rect
+              x="12"
+              y="2"
+              width="10"
+              height="6"
+              fill="currentColor"
+              rx="1"
+            />
+            <rect
+              x="2"
+              y="10"
+              width="6"
+              height="6"
+              fill="currentColor"
+              rx="1"
+            />
+            <rect
+              x="10"
+              y="10"
+              width="12"
+              height="6"
+              fill="currentColor"
+              rx="1"
+            />
+            <rect
+              x="2"
+              y="18"
+              width="20"
+              height="4"
+              fill="currentColor"
+              rx="1"
+            />
+          </svg>
+        </Button>
+        <Button
+          id="masonry-button"
+          variant="primary"
+          data-selected="false"
+          class="flex justify-center w-full sm:w-fit bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 data-[selected=false]:bg-transparent data-[selected=false]:border-transparent text-zinc-950 dark:text-zinc-50"
+          _="on click call toggleLayout('masonry')
+            set @data-selected to 'true'
+            set #justified-button's @data-selected to 'false'"
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect x="2" y="2" width="8" height="8" fill="currentColor" rx="1" />
+            <rect
+              x="12"
+              y="2"
+              width="8"
+              height="4"
+              fill="currentColor"
+              rx="1"
+            />
+            <rect
+              x="12"
+              y="8"
+              width="8"
+              height="6"
+              fill="currentColor"
+              rx="1"
+            />
+            <rect
+              x="2"
+              y="12"
+              width="8"
+              height="8"
+              fill="currentColor"
+              rx="1"
+            />
+            <rect
+              x="12"
+              y="16"
+              width="8"
+              height="4"
+              fill="currentColor"
+              rx="1"
+            />
+          </svg>
+        </Button>
+      </div>
       <div
         id="masonry-container"
         class="h-0 overflow-hidden relative mx-auto w-full"
-        _="on load or htmx:afterSettle call computeMasonry()"
+        _="on load or htmx:afterSettle call computeLayout()"
       >
         {gallery.items?.filter(isPhotoView)?.length
           ? gallery?.items
