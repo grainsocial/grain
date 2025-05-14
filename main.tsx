@@ -120,7 +120,7 @@ bff({
         <div
           id="login"
           class="flex justify-center items-center w-full h-full relative"
-          style="background-image: url('https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreiewhwu3ro5dv7omedphb62db4koa7qtvyzfhiiypg3ru4tvuxkrjy@webp'); background-size: cover; background-position: center;"
+          style="background-image: url('https://cdn.bsky.app/img/feed_fullsize/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreiewhwu3ro5dv7omedphb62db4koa7qtvyzfhiiypg3ru4tvuxkrjy@jpeg'); background-size: cover; background-position: center;"
         >
           <Login hx-target="#login" error={error} errorClass="text-white" />
           <div class="absolute bottom-2 right-2 text-white text-sm">
@@ -1541,7 +1541,8 @@ function ProfileDialog({
 }>) {
   return (
     <Dialog>
-      <Dialog.Content class="dark:bg-zinc-950">
+      <Dialog.Content class="dark:bg-zinc-950 relative">
+        <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Edit my profile</Dialog.Title>
         <div>
           <AvatarForm src={profile.avatar} alt={profile.handle} />
@@ -1563,6 +1564,7 @@ function ProfileDialog({
               name="displayName"
               class="dark:bg-zinc-800 dark:text-white"
               value={profile.displayName}
+              autoFocus
             />
           </div>
           <div class="mb-4 relative">
@@ -1906,7 +1908,8 @@ function GalleryCreateEditDialog({
 }: Readonly<{ gallery?: GalleryView | null }>) {
   return (
     <Dialog id="gallery-dialog" class="z-30">
-      <Dialog.Content class="dark:bg-zinc-950">
+      <Dialog.Content class="dark:bg-zinc-950 relative">
+        <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>
           {gallery ? "Edit gallery" : "Create a new gallery"}
         </Dialog.Title>
@@ -2031,7 +2034,7 @@ function AltTextButton({
 }: Readonly<{ photoUri: string }>) {
   return (
     <div
-      class="bg-zinc-950 dark:bg-zinc-950 py-[1px] px-[3px] absolute top-1 left-1 sm:top-1 sm:left-1 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
+      class="bg-zinc-950 dark:bg-zinc-950 py-[1px] px-[3px] absolute top-2 left-2 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
       hx-get={`/dialogs/photo/${new AtUri(photoUri).rkey}/alt`}
       hx-trigger="click"
       hx-target="#layout"
@@ -2056,6 +2059,7 @@ function PhotoDialog({
 }>) {
   return (
     <Dialog id="photo-dialog" class="bg-zinc-950 z-30">
+      <Dialog.X />
       {nextImage
         ? (
           <div
@@ -2106,7 +2110,8 @@ function PhotoAltDialog({
 }>) {
   return (
     <Dialog id="photo-alt-dialog" class="z-30">
-      <Dialog.Content class="dark:bg-zinc-950">
+      <Dialog.Content class="dark:bg-zinc-950 relative">
+        <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Add alt text</Dialog.Title>
         <div class="aspect-square relative">
           <img
@@ -2154,7 +2159,8 @@ function PhotoSelectDialog({
 }>) {
   return (
     <Dialog id="photo-select-dialog" class="z-30">
-      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950 sm:min-h-screen flex flex-col">
+      <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950 sm:min-h-screen flex flex-col relative">
+        <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Add photos</Dialog.Title>
         {photos.length
           ? (
@@ -2166,7 +2172,7 @@ function PhotoSelectDialog({
           : null}
         {photos.length
           ? (
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 my-4 flex-1">
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-4 my-4 flex-1">
               {photos.map((photo) => (
                 <PhotoSelectButton
                   key={photo.cid}
@@ -2288,9 +2294,9 @@ function photoToView(
     uri: photo.uri,
     cid: photo.photo.ref.toString(),
     thumb:
-      `https://cdn.bsky.app/img/feed_thumbnail/plain/${did}/${photo.photo.ref.toString()}@webp`,
+      `https://cdn.bsky.app/img/feed_thumbnail/plain/${did}/${photo.photo.ref.toString()}@jpeg`,
     fullsize:
-      `https://cdn.bsky.app/img/feed_fullsize/plain/${did}/${photo.photo.ref.toString()}@webp`,
+      `https://cdn.bsky.app/img/feed_fullsize/plain/${did}/${photo.photo.ref.toString()}@jpeg`,
     alt: photo.alt,
     aspectRatio: photo.aspectRatio,
   };
