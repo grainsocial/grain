@@ -387,6 +387,9 @@
   .shrink-0 {
     flex-shrink: 0;
   }
+  .cursor-grab {
+    cursor: grab;
+  }
   .cursor-pointer {
     cursor: pointer;
   }
@@ -483,6 +486,9 @@
     @supports (color: color-mix(in lab, red, red)) {
       background-color: color-mix(in oklab, var(--color-black) 80%, transparent);
     }
+  }
+  .bg-sky-500 {
+    background-color: var(--color-sky-500);
   }
   .bg-zinc-100 {
     background-color: var(--color-zinc-100);
@@ -592,9 +598,6 @@
   }
   .lowercase {
     text-transform: lowercase;
-  }
-  .opacity-50 {
-    opacity: 50%;
   }
   .ring-sky-500 {
     --tw-ring-color: var(--color-sky-500);

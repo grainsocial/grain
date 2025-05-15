@@ -2341,6 +2341,10 @@ export const schemaDict = {
               type: 'string',
               format: 'at-uri',
             },
+            position: {
+              type: 'integer',
+              default: 0,
+            },
           },
         },
       },

@@ -19,6 +19,7 @@ export interface Record {
   createdAt: string
   gallery: string
   item: string
+  position: number
   [k: string]: unknown
 }
 

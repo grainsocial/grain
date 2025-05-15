@@ -58,8 +58,7 @@ import { ComponentChildren, JSX, VNode } from "preact";
 const PUBLIC_URL = Deno.env.get("BFF_PUBLIC_URL") ?? "http://localhost:8080";
 const GOATCOUNTER_URL = Deno.env.get("GOATCOUNTER_URL");
 
-let cssContentHash: string = "";
-const staticJsFiles = new Map<string, string>();
+const staticFilesHash = new Map<string, string>();
 
 bff({
   appName: "Grain Social",
@@ -74,15 +73,11 @@ bff({
   lexicons,
   rootElement: Root,
   onListen: async () => {
-    const cssFileContent = await Deno.readFile(
-      join(Deno.cwd(), "static", "styles.css"),
-    );
-    const hashBuffer = await crypto.subtle.digest("SHA-256", cssFileContent);
-    cssContentHash = Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
     for (const entry of Deno.readDirSync(join(Deno.cwd(), "static"))) {
-      if (entry.isFile && entry.name.endsWith(".js")) {
+      if (
+        entry.isFile &&
+        (entry.name.endsWith(".js") || entry.name.endsWith(".css"))
+      ) {
         const fileContent = await Deno.readFile(
           join(Deno.cwd(), "static", entry.name),
         );
@@ -90,7 +85,7 @@ bff({
         const hash = Array.from(new Uint8Array(hashBuffer))
           .map((b) => b.toString(16).padStart(2, "0"))
           .join("");
-        staticJsFiles.set(entry.name, hash);
+        staticFilesHash.set(entry.name, hash);
       }
     }
   },
@@ -250,6 +245,14 @@ bff({
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
       return ctx.html(<GalleryCreateEditDialog gallery={gallery} />);
+    }),
+    route("/dialogs/gallery/:rkey/sort", (_req, params, ctx) => {
+      requireAuth(ctx);
+      const handle = ctx.currentUser.handle;
+      const rkey = params.rkey;
+      const gallery = getGallery(handle, rkey, ctx);
+      if (!gallery) return ctx.next();
+      return ctx.html(<GallerySortDialog gallery={gallery} />);
     }),
     route("/onboard", (_req, _params, ctx) => {
       requireAuth(ctx);
@@ -575,12 +578,56 @@ bff({
 
       return ctx.redirect(`/profile/${ctx.currentUser.handle}`);
     }),
-    route("/actions/sort-end", ["POST"], async (req, _params, ctx) => {
-      const formData = await req.formData();
-      const items = formData.getAll("item") as string[];
-      console.log(items);
-      return new Response(null, { status: 200 });
-    }),
+    route(
+      "/actions/gallery/:rkey/sort",
+      ["POST"],
+      async (req, params, ctx) => {
+        requireAuth(ctx);
+        const galleryRkey = params.rkey;
+        const galleryUri =
+          `at://${ctx.currentUser.did}/social.grain.gallery/${galleryRkey}`;
+        const {
+          items,
+        } = ctx.indexService.getRecords<WithBffMeta<GalleryItem>>(
+          "social.grain.gallery.item",
+          {
+            where: [
+              {
+                field: "gallery",
+                equals: galleryUri,
+              },
+            ],
+          },
+        );
+        const itemsMap = new Map<string, WithBffMeta<GalleryItem>>();
+        for (const item of items) {
+          itemsMap.set(item.item, item);
+        }
+        const formData = await req.formData();
+        const sortedItems = formData.getAll("item") as string[];
+        const updates = [];
+        let position = 0;
+        for (const sortedItemUri of sortedItems) {
+          const item = itemsMap.get(sortedItemUri);
+          if (!item) continue;
+          updates.push({
+            collection: "social.grain.gallery.item",
+            rkey: new AtUri(item.uri).rkey,
+            data: {
+              gallery: item.gallery,
+              item: item.item,
+              createdAt: item.createdAt,
+              position,
+            },
+          });
+          position++;
+        }
+        await ctx.updateRecords<WithBffMeta<GalleryItem>>(updates);
+        return ctx.redirect(
+          `/profile/${ctx.currentUser.handle}/${galleryRkey}`,
+        );
+      },
+    ),
     ...photoUploadRoutes(),
     ...avatarUploadRoutes(),
   ],
@@ -699,7 +746,7 @@ function getGalleryItemsAndPhotos(
   const { items: galleryItems } = ctx.indexService.getRecords<
     WithBffMeta<GalleryItem>
   >("social.grain.gallery.item", {
-    orderBy: { field: "createdAt", direction: "asc" },
+    orderBy: { field: "position", direction: "asc" },
     where: [{ field: "gallery", in: galleryUris }],
   });
 
@@ -1055,7 +1102,10 @@ function Root(props: Readonly<RootProps<State>>) {
         <script src="https://unpkg.com/hyperscript.org@0.9.14" />
         <script src="https://unpkg.com/sortablejs@1.15.6" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
-        <link rel="stylesheet" href={`/static/styles.css?${cssContentHash}`} />
+        <link
+          rel="stylesheet"
+          href={`/static/styles.css?${staticFilesHash.get("styles.css")}`}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -1074,7 +1124,7 @@ function Root(props: Readonly<RootProps<State>>) {
         {scripts?.map((file) => (
           <script
             key={file}
-            src={`/static/${file}?${staticJsFiles.get(file)}`}
+            src={`/static/${file}?${staticFilesHash.get(file)}`}
           />
         ))}
       </head>
@@ -1660,15 +1710,6 @@ function GalleryPage({
                 hx-target="#layout"
                 hx-swap="afterbegin"
               >
-                Change Sort
-              </Button>
-              <Button
-                variant="primary"
-                class="self-start w-full sm:w-fit"
-                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}`}
-                hx-target="#layout"
-                hx-swap="afterbegin"
-              >
                 Edit
               </Button>
               <Button
@@ -1679,6 +1720,15 @@ function GalleryPage({
                 class="self-start w-full sm:w-fit"
               >
                 Add photos
+              </Button>
+              <Button
+                variant="primary"
+                class="self-start w-full sm:w-fit"
+                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}/sort`}
+                hx-target="#layout"
+                hx-swap="afterbegin"
+              >
+                Sort order
               </Button>
               <ShareGalleryButton gallery={gallery} />
             </div>
@@ -1697,9 +1747,6 @@ function GalleryPage({
           )
           : null}
       </div>
-      <SortableGrid gallery={gallery} />
-      {
-        /* <div
       <div class="flex justify-end mb-2">
         <Button
           id="justified-button"
@@ -1817,8 +1864,7 @@ function GalleryPage({
               />
             ))
           : null}
-      </div> */
-      }
+      </div>
     </div>
   );
 }
@@ -1858,33 +1904,53 @@ function PhotoButton({
   );
 }
 
-function SortableGrid({ gallery }: Readonly<{ gallery: GalleryView }>) {
+function GallerySortDialog({ gallery }: Readonly<{ gallery: GalleryView }>) {
   return (
-    <form
-      id="masonry-container"
-      class="sortable h-0 overflow-hidden relative mx-auto w-full"
-      _="on load or htmx:afterSettle call computeMasonry()"
-      // hx-post="/actions/sort-end"
-      // hx-trigger="end"
-      // hx-swap="none"
-    >
-      <div class="htmx-indicator">Updating...</div>
-      {gallery?.items?.filter(isPhotoView).map((item) => (
-        <div
-          key={item.cid}
-          class="masonry-tile absolute cursor-pointer"
-          data-width={item.aspectRatio?.width}
-          data-height={item.aspectRatio?.height}
+    <Dialog>
+      <Dialog.Content class="dark:bg-zinc-950 relative">
+        <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
+        <Dialog.Title>Sort gallery</Dialog.Title>
+        <p class="my-2 text-center">Drag photos to rearrange</p>
+        <form
+          hx-post={`/actions/gallery/${new AtUri(gallery.uri).rkey}/sort`}
+          hx-trigger="submit"
+          hx-swap="none"
         >
-          <input type="hidden" name="item" value={item.uri} />
-          <img
-            src={item.fullsize}
-            alt={item.alt}
-            class="w-full h-full object-cover"
-          />
-        </div>
-      ))}
-    </form>
+          <div class="sortable grid grid-cols-3 sm:grid-cols-5 gap-2 mt-2">
+            {gallery?.items?.filter(isPhotoView).map((item) => (
+              <div
+                key={item.cid}
+                class="relative aspect-square cursor-grab"
+              >
+                <input type="hidden" name="item" value={item.uri} />
+                <img
+                  src={item.fullsize}
+                  alt={item.alt}
+                  class="w-full h-full absolute object-cover"
+                />
+              </div>
+            ))}
+          </div>
+          <div class="flex flex-col gap-2 mt-2">
+            <Button
+              variant="primary"
+              type="submit"
+              class="w-full"
+            >
+              Save
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              class="w-full"
+              _={Dialog._closeOnClick}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Dialog.Content>
+    </Dialog>
   );
 }
 
