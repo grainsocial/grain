@@ -1955,26 +1955,46 @@ function GallerySortDialog({ gallery }: Readonly<{ gallery: GalleryView }>) {
 }
 
 function ShareGalleryButton({ gallery }: Readonly<{ gallery: GalleryView }>) {
+  const intentLink = `https://bsky.app/intent/compose?text=${
+    encodeURIComponent(
+      "Check out this gallery on @grain.social \n" +
+        publicGalleryLink(gallery.creator.handle, gallery.uri),
+    )
+  }`;
   return (
-    <>
-      <input
-        type="hidden"
-        id="copy-text"
-        value={publicGalleryLink(gallery.creator.handle, gallery.uri)}
-      />
-      <Button
-        variant="primary"
-        _={`on click 
-      set copyText to #copy-text.value
-      writeText(copyText) on navigator.clipboard
-      alert('Copied to clipboard')`}
-      >
-        <i class="fa-solid fa-share-nodes mr-2" />
-        Share
-      </Button>
-    </>
+    <Button
+      variant="primary"
+      asChild
+    >
+      <a href={intentLink} target="_blank" rel="noopener noreferrer">
+        <i class="fa-solid fa-arrow-up-from-bracket mr-2" />
+        Share to Bluesky
+      </a>
+    </Button>
   );
 }
+
+// function ShareGalleryButton({ gallery }: Readonly<{ gallery: GalleryView }>) {
+//   return (
+//     <>
+//       <input
+//         type="hidden"
+//         id="copy-text"
+//         value={publicGalleryLink(gallery.creator.handle, gallery.uri)}
+//       />
+//       <Button
+//         variant="primary"
+//         _={`on click
+//       set copyText to #copy-text.value
+//       writeText(copyText) on navigator.clipboard
+//       alert('Copied to clipboard')`}
+//       >
+//         <i class="fa-solid fa-share-nodes mr-2" />
+//         Share
+//       </Button>
+//     </>
+//   );
+// }
 
 function FavoriteButton({
   currentUserDid,
