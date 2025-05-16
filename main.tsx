@@ -198,24 +198,27 @@ bff({
         />,
       );
     }),
-    route("/profile/:handle/:rkey", (_req, params, ctx: BffContext<State>) => {
-      const did = ctx.currentUser?.did;
-      let favs: WithBffMeta<Favorite>[] = [];
-      const handle = params.handle;
-      const rkey = params.rkey;
-      const gallery = getGallery(handle, rkey, ctx);
-      if (!gallery) return ctx.next();
-      favs = getGalleryFavs(gallery.uri, ctx);
-      ctx.state.meta = [
-        { title: `${(gallery.record as Gallery).title} — Grain` },
-        ...getPageMeta(galleryLink(handle, rkey)),
-        ...getGalleryMeta(gallery),
-      ];
-      ctx.state.scripts = ["photo_dialog.js", "masonry.js", "sortable.js"];
-      return ctx.render(
-        <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
-      );
-    }),
+    route(
+      "/profile/:handle/gallery/:rkey",
+      (_req, params, ctx: BffContext<State>) => {
+        const did = ctx.currentUser?.did;
+        let favs: WithBffMeta<Favorite>[] = [];
+        const handle = params.handle;
+        const rkey = params.rkey;
+        const gallery = getGallery(handle, rkey, ctx);
+        if (!gallery) return ctx.next();
+        favs = getGalleryFavs(gallery.uri, ctx);
+        ctx.state.meta = [
+          { title: `${(gallery.record as Gallery).title} — Grain` },
+          ...getPageMeta(galleryLink(handle, rkey)),
+          ...getGalleryMeta(gallery),
+        ];
+        ctx.state.scripts = ["photo_dialog.js", "masonry.js", "sortable.js"];
+        return ctx.render(
+          <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
+        );
+      },
+    ),
     route("/upload", (req, _params, ctx) => {
       const { did, handle } = ctx.requireAuth();
       const url = new URL(req.url);
@@ -638,7 +641,7 @@ bff({
         }
         await ctx.updateRecords<WithBffMeta<GalleryItem>>(updates);
         return ctx.redirect(
-          `/profile/${handle}/${galleryRkey}`,
+          galleryLink(handle, new AtUri(galleryUri).rkey),
         );
       },
     ),
@@ -1078,8 +1081,11 @@ function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
     // { property: "og:type", content: "website" },
     {
       property: "og:url",
-      content: `${PUBLIC_URL}/profile/${gallery.creator.handle}/${
-        new AtUri(gallery.uri).rkey
+      content: `${PUBLIC_URL}${
+        galleryLink(
+          gallery.creator.handle,
+          new AtUri(gallery.uri).rkey,
+        )
       }`,
     },
     { property: "og:title", content: (gallery.record as Gallery).title },
@@ -2441,7 +2447,7 @@ function profileLink(handle: string) {
 }
 
 function galleryLink(handle: string, galleryRkey: string) {
-  return `/profile/${handle}/${galleryRkey}`;
+  return `/profile/${handle}/gallery/${galleryRkey}`;
 }
 
 function photoDialogLink(gallery: GalleryView, image: PhotoView) {
@@ -2685,5 +2691,5 @@ function avatarUploadRoutes(): BffMiddleware[] {
 }
 
 function publicGalleryLink(handle: string, galleryUri: string): string {
-  return `${PUBLIC_URL}/profile/${handle}/${new AtUri(galleryUri).rkey}`;
+  return `${PUBLIC_URL}${galleryLink(handle, new AtUri(galleryUri).rkey)}`;
 }
