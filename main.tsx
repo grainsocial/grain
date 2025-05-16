@@ -26,7 +26,7 @@ import {
   oauth,
   OAUTH_ROUTES,
   onSignedInArgs,
-  requireAuth,
+  RateLimitError,
   RootProps,
   route,
   RouteHandler,
@@ -51,6 +51,8 @@ import {
   differenceInHours,
   differenceInMinutes,
   differenceInWeeks,
+  formatDuration,
+  intervalToDuration,
 } from "date-fns";
 import { wrap } from "popmotion";
 import { ComponentChildren, JSX, VNode } from "preact";
@@ -93,6 +95,24 @@ bff({
     if (err instanceof UnauthorizedError) {
       const ctx = err.ctx;
       return ctx.redirect(OAUTH_ROUTES.loginPage);
+    }
+    if (err instanceof RateLimitError) {
+      const now = new Date();
+      const future = new Date(now.getTime() + (err.retryAfter ?? 0) * 1000);
+      const duration = intervalToDuration({ start: now, end: future });
+      const formatted = formatDuration(duration, {
+        format: ["minutes", "seconds"],
+      });
+      return new Response(
+        `Too many requests. Retry in ${formatted}.`,
+        {
+          status: 429,
+          headers: {
+            ...err.retryAfter && { "Retry-After": err.retryAfter.toString() },
+            "Content-Type": "text/plain",
+          },
+        },
+      );
     }
     return new Response("Internal Server Error", {
       status: 500,
@@ -197,23 +217,22 @@ bff({
       );
     }),
     route("/upload", (req, _params, ctx) => {
-      requireAuth(ctx);
+      const { did, handle } = ctx.requireAuth();
       const url = new URL(req.url);
       const galleryRkey = url.searchParams.get("returnTo");
-      const photos = getActorPhotos(ctx.currentUser.did, ctx);
+      const photos = getActorPhotos(did, ctx);
       ctx.state.meta = [{ title: "Upload — Grain" }, getPageMeta("/upload")];
+      ctx.state.scripts = ["upload_page.js"];
       return ctx.render(
         <UploadPage
-          handle={ctx.currentUser.handle}
+          handle={handle}
           photos={photos}
-          returnTo={galleryRkey
-            ? galleryLink(ctx.currentUser.handle, galleryRkey)
-            : undefined}
+          returnTo={galleryRkey ? galleryLink(handle, galleryRkey) : undefined}
         />,
       );
     }),
     route("/follow/:did", ["POST"], async (_req, params, ctx) => {
-      requireAuth(ctx);
+      ctx.requireAuth();
       const did = params.did;
       if (!did) return ctx.next();
       const followUri = await ctx.createRecord<BskyFollow>(
@@ -225,37 +244,40 @@ bff({
       );
       return ctx.html(<FollowButton followeeDid={did} followUri={followUri} />);
     }),
-    route("/follow/:did/:rkey", ["DELETE"], async (_req, params, ctx) => {
-      requireAuth(ctx);
-      const did = params.did;
-      const rkey = params.rkey;
-      if (!did) return ctx.next();
-      await ctx.deleteRecord(
-        `at://${ctx.currentUser.did}/app.bsky.graph.follow/${rkey}`,
-      );
-      return ctx.html(<FollowButton followeeDid={did} followUri={undefined} />);
-    }),
+    route(
+      "/follow/:followeeDid/:rkey",
+      ["DELETE"],
+      async (_req, params, ctx) => {
+        const { did } = ctx.requireAuth();
+        const followeeDid = params.followeeDid;
+        const rkey = params.rkey;
+        await ctx.deleteRecord(
+          `at://${did}/app.bsky.graph.follow/${rkey}`,
+        );
+        return ctx.html(
+          <FollowButton followeeDid={followeeDid} followUri={undefined} />,
+        );
+      },
+    ),
     route("/dialogs/gallery/new", (_req, _params, ctx) => {
-      requireAuth(ctx);
+      ctx.requireAuth();
       return ctx.html(<GalleryCreateEditDialog />);
     }),
     route("/dialogs/gallery/:rkey", (_req, params, ctx) => {
-      requireAuth(ctx);
-      const handle = ctx.currentUser.handle;
+      const { handle } = ctx.requireAuth();
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
       return ctx.html(<GalleryCreateEditDialog gallery={gallery} />);
     }),
     route("/dialogs/gallery/:rkey/sort", (_req, params, ctx) => {
-      requireAuth(ctx);
-      const handle = ctx.currentUser.handle;
+      const { handle } = ctx.requireAuth();
       const rkey = params.rkey;
       const gallery = getGallery(handle, rkey, ctx);
       if (!gallery) return ctx.next();
       return ctx.html(<GallerySortDialog gallery={gallery} />);
     }),
     route("/onboard", (_req, _params, ctx) => {
-      requireAuth(ctx);
+      ctx.requireAuth();
       return ctx.render(
         <div
           hx-get="/dialogs/profile"
@@ -266,12 +288,12 @@ bff({
       );
     }),
     route("/dialogs/profile", (_req, _params, ctx: BffContext<State>) => {
-      requireAuth(ctx);
+      const { did } = ctx.requireAuth();
 
       if (!ctx.state.profile) return ctx.next();
 
       const profileRecord = ctx.indexService.getRecord<Profile>(
-        `at://${ctx.currentUser.did}/social.grain.actor.profile/self`,
+        `at://${did}/social.grain.actor.profile/self`,
       );
 
       if (!profileRecord) return ctx.next();
@@ -322,21 +344,20 @@ bff({
       );
     }),
     route("/dialogs/photo/:rkey/alt", (_req, params, ctx) => {
-      requireAuth(ctx);
+      const { did } = ctx.requireAuth();
       const photoRkey = params.rkey;
-      const photoUri =
-        `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+      const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
       const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
       if (!photo) return ctx.next();
       return ctx.html(
-        <PhotoAltDialog photo={photoToView(ctx.currentUser.did, photo)} />,
+        <PhotoAltDialog photo={photoToView(did, photo)} />,
       );
     }),
     route("/dialogs/photo-select/:galleryRkey", (_req, params, ctx) => {
-      requireAuth(ctx);
-      const photos = getActorPhotos(ctx.currentUser.did, ctx);
+      const { did } = ctx.requireAuth();
+      const photos = getActorPhotos(did, ctx);
       const galleryUri =
-        `at://${ctx.currentUser.did}/social.grain.gallery/${params.galleryRkey}`;
+        `at://${did}/social.grain.gallery/${params.galleryRkey}`;
       const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(
         galleryUri,
       );
@@ -354,14 +375,13 @@ bff({
       );
     }),
     route("/actions/create-edit", ["POST"], async (req, _params, ctx) => {
-      requireAuth(ctx);
+      const { handle } = ctx.requireAuth();
       const formData = await req.formData();
       const title = formData.get("title") as string;
       const description = formData.get("description") as string;
       const url = new URL(req.url);
       const searchParams = new URLSearchParams(url.search);
       const uri = searchParams.get("uri");
-      const handle = ctx.currentUser?.handle;
 
       if (uri) {
         const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(uri);
@@ -394,7 +414,7 @@ bff({
       return ctx.redirect(galleryLink(handle, new AtUri(createdUri).rkey));
     }),
     route("/actions/gallery/delete", ["POST"], async (req, _params, ctx) => {
-      requireAuth(ctx);
+      ctx.requireAuth();
       const formData = await req.formData();
       const uri = formData.get("uri") as string;
       await deleteGallery(uri, ctx);
@@ -404,14 +424,12 @@ bff({
       "/actions/gallery/:galleryRkey/add-photo/:photoRkey",
       ["PUT"],
       async (_req, params, ctx) => {
-        requireAuth(ctx);
+        const { did } = ctx.requireAuth();
         const galleryRkey = params.galleryRkey;
         const photoRkey = params.photoRkey;
-        const galleryUri =
-          `at://${ctx.currentUser.did}/social.grain.gallery/${galleryRkey}`;
-        const photoUri =
-          `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
-        const gallery = getGallery(ctx.currentUser.did, galleryRkey, ctx);
+        const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
+        const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
+        const gallery = getGallery(did, galleryRkey, ctx);
         const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
         if (!gallery || !photo) return ctx.next();
         if (
@@ -454,13 +472,11 @@ bff({
       "/actions/gallery/:galleryRkey/remove-photo/:photoRkey",
       ["PUT"],
       async (_req, params, ctx) => {
-        requireAuth(ctx);
+        const { did } = ctx.requireAuth();
         const galleryRkey = params.galleryRkey;
         const photoRkey = params.photoRkey;
-        const galleryUri =
-          `at://${ctx.currentUser.did}/social.grain.gallery/${galleryRkey}`;
-        const photoUri =
-          `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+        const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
+        const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
         if (!galleryRkey || !photoRkey) return ctx.next();
         const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
         if (!photo) return ctx.next();
@@ -483,7 +499,7 @@ bff({
         );
         if (!item) return ctx.next();
         await ctx.deleteRecord(item.uri);
-        const gallery = getGallery(ctx.currentUser.did, galleryRkey, ctx);
+        const gallery = getGallery(did, galleryRkey, ctx);
         if (!gallery) return ctx.next();
         return ctx.html(
           <PhotoSelectButton
@@ -497,12 +513,11 @@ bff({
       },
     ),
     route("/actions/photo/:rkey", ["PUT"], async (req, params, ctx) => {
-      requireAuth(ctx);
+      const { did } = ctx.requireAuth();
       const photoRkey = params.rkey;
       const formData = await req.formData();
       const alt = formData.get("alt") as string;
-      const photoUri =
-        `at://${ctx.currentUser.did}/social.grain.photo/${photoRkey}`;
+      const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
       const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
       if (!photo) return ctx.next();
       await ctx.updateRecord<Photo>("social.grain.photo", photoRkey, {
@@ -514,14 +529,14 @@ bff({
       return new Response(null, { status: 200 });
     }),
     route("/actions/photo/:rkey", ["DELETE"], (_req, params, ctx) => {
-      requireAuth(ctx);
+      const { did } = ctx.requireAuth();
       ctx.deleteRecord(
-        `at://${ctx.currentUser.did}/social.grain.photo/${params.rkey}`,
+        `at://${did}/social.grain.photo/${params.rkey}`,
       );
       return new Response(null, { status: 200 });
     }),
     route("/actions/favorite", ["POST"], async (req, _params, ctx) => {
-      requireAuth(ctx);
+      const { did } = ctx.requireAuth();
       const url = new URL(req.url);
       const searchParams = new URLSearchParams(url.search);
       const galleryUri = searchParams.get("galleryUri");
@@ -533,7 +548,7 @@ bff({
         const favs = getGalleryFavs(galleryUri, ctx);
         return ctx.html(
           <FavoriteButton
-            currentUserDid={ctx.currentUser.did}
+            currentUserDid={did}
             favs={favs}
             galleryUri={galleryUri}
           />,
@@ -549,21 +564,21 @@ bff({
 
       return ctx.html(
         <FavoriteButton
-          currentUserDid={ctx.currentUser.did}
+          currentUserDid={did}
           galleryUri={galleryUri}
           favs={favs}
         />,
       );
     }),
     route("/actions/profile/update", ["POST"], async (req, _params, ctx) => {
-      requireAuth(ctx);
+      const { did, handle } = ctx.requireAuth();
       const formData = await req.formData();
       const displayName = formData.get("displayName") as string;
       const description = formData.get("description") as string;
       const avatarCid = formData.get("avatarCid") as string;
 
       const record = ctx.indexService.getRecord<Profile>(
-        `at://${ctx.currentUser.did}/social.grain.actor.profile/self`,
+        `at://${did}/social.grain.actor.profile/self`,
       );
 
       if (!record) {
@@ -576,16 +591,15 @@ bff({
         avatar: ctx.blobMetaCache.get(avatarCid)?.blobRef ?? record.avatar,
       });
 
-      return ctx.redirect(`/profile/${ctx.currentUser.handle}`);
+      return ctx.redirect(`/profile/${handle}`);
     }),
     route(
       "/actions/gallery/:rkey/sort",
       ["POST"],
       async (req, params, ctx) => {
-        requireAuth(ctx);
+        const { did, handle } = ctx.requireAuth();
         const galleryRkey = params.rkey;
-        const galleryUri =
-          `at://${ctx.currentUser.did}/social.grain.gallery/${galleryRkey}`;
+        const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
         const {
           items,
         } = ctx.indexService.getRecords<WithBffMeta<GalleryItem>>(
@@ -624,7 +638,7 @@ bff({
         }
         await ctx.updateRecords<WithBffMeta<GalleryItem>>(updates);
         return ctx.redirect(
-          `/profile/${ctx.currentUser.handle}/${galleryRkey}`,
+          `/profile/${handle}/${galleryRkey}`,
         );
       },
     ),
@@ -1546,20 +1560,7 @@ function UploadPage({
             type="file"
             multiple
             accept="image/*"
-            _="on change
-                set fileList to me.files
-                if fileList.length > 10
-                  alert('You can only upload 10 photos at a time')
-                  halt
-                end
-                for file in fileList
-                  make a FormData called fd
-                  fd.append('file', file)
-                  fetch /actions/photo/upload-start with { method:'POST', body:fd }
-                  then put it at the start of #image-preview
-                  then call htmx.process(#image-preview)
-                end
-                set me.value to ''"
+            _="on change call uploadPhotos(me)"
           />
         </label>
       </Button>
@@ -2504,7 +2505,13 @@ function uploadStart(
   cb: (params: { uploadId: string; dataUrl?: string; cid?: string }) => VNode,
 ): RouteHandler {
   return async (req, _params, ctx) => {
-    requireAuth(ctx);
+    ctx.requireAuth();
+    ctx.rateLimit({
+      namespace: "upload",
+      points: 1,
+      limit: 50,
+      window: 24 * 60 * 60 * 1000, // 24 hours
+    });
     const formData = await req.formData();
     const file = formData.get("file") as File;
     if (!file) {
@@ -2542,7 +2549,7 @@ function uploadCheckStatus(
   cb: (params: { uploadId: string; dataUrl: string; cid?: string }) => VNode,
 ): RouteHandler {
   return (req, _params, ctx) => {
-    requireAuth(ctx);
+    ctx.requireAuth();
     const url = new URL(req.url);
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
@@ -2560,7 +2567,7 @@ function avatarUploadDone(
   cb: (params: { dataUrl: string; cid: string }) => VNode,
 ): RouteHandler {
   return (req, _params, ctx) => {
-    requireAuth(ctx);
+    ctx.requireAuth();
     const url = new URL(req.url);
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
@@ -2577,7 +2584,7 @@ function photoUploadDone(
   cb: (params: { dataUrl: string; uri: string }) => VNode,
 ): RouteHandler {
   return async (req, _params, ctx) => {
-    requireAuth(ctx);
+    ctx.requireAuth();
     const url = new URL(req.url);
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");

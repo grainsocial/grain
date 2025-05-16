@@ -2,7 +2,7 @@
   "version": "4",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.15": "0.3.0-beta.15",
+    "jsr:@bigmoves/bff@0.3.0-beta.16": "0.3.0-beta.16",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@denosaurs/plug@1": "1.0.5",
@@ -92,8 +92,8 @@
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.15": {
-      "integrity": "934d0fab8cc73804099ccb5362fa89f5ef3cd6269a6613029131770c97cdfcb9",
+    "@bigmoves/bff@0.3.0-beta.16": {
+      "integrity": "ed1e30dafb7442254c3397cf984de706cd7e4a1c98f5dd2a73a56e0e3fac41e6",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
@@ -110,6 +110,7 @@
         "npm:multiformats@^13.3.2",
         "npm:preact",
         "npm:preact-render-to-string",
+        "npm:sharp",
         "npm:tailwind-merge"
       ]
     },
@@ -1810,7 +1811,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.15",
+      "jsr:@bigmoves/bff@0.3.0-beta.16",
       "jsr:@gfx/canvas@~0.5.8",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",
