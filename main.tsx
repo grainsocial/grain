@@ -33,6 +33,7 @@ import {
   UnauthorizedError,
   WithBffMeta,
 } from "@bigmoves/bff";
+import { BFFPhotoProcessor } from "@bigmoves/bff-photo-processor";
 import {
   Button,
   cn,
@@ -61,6 +62,8 @@ const PUBLIC_URL = Deno.env.get("BFF_PUBLIC_URL") ?? "http://localhost:8080";
 const GOATCOUNTER_URL = Deno.env.get("GOATCOUNTER_URL");
 
 const staticFilesHash = new Map<string, string>();
+
+const photoProcessor = new BFFPhotoProcessor();
 
 bff({
   appName: "Grain Social",
@@ -304,7 +307,6 @@ bff({
       return ctx.html(
         <ProfileDialog
           profile={ctx.state.profile}
-          avatarCid={profileRecord.avatar?.ref.toString()}
         />,
       );
     }),
@@ -578,7 +580,7 @@ bff({
       const formData = await req.formData();
       const displayName = formData.get("displayName") as string;
       const description = formData.get("description") as string;
-      const avatarCid = formData.get("avatarCid") as string;
+      const uploadId = formData.get("uploadId") as string;
 
       const record = ctx.indexService.getRecord<Profile>(
         `at://${did}/social.grain.actor.profile/self`,
@@ -591,7 +593,8 @@ bff({
       await ctx.updateRecord<Profile>("social.grain.actor.profile", "self", {
         displayName,
         description,
-        avatar: ctx.blobMetaCache.get(avatarCid)?.blobRef ?? record.avatar,
+        avatar: photoProcessor.getUploadStatus(uploadId)?.blobRef ??
+          record.avatar,
       });
 
       return ctx.redirect(`/profile/${handle}`);
@@ -1584,10 +1587,8 @@ function UploadPage({
 
 function ProfileDialog({
   profile,
-  avatarCid,
 }: Readonly<{
   profile: ProfileView;
-  avatarCid?: string;
 }>) {
   return (
     <Dialog>
@@ -1602,9 +1603,7 @@ function ProfileDialog({
           hx-swap="none"
           _="on htmx:afterOnLoad trigger closeModal"
         >
-          <div id="image-input">
-            <input type="hidden" name="avatarCid" value={avatarCid} />
-          </div>
+          <div id="image-input" />
           <div class="mb-4 relative">
             <label htmlFor="displayName">Display Name</label>
             <Input
@@ -2410,6 +2409,10 @@ function itemToView(
   return undefined;
 }
 
+function photoThumb(did: string, cid: string) {
+  return `https://cdn.bsky.app/img/feed_thumbnail/plain/${did}/${cid}@jpeg`;
+}
+
 function photoToView(
   did: string,
   photo: WithBffMeta<Photo>,
@@ -2508,7 +2511,7 @@ async function onSignedIn({ actor, ctx }: onSignedInArgs) {
 
 function uploadStart(
   routePrefix: string,
-  cb: (params: { uploadId: string; dataUrl?: string; cid?: string }) => VNode,
+  cb: (params: { uploadId: string; src: string; done?: boolean }) => VNode,
 ): RouteHandler {
   return async (req, _params, ctx) => {
     ctx.requireAuth();
@@ -2524,10 +2527,11 @@ function uploadStart(
       return new Response("No file", { status: 400 });
     }
     const dataUrl = await compressImageForPreview(file);
-    const uploadId = ctx.uploadBlob({
-      file,
-      dataUrl,
-    });
+    if (!ctx.agent) {
+      return new Response("No agent", { status: 400 });
+    }
+    await photoProcessor.initialize(ctx.agent);
+    const uploadId = photoProcessor.startUpload(file);
     return ctx.html(
       <div
         id={`upload-id-${uploadId}`}
@@ -2544,59 +2548,59 @@ function uploadStart(
           hx-swap="innerHTML"
           class="h-full w-full"
         >
-          {cb({ uploadId, dataUrl })}
+          {cb({ uploadId, src: dataUrl })}
         </div>
       </div>,
     );
   };
 }
 
-function uploadCheckStatus(
-  cb: (params: { uploadId: string; dataUrl: string; cid?: string }) => VNode,
-): RouteHandler {
+function uploadCheckStatus(): RouteHandler {
   return (req, _params, ctx) => {
     ctx.requireAuth();
     const url = new URL(req.url);
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
     if (!uploadId) return ctx.next();
-    const meta = ctx.blobMetaCache.get(uploadId);
-    if (!meta?.dataUrl) return ctx.next();
-    return ctx.html(
-      cb({ uploadId, dataUrl: meta.dataUrl }),
-      meta.blobRef ? { "HX-Trigger": "done" } : undefined,
+    const meta = photoProcessor.getUploadStatus(uploadId);
+    return new Response(
+      null,
+      {
+        status: meta?.blobRef ? 200 : 204,
+        headers: meta?.blobRef ? { "HX-Trigger": "done" } : {},
+      },
     );
   };
 }
 
 function avatarUploadDone(
-  cb: (params: { dataUrl: string; cid: string }) => VNode,
+  cb: (params: { src: string; uploadId: string }) => VNode,
 ): RouteHandler {
   return (req, _params, ctx) => {
-    ctx.requireAuth();
+    const { did } = ctx.requireAuth();
     const url = new URL(req.url);
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
     if (!uploadId) return ctx.next();
-    const meta = ctx.blobMetaCache.get(uploadId);
-    if (!meta?.dataUrl || !meta?.blobRef) return ctx.next();
+    const meta = photoProcessor.getUploadStatus(uploadId);
+    if (!meta?.blobRef) return ctx.next();
     return ctx.html(
-      cb({ dataUrl: meta.dataUrl, cid: meta.blobRef.ref.toString() }),
+      cb({ src: photoThumb(did, meta.blobRef.ref.toString()), uploadId }),
     );
   };
 }
 
 function photoUploadDone(
-  cb: (params: { dataUrl: string; uri: string }) => VNode,
+  cb: (params: { src: string; uri: string }) => VNode,
 ): RouteHandler {
   return async (req, _params, ctx) => {
-    ctx.requireAuth();
+    const { did } = ctx.requireAuth();
     const url = new URL(req.url);
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
     if (!uploadId) return ctx.next();
-    const meta = ctx.blobMetaCache.get(uploadId);
-    if (!meta?.dataUrl || !meta?.blobRef) return ctx.next();
+    const meta = photoProcessor.getUploadStatus(uploadId);
+    if (!meta?.blobRef) return ctx.next();
     const photoUri = await ctx.createRecord<Photo>("social.grain.photo", {
       photo: meta.blobRef,
       aspectRatio: meta.dimensions?.width && meta.dimensions?.height
@@ -2608,7 +2612,9 @@ function photoUploadDone(
       alt: "",
       createdAt: new Date().toISOString(),
     });
-    return ctx.html(cb({ dataUrl: meta.dataUrl, uri: photoUri }));
+    return ctx.html(
+      cb({ src: photoThumb(did, meta.blobRef.ref.toString()), uri: photoUri }),
+    );
   };
 }
 
@@ -2619,24 +2625,22 @@ function photoUploadRoutes(): BffMiddleware[] {
       ["POST"],
       uploadStart(
         "photo",
-        ({ dataUrl }) => <PhotoPreview src={dataUrl ?? ""} />,
+        ({ src }) => <PhotoPreview src={src} />,
       ),
     ),
     route(
       `/actions/photo/upload-check-status`,
       ["GET"],
-      uploadCheckStatus(({ uploadId, dataUrl }) => (
-        <>
-          <input type="hidden" name="uploadId" value={uploadId} />
-          <PhotoPreview src={dataUrl} />
-        </>
-      )),
+      uploadCheckStatus(),
     ),
     route(
       `/actions/photo/upload-done`,
       ["GET"],
-      photoUploadDone(({ dataUrl, uri }) => (
-        <PhotoPreview src={dataUrl} uri={uri} />
+      photoUploadDone(({ src, uri }) => (
+        <PhotoPreview
+          src={src}
+          uri={uri}
+        />
       )),
     ),
   ];
@@ -2647,9 +2651,9 @@ function avatarUploadRoutes(): BffMiddleware[] {
     route(
       `/actions/avatar/upload-start`,
       ["POST"],
-      uploadStart("avatar", ({ dataUrl }) => (
+      uploadStart("avatar", ({ src }) => (
         <img
-          src={dataUrl}
+          src={src}
           alt=""
           data-state="pending"
           class="rounded-full w-full h-full object-cover data-[state=pending]:opacity-50"
@@ -2659,28 +2663,18 @@ function avatarUploadRoutes(): BffMiddleware[] {
     route(
       `/actions/avatar/upload-check-status`,
       ["GET"],
-      uploadCheckStatus(({ uploadId, dataUrl, cid }) => (
-        <>
-          <input type="hidden" name="uploadId" value={uploadId} />
-          <img
-            src={dataUrl}
-            alt=""
-            data-state={cid ? "complete" : "pending"}
-            class="rounded-full w-full h-full object-cover data-[state=pending]:opacity-50"
-          />
-        </>
-      )),
+      uploadCheckStatus(),
     ),
     route(
       `/actions/avatar/upload-done`,
       ["GET"],
-      avatarUploadDone(({ dataUrl, cid }) => (
+      avatarUploadDone(({ src, uploadId }) => (
         <>
           <div hx-swap-oob="innerHTML:#image-input">
-            <input type="hidden" name="avatarCid" value={cid} />
+            <input type="hidden" name="uploadId" value={uploadId} />
           </div>
           <img
-            src={dataUrl}
+            src={src}
             alt=""
             class="rounded-full w-full h-full object-cover"
           />

@@ -2,7 +2,8 @@
   "version": "4",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.16": "0.3.0-beta.16",
+    "jsr:@bigmoves/bff-photo-processor@0.1.0": "0.1.0",
+    "jsr:@bigmoves/bff@0.3.0-beta.17": "0.3.0-beta.17",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@denosaurs/plug@1": "1.0.5",
@@ -92,12 +93,11 @@
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.16": {
-      "integrity": "ed1e30dafb7442254c3397cf984de706cd7e4a1c98f5dd2a73a56e0e3fac41e6",
+    "@bigmoves/bff@0.3.0-beta.17": {
+      "integrity": "b28accfa8d903f2db200d22349f3256ef60cf9c57b456e92341a49aa5442fa4e",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
-        "jsr:@std/cache",
         "jsr:@std/http",
         "jsr:@std/path@^1.0.8",
         "npm:@atproto/api",
@@ -110,8 +110,17 @@
         "npm:multiformats@^13.3.2",
         "npm:preact",
         "npm:preact-render-to-string",
-        "npm:sharp",
         "npm:tailwind-merge"
+      ]
+    },
+    "@bigmoves/bff-photo-processor@0.1.0": {
+      "integrity": "43ff00033fb1c6dcf8f94b6c653788ba24cffd14509a6d0397d3209fbb93e111",
+      "dependencies": [
+        "jsr:@std/cache",
+        "jsr:@std/path@^1.0.8",
+        "npm:@atproto/api",
+        "npm:@atproto/lexicon@~0.4.10",
+        "npm:sharp"
       ]
     },
     "@deno/gfm@0.10.0": {
@@ -1811,7 +1820,8 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.16",
+      "jsr:@bigmoves/bff-photo-processor@0.1.0",
+      "jsr:@bigmoves/bff@0.3.0-beta.17",
       "jsr:@gfx/canvas@~0.5.8",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",
