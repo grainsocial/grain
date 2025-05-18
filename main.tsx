@@ -447,6 +447,7 @@ bff({
         await ctx.createRecord<Gallery>("social.grain.gallery.item", {
           gallery: galleryUri,
           item: photoUri,
+          position: gallery.items?.length ?? 0,
           createdAt: new Date().toISOString(),
         });
         gallery.items = [
@@ -766,7 +767,7 @@ function getGalleryItemsAndPhotos(
   const { items: galleryItems } = ctx.indexService.getRecords<
     WithBffMeta<GalleryItem>
   >("social.grain.gallery.item", {
-    orderBy: { field: "position", direction: "asc" },
+    orderBy: [{ field: "position", direction: "asc" }],
     where: [{ field: "gallery", in: galleryUris }],
   });
 
@@ -815,7 +816,7 @@ function processGalleries(
   const { items: galleries } = ctx.indexService.getRecords<
     WithBffMeta<Gallery>
   >("social.grain.gallery", {
-    orderBy: { field: "createdAt", direction: "desc" },
+    orderBy: [{ field: "createdAt", direction: "desc" }],
     where: whereClause,
   });
 
@@ -861,7 +862,7 @@ function processFavs(
   const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
     "social.grain.favorite",
     {
-      orderBy: { field: "createdAt", direction: "desc" },
+      orderBy: [{ field: "createdAt", direction: "desc" }],
       where: whereClause,
     },
   );
@@ -979,7 +980,7 @@ function getActorPhotos(handleOrDid: string, ctx: BffContext) {
     "social.grain.photo",
     {
       where: [{ field: "did", equals: did }],
-      orderBy: { field: "createdAt", direction: "desc" },
+      orderBy: [{ field: "createdAt", direction: "desc" }],
     },
   );
   return photos.items.map((photo) => photoToView(photo.did, photo));
@@ -998,7 +999,7 @@ function getActorGalleries(handleOrDid: string, ctx: BffContext) {
     WithBffMeta<Gallery>
   >("social.grain.gallery", {
     where: [{ field: "did", equals: did }],
-    orderBy: { field: "createdAt", direction: "desc" },
+    orderBy: [{ field: "createdAt", direction: "desc" }],
   });
   const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
   const creator = getActorProfile(did, ctx);
@@ -1756,6 +1757,7 @@ function GalleryPage({
       <div class="flex justify-end mb-2">
         <Button
           id="justified-button"
+          title="Justified layout"
           variant="primary"
           class="flex justify-center w-full sm:w-fit bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 data-[selected=false]:bg-transparent data-[selected=false]:border-transparent text-zinc-950 dark:text-zinc-50"
           _="on click call toggleLayout('justified')
@@ -1805,6 +1807,7 @@ function GalleryPage({
         </Button>
         <Button
           id="masonry-button"
+          title="Masonry layout"
           variant="primary"
           data-selected="false"
           class="flex justify-center w-full sm:w-fit bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 data-[selected=false]:bg-transparent data-[selected=false]:border-transparent text-zinc-950 dark:text-zinc-50"

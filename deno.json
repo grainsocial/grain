@@ -2,7 +2,7 @@
   "imports": {
     "$lexicon/": "./__generated__/",
     "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
-    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.17",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.18",
     "@bigmoves/bff-photo-processor": "jsr:@bigmoves/bff-photo-processor@0.1.0",
     "@gfx/canvas": "jsr:@gfx/canvas@^0.5.8",
     "@std/path": "jsr:@std/path@^1.0.9",
