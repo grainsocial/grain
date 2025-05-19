@@ -7,6 +7,7 @@ import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
+import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
 import {
   isRecord as isPhoto,
   Record as Photo,
@@ -18,6 +19,7 @@ import {
 import { $Typed, Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import {
+  ActorTable,
   bff,
   BffContext,
   BffMiddleware,
@@ -122,13 +124,23 @@ bff({
     });
   },
   middlewares: [
-    (_req, ctx) => {
+    (req, ctx) => {
       if (ctx.currentUser) {
+        const url = new URL(req.url);
+        if (
+          ["actions", "embed"].some((path) => url.pathname.includes(path)) ||
+          (url.pathname.includes("dialogs") &&
+            !url.pathname.includes("/dialogs/profile"))
+        ) {
+          return ctx.next();
+        }
         const profile = getActorProfile(ctx.currentUser.did, ctx);
         if (profile) {
           ctx.state.profile = profile;
-          return ctx.next();
         }
+        const notifications = getNotifications(ctx.currentUser, ctx);
+        ctx.state.notifications = notifications;
+        return ctx.next();
       }
       return ctx.next();
     },
@@ -157,6 +169,15 @@ bff({
       const items = getTimeline(ctx);
       ctx.state.meta = [{ title: "Timeline — Grain" }, getPageMeta("")];
       return ctx.render(<Timeline items={items} />);
+    }),
+    route("/notifications", (_req, _params, ctx: BffContext<State>) => {
+      ctx.requireAuth();
+      ctx.state.meta = [
+        { title: "Notifications — Grain" },
+      ];
+      return ctx.render(
+        <NotificationsPage notifications={ctx.state.notifications ?? []} />,
+      );
     }),
     route("/profile/:handle", (req, params, ctx) => {
       const url = new URL(req.url);
@@ -222,6 +243,11 @@ bff({
         );
       },
     ),
+    route("/embed/profile/:did/gallery/:rkey", (_req, params, ctx) => {
+      const gallery = getGallery(params.did, params.rkey, ctx);
+      if (!gallery) return ctx.next();
+      return ctx.html(<GalleryPreviewLink gallery={gallery} size="small" />);
+    }),
     route("/upload", (req, _params, ctx) => {
       const { did, handle } = ctx.requireAuth();
       const url = new URL(req.url);
@@ -237,34 +263,17 @@ bff({
         />,
       );
     }),
-    route("/follow/:did", ["POST"], async (_req, params, ctx) => {
+    route("/onboard", (_req, _params, ctx) => {
       ctx.requireAuth();
-      const did = params.did;
-      if (!did) return ctx.next();
-      const followUri = await ctx.createRecord<BskyFollow>(
-        "app.bsky.graph.follow",
-        {
-          subject: did,
-          createdAt: new Date().toISOString(),
-        },
+      return ctx.render(
+        <div
+          hx-get="/dialogs/profile"
+          hx-trigger="load"
+          hx-target="body"
+          hx-swap="afterbegin"
+        />,
       );
-      return ctx.html(<FollowButton followeeDid={did} followUri={followUri} />);
     }),
-    route(
-      "/follow/:followeeDid/:rkey",
-      ["DELETE"],
-      async (_req, params, ctx) => {
-        const { did } = ctx.requireAuth();
-        const followeeDid = params.followeeDid;
-        const rkey = params.rkey;
-        await ctx.deleteRecord(
-          `at://${did}/app.bsky.graph.follow/${rkey}`,
-        );
-        return ctx.html(
-          <FollowButton followeeDid={followeeDid} followUri={undefined} />,
-        );
-      },
-    ),
     route("/dialogs/gallery/new", (_req, _params, ctx) => {
       ctx.requireAuth();
       return ctx.html(<GalleryCreateEditDialog />);
@@ -281,17 +290,6 @@ bff({
       const gallery = getGallery(handle, rkey, ctx);
       if (!gallery) return ctx.next();
       return ctx.html(<GallerySortDialog gallery={gallery} />);
-    }),
-    route("/onboard", (_req, _params, ctx) => {
-      ctx.requireAuth();
-      return ctx.render(
-        <div
-          hx-get="/dialogs/profile"
-          hx-trigger="load"
-          hx-target="body"
-          hx-swap="afterbegin"
-        />,
-      );
     }),
     route("/dialogs/profile", (_req, _params, ctx: BffContext<State>) => {
       const { did } = ctx.requireAuth();
@@ -379,6 +377,39 @@ bff({
         />,
       );
     }),
+    route("/actions/update-seen", ["POST"], (_req, _params, ctx) => {
+      ctx.requireAuth();
+      ctx.updateSeen();
+      return new Response(null, { status: 200 });
+    }),
+    route("/actions/follow/:did", ["POST"], async (_req, params, ctx) => {
+      ctx.requireAuth();
+      const did = params.did;
+      if (!did) return ctx.next();
+      const followUri = await ctx.createRecord<BskyFollow>(
+        "app.bsky.graph.follow",
+        {
+          subject: did,
+          createdAt: new Date().toISOString(),
+        },
+      );
+      return ctx.html(<FollowButton followeeDid={did} followUri={followUri} />);
+    }),
+    route(
+      "/actions/follow/:followeeDid/:rkey",
+      ["DELETE"],
+      async (_req, params, ctx) => {
+        const { did } = ctx.requireAuth();
+        const followeeDid = params.followeeDid;
+        const rkey = params.rkey;
+        await ctx.deleteRecord(
+          `at://${did}/app.bsky.graph.follow/${rkey}`,
+        );
+        return ctx.html(
+          <FollowButton followeeDid={followeeDid} followUri={undefined} />,
+        );
+      },
+    ),
     route("/actions/create-edit", ["POST"], async (req, _params, ctx) => {
       const { handle } = ctx.requireAuth();
       const formData = await req.formData();
@@ -658,6 +689,7 @@ type State = {
   profile?: ProfileView;
   scripts?: string[];
   meta?: MetaDescriptor[];
+  notifications?: Un$Typed<NotificationView>[];
 };
 
 function readFileAsDataURL(file: File): Promise<string> {
@@ -1009,6 +1041,24 @@ function getActorGalleries(handleOrDid: string, ctx: BffContext) {
   );
 }
 
+function getNotifications(
+  currentUser: ActorTable,
+  ctx: BffContext,
+) {
+  const { lastSeenNotifs } = currentUser;
+  const notifications = ctx.getNotifications<NotificationRecords>();
+  return notifications.map((notification) => {
+    const actor = ctx.indexService.getActor(notification.did);
+    const authorProfile = getActorProfile(notification.did, ctx);
+    if (!actor || !authorProfile) return null;
+    return notificationToView(
+      notification,
+      authorProfile,
+      lastSeenNotifs,
+    );
+  }).filter((view): view is Un$Typed<NotificationView> => Boolean(view));
+}
+
 function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
   let did: string;
   if (handleOrDid.includes("did:")) {
@@ -1107,6 +1157,9 @@ function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
 function Root(props: Readonly<RootProps<State>>) {
   const profile = props.ctx.state.profile;
   const scripts = props.ctx.state.scripts;
+  const hasNotifications =
+    props.ctx.state.notifications?.find((n) => n.isRead === false) !==
+      undefined;
   return (
     <html lang="en" class="w-full h-full">
       <head>
@@ -1162,6 +1215,7 @@ function Root(props: Readonly<RootProps<State>>) {
               </h1>
             }
             profile={profile}
+            hasNotifications={hasNotifications}
             class="border-zinc-200 dark:border-zinc-800"
           />
           <Layout.Content>{props.children}</Layout.Content>
@@ -1211,28 +1265,35 @@ function AvatarDialog({
 }: Readonly<{ profile: Un$Typed<ProfileView> }>) {
   return (
     <Dialog>
+      <Dialog.X />
       <div
         class="w-[400px] h-[400px] flex flex-col p-4 z-10"
         _={Dialog._closeOnClick}
       >
-        <img
-          src={profile.avatar}
-          alt={profile.handle}
-          class="rounded-full w-full h-full object-cover"
-        />
+        <ActorAvatar class="w-full h-full" profile={profile} />
       </div>
     </Dialog>
+  );
+}
+
+function ActorAvatar({
+  profile,
+  class: classProp,
+}: Readonly<{ profile: Un$Typed<ProfileView>; class?: string }>) {
+  return (
+    <img
+      src={profile.avatar}
+      alt={profile.handle}
+      title={profile.handle}
+      class={cn("rounded-full object-cover", classProp)}
+    />
   );
 }
 
 function ActorInfo({ profile }: Readonly<{ profile: Un$Typed<ProfileView> }>) {
   return (
     <div class="flex items-center gap-2 min-w-0 flex-1">
-      <img
-        src={profile.avatar}
-        alt={profile.handle}
-        class="rounded-full object-cover size-7 shrink-0"
-      />
+      <ActorAvatar profile={profile} class="size-7 shrink-0" />
       <a
         href={profileLink(profile.handle)}
         class="hover:underline text-zinc-600 dark:text-zinc-500 truncate max-w-[300px] sm:max-w-[400px]"
@@ -1252,7 +1313,7 @@ function Timeline({ items }: Readonly<{ items: TimelineItem[] }>) {
       <div class="my-4">
         <Header>Timeline</Header>
       </div>
-      <ul class="space-y-4 relative">
+      <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y w-fit">
         {items.map((item) => <TimelineItem item={item} key={item.itemUri} />)}
       </ul>
     </div>
@@ -1262,7 +1323,7 @@ function Timeline({ items }: Readonly<{ items: TimelineItem[] }>) {
 function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   return (
     <li>
-      <div class="w-fit flex flex-col gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+      <div class="w-fit flex flex-col gap-4 pb-4">
         <div class="flex items-center justify-between gap-2 w-full">
           <ActorInfo profile={item.actor} />
           <span class="shrink-0">
@@ -1271,51 +1332,9 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
         </div>
         {item.gallery.items?.filter(isPhotoView).length
           ? (
-            <a
-              href={galleryLink(
-                item.gallery.creator.handle,
-                new AtUri(item.gallery.uri).rkey,
-              )}
-              class="flex w-full max-w-md mx-auto aspect-[3/2] overflow-hidden gap-2"
-            >
-              <div class="w-2/3 h-full">
-                <img
-                  src={item.gallery.items?.filter(isPhotoView)[0].thumb}
-                  alt={item.gallery.items?.filter(isPhotoView)[0].alt}
-                  class="w-full h-full object-cover"
-                />
-              </div>
-              <div class="w-1/3 flex flex-col h-full gap-2">
-                <div class="h-1/2">
-                  {item.gallery.items?.filter(isPhotoView)?.[1]
-                    ? (
-                      <img
-                        src={item.gallery.items?.filter(isPhotoView)?.[1]
-                          ?.thumb}
-                        alt={item.gallery.items?.filter(isPhotoView)?.[1]?.alt}
-                        class="w-full h-full object-cover"
-                      />
-                    )
-                    : (
-                      <div className="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
-                    )}
-                </div>
-                <div class="h-1/2">
-                  {item.gallery.items?.filter(isPhotoView)?.[2]
-                    ? (
-                      <img
-                        src={item.gallery.items?.filter(isPhotoView)?.[2]
-                          ?.thumb}
-                        alt={item.gallery.items?.filter(isPhotoView)?.[2]?.alt}
-                        class="w-full h-full object-cover"
-                      />
-                    )
-                    : (
-                      <div className="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
-                    )}
-                </div>
-              </div>
-            </a>
+            <GalleryPreviewLink
+              gallery={item.gallery}
+            />
           )
           : null}
         <p>
@@ -1335,6 +1354,56 @@ function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   );
 }
 
+function GalleryPreviewLink({
+  gallery,
+  size = "default",
+}: Readonly<{ gallery: Un$Typed<GalleryView>; size?: "small" | "default" }>) {
+  const gap = size === "small" ? "gap-1" : "gap-2";
+  return (
+    <a
+      href={galleryLink(
+        gallery.creator.handle,
+        new AtUri(gallery.uri).rkey,
+      )}
+      class={cn("flex w-full max-w-md aspect-[3/2] overflow-hidden", gap)}
+    >
+      <div class="w-2/3 h-full">
+        <img
+          src={gallery.items?.filter(isPhotoView)[0].thumb}
+          alt={gallery.items?.filter(isPhotoView)[0].alt}
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <div class={cn("w-1/3 flex flex-col h-full", gap)}>
+        <div class="h-1/2">
+          {gallery.items?.filter(isPhotoView)?.[1]
+            ? (
+              <img
+                src={gallery.items?.filter(isPhotoView)?.[1]
+                  ?.thumb}
+                alt={gallery.items?.filter(isPhotoView)?.[1]?.alt}
+                class="w-full h-full object-cover"
+              />
+            )
+            : <div className="w-full h-full bg-zinc-200 dark:bg-zinc-900" />}
+        </div>
+        <div class="h-1/2">
+          {gallery.items?.filter(isPhotoView)?.[2]
+            ? (
+              <img
+                src={gallery.items?.filter(isPhotoView)?.[2]
+                  ?.thumb}
+                alt={gallery.items?.filter(isPhotoView)?.[2]?.alt}
+                class="w-full h-full object-cover"
+              />
+            )
+            : <div className="w-full h-full bg-zinc-200 dark:bg-zinc-900" />}
+        </div>
+      </div>
+    </a>
+  );
+}
+
 function FollowButton({
   followeeDid,
   followUri,
@@ -1346,12 +1415,14 @@ function FollowButton({
       class={cn(
         "w-full sm:w-fit",
         isFollowing &&
-          "bg-zinc-200 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-800",
+          "bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 text-zinc-950 dark:text-zinc-50",
       )}
       {...(isFollowing
         ? {
           children: "Following",
-          "hx-delete": `/follow/${followeeDid}/${new AtUri(followUri).rkey}`,
+          "hx-delete": `/actions/follow/${followeeDid}/${
+            new AtUri(followUri).rkey
+          }`,
         }
         : {
           children: (
@@ -1360,7 +1431,7 @@ function FollowButton({
               Follow
             </>
           ),
-          "hx-post": `/follow/${followeeDid}`,
+          "hx-post": `/actions/follow/${followeeDid}`,
         })}
       hx-trigger="click"
       hx-target="this"
@@ -1382,6 +1453,63 @@ function formatRelativeTime(date: Date) {
 
   const minutes = differenceInMinutes(now, date);
   return `${Math.max(1, minutes)}m`;
+}
+
+function NotificationsPage(
+  { notifications }: Readonly<{ notifications: Un$Typed<NotificationView>[] }>,
+) {
+  return (
+    <div class="px-4 mb-4">
+      <div hx-post="/actions/update-seen" hx-trigger="load delay:1s" />
+      <div class="my-4">
+        <Header>Notifications</Header>
+      </div>
+      <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y">
+        {notifications.length
+          ? (
+            notifications.map((notification) => (
+              <li
+                key={notification.uri}
+                class="flex flex-col gap-4 pb-4"
+              >
+                <div class="flex flex-wrap items-center gap-2">
+                  <a
+                    href={profileLink(notification.author.handle)}
+                    class="flex items-center gap-2 hover:underline"
+                  >
+                    <ActorAvatar
+                      profile={notification.author}
+                      class="h-8 w-8"
+                    />
+                    <span class="font-semibold break-words">
+                      {notification.author.displayName ??
+                        notification.author.handle}
+                    </span>
+                  </a>
+                  <span class="break-words">
+                    favorited your gallery · {formatRelativeTime(
+                      new Date((notification.record as Favorite).createdAt),
+                    )}
+                  </span>
+                </div>
+                <div
+                  hx-get={`/embed/profile/${
+                    new AtUri(notification.reasonSubject ?? "").hostname
+                  }/gallery/${
+                    new AtUri(notification.reasonSubject ?? "").rkey
+                  }`}
+                  hx-trigger="load"
+                  hx-target="this"
+                  hx-swap="innerHTML"
+                  class="w-[200px]"
+                />
+              </li>
+            ))
+          )
+          : <li>No notifications yet.</li>}
+      </ul>
+    </div>
+  );
 }
 
 function ProfilePage({
@@ -1487,7 +1615,7 @@ function ProfilePage({
       <div id="tab-content" role="tabpanel">
         {!selectedTab
           ? (
-            <ul class="space-y-4 relative">
+            <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y w-fit">
               {timelineItems.length
                 ? (
                   timelineItems.map((item) => (
@@ -2445,6 +2573,32 @@ function profileToView(
     avatar: record?.avatar
       ? `https://cdn.bsky.app/img/feed_thumbnail/plain/${record.did}/${record.avatar.ref.toString()}`
       : undefined,
+  };
+}
+
+type NotificationRecords = WithBffMeta<Favorite>;
+
+function notificationToView(
+  record: NotificationRecords,
+  author: Un$Typed<ProfileView>,
+  lastSeenNotifs: string | undefined,
+): Un$Typed<NotificationView> {
+  const reason = record.$type === "social.grain.favorite"
+    ? "gallery-favorite"
+    : "unknown";
+  const reasonSubject = record.$type === "social.grain.favorite"
+    ? record.subject
+    : undefined;
+  const isRead = lastSeenNotifs ? record.createdAt <= lastSeenNotifs : false;
+  return {
+    uri: record.uri,
+    cid: record.cid,
+    author,
+    record,
+    reason,
+    reasonSubject,
+    isRead,
+    indexedAt: record.indexedAt,
   };
 }
 

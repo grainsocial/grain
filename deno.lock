@@ -3,7 +3,7 @@
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
     "jsr:@bigmoves/bff-photo-processor@0.1.0": "0.1.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.18": "0.3.0-beta.18",
+    "jsr:@bigmoves/bff@0.3.0-beta.21": "0.3.0-beta.21",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@denosaurs/plug@1": "1.0.5",
@@ -93,8 +93,8 @@
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.18": {
-      "integrity": "4be32a5337fbfb63fe030380b8b47f469a8e5395e726e60b6545a7b62a7f814b",
+    "@bigmoves/bff@0.3.0-beta.21": {
+      "integrity": "1c83ac3abca2a9671b1ddadcdb38ed628704c5a14765ec20c54a4d05c46757dd",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
@@ -1821,7 +1821,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@bigmoves/bff-photo-processor@0.1.0",
-      "jsr:@bigmoves/bff@0.3.0-beta.18",
+      "jsr:@bigmoves/bff@0.3.0-beta.21",
       "jsr:@gfx/canvas@~0.5.8",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",

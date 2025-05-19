@@ -2318,6 +2318,58 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainNotificationDefs: {
+    lexicon: 1,
+    id: 'social.grain.notification.defs',
+    defs: {
+      notificationView: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'author',
+          'reason',
+          'record',
+          'isRead',
+          'indexedAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          author: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#profileView',
+          },
+          reason: {
+            type: 'string',
+            description:
+              "Expected values are 'gallery-favorite', and 'unknown'.",
+            knownValues: ['gallery-favorite', 'unknown'],
+          },
+          reasonSubject: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          record: {
+            type: 'unknown',
+          },
+          isRead: {
+            type: 'boolean',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
   SocialGrainGalleryItem: {
     lexicon: 1,
     id: 'social.grain.gallery.item',
@@ -2840,6 +2892,7 @@ export const ids = {
   AppBskyActorProfile: 'app.bsky.actor.profile',
   AppBskyLabelerDefs: 'app.bsky.labeler.defs',
   SocialGrainDefs: 'social.grain.defs',
+  SocialGrainNotificationDefs: 'social.grain.notification.defs',
   SocialGrainGalleryItem: 'social.grain.gallery.item',
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
   SocialGrainGallery: 'social.grain.gallery',
