@@ -44,8 +44,7 @@ Protocol ecosystem. It enables users to:
 ### Environment Variables
 
 ```
-BFF_PUBLIC_URL=http://localhost:8080  # Your public-facing URL
-GOATCOUNTER_URL=                      # Optional analytics
+BFF_DATABASE_URL=grain.db             # SQLite db file
 ```
 
 ### Running Locally
