@@ -1,4 +1,3 @@
-
 import "typed-htmx";
 
 declare module "preact" {
