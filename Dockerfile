@@ -6,7 +6,7 @@ COPY . .
 
 # Give ownership to deno user and cache dependencies
 RUN chown -R deno:deno /app && \
-	deno cache ./main.tsx
+	deno cache ./src/main.tsx
 
 FROM denoland/deno:alpine-2.2.3
 

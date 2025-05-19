@@ -14,11 +14,10 @@
     "typed-htmx": "npm:typed-htmx@^0.3.1"
   },
   "tasks": {
-    "start": "deno run -A --unstable-kv --unstable-ffi main.tsx",
+    "start": "deno run -A --unstable-kv --unstable-ffi ./src/main.tsx",
     "dev": "deno run \"dev:*\"",
-    "dev:server": "deno run -A --unstable-kv --unstable-ffi --env-file=.env --watch ./main.tsx",
-    "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./input.css -o ./static/styles.css --watch",
-    "codegen": "deno run -A ../../packages/bff-cli/mod.ts lex"
+    "dev:server": "deno run -A --unstable-kv --unstable-ffi --env-file=.env --watch ./src/main.tsx",
+    "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./src/input.css -o ./static/styles.css --watch"
   },
   "compilerOptions": {
     "jsx": "precompile",

@@ -32,7 +32,7 @@ proxy:
 # the last command to be long-running (e.g. an application server). When the
 # last command exits, LiteFS is shut down.
 exec:
-  - cmd: "deno run -A --unstable-kv --unstable-ffi main.tsx"
+  - cmd: "deno run start"
 
 # The lease section specifies how the cluster will be managed. We're using the
 # "consul" lease type so that our application can dynamically change the primary.
