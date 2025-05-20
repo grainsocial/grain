@@ -6,7 +6,7 @@ import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { Button, cn } from "@bigmoves/bff/components";
 import { TimelineItem } from "../timeline.ts";
-import { galleryLink, profileLink } from "../utils.ts";
+import { bskyProfileLink, galleryLink, profileLink } from "../utils.ts";
 import { AvatarButton } from "./AvatarButton.tsx";
 import { FollowButton } from "./FollowButton.tsx";
 import { TimelineItem as Item } from "./TimelineItem.tsx";
@@ -38,6 +38,14 @@ export function ProfilePage({
           {profile.description
             ? <p class="mt-2">{profile.description}</p>
             : null}
+          <p>
+            <a
+              href={bskyProfileLink(profile.handle)}
+              class="text-xs hover:underline"
+            >
+              <i class="fa-brands fa-bluesky text-sky-500" /> @{profile.handle}
+            </a>
+          </p>
         </div>
         {!isCreator && loggedInUserDid
           ? (

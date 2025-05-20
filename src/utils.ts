@@ -44,6 +44,10 @@ export function publicGalleryLink(handle: string, galleryUri: string): string {
   return `${PUBLIC_URL}${galleryLink(handle, new AtUri(galleryUri).rkey)}`;
 }
 
+export function bskyProfileLink(handle: string) {
+  return `https://bsky.app/profile/${handle}`;
+}
+
 export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
   const profileResults = ctx.indexService.getRecords<Profile>(
     "social.grain.actor.profile",
