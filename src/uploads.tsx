@@ -25,6 +25,13 @@ function uploadStart(
     if (!file) {
       return new Response("No file", { status: 400 });
     }
+    // Check if file size exceeds 20MB limit
+    const maxSizeBytes = 20 * 1000 * 1000; // 20MB in bytes
+    if (file.size > maxSizeBytes) {
+      return new Response("File too large. Maximum size is 20MB", {
+        status: 400,
+      });
+    }
     const dataUrl = await compressImageForPreview(file);
     if (!ctx.agent) {
       return new Response("No agent", { status: 400 });

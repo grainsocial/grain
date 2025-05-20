@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff-photo-processor@0.1.0": "0.1.0",
+    "jsr:@bigmoves/bff-photo-processor@0.1.1": "0.1.1",
     "jsr:@bigmoves/bff@0.3.0-beta.23": "0.3.0-beta.23",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
@@ -122,13 +122,14 @@
         "npm:tailwind-merge"
       ]
     },
-    "@bigmoves/bff-photo-processor@0.1.0": {
-      "integrity": "43ff00033fb1c6dcf8f94b6c653788ba24cffd14509a6d0397d3209fbb93e111",
+    "@bigmoves/bff-photo-processor@0.1.1": {
+      "integrity": "3f9b4ad0f1b028ca69ef4c34b88984c0ad79b651d99ecfcf7ab98a5091bc776b",
       "dependencies": [
         "jsr:@std/cache",
         "jsr:@std/path@^1.0.8",
-        "npm:@atproto/api@~0.14.19",
-        "npm:@atproto/lexicon@~0.4.10"
+        "npm:@atproto/api@~0.15.7",
+        "npm:@atproto/lexicon@~0.4.11",
+        "npm:sharp"
       ]
     },
     "@deno/gfm@0.10.0": {
@@ -2064,7 +2065,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff-photo-processor@0.1.0",
+      "jsr:@bigmoves/bff-photo-processor@0.1.1",
       "jsr:@bigmoves/bff@0.3.0-beta.23",
       "jsr:@gfx/canvas@~0.5.8",
       "jsr:@std/path@^1.0.9",
