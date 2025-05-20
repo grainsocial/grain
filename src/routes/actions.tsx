@@ -348,12 +348,16 @@ export const profileUpdate: RouteHandler = async (
     return new Response("Profile record not found", { status: 404 });
   }
 
-  await ctx.updateRecord<Profile>("social.grain.actor.profile", "self", {
-    displayName,
-    description,
-    avatar: photoProcessor.getUploadStatus(uploadId)?.blobRef ??
-      record.avatar,
-  });
+  try {
+    await ctx.updateRecord<Profile>("social.grain.actor.profile", "self", {
+      displayName,
+      description,
+      avatar: photoProcessor.getUploadStatus(uploadId)?.blobRef ??
+        record.avatar,
+    });
+  } catch (e) {
+    console.error("Error updating record:", e);
+  }
 
   return ctx.redirect(`/profile/${handle}`);
 };

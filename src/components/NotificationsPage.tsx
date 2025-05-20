@@ -1,13 +1,19 @@
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
-import { AtUri } from "@atproto/syntax";
 import { formatRelativeTime, profileLink } from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
+import { GalleryPreviewLink } from "./GalleryPreviewLink.tsx";
 import { Header } from "./Header.tsx";
 
 export function NotificationsPage(
-  { notifications }: Readonly<{ notifications: Un$Typed<NotificationView>[] }>,
+  { galleriesMap, notifications }: Readonly<
+    {
+      galleriesMap: Map<string, Un$Typed<GalleryView>>;
+      notifications: Un$Typed<NotificationView>[];
+    }
+  >,
 ) {
   return (
     <div class="px-4 mb-4">
@@ -33,7 +39,7 @@ export function NotificationsPage(
                       class="h-8 w-8"
                     />
                     <span class="font-semibold break-words">
-                      {notification.author.displayName ??
+                      {notification.author.displayName ||
                         notification.author.handle}
                     </span>
                   </a>
@@ -43,17 +49,20 @@ export function NotificationsPage(
                     )}
                   </span>
                 </div>
-                <div
-                  hx-get={`/embed/profile/${
-                    new AtUri(notification.reasonSubject ?? "").hostname
-                  }/gallery/${
-                    new AtUri(notification.reasonSubject ?? "").rkey
-                  }`}
-                  hx-trigger="load"
-                  hx-target="this"
-                  hx-swap="innerHTML"
-                  class="w-[200px]"
-                />
+                {galleriesMap.get(
+                    (notification.record as Favorite).subject,
+                  )
+                  ? (
+                    <div class="w-[200px]">
+                      <GalleryPreviewLink
+                        gallery={galleriesMap.get(
+                          (notification.record as Favorite).subject,
+                        ) as Un$Typed<GalleryView>}
+                        size="small"
+                      />
+                    </div>
+                  )
+                  : null}
               </li>
             ))
           )

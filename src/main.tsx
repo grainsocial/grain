@@ -6,7 +6,6 @@ import { onError } from "./errors.ts";
 import * as actionHandlers from "./routes/actions.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
 import { handler as galleryHandler } from "./routes/gallery.tsx";
-import { handler as galleryEmbedHandler } from "./routes/gallery_embed.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
 import { handler as profileHandler } from "./routes/profile.tsx";
@@ -26,6 +25,10 @@ bff({
     "social.grain.photo",
     "social.grain.favorite",
     "social.grain.gallery.item",
+  ],
+  externalCollections: [
+    "app.bsky.actor.profile",
+    "app.bsky.graph.follow",
   ],
   jetstreamUrl: JETSTREAM.WEST_1,
   lexicons,
@@ -48,7 +51,6 @@ bff({
     route("/notifications", notificationsHandler),
     route("/profile/:handle", profileHandler),
     route("/profile/:handle/gallery/:rkey", galleryHandler),
-    route("/embed/profile/:did/gallery/:rkey", galleryEmbedHandler),
     route("/upload", uploadHandler),
     route("/onboard", onboardHandler),
     route("/dialogs/gallery/new", dialogHandlers.createGallery),

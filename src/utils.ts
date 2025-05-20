@@ -45,15 +45,6 @@ export function publicGalleryLink(handle: string, galleryUri: string): string {
 }
 
 export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
-  await ctx.backfillCollections(
-    [actor.did],
-    [
-      ...ctx.cfg.collections!,
-      "app.bsky.actor.profile",
-      "app.bsky.graph.follow",
-    ],
-  );
-
   const profileResults = ctx.indexService.getRecords<Profile>(
     "social.grain.actor.profile",
     {
@@ -67,6 +58,15 @@ export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
     console.log("Profile already exists");
     return `/profile/${actor.handle}`;
   }
+
+  // This should only happen once for new users
+  await ctx.backfillCollections({
+    externalCollections: [
+      "app.bsky.actor.profile",
+      "app.bsky.graph.follow",
+    ],
+    repos: [actor.did],
+  });
 
   const bskyProfileResults = ctx.indexService.getRecords<BskyProfile>(
     "app.bsky.actor.profile",

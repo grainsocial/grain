@@ -1,4 +1,4 @@
-FROM denoland/deno:2.2.3 AS builder
+FROM denoland/deno:2.3.3 AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY . .
 RUN chown -R deno:deno /app && \
 	deno cache ./src/main.tsx
 
-FROM denoland/deno:alpine-2.2.3
+FROM denoland/deno:alpine-2.3.3
 
 COPY --from=flyio/litefs:0.5 /usr/local/bin/litefs /usr/local/bin/litefs
 COPY litefs.yml /etc/litefs.yml

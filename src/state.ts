@@ -17,9 +17,9 @@ export type State = {
 export const appStateMiddleware: BffMiddleware = (req, ctx) => {
   if (ctx.currentUser) {
     const url = new URL(req.url);
-    // ignore routes prefixed with actions, embed and dialogs (no need to resolve profile)
+    // ignore routes prefixed with actions and dialogs (no need to resolve profile)
     if (
-      ["actions", "embed"].some((path) => url.pathname.includes(path)) ||
+      url.pathname.includes("actions") ||
       (url.pathname.includes("dialogs") &&
         !url.pathname.includes("/dialogs/profile"))
     ) {
