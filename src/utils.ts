@@ -82,8 +82,7 @@ export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
   const bskyProfile = bskyProfileResults.items[0];
 
   if (!bskyProfile) {
-    console.error("Failed to get profile");
-    return;
+    console.error("Failed to get bsky profile");
   }
 
   await ctx.createRecord<Profile>(
