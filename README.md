@@ -43,13 +43,17 @@ Protocol ecosystem. It enables users to:
 
 ### Environment Variables
 
-```
+```bash
+# .env
 BFF_DATABASE_URL=grain.db             # SQLite db file
 ```
 
 ### Running Locally
 
 ```bash
+# Backfill all network data
+deno run sync
+
 # Start the development server
 deno run dev
 ```
