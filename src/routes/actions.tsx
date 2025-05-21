@@ -14,7 +14,6 @@ import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
 import { deleteGallery, getGallery, getGalleryFavs } from "../gallery.ts";
 import { photoToView } from "../photo.ts";
 import type { State } from "../state.ts";
-import { photoProcessor } from "../uploads.tsx";
 import { galleryLink } from "../utils.ts";
 
 export const updateSeen: RouteHandler = (
@@ -231,15 +230,29 @@ export const photoEdit: RouteHandler = async (
   return new Response(null, { status: 200 });
 };
 
-export const photoDelete: RouteHandler = (
+export const photoDelete: RouteHandler = async (
   _req,
   params,
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
-  ctx.deleteRecord(
+  await ctx.deleteRecord(
     `at://${did}/social.grain.photo/${params.rkey}`,
   );
+  const { items } = ctx.indexService.getRecords<WithBffMeta<GalleryItem>>(
+    "social.grain.gallery.item",
+    {
+      where: [
+        {
+          field: "item",
+          equals: `at://${did}/social.grain.photo/${params.rkey}`,
+        },
+      ],
+    },
+  );
+  for (const item of items) {
+    await ctx.deleteRecord(item.uri);
+  }
   return new Response(null, { status: 200 });
 };
 
@@ -338,7 +351,6 @@ export const profileUpdate: RouteHandler = async (
   const formData = await req.formData();
   const displayName = formData.get("displayName") as string;
   const description = formData.get("description") as string;
-  const uploadId = formData.get("uploadId") as string;
 
   const record = ctx.indexService.getRecord<Profile>(
     `at://${did}/social.grain.actor.profile/self`,
@@ -352,8 +364,7 @@ export const profileUpdate: RouteHandler = async (
     await ctx.updateRecord<Profile>("social.grain.actor.profile", "self", {
       displayName,
       description,
-      avatar: photoProcessor.getUploadStatus(uploadId)?.blobRef ??
-        record.avatar,
+      avatar: record.avatar,
     });
   } catch (e) {
     console.error("Error updating record:", e);

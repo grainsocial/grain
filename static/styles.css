@@ -695,11 +695,6 @@
       max-width: 400px;
     }
   }
-  .sm\:max-w-\[500px\] {
-    @media (width >= 40rem) {
-      max-width: 500px;
-    }
-  }
   .sm\:max-w-\[600px\] {
     @media (width >= 40rem) {
       max-width: 600px;

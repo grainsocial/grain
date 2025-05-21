@@ -12,7 +12,7 @@ import { handler as profileHandler } from "./routes/profile.tsx";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
 import { appStateMiddleware, type State } from "./state.ts";
-import { avatarUploadRoutes, photoUploadRoutes } from "./uploads.tsx";
+import { photoUploadRoutes } from "./uploads.tsx";
 import { generateStaticFilesHash, onSignedIn } from "./utils.ts";
 
 let staticFilesHash = new Map<string, string>();
@@ -93,6 +93,5 @@ bff({
       actionHandlers.gallerySort,
     ),
     ...photoUploadRoutes(),
-    ...avatarUploadRoutes(),
   ],
 });

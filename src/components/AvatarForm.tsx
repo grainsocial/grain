@@ -4,7 +4,7 @@ export function AvatarForm(
   return (
     <form
       id="avatar-file-form"
-      hx-post="/actions/avatar/upload-start"
+      hx-post="/actions/avatar/upload"
       hx-target="#image-preview"
       hx-swap="innerHTML"
       hx-encoding="multipart/form-data"
