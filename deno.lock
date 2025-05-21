@@ -3,7 +3,7 @@
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
     "jsr:@bigmoves/bff-photo-processor@0.1.1": "0.1.1",
-    "jsr:@bigmoves/bff@0.3.0-beta.23": "0.3.0-beta.23",
+    "jsr:@bigmoves/bff@0.3.0-beta.24": "0.3.0-beta.24",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@denosaurs/plug@1": "1.0.5",
@@ -101,8 +101,8 @@
         "npm:tailwind-merge"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.23": {
-      "integrity": "98b1dd709d5e2062e4575c6101b3714bceb0046854fdab293630a659d42df1e3",
+    "@bigmoves/bff@0.3.0-beta.24": {
+      "integrity": "8ea9b9be5c2a338ce3bda57141b7ea7948a22578275029f225f6b09fb11d18ef",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
@@ -2066,7 +2066,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@bigmoves/bff-photo-processor@0.1.1",
-      "jsr:@bigmoves/bff@0.3.0-beta.23",
+      "jsr:@bigmoves/bff@0.3.0-beta.24",
       "jsr:@gfx/canvas@~0.5.8",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",

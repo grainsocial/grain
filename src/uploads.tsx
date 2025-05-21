@@ -20,44 +20,49 @@ function uploadStart(
       limit: 50,
       window: 24 * 60 * 60 * 1000, // 24 hours
     });
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    if (!file) {
-      return new Response("No file", { status: 400 });
-    }
-    // Check if file size exceeds 20MB limit
-    const maxSizeBytes = 20 * 1000 * 1000; // 20MB in bytes
-    if (file.size > maxSizeBytes) {
-      return new Response("File too large. Maximum size is 20MB", {
-        status: 400,
-      });
-    }
-    const dataUrl = await compressImageForPreview(file);
-    if (!ctx.agent) {
-      return new Response("No agent", { status: 400 });
-    }
-    await photoProcessor.initialize(ctx.agent);
-    const uploadId = photoProcessor.startUpload(file);
-    return ctx.html(
-      <div
-        id={`upload-id-${uploadId}`}
-        hx-trigger="done"
-        hx-get={`/actions/${routePrefix}/upload-done?uploadId=${uploadId}`}
-        hx-target="this"
-        hx-swap="outerHTML"
-        class="h-full w-full"
-      >
+    try {
+      const formData = await req.formData();
+      const file = formData.get("file") as File;
+      if (!file) {
+        return new Response("No file", { status: 400 });
+      }
+      // Check if file size exceeds 20MB limit
+      const maxSizeBytes = 20 * 1000 * 1000; // 20MB in bytes
+      if (file.size > maxSizeBytes) {
+        return new Response("File too large. Maximum size is 20MB", {
+          status: 400,
+        });
+      }
+      const dataUrl = await compressImageForPreview(file);
+      if (!ctx.agent) {
+        return new Response("No agent", { status: 400 });
+      }
+      await photoProcessor.initialize(ctx.agent);
+      const uploadId = photoProcessor.startUpload(file);
+      return ctx.html(
         <div
-          hx-get={`/actions/${routePrefix}/upload-check-status?uploadId=${uploadId}`}
-          hx-trigger="every 600ms"
+          id={`upload-id-${uploadId}`}
+          hx-trigger="done"
+          hx-get={`/actions/${routePrefix}/upload-done?uploadId=${uploadId}`}
           hx-target="this"
-          hx-swap="innerHTML"
+          hx-swap="outerHTML"
           class="h-full w-full"
         >
-          {cb({ uploadId, src: dataUrl })}
-        </div>
-      </div>,
-    );
+          <div
+            hx-get={`/actions/${routePrefix}/upload-check-status?uploadId=${uploadId}`}
+            hx-trigger="every 2000ms"
+            hx-target="this"
+            hx-swap="innerHTML"
+            class="h-full w-full"
+          >
+            {cb({ uploadId, src: dataUrl })}
+          </div>
+        </div>,
+      );
+    } catch (e) {
+      console.error("Error in uploadStart:", e);
+      return new Response("Internal Server Error", { status: 500 });
+    }
   };
 }
 
@@ -68,14 +73,19 @@ function uploadCheckStatus(): RouteHandler {
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
     if (!uploadId) return ctx.next();
-    const meta = photoProcessor.getUploadStatus(uploadId);
-    return new Response(
-      null,
-      {
-        status: meta?.blobRef ? 200 : 204,
-        headers: meta?.blobRef ? { "HX-Trigger": "done" } : {},
-      },
-    );
+    try {
+      const meta = photoProcessor.getUploadStatus(uploadId);
+      return new Response(
+        null,
+        {
+          status: meta?.blobRef ? 200 : 204,
+          headers: meta?.blobRef ? { "HX-Trigger": "done" } : {},
+        },
+      );
+    } catch (e) {
+      console.error("Error in uploadCheckStatus:", e);
+      return new Response("Internal Server Error", { status: 500 });
+    }
   };
 }
 
@@ -105,22 +115,30 @@ function photoUploadDone(
     const searchParams = new URLSearchParams(url.search);
     const uploadId = searchParams.get("uploadId");
     if (!uploadId) return ctx.next();
-    const meta = photoProcessor.getUploadStatus(uploadId);
-    if (!meta?.blobRef) return ctx.next();
-    const photoUri = await ctx.createRecord<Photo>("social.grain.photo", {
-      photo: meta.blobRef,
-      aspectRatio: meta.dimensions?.width && meta.dimensions?.height
-        ? {
-          width: meta.dimensions.width,
-          height: meta.dimensions.height,
-        }
-        : undefined,
-      alt: "",
-      createdAt: new Date().toISOString(),
-    });
-    return ctx.html(
-      cb({ src: photoThumb(did, meta.blobRef.ref.toString()), uri: photoUri }),
-    );
+    try {
+      const meta = photoProcessor.getUploadStatus(uploadId);
+      if (!meta?.blobRef) return ctx.next();
+      const photoUri = await ctx.createRecord<Photo>("social.grain.photo", {
+        photo: meta.blobRef,
+        aspectRatio: meta.dimensions?.width && meta.dimensions?.height
+          ? {
+            width: meta.dimensions.width,
+            height: meta.dimensions.height,
+          }
+          : undefined,
+        alt: "",
+        createdAt: new Date().toISOString(),
+      });
+      return ctx.html(
+        cb({
+          src: photoThumb(did, meta.blobRef.ref.toString()),
+          uri: photoUri,
+        }),
+      );
+    } catch (e) {
+      console.error("Error in photoUploadDone:", e);
+      return new Response("Internal Server Error", { status: 500 });
+    }
   };
 }
 
