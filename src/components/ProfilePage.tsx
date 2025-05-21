@@ -36,7 +36,7 @@ export function ProfilePage({
           <p class="text-2xl font-bold">{displayName}</p>
           <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
           {profile.description
-            ? <p class="mt-2">{profile.description}</p>
+            ? <p class="mt-2 sm:max-w-[600px]">{profile.description}</p>
             : null}
           <p>
             <a
