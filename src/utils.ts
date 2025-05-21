@@ -88,9 +88,9 @@ export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
   await ctx.createRecord<Profile>(
     "social.grain.actor.profile",
     {
-      displayName: bskyProfile.displayName ?? undefined,
-      description: bskyProfile.description ?? undefined,
-      avatar: bskyProfile.avatar ?? undefined,
+      displayName: bskyProfile?.displayName ?? undefined,
+      description: bskyProfile?.description ?? undefined,
+      avatar: bskyProfile?.avatar ?? undefined,
       createdAt: new Date().toISOString(),
     },
     true,
