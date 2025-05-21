@@ -1,5 +1,5 @@
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
-import { Button } from "https://jsr.io/@bigmoves/bff/0.3.0-beta.21/components/Button.tsx";
+import { Button } from "@bigmoves/bff/components";
 import { profileLink } from "../utils.ts";
 import { PhotoPreview } from "./PhotoPreview.tsx";
 
