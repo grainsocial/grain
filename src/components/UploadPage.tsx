@@ -39,6 +39,19 @@ export function UploadPage({
           />
         </label>
       </Button>
+      <div>
+        Upload 10 photos at a time. Click{" "}
+        <button
+          type="button"
+          hx-get="/dialogs/gallery/new"
+          hx-target="#layout"
+          hx-swap="afterbegin"
+          class="font-semibold hover:underline cursor-pointer text-sky-500"
+        >
+          here
+        </button>{" "}
+        to create a gallery or add to existing galleries once you're done!
+      </div>
       <div
         id="image-preview"
         class="w-full h-full grid grid-cols-2 sm:grid-cols-5 gap-2"
