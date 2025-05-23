@@ -25,7 +25,7 @@ export function GalleryPage({
   return (
     <div class="px-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 mb-2">
-        <div class="flex flex-col space-y-2 mb-4">
+        <div class="flex flex-col space-y-2 mb-4 max-w-[500px]">
           <h1 class="font-bold text-2xl">
             {(gallery.record as Gallery).title}
           </h1>
@@ -34,10 +34,10 @@ export function GalleryPage({
         </div>
         {isLoggedIn && isCreator
           ? (
-            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
+            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
               <Button
                 variant="primary"
-                class="self-start w-full sm:w-fit"
+                class="self-start w-full sm:w-fit whitespace-nowrap"
                 hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}`}
                 hx-target="#layout"
                 hx-swap="afterbegin"
@@ -49,13 +49,13 @@ export function GalleryPage({
                 hx-target="#layout"
                 hx-swap="afterbegin"
                 variant="primary"
-                class="self-start w-full sm:w-fit"
+                class="self-start w-full sm:w-fit whitespace-nowrap"
               >
                 Add photos
               </Button>
               <Button
                 variant="primary"
-                class="self-start w-full sm:w-fit"
+                class="self-start w-full sm:w-fit whitespace-nowrap"
                 hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}/sort`}
                 hx-target="#layout"
                 hx-swap="afterbegin"

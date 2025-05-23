@@ -14,6 +14,7 @@ export function ShareGalleryButton(
   return (
     <Button
       variant="primary"
+      class="whitespace-nowrap"
       asChild
     >
       <a href={intentLink} target="_blank" rel="noopener noreferrer">

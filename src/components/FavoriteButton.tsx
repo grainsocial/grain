@@ -15,7 +15,7 @@ export function FavoriteButton({
   return (
     <Button
       variant="primary"
-      class="self-start w-full sm:w-fit"
+      class="self-start w-full sm:w-fit whitespace-nowrap"
       type="button"
       hx-post={`/actions/favorite?galleryUri=${galleryUri}${
         favUri ? "&favUri=" + favUri : ""

@@ -10,7 +10,7 @@ export function FollowButton({
     <Button
       variant="primary"
       class={cn(
-        "w-full sm:w-fit",
+        "w-full sm:w-fit whitespace-nowrap",
         isFollowing &&
           "bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 text-zinc-950 dark:text-zinc-50",
       )}

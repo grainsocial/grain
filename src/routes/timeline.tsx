@@ -1,5 +1,5 @@
 import { BffContext, RouteHandler } from "@bigmoves/bff";
-import { Timeline } from "../components/Timline.tsx";
+import { Timeline } from "../components/Timeline.tsx";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { getTimeline } from "../timeline.ts";

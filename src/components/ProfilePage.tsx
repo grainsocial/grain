@@ -36,7 +36,7 @@ export function ProfilePage({
           <p class="text-2xl font-bold">{displayName}</p>
           <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
           {profile.description
-            ? <p class="mt-2 sm:max-w-[600px]">{profile.description}</p>
+            ? <p class="mt-2 sm:max-w-[500px]">{profile.description}</p>
             : null}
           <p>
             <a
@@ -56,8 +56,12 @@ export function ProfilePage({
           : null}
         {isCreator
           ? (
-            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              <Button variant="primary" class="w-full sm:w-fit" asChild>
+            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
+              <Button
+                variant="primary"
+                class="w-full sm:w-fit whitespace-nowrap"
+                asChild
+              >
                 <a href="/upload">
                   <i class="fa-solid fa-upload mr-2" />
                   Upload
@@ -69,14 +73,14 @@ export function ProfilePage({
                 hx-get="/dialogs/profile"
                 hx-target="#layout"
                 hx-swap="afterbegin"
-                class="w-full sm:w-fit"
+                class="w-full sm:w-fit whitespace-nowrap"
               >
                 Edit Profile
               </Button>
               <Button
                 variant="primary"
                 type="button"
-                class="w-full sm:w-fit"
+                class="w-full sm:w-fit whitespace-nowrap"
                 hx-get="/dialogs/gallery/new"
                 hx-target="#layout"
                 hx-swap="afterbegin"
