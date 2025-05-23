@@ -63,6 +63,11 @@ export function GalleryPage({
                 Sort order
               </Button>
               <ShareGalleryButton gallery={gallery} />
+              <FavoriteButton
+                currentUserDid={currentUserDid}
+                favs={favs}
+                galleryUri={gallery.uri}
+              />
             </div>
           )
           : null}
