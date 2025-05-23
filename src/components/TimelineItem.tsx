@@ -23,18 +23,18 @@ export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
             />
           )
           : null}
-        <div class="flex items-baseline gap-1">
-          {item.itemType === "favorite" ? "Favorited" : "Created"}
+        <p class="w-full flex items-baseline gap-1">
+          {item.itemType === "favorite" ? "Favorited" : "Created"}{" "}
           <a
             href={galleryLink(
               item.gallery.creator.handle,
               new AtUri(item.gallery.uri).rkey,
             )}
-            class="inline-block max-w-[350px] truncate font-semibold hover:underline"
+            class="inline-block truncate max-w-[200px] overflow-hidden font-semibold hover:underline"
           >
             {(item.gallery.record as Gallery).title}
           </a>
-        </div>
+        </p>
       </div>
     </li>
   );

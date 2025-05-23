@@ -381,11 +381,11 @@
   .max-w-5xl {
     max-width: var(--container-5xl);
   }
+  .max-w-\[200px\] {
+    max-width: 200px;
+  }
   .max-w-\[300px\] {
     max-width: 300px;
-  }
-  .max-w-\[350px\] {
-    max-width: 350px;
   }
   .max-w-\[500px\] {
     max-width: 500px;
