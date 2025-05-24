@@ -65,6 +65,7 @@ export function Root(props: Readonly<RootProps<State>>) {
               </h1>
             }
             profile={profile}
+            showSearch
             showNotifications
             hasNotifications={hasNotifications}
             class="border-zinc-200 dark:border-zinc-800"

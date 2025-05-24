@@ -5,6 +5,7 @@ import { LoginPage } from "./components/LoginPage.tsx";
 import { onError } from "./errors.ts";
 import * as actionHandlers from "./routes/actions.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
+import { handler as exploreHandler } from "./routes/explore.tsx";
 import { handler as galleryHandler } from "./routes/gallery.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
@@ -48,6 +49,7 @@ bff({
       LoginComponent: LoginPage,
     }),
     route("/", timelineHandler),
+    route("/explore", exploreHandler),
     route("/notifications", notificationsHandler),
     route("/profile/:handle", profileHandler),
     route("/profile/:handle/gallery/:rkey", galleryHandler),

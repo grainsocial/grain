@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.24": "0.3.0-beta.24",
+    "jsr:@bigmoves/bff@0.3.0-beta.25": "0.3.0-beta.25",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@denosaurs/plug@1": "1.0.5",
@@ -13,7 +13,6 @@
     "jsr:@std/assert@^1.0.12": "1.0.13",
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/async@^1.0.12": "1.0.12",
-    "jsr:@std/cli@^1.0.16": "1.0.17",
     "jsr:@std/cli@^1.0.17": "1.0.17",
     "jsr:@std/data-structures@^1.0.6": "1.0.7",
     "jsr:@std/encoding@0.214": "0.214.0",
@@ -100,8 +99,8 @@
         "npm:tailwind-merge"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.24": {
-      "integrity": "8ea9b9be5c2a338ce3bda57141b7ea7948a22578275029f225f6b09fb11d18ef",
+    "@bigmoves/bff@0.3.0-beta.25": {
+      "integrity": "33a71b4d3f8e28832f2caa13dd09fbf799c5142509e16ce934bc4757509b4a3d",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
@@ -220,7 +219,7 @@
     "@std/http@1.0.16": {
       "integrity": "80c8d08c4bfcf615b89978dcefb84f7e880087cf3b6b901703936f3592a06933",
       "dependencies": [
-        "jsr:@std/cli@^1.0.17",
+        "jsr:@std/cli",
         "jsr:@std/encoding@^1.0.10",
         "jsr:@std/fmt@^1.0.8",
         "jsr:@std/html",
@@ -2051,7 +2050,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.24",
+      "jsr:@bigmoves/bff@0.3.0-beta.25",
       "jsr:@gfx/canvas@~0.5.8",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",

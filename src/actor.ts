@@ -16,7 +16,7 @@ export function getActorProfile(did: string, ctx: BffContext) {
   return profileRecord ? profileToView(profileRecord, actor.handle) : null;
 }
 
-function profileToView(
+export function profileToView(
   record: WithBffMeta<Profile>,
   handle: string,
 ): Un$Typed<ProfileView> {
