@@ -87,7 +87,7 @@ function SearchResults(
               <img
                 src={profile.avatar}
                 alt={profile.displayName || profile.handle}
-                className="rounded-full w-8 h-8 mr-2"
+                className="rounded-full object-cover w-8 h-8 mr-2"
               />
               <div class="flex flex-col">
                 <div class="font-semibold">
