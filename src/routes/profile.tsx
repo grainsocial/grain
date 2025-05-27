@@ -34,6 +34,7 @@ export const handler: RouteHandler = (
     },
     ...getPageMeta(profileLink(handle)),
   ];
+  ctx.state.scripts = ["photo_manip.js", "profile_dialog.js"];
   if (tab) {
     return ctx.html(
       <ProfilePage

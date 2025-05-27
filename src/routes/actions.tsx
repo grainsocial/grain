@@ -351,6 +351,7 @@ export const profileUpdate: RouteHandler = async (
   const formData = await req.formData();
   const displayName = formData.get("displayName") as string;
   const description = formData.get("description") as string;
+  const file = formData.get("file") as File | null;
 
   const record = ctx.indexService.getRecord<Profile>(
     `at://${did}/social.grain.actor.profile/self`,
@@ -358,6 +359,15 @@ export const profileUpdate: RouteHandler = async (
 
   if (!record) {
     return new Response("Profile record not found", { status: 404 });
+  }
+
+  if (file) {
+    try {
+      const blobResponse = await ctx.agent?.uploadBlob(file);
+      record.avatar = blobResponse?.data?.blob;
+    } catch (e) {
+      console.error("Failed to upload avatar:", e);
+    }
   }
 
   try {
@@ -368,6 +378,10 @@ export const profileUpdate: RouteHandler = async (
     });
   } catch (e) {
     console.error("Error updating record:", e);
+    const errorMessage = e instanceof Error
+      ? e.message
+      : "Unknown error occurred";
+    return new Response(errorMessage, { status: 400 });
   }
 
   return ctx.redirect(`/profile/${handle}`);

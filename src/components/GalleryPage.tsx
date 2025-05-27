@@ -90,7 +90,7 @@ export function GalleryPage({
           title="Justified layout"
           variant="primary"
           class="flex justify-center w-full sm:w-fit bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 data-[selected=false]:bg-transparent data-[selected=false]:border-transparent text-zinc-950 dark:text-zinc-50"
-          _="on click call toggleLayout('justified')
+          _="on click call Grain.toggleLayout('justified')
             set @data-selected to 'true'
             set #masonry-button's @data-selected to 'false'"
         >
@@ -141,7 +141,7 @@ export function GalleryPage({
           variant="primary"
           data-selected="false"
           class="flex justify-center w-full sm:w-fit bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 data-[selected=false]:bg-transparent data-[selected=false]:border-transparent text-zinc-950 dark:text-zinc-50"
-          _="on click call toggleLayout('masonry')
+          _="on click call Grain.toggleLayout('masonry')
             set @data-selected to 'true'
             set #justified-button's @data-selected to 'false'"
         >
@@ -190,7 +190,7 @@ export function GalleryPage({
       <div
         id="masonry-container"
         class="h-0 overflow-hidden relative mx-auto w-full"
-        _="on load or htmx:afterSettle call computeLayout()"
+        _="on load or htmx:afterSettle call Grain.computeLayout()"
       >
         {gallery.items?.filter(isPhotoView)?.length
           ? gallery?.items

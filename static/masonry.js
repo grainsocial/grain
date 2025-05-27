@@ -164,3 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
   computeMasonry();
   observeMasonry();
 });
+
+window.Grain = window.Grain || {};
+window.Grain.toggleLayout = toggleLayout;
+window.Grain.computeLayout = computeLayout;

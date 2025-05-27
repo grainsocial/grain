@@ -35,7 +35,7 @@ export function UploadPage({
             type="file"
             multiple
             accept="image/*"
-            _="on change call uploadPhotos(me)"
+            _="on change call Grain.uploadPhotos(me)"
           />
         </label>
       </Button>
