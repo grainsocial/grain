@@ -386,3 +386,45 @@ export const profileUpdate: RouteHandler = async (
 
   return ctx.redirect(`/profile/${handle}`);
 };
+
+export const getBlob: RouteHandler = async (
+  req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  const url = new URL(req.url);
+  const did = url.searchParams.get("did");
+  const cid = url.searchParams.get("cid");
+  if (!did || !cid) {
+    return new Response("Missing did or cid", { status: 400 });
+  }
+
+  const atpData = await ctx.didResolver.resolveAtprotoData(did);
+  if (!atpData) {
+    return new Response("ATP not found", { status: 404 });
+  }
+
+  const blobUrl =
+    `${atpData.pds}/xrpc/com.atproto.sync.getBlob?did=${did}&cid=${cid}`;
+
+  try {
+    const response = await fetch(blobUrl);
+    if (!response.ok) {
+      return new Response(`Failed to fetch blob: ${response.statusText}`, {
+        status: response.status,
+      });
+    }
+
+    const blobData = await response.arrayBuffer();
+    return new Response(blobData, {
+      status: 200,
+      headers: {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "max-age=31536000, public",
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching blob:", error);
+    return new Response("Error fetching blob", { status: 500 });
+  }
+};

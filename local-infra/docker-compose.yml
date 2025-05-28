@@ -1,0 +1,93 @@
+name: grain_infra
+services:
+  maildev:
+    image: maildev/maildev
+    restart: always
+    environment:
+      - TZ=America/Los_Angeles
+      - MAILDEV_WEB_PORT=1080
+      - MAILDEV_SMTP_PORT=1025
+    ports:
+      - "8050:1080"
+      - "1025:1025"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+
+  caddy:
+    container_name: caddy
+    image: caddy:2
+    depends_on:
+      - pds
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+  pds:
+    image: ghcr.io/bluesky-social/pds:0.4
+    container_name: pds
+    restart: unless-stopped
+    ports:
+      - '4001:3000'
+    volumes:
+      - pds:/pds
+    env_file:
+      - ./pds.env
+
+  plc:
+    image: ghcr.io/bluesky-social/did-method-plc:plc-f2ab7516bac5bc0f3f86842fa94e996bd1b3815b
+    platform: linux/amd64
+    container_name: plc
+    restart: unless-stopped
+    ports:
+      - '4000:8080'
+    depends_on:
+      - plc_db
+    environment:
+      DEBUG_MODE: 1
+      LOG_ENABLED: "true"
+      LOG_LEVEL: "debug"
+      LOG_DESTINATION: 1
+      DB_CREDS_JSON: &DB_CREDS_JSON '{"username":"pg","password":"password","host":"plc_db","port":5432}'
+      DB_MIGRATE_CREDS_JSON: *DB_CREDS_JSON
+      PLC_VERSION: 0.0.1
+      PORT: 8080
+
+  plc_db:
+    image: postgres:14.4-alpine
+    container_name: plc_db
+    environment:
+      - POSTGRES_USER=pg
+      - POSTGRES_PASSWORD=password
+    ports:
+      - '5433:5432'
+    volumes:
+      - plc:/var/lib/postgresql/data
+
+  jetstream:
+    container_name: jetstream
+    image: ghcr.io/bluesky-social/jetstream:sha-0ab10bd
+    restart: unless-stopped
+    volumes:
+      - jetstream:/data
+    environment:
+      - JETSTREAM_DATA_DIR=/data
+        # livness check interval to restart when no events are received (default: 15sec)
+      - JETSTREAM_LIVENESS_TTL=300s
+      - JETSTREAM_WS_URL=ws://pds:3000/xrpc/com.atproto.sync.subscribeRepos
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pds:
+  plc:
+  jetstream:

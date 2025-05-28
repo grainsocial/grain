@@ -1,0 +1,39 @@
+{
+	storage file_system /data/
+	debug
+	pki {
+		ca grain {
+			name "Grain"
+		}
+	}
+}
+
+plc.dev.grain.social {
+	tls {
+		issuer internal {
+			ca grain
+		}
+	}
+
+	reverse_proxy http://plc:8080
+}
+
+*.pds.dev.grain.social, pds.dev.grain.social {
+	tls {
+		issuer internal {
+			ca grain
+		}
+	}
+
+	reverse_proxy http://pds:3000
+}
+
+jetstream.dev.grain.social {
+	tls {
+		issuer internal {
+			ca grain
+		}
+	}
+
+	reverse_proxy http://jetstream:6008
+}
