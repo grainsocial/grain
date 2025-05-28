@@ -15,7 +15,7 @@ export function PhotoDialog({
   prevImage?: PhotoView;
 }>) {
   return (
-    <Dialog id="photo-dialog" class="bg-zinc-950 z-30">
+    <Dialog id="photo-dialog" class="bg-zinc-950 z-100">
       <Dialog.X />
       {nextImage
         ? (

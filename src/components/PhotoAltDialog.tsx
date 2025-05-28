@@ -8,7 +8,7 @@ export function PhotoAltDialog({
   photo: PhotoView;
 }>) {
   return (
-    <Dialog id="photo-alt-dialog" class="z-30">
+    <Dialog id="photo-alt-dialog" class="z-100">
       <Dialog.Content class="dark:bg-zinc-950 relative">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Add alt text</Dialog.Title>

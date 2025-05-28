@@ -6,7 +6,7 @@ export function GalleryCreateEditDialog({
   gallery,
 }: Readonly<{ gallery?: GalleryView | null }>) {
   return (
-    <Dialog id="gallery-dialog" class="z-30">
+    <Dialog id="gallery-dialog" class="z-100">
       <Dialog.Content class="dark:bg-zinc-950 relative">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>

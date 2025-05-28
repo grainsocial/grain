@@ -13,7 +13,7 @@ export function PhotoSelectDialog({
   photos: PhotoView[];
 }>) {
   return (
-    <Dialog id="photo-select-dialog" class="z-30">
+    <Dialog id="photo-select-dialog" class="z-100">
       <Dialog.Content class="w-full max-w-5xl dark:bg-zinc-950 sm:min-h-screen flex flex-col relative">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Add photos</Dialog.Title>

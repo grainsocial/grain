@@ -12,7 +12,7 @@ export function Root(props: Readonly<RootProps<State>>) {
       undefined;
   const staticFilesHash = props.ctx.state.staticFilesHash;
   return (
-    <html lang="en" class="w-full h-full">
+    <html lang="en" class="h-full">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -56,8 +56,8 @@ export function Root(props: Readonly<RootProps<State>>) {
           />
         ))}
       </head>
-      <body class="h-full w-full dark:bg-zinc-950 dark:text-white">
-        <Layout id="layout" class="border-zinc-200 dark:border-zinc-800">
+      <body class="h-full dark:bg-zinc-950 dark:text-white">
+        <Layout id="layout">
           <Layout.Nav
             heading={
               <h1 class="font-['Jersey_20'] text-4xl text-zinc-900 dark:text-white">
@@ -67,7 +67,6 @@ export function Root(props: Readonly<RootProps<State>>) {
             }
             profile={profile}
             hasNotifications={hasNotifications}
-            class="border-zinc-200 dark:border-zinc-800"
           />
           <Layout.Content>{props.children}</Layout.Content>
         </Layout>

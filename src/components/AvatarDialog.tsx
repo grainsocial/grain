@@ -7,7 +7,7 @@ export function AvatarDialog({
   profile,
 }: Readonly<{ profile: Un$Typed<ProfileView> }>) {
   return (
-    <Dialog>
+    <Dialog class="z-100">
       <Dialog.X />
       <div
         class="w-[400px] h-[400px] flex flex-col p-4 z-10"

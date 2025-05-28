@@ -53,7 +53,7 @@ function ExplorePage(
       <div class="my-4">
         <Input
           name="q"
-          class="dark:bg-zinc-800 dark:text-white"
+          class="dark:bg-zinc-800 dark:text-white border-zinc-100 bg-zinc-100 dark:border-zinc-800"
           placeholder="Search for users"
           hx-get="/explore"
           hx-target="#search-results"

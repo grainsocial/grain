@@ -8,7 +8,7 @@ export function ProfileDialog({
   profile: ProfileView;
 }>) {
   return (
-    <Dialog>
+    <Dialog class="z-100">
       <Dialog.Content class="dark:bg-zinc-950 relative">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Edit my profile</Dialog.Title>
