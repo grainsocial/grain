@@ -36,7 +36,7 @@ export function NotificationsPage(
                   >
                     <ActorAvatar
                       profile={notification.author}
-                      class="h-8 w-8"
+                      size={32}
                     />
                     <span class="font-semibold break-words">
                       {notification.author.displayName ||

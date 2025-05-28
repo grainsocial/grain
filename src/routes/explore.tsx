@@ -5,6 +5,7 @@ import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { Input } from "@bigmoves/bff/components";
 import { ComponentChildren } from "preact";
 import { profileToView } from "../actor.ts";
+import { ActorAvatar } from "../components/ActorAvatar.tsx";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 
@@ -84,11 +85,7 @@ function SearchResults(
         {profileViews.map((profile) => (
           <li key={profile.did}>
             <a class="flex items-center" href={`/profile/${profile.handle}`}>
-              <img
-                src={profile.avatar}
-                alt={profile.displayName || profile.handle}
-                className="rounded-full object-cover w-8 h-8 mr-2"
-              />
+              <ActorAvatar profile={profile} size={32} class="mr-2" />
               <div class="flex flex-col">
                 <div class="font-semibold">
                   {profile.displayName || profile.handle}

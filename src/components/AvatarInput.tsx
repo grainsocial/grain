@@ -1,5 +1,9 @@
+import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
+import { Un$Typed } from "$lexicon/util.ts";
+import { ActorAvatar } from "./ActorAvatar.tsx";
+
 export function AvatarInput(
-  { src, alt }: Readonly<{ src?: string; alt?: string }>,
+  { profile }: Readonly<{ profile?: Un$Typed<ProfileView> }>,
 ) {
   return (
     <label htmlFor="file">
@@ -9,15 +13,7 @@ export function AvatarInput(
           <i class="fa-solid fa-camera text-white text-xs"></i>
         </div>
         <div id="image-preview" class="w-full h-full">
-          {src
-            ? (
-              <img
-                src={src}
-                alt={alt}
-                className="rounded-full w-full h-full object-cover"
-              />
-            )
-            : null}
+          {profile ? <ActorAvatar profile={profile} size={64} /> : null}
         </div>
       </div>
       <input

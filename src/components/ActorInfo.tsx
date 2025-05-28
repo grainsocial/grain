@@ -8,7 +8,7 @@ export function ActorInfo(
 ) {
   return (
     <div class="flex items-center gap-2 min-w-0 flex-1">
-      <ActorAvatar profile={profile} class="size-7 shrink-0" />
+      <ActorAvatar profile={profile} size={28} class="shrink-0" />
       <a
         href={profileLink(profile.handle)}
         class="hover:underline text-zinc-600 dark:text-zinc-500 truncate max-w-[300px] sm:max-w-[400px]"

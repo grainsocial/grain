@@ -29,14 +29,14 @@ export function ProfileDialog({
               trigger closeDialog
             end"
         >
-          <AvatarInput src={profile.avatar} alt={profile.handle} />
+          <AvatarInput profile={profile} />
           <div class="mb-4 relative">
             <label htmlFor="displayName">Display Name</label>
             <Input
               type="text"
-              required
               id="displayName"
               name="displayName"
+              placeholder="e.g. Alice Lastname"
               class="dark:bg-zinc-800 dark:text-white"
               value={profile.displayName}
               autoFocus
@@ -47,6 +47,7 @@ export function ProfileDialog({
             <Textarea
               id="description"
               name="description"
+              placeholder="Tell us about yourself"
               rows={4}
               class="dark:bg-zinc-800 dark:text-white"
             >

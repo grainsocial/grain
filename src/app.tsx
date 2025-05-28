@@ -1,5 +1,6 @@
 import { CSS, RootProps } from "@bigmoves/bff";
-import { Layout, Meta } from "@bigmoves/bff/components";
+import { Meta } from "@bigmoves/bff/components";
+import { Layout } from "./components/Layout.tsx";
 import { GOATCOUNTER_URL } from "./env.ts";
 import type { State } from "./state.ts";
 
@@ -65,8 +66,6 @@ export function Root(props: Readonly<RootProps<State>>) {
               </h1>
             }
             profile={profile}
-            showSearch
-            showNotifications
             hasNotifications={hasNotifications}
             class="border-zinc-200 dark:border-zinc-800"
           />

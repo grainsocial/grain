@@ -1,17 +1,26 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { cn } from "@bigmoves/bff/components";
+import { DefaultAvatar } from "./DefaultAvatar.tsx";
 
 export function ActorAvatar({
   profile,
+  size = 28,
   class: classProp,
-}: Readonly<{ profile: Un$Typed<ProfileView>; class?: string }>) {
+}: Readonly<
+  { profile: Un$Typed<ProfileView>; size?: number; class?: string }
+>) {
   return (
-    <img
-      src={profile.avatar}
-      alt={profile.handle}
-      title={profile.handle}
-      class={cn("rounded-full object-cover", classProp)}
-    />
+    profile.avatar
+      ? (
+        <img
+          src={profile.avatar}
+          alt={profile.handle}
+          title={profile.handle}
+          class={cn("rounded-full object-cover", classProp)}
+          style={{ width: size, height: size }}
+        />
+      )
+      : <DefaultAvatar size={size} class={classProp} />
   );
 }
