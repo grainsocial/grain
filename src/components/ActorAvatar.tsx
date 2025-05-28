@@ -5,7 +5,7 @@ import { DefaultAvatar } from "./DefaultAvatar.tsx";
 
 export function ActorAvatar({
   profile,
-  size = 28,
+  size,
   class: classProp,
 }: Readonly<
   { profile: Un$Typed<ProfileView>; size?: number; class?: string }
@@ -18,7 +18,7 @@ export function ActorAvatar({
           alt={profile.handle}
           title={profile.handle}
           class={cn("rounded-full object-cover", classProp)}
-          style={{ width: size, height: size }}
+          style={size ? { width: size, height: size } : undefined}
         />
       )
       : <DefaultAvatar size={size} class={classProp} />
