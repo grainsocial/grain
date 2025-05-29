@@ -2,6 +2,7 @@ import { lexicons } from "$lexicon/lexicons.ts";
 import { bff, BffContext, JETSTREAM, oauth, route } from "@bigmoves/bff";
 import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
+import { PDS_HOST_URL } from "./env.ts";
 import { onError } from "./errors.ts";
 import * as actionHandlers from "./routes/actions.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
@@ -47,6 +48,7 @@ bff({
     oauth({
       onSignedIn,
       LoginComponent: LoginPage,
+      createAccountPdsHost: PDS_HOST_URL,
     }),
     route("/", timelineHandler),
     route("/explore", exploreHandler),
@@ -94,6 +96,7 @@ bff({
       ["POST"],
       actionHandlers.gallerySort,
     ),
+    route("/actions/get-blob", ["GET"], actionHandlers.getBlob),
     ...photoUploadRoutes(),
   ],
 });

@@ -58,6 +58,99 @@ deno run sync
 deno run dev
 ```
 
+### Running the whole infra locally PDS + PLC + Jetstream
+
+You must ensure that pds.dev.grain.social resolves to your local machine
+(typically 127.0.0.1 or your Docker host).
+
+#### Add to /etc/hosts (macOS/Linux)
+
+```bash
+sudo nano /etc/hosts
+```
+
+```bash
+127.0.0.1 pds.dev.grain.social
+127.0.0.1 plc.dev.grain.social
+127.0.0.1 jetstream.dev.grain.social
+```
+
+#### Start services
+
+```bash
+cd local-infra
+docker compose up -d
+```
+
+#### Install the Root Certificate on Host
+
+First, get your Caddy container ID:
+
+```bash
+docker ps
+```
+
+Then copy the cert out:
+
+```bash
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain grain-root.crt
+```
+
+Once you have grain-root.crt, install it:
+
+macOS:
+
+```bash
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain grain-root.crt
+```
+
+Ubuntu/Linux:
+
+```bash
+sudo cp grain-root.crt /usr/local/share/ca-certificates/grain.crt
+sudo update-ca-certificates
+```
+
+#### Update ENV Variables
+
+Make sure the following env vars are in your .env
+
+```bash
+# for running local infra only
+DENO_TLS_CA_STORE=system
+USE_CDN=false
+BFF_PLC_DIRECTORY_URL=https://plc.dev.grain.social
+BFF_JETSTREAM_URL=https://jetstream.dev.grain.social
+PDS_HOST_URL=https://pds.dev.grain.social
+```
+
+#### Run the app
+
+Start the app:
+
+```bash
+deno run dev
+```
+
+You can then create an account via the "Create Account" button in the navbar.
+
+After clicking the link, verify you are redirected to
+`https://pds.dev.grain.social/...`
+
+Create an account with your desired handle.
+
+If all goes well you will be redirectly to the app at
+`http://localhost:8080/onboard` and prompted to edit your profile details.
+
+From then on, you can login by typing `https://pds.dev.grain.social` into the
+login input and follow the PDS prompts to login.
+
+NOTE: When running with local-infra, only blobs on the local PDS will get
+resolved because of the PLC directory. All of the other images will appear
+broken. We could do some more work to support both but seems fine for now to
+test new features. Just switch back to non local-infra mode and you'll see them
+all.
+
 ## License
 
 [MIT License](LICENSE)

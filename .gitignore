@@ -4,3 +4,4 @@ node_modules
 *.fly.toml
 image_storage
 .env
+grain-root.crt
