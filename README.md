@@ -46,6 +46,7 @@ Protocol ecosystem. It enables users to:
 ```bash
 # .env
 BFF_DATABASE_URL=grain.db             # SQLite db file
+USE_CDN=true                          # Use bsky cdn
 ```
 
 ### Running Locally
