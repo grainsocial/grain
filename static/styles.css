@@ -841,49 +841,49 @@
     }
   }
   .dark\:divide-zinc-800 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       :where(& > :not(:last-child)) {
         border-color: var(--color-zinc-800);
       }
     }
   }
   .dark\:border-zinc-800 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       border-color: var(--color-zinc-800);
     }
   }
   .dark\:bg-zinc-800 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       background-color: var(--color-zinc-800);
     }
   }
   .dark\:bg-zinc-900 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       background-color: var(--color-zinc-900);
     }
   }
   .dark\:bg-zinc-950 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       background-color: var(--color-zinc-950);
     }
   }
   .dark\:fill-zinc-50 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       fill: var(--color-zinc-50);
     }
   }
   .dark\:text-white {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       color: var(--color-white);
     }
   }
   .dark\:text-zinc-50 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       color: var(--color-zinc-50);
     }
   }
   .dark\:text-zinc-500 {
-    &:where(.dark, .dark *) {
+    @media (prefers-color-scheme: dark) {
       color: var(--color-zinc-500);
     }
   }
