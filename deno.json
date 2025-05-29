@@ -2,8 +2,9 @@
   "imports": {
     "$lexicon/": "./__generated__/",
     "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
-    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.27",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.29",
     "@gfx/canvas": "jsr:@gfx/canvas@^0.5.8",
+    "@std/http": "jsr:@std/http@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
     "@tailwindcss/cli": "npm:@tailwindcss/cli@^4.1.4",
     "date-fns": "npm:date-fns@^4.1.0",
@@ -17,8 +18,8 @@
     "dev": "deno run \"dev:*\"",
     "dev:server": "deno run -A --unstable-kv --unstable-ffi --env-file=.env --watch ./src/main.tsx",
     "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./src/input.css -o ./static/styles.css --watch",
-    "sync": "deno run -A --env=.env jsr:@bigmoves/bff-cli@0.3.0-beta.23 sync --collections=social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.favorite,social.grain.gallery.item --external-collections=app.bsky.actor.profile,app.bsky.graph.follow",
-    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.23 lexgen"
+    "sync": "deno run -A --env=.env jsr:@bigmoves/bff-cli@0.3.0-beta.29 sync --collections=social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.favorite,social.grain.gallery.item --external-collections=app.bsky.actor.profile,app.bsky.graph.follow",
+    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.29 lexgen"
   },
   "compilerOptions": {
     "jsx": "precompile",

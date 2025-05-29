@@ -1,10 +1,11 @@
+import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
-import { BffContext, WithBffMeta } from "@bigmoves/bff";
+import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
 
@@ -20,6 +21,7 @@ export type TimelineItem = {
 
 type TimelineOptions = {
   actorDid?: string;
+  followingDids?: Set<string>;
 };
 
 function processGalleries(
@@ -28,9 +30,16 @@ function processGalleries(
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
-  const whereClause = options?.actorDid
+  let whereClause: QueryOptions["where"] = options?.actorDid
     ? [{ field: "did", equals: options.actorDid }]
     : undefined;
+
+  if (options?.followingDids && options.followingDids.size > 0) {
+    whereClause = [
+      ...(whereClause ?? []),
+      { field: "did", in: Array.from(options.followingDids) },
+    ];
+  }
 
   const { items: galleries } = ctx.indexService.getRecords<
     WithBffMeta<Gallery>
@@ -74,9 +83,16 @@ function processFavs(
 ): TimelineItem[] {
   const items: TimelineItem[] = [];
 
-  const whereClause = options?.actorDid
+  let whereClause: QueryOptions["where"] = options?.actorDid
     ? [{ field: "did", equals: options.actorDid }]
     : undefined;
+
+  if (options?.followingDids && options.followingDids.size > 0) {
+    whereClause = [
+      ...(whereClause ?? []),
+      { field: "did", in: Array.from(options.followingDids) },
+    ];
+  }
 
   const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
     "social.grain.favorite",
@@ -170,8 +186,34 @@ function getTimelineItems(
   );
 }
 
-export function getTimeline(ctx: BffContext): TimelineItem[] {
-  return getTimelineItems(ctx);
+function getFollowingDids(ctx: BffContext): Set<string> {
+  if (!ctx.currentUser?.did) return new Set();
+  const { items: follows } = ctx.indexService.getRecords<
+    WithBffMeta<BskyFollow>
+  >(
+    "app.bsky.graph.follow",
+    { where: [{ field: "did", equals: ctx.currentUser.did }] },
+  );
+  return new Set(follows.map((f) => f.subject).filter(Boolean));
+}
+
+export function getTimeline(
+  ctx: BffContext,
+  type: "timeline" | "following" = "timeline",
+): TimelineItem[] {
+  let followingDids: Set<string> | undefined = undefined;
+  if (type === "following") {
+    followingDids = getFollowingDids(ctx);
+  }
+  const galleryItems = processGalleries(ctx, { followingDids });
+  const favsItems = processFavs(
+    ctx,
+    followingDids ? { followingDids } : undefined,
+  );
+  const timelineItems = [...galleryItems, ...favsItems];
+  return timelineItems.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 }
 
 export function getActorTimeline(handleOrDid: string, ctx: BffContext) {
