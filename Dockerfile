@@ -13,13 +13,9 @@ FROM denoland/deno:alpine-2.3.3
 COPY --from=flyio/litefs:0.5 /usr/local/bin/litefs /usr/local/bin/litefs
 COPY litefs.yml /etc/litefs.yml
 
-# libstdc++ is needed for @gfx/canvas
-RUN apk add --no-cache ca-certificates fuse3 libstdc++ sqlite
+RUN apk add --no-cache ca-certificates fuse3 sqlite
 
 WORKDIR /app
-
-# Needed for @gfx/canvas
-RUN mkdir -p /usr/share/fonts
 
 COPY --from=builder $DENO_DIR $DENO_DIR
 COPY --from=builder /app .
