@@ -94,7 +94,7 @@ docker ps
 Then copy the cert out:
 
 ```bash
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain grain-root.crt
+docker cp <caddy_container_id>:/data/pki/authorities/grain/root.crt ./grain-root.crt
 ```
 
 Once you have grain-root.crt, install it:
