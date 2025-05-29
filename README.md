@@ -118,11 +118,12 @@ Make sure the following env vars are in your .env
 
 ```bash
 # for running local infra only
-DENO_TLS_CA_STORE=system
-USE_CDN=false
+BFF_DATABASE_URL=grain.db
 BFF_PLC_DIRECTORY_URL=https://plc.dev.grain.social
 BFF_JETSTREAM_URL=https://jetstream.dev.grain.social
 PDS_HOST_URL=https://pds.dev.grain.social
+DENO_TLS_CA_STORE=system
+USE_CDN=false
 ```
 
 #### Run the app
