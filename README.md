@@ -83,7 +83,7 @@ cd local-infra
 docker compose up -d
 ```
 
-#### Install the Root Certificate on Host
+#### Install the root certificate on your machine
 
 First, get your Caddy container ID:
 
@@ -151,6 +151,12 @@ resolved because of the PLC directory. All of the other images will appear
 broken. We could do some more work to support both but seems fine for now to
 test new features. Just switch back to non local-infra mode and you'll see them
 all.
+
+#### Explore records
+
+You can use [PDSls](https://pdsls.dev/) to explore records when running
+local-infra. Click the settings icon and change the PLC directory to
+`https://plc.dev.grain.social`.
 
 ## License
 
