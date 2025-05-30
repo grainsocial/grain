@@ -4,8 +4,8 @@ import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { Input } from "@bigmoves/bff/components";
 import { ComponentChildren } from "preact";
-import { profileToView } from "../actor.ts";
 import { ActorAvatar } from "../components/ActorAvatar.tsx";
+import { profileToView } from "../lib/actor.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 

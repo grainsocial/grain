@@ -5,7 +5,6 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
-import { getActorPhotos, getActorProfile } from "../actor.ts";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
@@ -13,8 +12,9 @@ import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
 import { PhotoDialog } from "../components/PhotoDialog.tsx";
 import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
-import { getGallery, getGalleryItemsAndPhotos } from "../gallery.ts";
-import { photoToView } from "../photo.ts";
+import { getActorPhotos, getActorProfile } from "../lib/actor.ts";
+import { getGallery, getGalleryItemsAndPhotos } from "../lib/gallery.ts";
+import { photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 
 export const createGallery: RouteHandler = (

@@ -2,7 +2,7 @@ import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { $Typed } from "$lexicon/util.ts";
 import { WithBffMeta } from "@bigmoves/bff";
-import { PUBLIC_URL, USE_CDN } from "./env.ts";
+import { PUBLIC_URL, USE_CDN } from "../env.ts";
 
 export function photoThumb(did: string, cid: string) {
   return photoUrl(did, cid, "thumbnail");

@@ -5,7 +5,7 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { Button, cn } from "@bigmoves/bff/components";
-import { TimelineItem } from "../timeline.ts";
+import { TimelineItem } from "../lib/timeline.ts";
 import { bskyProfileLink, galleryLink, profileLink } from "../utils.ts";
 import { AvatarButton } from "./AvatarButton.tsx";
 import { FollowButton } from "./FollowButton.tsx";

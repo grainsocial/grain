@@ -3,7 +3,8 @@ import { bff, BffContext, JETSTREAM, oauth, route } from "@bigmoves/bff";
 import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
 import { PDS_HOST_URL } from "./env.ts";
-import { onError } from "./errors.ts";
+import { onError } from "./lib/errors.ts";
+import { photoUploadRoutes } from "./lib/uploads.tsx";
 import * as actionHandlers from "./routes/actions.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
 import { handler as exploreHandler } from "./routes/explore.tsx";
@@ -14,7 +15,6 @@ import { handler as profileHandler } from "./routes/profile.tsx";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
 import { appStateMiddleware, type State } from "./state.ts";
-import { photoUploadRoutes } from "./uploads.tsx";
 import { generateStaticFilesHash, onSignedIn } from "./utils.ts";
 
 let staticFilesHash = new Map<string, string>();

@@ -1,6 +1,6 @@
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { BffMiddleware, route, RouteHandler } from "@bigmoves/bff";
-import { PhotoPreview } from "./components/PhotoPreview.tsx";
+import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { photoThumb } from "./photo.ts";
 
 function uploadPhoto(): RouteHandler {
@@ -64,13 +64,3 @@ export function photoUploadRoutes(): BffMiddleware[] {
     ),
   ];
 }
-
-// export function avatarUploadRoutes(): BffMiddleware[] {
-//   return [
-//     route(
-//       `/actions/avatar/upload`,
-//       ["POST"],
-//       uploadPhoto(),
-//     ),
-//   ];
-// }

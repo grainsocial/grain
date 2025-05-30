@@ -5,7 +5,7 @@ import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { NotificationsPage } from "../components/NotificationsPage.tsx";
-import { getGallery } from "../gallery.ts";
+import { getGallery } from "../lib/gallery.ts";
 import type { State } from "../state.ts";
 
 export const handler: RouteHandler = (

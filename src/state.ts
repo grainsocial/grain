@@ -3,8 +3,8 @@ import { NotificationView } from "$lexicon/types/social/grain/notification/defs.
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffMiddleware } from "@bigmoves/bff";
 import { MetaDescriptor } from "@bigmoves/bff/components";
-import { getActorProfile } from "./actor.ts";
-import { getNotifications } from "./notifications.ts";
+import { getActorProfile } from "./lib/actor.ts";
+import { getNotifications } from "./lib/notifications.ts";
 
 export type State = {
   profile?: ProfileView;

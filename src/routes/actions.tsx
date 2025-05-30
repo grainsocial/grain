@@ -11,8 +11,8 @@ import { FavoriteButton } from "../components/FavoriteButton.tsx";
 import { FollowButton } from "../components/FollowButton.tsx";
 import { PhotoButton } from "../components/PhotoButton.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
-import { deleteGallery, getGallery, getGalleryFavs } from "../gallery.ts";
-import { photoToView } from "../photo.ts";
+import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
+import { photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";
 

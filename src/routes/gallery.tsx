@@ -2,7 +2,7 @@ import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { GalleryPage } from "../components/GalleryPage.tsx";
-import { getGallery, getGalleryFavs } from "../gallery.ts";
+import { getGallery, getGalleryFavs } from "../lib/gallery.ts";
 import { getGalleryMeta, getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";

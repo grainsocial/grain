@@ -1,9 +1,9 @@
 import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { getCookies, setCookie } from "@std/http";
 import { Timeline } from "../components/Timeline.tsx";
+import { getTimeline } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
-import { getTimeline } from "../timeline.ts";
 
 export const handler: RouteHandler = (
   req,

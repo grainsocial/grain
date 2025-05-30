@@ -1,5 +1,5 @@
 import { cn } from "@bigmoves/bff/components";
-import { type TimelineItem } from "../timeline.ts";
+import { type TimelineItem } from "../lib/timeline.ts";
 import { Header } from "./Header.tsx";
 import { TimelineItem as Item } from "./TimelineItem.tsx";
 

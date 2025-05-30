@@ -1,7 +1,7 @@
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { type TimelineItem } from "../timeline.ts";
+import { type TimelineItem } from "../lib/timeline.ts";
 import { formatRelativeTime, galleryLink } from "../utils.ts";
 import { ActorInfo } from "./ActorInfo.tsx";
 import { GalleryPreviewLink } from "./GalleryPreviewLink.tsx";

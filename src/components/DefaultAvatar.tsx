@@ -1,9 +1,9 @@
-type DefaultAvatarProps = {
+type DefaultAvatarProps = Readonly<{
   size?: number;
   backgroundColor?: string;
   foregroundColor?: string;
   class?: string;
-};
+}>;
 
 export function DefaultAvatar({
   size = 28,

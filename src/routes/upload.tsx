@@ -1,6 +1,6 @@
 import { BffContext, RouteHandler } from "@bigmoves/bff";
-import { getActorPhotos } from "../actor.ts";
 import { UploadPage } from "../components/UploadPage.tsx";
+import { getActorPhotos } from "../lib/actor.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";

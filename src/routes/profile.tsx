@@ -1,11 +1,11 @@
 import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
-import { getActorGalleries, getActorProfile } from "../actor.ts";
 import { ProfilePage } from "../components/ProfilePage.tsx";
-import { getFollow } from "../follow.ts";
+import { getActorGalleries, getActorProfile } from "../lib/actor.ts";
+import { getFollow } from "../lib/follow.ts";
+import { getActorTimeline } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
-import { getActorTimeline } from "../timeline.ts";
 import { profileLink } from "../utils.ts";
 
 export const handler: RouteHandler = (
