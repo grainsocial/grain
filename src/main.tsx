@@ -11,7 +11,7 @@ import { handler as galleryHandler } from "./routes/gallery.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
 import { handler as profileHandler } from "./routes/profile.tsx";
-import { handler as recordHandler } from "./routes/record.tsx";
+import { handler as recordHandler } from "./routes/record.ts";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
 import { appStateMiddleware, type State } from "./state.ts";
