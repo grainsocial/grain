@@ -5,6 +5,7 @@ import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
+import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { FavoriteButton } from "../components/FavoriteButton.tsx";
@@ -237,10 +238,13 @@ export const photoDelete: RouteHandler = async (
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
+  const deleteUris: string[] = [];
   await ctx.deleteRecord(
     `at://${did}/social.grain.photo/${params.rkey}`,
   );
-  const { items } = ctx.indexService.getRecords<WithBffMeta<GalleryItem>>(
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >(
     "social.grain.gallery.item",
     {
       where: [
@@ -251,8 +255,43 @@ export const photoDelete: RouteHandler = async (
       ],
     },
   );
-  for (const item of items) {
-    await ctx.deleteRecord(item.uri);
+  for (const item of galleryItems) {
+    deleteUris.push(item.uri);
+  }
+  const { items: favorites } = ctx.indexService.getRecords<
+    WithBffMeta<Favorite>
+  >(
+    "social.grain.favorite",
+    {
+      where: [
+        {
+          field: "subject",
+          equals: `at://${did}/social.grain.photo/${params.rkey}`,
+        },
+      ],
+    },
+  );
+  for (const favorite of favorites) {
+    deleteUris.push(favorite.uri);
+  }
+  const { items: exifItems } = ctx.indexService.getRecords<
+    WithBffMeta<PhotoExif>
+  >(
+    "social.grain.photo.exif",
+    {
+      where: [
+        {
+          field: "photo",
+          equals: `at://${did}/social.grain.photo/${params.rkey}`,
+        },
+      ],
+    },
+  );
+  for (const item of exifItems) {
+    deleteUris.push(item.uri);
+  }
+  for (const uri of deleteUris) {
+    await ctx.deleteRecord(uri);
   }
   return new Response(null, { status: 200 });
 };
@@ -436,23 +475,39 @@ export const uploadPhoto: RouteHandler = async (
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
+
   ctx.rateLimit({
     namespace: "upload",
     points: 1,
     limit: 50,
     window: 24 * 60 * 60 * 1000, // 24 hours
   });
+
   if (!ctx.agent) {
     return new Response("Agent has not been initialized", { status: 401 });
   }
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const width = Number(formData.get("width")) || undefined;
     const height = Number(formData.get("height")) || undefined;
+    const exifJsonString = formData.get("exif") as string;
+    let exif = undefined;
+
+    if (exifJsonString) {
+      try {
+        exif = JSON.parse(exifJsonString);
+        console.log("Parsed EXIF data:", exif);
+      } catch (e) {
+        console.error("Failed to parse EXIF data:", e);
+      }
+    }
+
     if (!file) {
       return new Response("No file", { status: 400 });
     }
+
     // Check if file size exceeds 20MB limit
     const maxSizeBytes = 20 * 1000 * 1000; // 20MB in bytes
     if (file.size > maxSizeBytes) {
@@ -460,7 +515,9 @@ export const uploadPhoto: RouteHandler = async (
         status: 400,
       });
     }
+
     const blobResponse = await ctx.agent.uploadBlob(file);
+
     const photoUri = await ctx.createRecord<Photo>("social.grain.photo", {
       photo: blobResponse.data.blob,
       aspectRatio: width && height
@@ -472,6 +529,13 @@ export const uploadPhoto: RouteHandler = async (
       alt: "",
       createdAt: new Date().toISOString(),
     });
+
+    await ctx.createRecord<PhotoExif>("social.grain.photo.exif", {
+      photo: photoUri,
+      createdAt: new Date().toISOString(),
+      ...exif,
+    });
+
     return ctx.html(
       <PhotoPreview
         src={photoThumb(did, blobResponse.data.blob.ref.toString())}

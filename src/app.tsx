@@ -29,6 +29,7 @@ export function Root(props: Readonly<RootProps<State>>) {
         <script src="https://unpkg.com/htmx.org@1.9.10" />
         <script src="https://unpkg.com/hyperscript.org@0.9.14" />
         <script src="https://unpkg.com/sortablejs@1.15.6" />
+        <script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <link
           rel="stylesheet"

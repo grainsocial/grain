@@ -132,11 +132,13 @@ export class SocialGrainNS {
   _server: Server
   gallery: SocialGrainGalleryNS
   actor: SocialGrainActorNS
+  photo: SocialGrainPhotoNS
 
   constructor(server: Server) {
     this._server = server
     this.gallery = new SocialGrainGalleryNS(server)
     this.actor = new SocialGrainActorNS(server)
+    this.photo = new SocialGrainPhotoNS(server)
   }
 }
 
@@ -149,6 +151,14 @@ export class SocialGrainGalleryNS {
 }
 
 export class SocialGrainActorNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
+export class SocialGrainPhotoNS {
   _server: Server
 
   constructor(server: Server) {
