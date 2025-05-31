@@ -1,5 +1,6 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
+import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { Un$Typed } from "$lexicon/util.ts";
@@ -33,6 +34,7 @@ export function profileToView(
 
 export function getActorPhotos(handleOrDid: string, ctx: BffContext) {
   let did: string;
+
   if (handleOrDid.includes("did:")) {
     did = handleOrDid;
   } else {
@@ -40,6 +42,7 @@ export function getActorPhotos(handleOrDid: string, ctx: BffContext) {
     if (!actor) return [];
     did = actor.did;
   }
+
   const photos = ctx.indexService.getRecords<WithBffMeta<Photo>>(
     "social.grain.photo",
     {
@@ -47,11 +50,13 @@ export function getActorPhotos(handleOrDid: string, ctx: BffContext) {
       orderBy: [{ field: "createdAt", direction: "desc" }],
     },
   );
+
   return photos.items.map((photo) => photoToView(photo.did, photo));
 }
 
 export function getActorGalleries(handleOrDid: string, ctx: BffContext) {
   let did: string;
+
   if (handleOrDid.includes("did:")) {
     did = handleOrDid;
   } else {
@@ -59,16 +64,90 @@ export function getActorGalleries(handleOrDid: string, ctx: BffContext) {
     if (!actor) return [];
     did = actor.did;
   }
+
   const { items: galleries } = ctx.indexService.getRecords<
     WithBffMeta<Gallery>
   >("social.grain.gallery", {
     where: [{ field: "did", equals: did }],
     orderBy: [{ field: "createdAt", direction: "desc" }],
   });
+
   const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
   const creator = getActorProfile(did, ctx);
+
   if (!creator) return [];
+
   return galleries.map((gallery) =>
     galleryToView(gallery, creator, galleryPhotosMap.get(gallery.uri) ?? [])
   );
+}
+
+export function getActorGalleryFavs(handleOrDid: string, ctx: BffContext) {
+  let did: string;
+
+  if (handleOrDid.includes("did:")) {
+    did = handleOrDid;
+  } else {
+    const actor = ctx.indexService.getActorByHandle(handleOrDid);
+    if (!actor) return [];
+    did = actor.did;
+  }
+
+  const { items: favRecords } = ctx.indexService.getRecords<
+    WithBffMeta<Favorite>
+  >(
+    "social.grain.favorite",
+    {
+      where: [{ field: "did", equals: did }],
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+    },
+  );
+
+  if (!favRecords.length) return [];
+
+  const galleryUris = favRecords.map((fav) => fav.subject);
+
+  const { items: galleries } = ctx.indexService.getRecords<
+    WithBffMeta<Gallery>
+  >(
+    "social.grain.gallery",
+    {
+      where: [{ field: "uri", in: galleryUris }],
+    },
+  );
+
+  // Map gallery uri to gallery object for fast lookup
+  const galleryMap = new Map(galleries.map((g) => [g.uri, g]));
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
+  const creators = new Map<string, ReturnType<typeof getActorProfile>>();
+  const uniqueDids = Array.from(
+    new Set(galleries.map((gallery) => gallery.did)),
+  );
+
+  const { items: profiles } = ctx.indexService.getRecords<WithBffMeta<Profile>>(
+    "social.grain.actor.profile",
+    {
+      where: [{ field: "did", in: uniqueDids }],
+    },
+  );
+
+  for (const profile of profiles) {
+    const handle = ctx.indexService.getActor(profile.did)?.handle ?? "";
+    creators.set(profile.did, profileToView(profile, handle));
+  }
+
+  // Order galleries by the order of favRecords (favorited at)
+  return favRecords
+    .map((fav) => {
+      const gallery = galleryMap.get(fav.subject);
+      if (!gallery) return null;
+      const creator = creators.get(gallery.did);
+      if (!creator) return null;
+      return galleryToView(
+        gallery,
+        creator,
+        galleryPhotosMap.get(gallery.uri) ?? [],
+      );
+    })
+    .filter((g) => g !== null);
 }

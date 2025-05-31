@@ -21,7 +21,7 @@ export function Timeline(
                   hx-target="body"
                   hx-swap="outerHTML"
                   class={cn(
-                    "flex-1 py-2 px-4 cursor-pointer font-semibold",
+                    "flex-1 py-2 sm:min-w-[120px] px-4 cursor-pointer font-semibold",
                     !selectedTab &&
                       "bg-zinc-100 dark:bg-zinc-800 font-semibold",
                   )}
@@ -37,7 +37,7 @@ export function Timeline(
                   hx-target="#timeline-page"
                   hx-swap="outerHTML"
                   class={cn(
-                    "flex-1 py-2 px-4 cursor-pointer font-semibold",
+                    "flex-1 py-2 sm:min-w-[120px] px-4 cursor-pointer font-semibold",
                     selectedTab === "following" &&
                       "bg-zinc-100 dark:bg-zinc-800 font-semibold",
                   )}
