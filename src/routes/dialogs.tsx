@@ -10,11 +10,12 @@ import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.t
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
 import { PhotoDialog } from "../components/PhotoDialog.tsx";
+import { PhotoExifDialog } from "../components/PhotoExifDialog.tsx";
 import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
 import { getActorPhotos, getActorProfile } from "../lib/actor.ts";
 import { getGallery, getGalleryItemsAndPhotos } from "../lib/gallery.ts";
-import { photoToView } from "../lib/photo.ts";
+import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 
 export const createGallery: RouteHandler = (
@@ -127,6 +128,21 @@ export const photoAlt: RouteHandler = (
   if (!photo) return ctx.next();
   return ctx.html(
     <PhotoAltDialog photo={photoToView(did, photo)} />,
+  );
+};
+
+export const photoExif: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const photoRkey = params.rkey;
+  const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
+  const photo = getPhoto(photoUri, ctx);
+  if (!photo) return ctx.next();
+  return ctx.html(
+    <PhotoExifDialog photo={photo} />,
   );
 };
 

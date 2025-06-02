@@ -2,6 +2,7 @@ import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
+import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
@@ -47,7 +48,20 @@ export function getActorPhotos(handleOrDid: string, ctx: BffContext) {
       orderBy: [{ field: "createdAt", direction: "desc" }],
     },
   );
-  return photos.items.map((photo) => photoToView(photo.did, photo));
+  const exif = ctx.indexService.getRecords<WithBffMeta<PhotoExif>>(
+    "social.grain.photo.exif",
+    {
+      where: [{ field: "photo", in: photos.items.map((p) => p.uri) }],
+    },
+  );
+  const exifMap = new Map<string, WithBffMeta<PhotoExif>>();
+  exif.items.forEach((e) => {
+    exifMap.set(e.photo, e);
+  });
+  return photos.items.map((photo) => {
+    const exifData = exifMap.get(photo.uri);
+    return photoToView(photo.did, photo, exifData);
+  });
 }
 
 export function getActorGalleries(handleOrDid: string, ctx: BffContext) {

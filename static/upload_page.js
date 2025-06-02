@@ -24,7 +24,7 @@ async function uploadPhotos(inputElement) {
     }
 
     try {
-      const rawExif = await window.exifr.parse(file);
+      const rawExif = await window.exifr.parse(file, { gps: false });
       exif = normalizeExif(rawExif);
     } catch (err) {
       console.error("Error reading EXIF data:", err);
@@ -77,37 +77,22 @@ async function uploadPhotos(inputElement) {
   inputElement.value = "";
 }
 
-const KNOWN_INTEGERS = new Set([
-  "iso",
-  "colorSpace",
-  "focalLengthIn35mmFormat",
-  "recommendedExposureIndex",
-  "sensitivityType",
-  "xResolution",
-  "yResolution",
-]);
+const SCALE_FACTOR = 1000000;
 
-const SCALING_FACTOR = 1_000_000;
-
-function scaleNumber(value, isInt) {
-  return isInt ? Math.round(value) : Math.round(value * SCALING_FACTOR);
-}
-
-/**
- * Normalize EXIF: camelCase keys, scale floats to ints for Lexicon.
- */
-function normalizeExif(exif) {
+function normalizeExif(
+  exif,
+  scale = SCALE_FACTOR,
+) {
   const normalized = {};
 
   for (const [key, value] of Object.entries(exif)) {
     const camelKey = key[0].toLowerCase() + key.slice(1);
-    const isInt = KNOWN_INTEGERS.has(camelKey);
 
     if (typeof value === "number") {
-      normalized[camelKey] = scaleNumber(value, isInt);
+      normalized[camelKey] = Math.round(value * scale);
     } else if (Array.isArray(value)) {
       normalized[camelKey] = value.map((v) =>
-        typeof v === "number" ? scaleNumber(v, isInt) : v
+        typeof v === "number" ? Math.round(v * scale) : v
       );
     } else {
       normalized[camelKey] = value;

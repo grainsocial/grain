@@ -14,7 +14,7 @@ import { PhotoButton } from "../components/PhotoButton.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
 import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
-import { photoThumb, photoToView } from "../lib/photo.ts";
+import { photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";
 
@@ -530,16 +530,27 @@ export const uploadPhoto: RouteHandler = async (
       createdAt: new Date().toISOString(),
     });
 
-    await ctx.createRecord<PhotoExif>("social.grain.photo.exif", {
-      photo: photoUri,
-      createdAt: new Date().toISOString(),
-      ...exif,
-    });
+    const exifUri = await ctx.createRecord<PhotoExif>(
+      "social.grain.photo.exif",
+      {
+        photo: photoUri,
+        createdAt: new Date().toISOString(),
+        ...exif,
+      },
+    );
+
+    const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
+    if (!photo) {
+      return new Response("Photo not found after creation", { status: 404 });
+    }
+
+    const exifRecord = ctx.indexService.getRecord<WithBffMeta<PhotoExif>>(
+      exifUri,
+    );
 
     return ctx.html(
       <PhotoPreview
-        src={photoThumb(did, blobResponse.data.blob.ref.toString())}
-        uri={photoUri}
+        photo={photoToView(did, photo, exifRecord)}
       />,
     );
   } catch (e) {

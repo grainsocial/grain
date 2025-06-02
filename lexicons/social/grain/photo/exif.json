@@ -36,7 +36,7 @@
           "focalPlaneResolutionUnit": { "type": "string" },
           "focalPlaneXResolution": { "type": "integer" },
           "focalPlaneYResolution": { "type": "integer" },
-          "iso": { "type": "integer" },
+          "iSO": { "type": "integer" },
           "lensInfo": {
             "type": "array",
             "items": { "type": "integer" },

@@ -26,6 +26,7 @@ export interface PhotoView {
   /** Alt text description of the image, for accessibility. */
   alt: string
   aspectRatio?: SocialGrainDefs.AspectRatio
+  exif?: ExifView
 }
 
 const hashPhotoView = 'photoView'
@@ -36,4 +37,64 @@ export function isPhotoView<V>(v: V) {
 
 export function validatePhotoView<V>(v: V) {
   return validate<PhotoView & V>(v, id, hashPhotoView)
+}
+
+export interface ExifView {
+  $type?: 'social.grain.photo.defs#exifView'
+  uri?: string
+  cid?: string
+  photo: string
+  createdAt: string
+  apertureValue?: number
+  brightnessValue?: number
+  colorSpace?: number
+  contrast?: 'Normal' | 'Soft' | 'Hard'
+  createDate?: string
+  customRendered?: string
+  dateTimeOriginal?: string
+  digitalZoomRatio?: number
+  exifVersion?: string
+  exposureCompensation?: number
+  exposureMode?: string
+  exposureProgram?: string
+  exposureTime?: number
+  fNumber?: number
+  fileSource?: string
+  flash?: string
+  focalLength?: number
+  focalLengthIn35mmFormat?: number
+  focalPlaneResolutionUnit?: string
+  focalPlaneXResolution?: number
+  focalPlaneYResolution?: number
+  iSO?: number
+  lensInfo?: number[]
+  lensModel?: string
+  lightSource?: string
+  make?: string
+  maxApertureValue?: number
+  meteringMode?: string
+  model?: string
+  modifyDate?: string
+  recommendedExposureIndex?: number
+  resolutionUnit?: string
+  saturation?: string
+  sceneCaptureType?: string
+  sceneType?: string
+  sensitivityType?: number
+  sharpness?: string
+  shutterSpeedValue?: number
+  software?: string
+  whiteBalance?: string
+  xResolution?: number
+  yResolution?: number
+}
+
+const hashExifView = 'exifView'
+
+export function isExifView<V>(v: V) {
+  return is$typed(v, id, hashExifView)
+}
+
+export function validateExifView<V>(v: V) {
+  return validate<ExifView & V>(v, id, hashExifView)
 }

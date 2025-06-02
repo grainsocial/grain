@@ -39,7 +39,7 @@ export interface Record {
   focalPlaneResolutionUnit?: string
   focalPlaneXResolution?: number
   focalPlaneYResolution?: number
-  iso?: number
+  iSO?: number
   lensInfo?: number[]
   lensModel?: string
   lightSource?: string

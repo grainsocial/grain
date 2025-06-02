@@ -22,11 +22,12 @@ let staticFilesHash = new Map<string, string>();
 bff({
   appName: "Grain Social",
   collections: [
-    "social.grain.gallery",
     "social.grain.actor.profile",
-    "social.grain.photo",
-    "social.grain.favorite",
+    "social.grain.gallery",
     "social.grain.gallery.item",
+    "social.grain.photo",
+    "social.grain.photo.exif",
+    "social.grain.favorite",
   ],
   externalCollections: [
     "app.bsky.actor.profile",
@@ -64,6 +65,10 @@ bff({
     route("/dialogs/avatar/:handle", dialogHandlers.avatar),
     route("/dialogs/image", dialogHandlers.image),
     route("/dialogs/photo/:rkey/alt", dialogHandlers.photoAlt),
+    route(
+      "/dialogs/photo/:rkey/exif",
+      dialogHandlers.photoExif,
+    ),
     route(
       "/dialogs/photo-select/:galleryRkey",
       dialogHandlers.galleryPhotoSelect,

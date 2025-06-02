@@ -56,9 +56,7 @@ export function UploadPage({
         id="image-preview"
         class="w-full h-full grid grid-cols-2 sm:grid-cols-5 gap-2"
       >
-        {photos.map((photo) => (
-          <PhotoPreview key={photo.cid} src={photo.thumb} uri={photo.uri} />
-        ))}
+        {photos.map((photo) => <PhotoPreview key={photo.cid} photo={photo} />)}
       </div>
     </div>
   );
