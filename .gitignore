@@ -5,3 +5,4 @@ node_modules
 image_storage
 .env
 grain-root.crt
+*.log

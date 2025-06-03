@@ -1,0 +1,44 @@
+# fly.toml app configuration file generated for grain-pds on 2025-06-01T21:15:20-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'grain-pds'
+primary_region = 'sea'
+
+[build]
+  image = 'ghcr.io/bluesky-social/pds:0.4'
+
+[env]
+  LOG_ENABLED = 'true'
+  PDS_BLOBSTORE_DISK_LOCATION = '/pds/blocks'
+  PDS_BLOB_UPLOAD_LIMIT = '52428800'
+  PDS_BSKY_APP_VIEW_DID = 'did:web:api.bsky.app'
+  PDS_BSKY_APP_VIEW_URL = 'https://api.bsky.app'
+  PDS_CRAWLERS = 'https://bsky.network'
+  PDS_DATA_DIRECTORY = '/pds'
+  PDS_DID_PLC_URL = 'https://plc.directory'
+  PDS_HOSTNAME = 'ansel.grainsocial.network'
+  PDS_REPORT_SERVICE_DID = 'did:plc:ar7c4by46qjdydhdevvrndac'
+  PDS_REPORT_SERVICE_URL = 'https://mod.bsky.app'
+
+[[mounts]]
+  source = 'pdsdata'
+  destination = '/pds'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 3000
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
