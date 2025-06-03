@@ -29,6 +29,10 @@ primary_region = 'sea'
   PDS_PRIMARY_COLOR = '#00a6f4'
   PDS_PRIMARY_COLOR_CONTRAST = '#fff'
   PDS_PRIMARY_COLOR_HUE = '#fff'
+  PDS_TERMS_OF_SERVICE_URL = 'https://grain.social/support/terms'
+  PDS_PRIVACY_POLICY_URL = 'https://grain.social/support/privacy'
+  PDS_SUPPORT_URL= 'https://grain.social/support'
+  PDS_CONTACT_EMAIL_ADDRESS = 'support@grain.social'
 
 [[mounts]]
   source = 'pdsdata'

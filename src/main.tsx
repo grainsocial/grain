@@ -8,10 +8,12 @@ import * as actionHandlers from "./routes/actions.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
 import { handler as exploreHandler } from "./routes/explore.tsx";
 import { handler as galleryHandler } from "./routes/gallery.tsx";
+import * as legalHandlers from "./routes/legal.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
 import { handler as profileHandler } from "./routes/profile.tsx";
 import { handler as recordHandler } from "./routes/record.ts";
+import { handler as supportHandler } from "./routes/support.tsx";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
 import { appStateMiddleware, type State } from "./state.ts";
@@ -57,6 +59,10 @@ bff({
     route("/profile/:handle/gallery/:rkey", galleryHandler),
     route("/upload", uploadHandler),
     route("/onboard", onboardHandler),
+    route("/support", supportHandler),
+    route("/support/privacy", legalHandlers.privacyHandler),
+    route("/support/terms", legalHandlers.termsHandler),
+    route("/support/copyright", legalHandlers.copyrightHandler),
     route("/dialogs/create-account", dialogHandlers.createAccount),
     route("/dialogs/gallery/new", dialogHandlers.createGallery),
     route("/dialogs/gallery/:rkey", dialogHandlers.editGallery),
