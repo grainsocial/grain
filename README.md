@@ -85,16 +85,10 @@ docker compose up -d
 
 #### Install the root certificate on your machine
 
-First, get your Caddy container ID:
+Copy the cert out:
 
 ```bash
-docker ps
-```
-
-Then copy the cert out:
-
-```bash
-docker cp <caddy_container_id>:/data/pki/authorities/grain/root.crt ./grain-root.crt
+docker cp caddy:/data/pki/authorities/grain/root.crt ./grain-root.crt
 ```
 
 Once you have grain-root.crt, install it:

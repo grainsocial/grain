@@ -6,6 +6,7 @@ import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
+import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
@@ -152,4 +153,12 @@ export const galleryPhotoSelect: RouteHandler = (
       photos={photos}
     />,
   );
+};
+
+export const createAccount: RouteHandler = (
+  _req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  return ctx.html(<CreateAccountDialog />);
 };

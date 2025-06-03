@@ -57,6 +57,7 @@ bff({
     route("/profile/:handle/gallery/:rkey", galleryHandler),
     route("/upload", uploadHandler),
     route("/onboard", onboardHandler),
+    route("/dialogs/create-account", dialogHandlers.createAccount),
     route("/dialogs/gallery/new", dialogHandlers.createGallery),
     route("/dialogs/gallery/:rkey", dialogHandlers.editGallery),
     route("/dialogs/gallery/:rkey/sort", dialogHandlers.sortGallery),
