@@ -12,6 +12,7 @@ import { FollowButton } from "../components/FollowButton.tsx";
 import { PhotoButton } from "../components/PhotoButton.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
+import { BadRequestError } from "../lib/errors.ts";
 import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
 import { photoThumb, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
@@ -28,36 +29,66 @@ export const updateSeen: RouteHandler = (
 };
 
 export const follow: RouteHandler = async (
-  _req,
+  req,
   params,
   ctx: BffContext<State>,
 ) => {
   ctx.requireAuth();
   const did = params.did;
-  if (!did) return ctx.next();
+  const url = new URL(req.url);
+  const collection = url.searchParams.get("collection") || undefined;
+  const hideCollection = url.searchParams.get("hideCollection") === "true";
+  // TODO: check for supported collections
+  if (!did || !collection) {
+    throw new BadRequestError("Missing did or collection");
+  }
   const followUri = await ctx.createRecord<BskyFollow>(
-    "app.bsky.graph.follow",
+    collection,
     {
       subject: did,
       createdAt: new Date().toISOString(),
     },
   );
+  if (collection) {
+    return ctx.html(
+      <FollowButton
+        {...!hideCollection && {
+          class: "sm:w-full",
+          collection,
+        }}
+        followeeDid={did}
+        followUri={followUri}
+      />,
+    );
+  }
   return ctx.html(<FollowButton followeeDid={did} followUri={followUri} />);
 };
 
 export const unfollow: RouteHandler = async (
-  _req,
+  req,
   params,
   ctx: BffContext<State>,
 ) => {
-  const { did } = ctx.requireAuth();
+  ctx.requireAuth();
   const followeeDid = params.followeeDid;
-  const rkey = params.rkey;
+  const url = new URL(req.url);
+  const uri = url.searchParams.get("uri") || undefined;
+  const hideCollection = url.searchParams.get("hideCollection") === "true";
+  if (!followeeDid || !uri) {
+    throw new BadRequestError("Missing followeeDid or uri");
+  }
   await ctx.deleteRecord(
-    `at://${did}/app.bsky.graph.follow/${rkey}`,
+    uri,
   );
   return ctx.html(
-    <FollowButton followeeDid={followeeDid} followUri={undefined} />,
+    <FollowButton
+      {...!hideCollection && {
+        class: "sm:w-full",
+        collection: new AtUri(uri).collection,
+      }}
+      followeeDid={followeeDid}
+      followUri={undefined}
+    />,
   );
 };
 

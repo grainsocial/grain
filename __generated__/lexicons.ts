@@ -2296,6 +2296,101 @@ export const schemaDict = {
       },
     },
   },
+  ShTangledGraphFollow: {
+    lexicon: 1,
+    id: 'sh.tangled.graph.follow',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ShTangledActorProfile: {
+    lexicon: 1,
+    id: 'sh.tangled.actor.profile',
+    defs: {
+      main: {
+        type: 'record',
+        description: 'A declaration of a Tangled account profile.',
+        key: 'literal:self',
+        record: {
+          type: 'object',
+          required: ['bluesky'],
+          properties: {
+            description: {
+              type: 'string',
+              description: 'Free-form profile description text.',
+              maxGraphemes: 256,
+              maxLength: 2560,
+            },
+            links: {
+              type: 'array',
+              minLength: 0,
+              maxLength: 5,
+              items: {
+                type: 'string',
+                description:
+                  'Any URI, intended for social profiles or websites, can be used to link DIDs/AT-URIs too.',
+              },
+            },
+            stats: {
+              type: 'array',
+              minLength: 0,
+              maxLength: 2,
+              items: {
+                type: 'string',
+                description: 'Vanity stats.',
+                enum: [
+                  'merged-pull-request-count',
+                  'closed-pull-request-count',
+                  'open-pull-request-count',
+                  'open-issue-count',
+                  'closed-issue-count',
+                  'repository-count',
+                ],
+              },
+            },
+            bluesky: {
+              type: 'boolean',
+              description: 'Include link to this account on Bluesky.',
+            },
+            location: {
+              type: 'string',
+              description: 'Free-form location text.',
+              maxGraphemes: 40,
+              maxLength: 400,
+            },
+            pinnedRepositories: {
+              type: 'array',
+              description:
+                'Any ATURI, it is up to appviews to validate these fields.',
+              minLength: 0,
+              maxLength: 6,
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainDefs: {
     lexicon: 1,
     id: 'social.grain.defs',
@@ -2458,6 +2553,30 @@ export const schemaDict = {
             description: {
               type: 'string',
               maxLength: 1000,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGraphFollow: {
+    lexicon: 1,
+    id: 'social.grain.graph.follow',
+    defs: {
+      main: {
+        key: 'tid',
+        type: 'record',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'did',
             },
             createdAt: {
               type: 'string',
@@ -2891,11 +3010,14 @@ export const ids = {
   AppBskyActorDefs: 'app.bsky.actor.defs',
   AppBskyActorProfile: 'app.bsky.actor.profile',
   AppBskyLabelerDefs: 'app.bsky.labeler.defs',
+  ShTangledGraphFollow: 'sh.tangled.graph.follow',
+  ShTangledActorProfile: 'sh.tangled.actor.profile',
   SocialGrainDefs: 'social.grain.defs',
   SocialGrainNotificationDefs: 'social.grain.notification.defs',
   SocialGrainGalleryItem: 'social.grain.gallery.item',
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
   SocialGrainGallery: 'social.grain.gallery',
+  SocialGrainGraphFollow: 'social.grain.graph.follow',
   SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorProfile: 'social.grain.actor.profile',

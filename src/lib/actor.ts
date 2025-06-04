@@ -1,5 +1,7 @@
+import { Record as BskyProfile } from "$lexicon/types/app/bsky/actor/profile.ts";
+import { Record as TangledProfile } from "$lexicon/types/sh/tangled/actor/profile.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
-import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
+import { Record as GrainProfile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
@@ -7,18 +9,19 @@ import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
 import { photoToView } from "./photo.ts";
+import type { SocialNetwork } from "./timeline.ts";
 
 export function getActorProfile(did: string, ctx: BffContext) {
   const actor = ctx.indexService.getActor(did);
   if (!actor) return null;
-  const profileRecord = ctx.indexService.getRecord<WithBffMeta<Profile>>(
+  const profileRecord = ctx.indexService.getRecord<WithBffMeta<GrainProfile>>(
     `at://${did}/social.grain.actor.profile/self`,
   );
   return profileRecord ? profileToView(profileRecord, actor.handle) : null;
 }
 
 export function profileToView(
-  record: WithBffMeta<Profile>,
+  record: WithBffMeta<GrainProfile>,
   handle: string,
 ): Un$Typed<ProfileView> {
   return {
@@ -124,7 +127,9 @@ export function getActorGalleryFavs(handleOrDid: string, ctx: BffContext) {
     new Set(galleries.map((gallery) => gallery.did)),
   );
 
-  const { items: profiles } = ctx.indexService.getRecords<WithBffMeta<Profile>>(
+  const { items: profiles } = ctx.indexService.getRecords<
+    WithBffMeta<GrainProfile>
+  >(
     "social.grain.actor.profile",
     {
       where: [{ field: "did", in: uniqueDids }],
@@ -150,4 +155,67 @@ export function getActorGalleryFavs(handleOrDid: string, ctx: BffContext) {
       );
     })
     .filter((g) => g !== null);
+}
+
+export function getActorProfiles(
+  handleOrDid: string,
+  ctx: BffContext,
+): SocialNetwork[] {
+  let did: string;
+
+  if (handleOrDid.includes("did:")) {
+    did = handleOrDid;
+  } else {
+    const actor = ctx.indexService.getActorByHandle(handleOrDid);
+    if (!actor) return [];
+    did = actor.did;
+  }
+
+  const { items: grainProfiles } = ctx.indexService.getRecords<
+    WithBffMeta<GrainProfile>
+  >(
+    "social.grain.actor.profile",
+    {
+      where: {
+        AND: [
+          { field: "did", equals: did },
+          { field: "uri", contains: "self" },
+        ],
+      },
+    },
+  );
+
+  const { items: tangledProfiles } = ctx.indexService.getRecords<
+    WithBffMeta<TangledProfile>
+  >(
+    "sh.tangled.actor.profile",
+    {
+      where: {
+        AND: [
+          { field: "did", equals: did },
+          { field: "uri", contains: "self" },
+        ],
+      },
+    },
+  );
+
+  const { items: bskyProfiles } = ctx.indexService.getRecords<
+    WithBffMeta<BskyProfile>
+  >(
+    "app.bsky.actor.profile",
+    {
+      where: {
+        AND: [
+          { field: "did", equals: did },
+          { field: "uri", contains: "self" },
+        ],
+      },
+    },
+  );
+
+  const profiles: SocialNetwork[] = [];
+  if (grainProfiles.length) profiles.push("grain");
+  if (bskyProfiles.length) profiles.push("bluesky");
+  if (tangledProfiles.length) profiles.push("tangled");
+  return profiles;
 }

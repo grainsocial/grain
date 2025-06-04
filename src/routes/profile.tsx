@@ -1,13 +1,13 @@
-import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
-import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
+import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { ProfilePage, ProfileTabs } from "../components/ProfilePage.tsx";
 import {
   getActorGalleries,
   getActorGalleryFavs,
   getActorProfile,
+  getActorProfiles,
 } from "../lib/actor.ts";
-import { getFollow } from "../lib/follow.ts";
-import { getActorTimeline } from "../lib/timeline.ts";
+import { type FollowMap, getFollows } from "../lib/follow.ts";
+import { getActorTimeline, type SocialNetwork } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { profileLink } from "../utils.ts";
@@ -31,11 +31,20 @@ export const handler: RouteHandler = (
 
   if (!profile) return ctx.next();
 
-  let follow: WithBffMeta<BskyFollow> | undefined;
+  let followMap: FollowMap = {
+    "social.grain.graph.follow": "",
+    "app.bsky.graph.follow": "",
+    "sh.tangled.graph.follow": "",
+  };
+  let actorProfiles: SocialNetwork[] = [];
+  let userProfiles: SocialNetwork[] = [];
 
   if (ctx.currentUser) {
-    follow = getFollow(profile.did, ctx.currentUser.did, ctx);
+    followMap = getFollows(profile.did, ctx.currentUser.did, ctx);
+    actorProfiles = getActorProfiles(ctx.currentUser.did, ctx);
   }
+
+  userProfiles = getActorProfiles(handle, ctx);
 
   ctx.state.meta = [
     {
@@ -52,7 +61,9 @@ export const handler: RouteHandler = (
     const galleryFavs = getActorGalleryFavs(handle, ctx);
     return render(
       <ProfilePage
-        followUri={follow?.uri}
+        userProfiles={userProfiles}
+        actorProfiles={actorProfiles}
+        followMap={followMap}
         loggedInUserDid={ctx.currentUser?.did}
         timelineItems={timelineItems}
         profile={profile}
@@ -66,7 +77,9 @@ export const handler: RouteHandler = (
     const galleries = getActorGalleries(handle, ctx);
     return render(
       <ProfilePage
-        followUri={follow?.uri}
+        userProfiles={userProfiles}
+        actorProfiles={actorProfiles}
+        followMap={followMap}
         loggedInUserDid={ctx.currentUser?.did}
         timelineItems={timelineItems}
         profile={profile}
@@ -77,7 +90,9 @@ export const handler: RouteHandler = (
   }
   return ctx.render(
     <ProfilePage
-      followUri={follow?.uri}
+      userProfiles={userProfiles}
+      actorProfiles={actorProfiles}
+      followMap={followMap}
       loggedInUserDid={ctx.currentUser?.did}
       timelineItems={timelineItems}
       profile={profile}

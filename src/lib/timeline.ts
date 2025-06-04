@@ -1,14 +1,18 @@
 import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
+import { Record as TangledFollow } from "$lexicon/types/sh/tangled/graph/follow.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
+import { Record as GrainFollow } from "$lexicon/types/social/grain/graph/follow.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
 
-type TimelineItemType = "gallery";
+export type TimelineItemType = "gallery";
+
+export type SocialNetwork = "bluesky" | "grain" | "tangled";
 
 export type TimelineItem = {
   createdAt: string;
@@ -33,11 +37,15 @@ function processGalleries(
     ? [{ field: "did", equals: options.actorDid }]
     : undefined;
 
-  if (options?.followingDids && options.followingDids.size > 0) {
-    whereClause = [
-      ...(whereClause ?? []),
-      { field: "did", in: Array.from(options.followingDids) },
-    ];
+  if (options?.followingDids) {
+    if (options.followingDids.size > 0) {
+      whereClause = [
+        ...(whereClause ?? []),
+        { field: "did", in: Array.from(options.followingDids) },
+      ];
+    } else {
+      return [];
+    }
   }
 
   const { items: galleries } = ctx.indexService.getRecords<
@@ -86,12 +94,21 @@ function getTimelineItems(
   );
 }
 
-function getFollowingDids(ctx: BffContext): Set<string> {
+function getFollowingDids(type: SocialNetwork, ctx: BffContext): Set<string> {
   if (!ctx.currentUser?.did) return new Set();
+  const typeToCollection: Record<SocialNetwork, string> = {
+    bluesky: "app.bsky.graph.follow",
+    grain: "social.grain.graph.follow",
+    tangled: "sh.tangled.graph.follow",
+  };
+  const collection = typeToCollection[type];
+  if (!collection) {
+    throw new Error(`Unsupported social graph type: ${type}`);
+  }
   const { items: follows } = ctx.indexService.getRecords<
-    WithBffMeta<BskyFollow>
+    WithBffMeta<BskyFollow | GrainFollow | TangledFollow>
   >(
-    "app.bsky.graph.follow",
+    collection,
     { where: [{ field: "did", equals: ctx.currentUser.did }] },
   );
   return new Set(follows.map((f) => f.subject).filter(Boolean));
@@ -99,11 +116,12 @@ function getFollowingDids(ctx: BffContext): Set<string> {
 
 export function getTimeline(
   ctx: BffContext,
-  type: "timeline" | "following" = "timeline",
+  type: "timeline" | "following",
+  graph: SocialNetwork,
 ): TimelineItem[] {
   let followingDids: Set<string> | undefined = undefined;
   if (type === "following") {
-    followingDids = getFollowingDids(ctx);
+    followingDids = getFollowingDids(graph, ctx);
   }
   const galleryItems = processGalleries(ctx, { followingDids });
   return galleryItems.sort(

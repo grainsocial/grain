@@ -5,17 +5,21 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { Button, cn } from "@bigmoves/bff/components";
-import { TimelineItem } from "../lib/timeline.ts";
+import { FollowMap } from "../lib/follow.ts";
+import type { SocialNetwork, TimelineItem } from "../lib/timeline.ts";
 import { bskyProfileLink, galleryLink, profileLink } from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
 import { AvatarButton } from "./AvatarButton.tsx";
 import { FollowButton } from "./FollowButton.tsx";
+import { FollowsButton } from "./FollowsButton.tsx";
 import { TimelineItem as Item } from "./TimelineItem.tsx";
 
 export type ProfileTabs = "favs" | "galleries" | null;
 
 export function ProfilePage({
-  followUri,
+  userProfiles,
+  actorProfiles,
+  followMap,
   loggedInUserDid,
   timelineItems,
   profile,
@@ -23,7 +27,9 @@ export function ProfilePage({
   galleries,
   galleryFavs,
 }: Readonly<{
-  followUri?: string;
+  userProfiles: SocialNetwork[];
+  actorProfiles: SocialNetwork[];
+  followMap: FollowMap;
   loggedInUserDid?: string;
   timelineItems: TimelineItem[];
   profile: Un$Typed<ProfileView>;
@@ -33,6 +39,11 @@ export function ProfilePage({
 }>) {
   const isCreator = loggedInUserDid === profile.did;
   const displayName = profile.displayName || profile.handle;
+  const grainOnly = actorProfiles.length === 1 &&
+    actorProfiles.includes("grain");
+  const profilesIntersection = userProfiles.filter((p) =>
+    actorProfiles.includes(p)
+  );
   return (
     <div class="px-4 mb-4" id="profile-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
@@ -44,18 +55,34 @@ export function ProfilePage({
             ? <p class="mt-2 sm:max-w-[500px]">{profile.description}</p>
             : null}
           <p>
-            <a
-              href={bskyProfileLink(profile.handle)}
-              class="text-xs hover:underline"
-            >
-              <i class="fa-brands fa-bluesky text-sky-500" /> @{profile.handle}
-            </a>
+            {userProfiles.includes("bluesky") && (
+              <a
+                href={bskyProfileLink(profile.handle)}
+                class="text-xs hover:underline"
+              >
+                <i class="fa-brands fa-bluesky text-sky-500" />{" "}
+                @{profile.handle}
+              </a>
+            )}
           </p>
         </div>
         {!isCreator && loggedInUserDid
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              <FollowButton followeeDid={profile.did} followUri={followUri} />
+              {grainOnly
+                ? (
+                  <FollowButton
+                    followeeDid={profile.did}
+                    followUri={followMap["social.grain.graph.follow"]}
+                  />
+                )
+                : (
+                  <FollowsButton
+                    actorProfiles={profilesIntersection}
+                    followeeDid={profile.did}
+                    followMap={followMap}
+                  />
+                )}
             </div>
           )
           : null}

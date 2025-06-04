@@ -7,13 +7,20 @@ import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
 import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
+import { FollowsDialog } from "../components/FollowsDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
 import { PhotoDialog } from "../components/PhotoDialog.tsx";
 import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
-import { getActorPhotos, getActorProfile } from "../lib/actor.ts";
+import {
+  getActorPhotos,
+  getActorProfile,
+  getActorProfiles,
+} from "../lib/actor.ts";
+import { BadRequestError } from "../lib/errors.ts";
+import { getFollows } from "../lib/follow.ts";
 import { getGallery, getGalleryItemsAndPhotos } from "../lib/gallery.ts";
 import { photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
@@ -161,4 +168,25 @@ export const createAccount: RouteHandler = (
   ctx: BffContext<State>,
 ) => {
   return ctx.html(<CreateAccountDialog />);
+};
+
+export const follows: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const followeeDid = params.followeeDid;
+  if (!followeeDid) {
+    throw new BadRequestError("Missing followeeDid parameter");
+  }
+  const followMap = getFollows(followeeDid, did, ctx);
+  const sources = getActorProfiles(followeeDid, ctx);
+  return ctx.html(
+    <FollowsDialog
+      sources={sources}
+      followeeDid={followeeDid}
+      followMap={followMap}
+    />,
+  );
 };
