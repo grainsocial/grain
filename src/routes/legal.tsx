@@ -7,6 +7,7 @@ export const termsHandler: RouteHandler = (
   _params,
   ctx: BffContext<State>,
 ) => {
+  ctx.state.meta = [{ title: "Terms — Grain" }];
   return ctx.render(
     <Terms />,
   );
@@ -17,6 +18,7 @@ export const privacyHandler: RouteHandler = (
   _params,
   ctx: BffContext<State>,
 ) => {
+  ctx.state.meta = [{ title: "Privacy Policy — Grain" }];
   return ctx.render(
     <PrivacyPolicy />,
   );
@@ -27,6 +29,7 @@ export const copyrightHandler: RouteHandler = (
   _params,
   ctx: BffContext<State>,
 ) => {
+  ctx.state.meta = [{ title: "Copyright Policy — Grain" }];
   return ctx.render(
     <CopyrightPolicy />,
   );
