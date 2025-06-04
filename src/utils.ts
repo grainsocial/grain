@@ -68,6 +68,8 @@ export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
     externalCollections: [
       "app.bsky.actor.profile",
       "app.bsky.graph.follow",
+      "sh.tangled.actor.profile",
+      "sh.tangled.graph.follow",
     ],
     repos: [actor.did],
   });
