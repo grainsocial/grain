@@ -1,5 +1,6 @@
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
+import { Record as Follow } from "$lexicon/types/social/grain/graph/follow.ts";
 import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { formatRelativeTime, profileLink } from "../utils.ts";
@@ -44,12 +45,23 @@ export function NotificationsPage(
                     </span>
                   </a>
                   <span class="break-words">
-                    favorited your gallery · {formatRelativeTime(
-                      new Date((notification.record as Favorite).createdAt),
+                    {notification.reason === "gallery-favorite" && (
+                      <>
+                        favorited your gallery · {formatRelativeTime(
+                          new Date((notification.record as Favorite).createdAt),
+                        )}
+                      </>
+                    )}
+                    {notification.reason === "follow" && (
+                      <>
+                        followed you · {formatRelativeTime(
+                          new Date((notification.record as Follow).createdAt),
+                        )}
+                      </>
                     )}
                   </span>
                 </div>
-                {galleriesMap.get(
+                {notification.reason === "gallery-favorite" && galleriesMap.get(
                     (notification.record as Favorite).subject,
                   )
                   ? (

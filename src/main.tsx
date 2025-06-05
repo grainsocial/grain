@@ -7,6 +7,8 @@ import { onError } from "./lib/errors.ts";
 import * as actionHandlers from "./routes/actions.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
 import { handler as exploreHandler } from "./routes/explore.tsx";
+import { handler as followersHandler } from "./routes/followers.tsx";
+import { handler as followsHandler } from "./routes/follows.tsx";
 import { handler as galleryHandler } from "./routes/gallery.tsx";
 import * as legalHandlers from "./routes/legal.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
@@ -59,6 +61,8 @@ bff({
     route("/explore", exploreHandler),
     route("/notifications", notificationsHandler),
     route("/profile/:handle", profileHandler),
+    route("/profile/:handle/followers", followersHandler),
+    route("/profile/:handle/follows", followsHandler),
     route("/profile/:handle/gallery/:rkey", galleryHandler),
     route("/upload", uploadHandler),
     route("/onboard", onboardHandler),
@@ -78,11 +82,10 @@ bff({
       "/dialogs/photo-select/:galleryRkey",
       dialogHandlers.galleryPhotoSelect,
     ),
-    route("/dialogs/follows/:followeeDid", dialogHandlers.follows),
     route("/actions/update-seen", ["POST"], actionHandlers.updateSeen),
-    route("/actions/follow/:did", ["POST"], actionHandlers.follow),
+    route("/actions/follow/:followeeDid", ["POST"], actionHandlers.follow),
     route(
-      "/actions/follow/:followeeDid",
+      "/actions/follow/:followeeDid/:rkey",
       ["DELETE"],
       actionHandlers.unfollow,
     ),

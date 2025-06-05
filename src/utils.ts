@@ -32,6 +32,14 @@ export function profileLink(handle: string) {
   return `/profile/${handle}`;
 }
 
+export function followersLink(handle: string) {
+  return `/profile/${handle}/followers`;
+}
+
+export function followingLink(handle: string) {
+  return `/profile/${handle}/follows`;
+}
+
 export function galleryLink(handle: string, galleryRkey: string) {
   return `/profile/${handle}/gallery/${galleryRkey}`;
 }

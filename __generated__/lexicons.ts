@@ -2444,8 +2444,8 @@ export const schemaDict = {
           reason: {
             type: 'string',
             description:
-              "Expected values are 'gallery-favorite', and 'unknown'.",
-            knownValues: ['gallery-favorite', 'unknown'],
+              'The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower.',
+            knownValues: ['follow', 'gallery-favorite', 'unknown'],
           },
           reasonSubject: {
             type: 'string',

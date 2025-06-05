@@ -6,8 +6,8 @@ import {
   getActorProfile,
   getActorProfiles,
 } from "../lib/actor.ts";
-import { type FollowMap, getFollows } from "../lib/follow.ts";
-import { getActorTimeline, type SocialNetwork } from "../lib/timeline.ts";
+import { getFollow, getFollowers, getFollowing } from "../lib/follow.ts";
+import { type SocialNetwork } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { profileLink } from "../utils.ts";
@@ -20,7 +20,6 @@ export const handler: RouteHandler = (
   const url = new URL(req.url);
   const tab = url.searchParams.get("tab") as ProfileTabs;
   const handle = params.handle;
-  const timelineItems = getActorTimeline(handle, ctx);
   const actor = ctx.indexService.getActorByHandle(handle);
   const isHxRequest = req.headers.get("hx-request") !== null;
   const render = isHxRequest ? ctx.html : ctx.render;
@@ -28,19 +27,18 @@ export const handler: RouteHandler = (
   if (!actor) return ctx.next();
 
   const profile = getActorProfile(actor.did, ctx);
+  const galleries = getActorGalleries(handle, ctx);
+  const followers = getFollowers(actor.did, ctx);
+  const following = getFollowing(actor.did, ctx);
 
   if (!profile) return ctx.next();
 
-  let followMap: FollowMap = {
-    "social.grain.graph.follow": "",
-    "app.bsky.graph.follow": "",
-    "sh.tangled.graph.follow": "",
-  };
+  let followUri: string | undefined;
   let actorProfiles: SocialNetwork[] = [];
   let userProfiles: SocialNetwork[] = [];
 
   if (ctx.currentUser) {
-    followMap = getFollows(profile.did, ctx.currentUser.did, ctx);
+    followUri = getFollow(profile.did, ctx.currentUser.did, ctx)?.uri;
     actorProfiles = getActorProfiles(ctx.currentUser.did, ctx);
   }
 
@@ -61,41 +59,30 @@ export const handler: RouteHandler = (
     const galleryFavs = getActorGalleryFavs(handle, ctx);
     return render(
       <ProfilePage
+        followersCount={followers.length}
+        followingCount={following.length}
         userProfiles={userProfiles}
         actorProfiles={actorProfiles}
-        followMap={followMap}
+        followUri={followUri}
         loggedInUserDid={ctx.currentUser?.did}
-        timelineItems={timelineItems}
         profile={profile}
-        selectedTab={tab}
-        galleries={[]}
+        selectedTab="favs"
+        galleries={galleries}
         galleryFavs={galleryFavs}
       />,
     );
   }
-  if (tab === "galleries") {
-    const galleries = getActorGalleries(handle, ctx);
-    return render(
-      <ProfilePage
-        userProfiles={userProfiles}
-        actorProfiles={actorProfiles}
-        followMap={followMap}
-        loggedInUserDid={ctx.currentUser?.did}
-        timelineItems={timelineItems}
-        profile={profile}
-        selectedTab={tab}
-        galleries={galleries}
-      />,
-    );
-  }
-  return ctx.render(
+  return render(
     <ProfilePage
+      followersCount={followers.length}
+      followingCount={following.length}
       userProfiles={userProfiles}
       actorProfiles={actorProfiles}
-      followMap={followMap}
+      followUri={followUri}
       loggedInUserDid={ctx.currentUser?.did}
-      timelineItems={timelineItems}
       profile={profile}
+      selectedTab="galleries"
+      galleries={galleries}
     />,
   );
 };

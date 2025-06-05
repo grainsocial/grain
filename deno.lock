@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.31": "0.3.0-beta.31",
+    "jsr:@bigmoves/bff@0.3.0-beta.32": "0.3.0-beta.32",
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/cli@^1.0.18": "1.0.19",
     "jsr:@std/encoding@^1.0.10": "1.0.10",
@@ -65,8 +65,8 @@
         "npm:tailwind-merge"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.31": {
-      "integrity": "2f0ec89088ff8099abeaec25af5a5998894c1dbdbed66cc6d3b0a9b2500b18e0",
+    "@bigmoves/bff@0.3.0-beta.32": {
+      "integrity": "d33581157c6d52bd9ecccdbcb090559377de71d28137ce7fdf3882740390a389",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert",
@@ -1596,7 +1596,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.31",
+      "jsr:@bigmoves/bff@0.3.0-beta.32",
       "jsr:@std/http@^1.0.17",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",

@@ -20,8 +20,8 @@ export interface NotificationView {
   uri: string
   cid: string
   author: SocialGrainActorDefs.ProfileView
-  /** Expected values are 'gallery-favorite', and 'unknown'. */
-  reason: 'gallery-favorite' | 'unknown' | (string & {})
+  /** The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower. */
+  reason: 'follow' | 'gallery-favorite' | 'unknown' | (string & {})
   reasonSubject?: string
   record: { [_ in string]: unknown }
   isRead: boolean

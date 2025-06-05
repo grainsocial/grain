@@ -5,33 +5,37 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { Button, cn } from "@bigmoves/bff/components";
-import { FollowMap } from "../lib/follow.ts";
-import type { SocialNetwork, TimelineItem } from "../lib/timeline.ts";
-import { bskyProfileLink, galleryLink, profileLink } from "../utils.ts";
+import type { SocialNetwork } from "../lib/timeline.ts";
+import {
+  bskyProfileLink,
+  followersLink,
+  followingLink,
+  galleryLink,
+  profileLink,
+} from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
 import { AvatarButton } from "./AvatarButton.tsx";
 import { FollowButton } from "./FollowButton.tsx";
-import { FollowsButton } from "./FollowsButton.tsx";
-import { TimelineItem as Item } from "./TimelineItem.tsx";
 
-export type ProfileTabs = "favs" | "galleries" | null;
+export type ProfileTabs = "favs" | "galleries";
 
 export function ProfilePage({
+  followUri,
+  followersCount,
+  followingCount,
   userProfiles,
-  actorProfiles,
-  followMap,
   loggedInUserDid,
-  timelineItems,
   profile,
   selectedTab,
   galleries,
   galleryFavs,
 }: Readonly<{
+  followUri?: string;
+  followersCount?: number;
+  followingCount?: number;
   userProfiles: SocialNetwork[];
   actorProfiles: SocialNetwork[];
-  followMap: FollowMap;
   loggedInUserDid?: string;
-  timelineItems: TimelineItem[];
   profile: Un$Typed<ProfileView>;
   selectedTab?: ProfileTabs;
   galleries?: GalleryView[];
@@ -39,11 +43,6 @@ export function ProfilePage({
 }>) {
   const isCreator = loggedInUserDid === profile.did;
   const displayName = profile.displayName || profile.handle;
-  const grainOnly = actorProfiles.length === 1 &&
-    actorProfiles.includes("grain");
-  const profilesIntersection = userProfiles.filter((p) =>
-    actorProfiles.includes(p)
-  );
   return (
     <div class="px-4 mb-4" id="profile-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
@@ -51,6 +50,22 @@ export function ProfilePage({
           <AvatarButton profile={profile} />
           <p class="text-2xl font-bold">{displayName}</p>
           <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
+          <p class="space-x-1">
+            <a href={followersLink(profile.handle)}>
+              <span class="font-semibold" id="followers-count">
+                {followersCount ?? 0}
+              </span>{" "}
+              <span class="text-zinc-600 dark:text-zinc-500">followers</span>
+            </a>{" "}
+            <a href={followingLink(profile.handle)}>
+              <span class="font-semibold" id="following-count">
+                {followingCount ?? 0}
+              </span>{" "}
+              <span class="text-zinc-600 dark:text-zinc-500">following</span>
+            </a>{" "}
+            <span class="font-semibold">{galleries?.length ?? 0}</span>
+            <span class="text-zinc-600 dark:text-zinc-500">galleries</span>
+          </p>
           {profile.description
             ? <p class="mt-2 sm:max-w-[500px]">{profile.description}</p>
             : null}
@@ -69,20 +84,10 @@ export function ProfilePage({
         {!isCreator && loggedInUserDid
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              {grainOnly
-                ? (
-                  <FollowButton
-                    followeeDid={profile.did}
-                    followUri={followMap["social.grain.graph.follow"]}
-                  />
-                )
-                : (
-                  <FollowsButton
-                    actorProfiles={profilesIntersection}
-                    followeeDid={profile.did}
-                    followMap={followMap}
-                  />
-                )}
+              <FollowButton
+                followeeDid={profile.did}
+                followUri={followUri}
+              />
             </div>
           )
           : null}
@@ -130,19 +135,20 @@ export function ProfilePage({
       >
         <button
           type="button"
+          name="tab"
+          value="galleries"
           hx-get={profileLink(profile.handle)}
-          hx-target="body"
+          hx-target="#profile-page"
           hx-swap="outerHTML"
           class={cn(
             "flex-1 min-w-[120px] py-2 px-4 cursor-pointer font-semibold",
-            !selectedTab && "bg-zinc-100 dark:bg-zinc-800 font-semibold",
+            selectedTab === "galleries" && "bg-zinc-100 dark:bg-zinc-800",
           )}
           role="tab"
-          aria-selected={!selectedTab}
+          aria-selected={selectedTab === "galleries"}
           aria-controls="tab-content"
-          hx-push-url="true"
         >
-          Activity
+          Galleries
         </button>
         {isCreator && (
           <button
@@ -159,42 +165,63 @@ export function ProfilePage({
             role="tab"
             aria-selected={selectedTab === "favs"}
             aria-controls="tab-content"
-            hx-push-url="true"
           >
             Favs
           </button>
         )}
-        <button
+        {
+          /* <button
           type="button"
-          name="tab"
-          value="galleries"
           hx-get={profileLink(profile.handle)}
-          hx-target="#profile-page"
+          hx-target="body"
           hx-swap="outerHTML"
           class={cn(
             "flex-1 min-w-[120px] py-2 px-4 cursor-pointer font-semibold",
-            selectedTab === "galleries" && "bg-zinc-100 dark:bg-zinc-800",
+            !selectedTab && "bg-zinc-100 dark:bg-zinc-800 font-semibold",
           )}
           role="tab"
-          aria-selected={selectedTab === "galleries"}
+          aria-selected={!selectedTab}
           aria-controls="tab-content"
           hx-push-url="true"
         >
-          Galleries
-        </button>
+          Activity
+        </button> */
+        }
       </div>
       <div id="tab-content" role="tabpanel">
-        {!selectedTab
+        {selectedTab === "galleries"
           ? (
-            <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y w-fit">
-              {timelineItems.length
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+              {galleries?.length
                 ? (
-                  timelineItems.map((item) => (
-                    <Item item={item} key={item.itemUri} />
+                  galleries.map((gallery) => (
+                    <a
+                      href={galleryLink(
+                        gallery.creator.handle,
+                        new AtUri(gallery.uri).rkey,
+                      )}
+                      class="cursor-pointer relative aspect-square"
+                    >
+                      {gallery.items?.length
+                        ? (
+                          <img
+                            src={gallery.items?.filter(isPhotoView)?.[0]
+                              ?.fullsize}
+                            alt={gallery.items?.filter(isPhotoView)?.[0]?.alt}
+                            class="w-full h-full object-cover"
+                          />
+                        )
+                        : (
+                          <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
+                        )}
+                      <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2">
+                        {(gallery.record as Gallery).title}
+                      </div>
+                    </a>
                   ))
                 )
-                : <li>No activity yet.</li>}
-            </ul>
+                : <p>No galleries yet.</p>}
+            </div>
           )
           : null}
         {selectedTab === "favs"
@@ -233,41 +260,21 @@ export function ProfilePage({
             </div>
           )
           : null}
-        {selectedTab === "galleries"
+        {
+          /* {!selectedTab
           ? (
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
-              {galleries?.length
+            <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y w-fit">
+              {timelineItems.length
                 ? (
-                  galleries.map((gallery) => (
-                    <a
-                      href={galleryLink(
-                        gallery.creator.handle,
-                        new AtUri(gallery.uri).rkey,
-                      )}
-                      class="cursor-pointer relative aspect-square"
-                    >
-                      {gallery.items?.length
-                        ? (
-                          <img
-                            src={gallery.items?.filter(isPhotoView)?.[0]
-                              ?.fullsize}
-                            alt={gallery.items?.filter(isPhotoView)?.[0]?.alt}
-                            class="w-full h-full object-cover"
-                          />
-                        )
-                        : (
-                          <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />
-                        )}
-                      <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2">
-                        {(gallery.record as Gallery).title}
-                      </div>
-                    </a>
+                  timelineItems.map((item) => (
+                    <Item item={item} key={item.itemUri} />
                   ))
                 )
-                : <p>No galleries yet.</p>}
-            </div>
+                : <li>No activity yet.</li>}
+            </ul>
           )
-          : null}
+          : null} */
+        }
       </div>
     </div>
   );

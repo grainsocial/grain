@@ -1,4 +1,5 @@
 import { ComponentChildren } from "preact";
+import { Breadcrumb } from "./components/Breadcrumb.tsx";
 
 type SectionProps = {
   title: string;
@@ -19,21 +20,15 @@ const Section = ({ title, children }: SectionProps) => (
 export function Terms() {
   return (
     <div className="px-4 py-4">
-      <nav className="mb-4 text-sm text-zinc-500 dark:text-zinc-300">
-        <a href="/support" className="text-sky-500 hover:underline">
-          support
-        </a>{" "}
-        <span className="mx-1">&gt;</span>{" "}
-        <span className="text-zinc-700 dark:text-zinc-100">terms</span>
-      </nav>
+      <Breadcrumb
+        items={[{ label: "support", href: "/support" }, { label: "terms" }]}
+      />
       <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-white">
         Terms and Conditions
       </h1>
-
       <div className="mb-6 text-sm text-zinc-900 dark:text-white">
         Last Updated: June 3, 2025
       </div>
-
       <Section title="Overview">
         <p>
           Grain is a photo sharing app built on the{" "}
@@ -42,12 +37,11 @@ export function Terms() {
             className="text-sky-500 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
-          >
-            AT Protocol
-          </a>
-          . All data, including photos, galleries, favorites, and metadata, is
-          public and stored on the AT Protocol network. Users can upload photos,
-          create and favorite galleries, and view non-location EXIF metadata.
+          />
+          AT Protocol . All data, including photos, galleries, favorites, and
+          metadata, is public and stored on the AT Protocol network. Users can
+          upload photos, create and favorite galleries, and view non-location
+          EXIF metadata.
         </p>
         <p>
           Grain is an open source project. These Terms apply to your use of the
@@ -140,8 +134,7 @@ export function Terms() {
             className="text-sky-500 hover:underline"
           >
             support@grain.social
-          </a>
-          .
+          </a>.
         </p>
       </Section>
     </div>
@@ -151,21 +144,15 @@ export function Terms() {
 export function PrivacyPolicy() {
   return (
     <div className="px-4 py-4">
-      <nav className="mb-4 text-sm text-zinc-500 dark:text-zinc-300">
-        <a href="/support" className="text-sky-500 hover:underline">
-          support
-        </a>{" "}
-        <span className="mx-1">&gt;</span>{" "}
-        <span className="text-zinc-700 dark:text-zinc-100">privacy</span>
-      </nav>
+      <Breadcrumb
+        items={[{ label: "support", href: "/support" }, { label: "privacy" }]}
+      />
       <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-white">
         Privacy Policy
       </h1>
-
       <div className="mb-6 text-sm text-zinc-900 dark:text-white">
         Last Updated: June 3, 2025
       </div>
-
       <Section title="Data Storage and Access">
         <p>
           Your data is stored on the AT Protocol. If you use a{" "}
@@ -245,8 +232,7 @@ export function PrivacyPolicy() {
             className="text-sky-500 hover:underline"
           >
             support@grain.social
-          </a>
-          .
+          </a>.
         </p>
       </Section>
     </div>
@@ -256,21 +242,15 @@ export function PrivacyPolicy() {
 export function CopyrightPolicy() {
   return (
     <div className="px-4 py-4">
-      <nav className="mb-4 text-sm text-zinc-500 dark:text-zinc-300">
-        <a href="/support" className="text-sky-500 hover:underline">
-          support
-        </a>{" "}
-        <span className="mx-1">&gt;</span>{" "}
-        <span className="text-zinc-700 dark:text-zinc-100">copyright</span>
-      </nav>
+      <Breadcrumb
+        items={[{ label: "support", href: "/support" }, { label: "copyright" }]}
+      />
       <h1 className="text-3xl font-bold mb-6 text-zinc-900 dark:text-white">
         Copyright Policy
       </h1>
-
       <div className="mb-6 text-sm text-zinc-900 dark:text-white">
         Last Updated: June 3, 2025
       </div>
-
       <Section title="Copyright Infringement">
         <p>
           Grain respects the intellectual property rights of others and expects
@@ -317,8 +297,7 @@ export function CopyrightPolicy() {
             className="text-sky-500 hover:underline"
           >
             support@grain.social
-          </a>
-          .
+          </a>.
         </p>
       </Section>
     </div>

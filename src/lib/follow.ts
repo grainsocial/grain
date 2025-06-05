@@ -1,48 +1,92 @@
-import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
-import { Record as TangledFollow } from "$lexicon/types/sh/tangled/graph/follow.ts";
 import { Record as GrainFollow } from "$lexicon/types/social/grain/graph/follow.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
+import { getActorProfile } from "./actor.ts";
 
-export type FollowSource =
-  | "app.bsky.graph.follow"
-  | "sh.tangled.graph.follow"
-  | "social.grain.graph.follow";
-
-export type FollowMap = Record<FollowSource, string>;
-
-export function getFollows(
+export function getFollow(
   followeeDid: string,
   followerDid: string,
   ctx: BffContext,
-): FollowMap {
-  const sources: FollowSource[] = [
-    "app.bsky.graph.follow",
-    "sh.tangled.graph.follow",
+) {
+  const {
+    items: [follow],
+  } = ctx.indexService.getRecords<
+    WithBffMeta<GrainFollow>
+  >(
     "social.grain.graph.follow",
-  ];
-
-  const result: FollowMap = {} as FollowMap;
-
-  for (const source of sources) {
-    const {
-      items: [follow],
-    } = ctx.indexService.getRecords<
-      WithBffMeta<BskyFollow | GrainFollow | TangledFollow>
-    >(source, {
-      where: [
-        {
+    {
+      where: {
+        AND: [{
           field: "did",
           equals: followerDid,
-        },
-        {
+        }, {
           field: "subject",
           equals: followeeDid,
-        },
-      ],
-    });
-    if (follow && "uri" in follow) {
-      result[source] = follow.uri;
-    }
-  }
-  return result;
+        }],
+      },
+    },
+  );
+
+  return follow;
+}
+
+export function getFollowers(
+  followeeDid: string,
+  ctx: BffContext,
+): WithBffMeta<GrainFollow>[] {
+  const { items: followers } = ctx.indexService.getRecords<
+    WithBffMeta<GrainFollow>
+  >(
+    "social.grain.graph.follow",
+    {
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+      where: [{
+        field: "subject",
+        equals: followeeDid,
+      }],
+    },
+  );
+  return followers;
+}
+
+export function getFollowing(
+  followerDid: string,
+  ctx: BffContext,
+): WithBffMeta<GrainFollow>[] {
+  const { items: following } = ctx.indexService.getRecords<
+    WithBffMeta<GrainFollow>
+  >(
+    "social.grain.graph.follow",
+    {
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+      where: [{
+        field: "did",
+        equals: followerDid,
+      }],
+    },
+  );
+  return following;
+}
+
+export function getFollowersWithProfiles(
+  followeeDid: string,
+  ctx: BffContext,
+) {
+  const followers = getFollowers(followeeDid, ctx);
+  return followers
+    .map((follow) => getActorProfile(follow.did, ctx))
+    .filter((profile): profile is NonNullable<typeof profile> =>
+      profile != null
+    );
+}
+
+export function getFollowingWithProfiles(
+  followerDid: string,
+  ctx: BffContext,
+) {
+  const following = getFollowing(followerDid, ctx);
+  return following
+    .map((follow) => getActorProfile(follow.subject, ctx))
+    .filter((profile): profile is NonNullable<typeof profile> =>
+      profile != null
+    );
 }
