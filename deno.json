@@ -19,8 +19,8 @@
   },
   "tasks": {
     "start": "deno run -A ./src/main.tsx",
-    "build": "deno run -A build.ts",
-    "dev": "deno run \"dev:*\"",
+    "build": "rm -f ./static/app.esm.js.map && deno run -A build.ts",
+    "dev": "DEV=true deno run \"dev:*\"",
     "dev:build": "deno -A --watch=src/static/ build.ts",
     "dev:server": "deno run -A --env-file=.env --watch ./src/main.tsx",
     "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./src/input.css -o ./static/styles.css --watch",

@@ -10,6 +10,8 @@ await esbuild.build({
   outfile: "./static/app.esm.js",
   bundle: true,
   format: "esm",
+  sourcemap: Deno.env.get("DEV") === "true" ? "linked" : false,
+  minify: Deno.env.get("DEV") !== "true",
 });
 
 const command = new Deno.Command("du", {
