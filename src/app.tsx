@@ -6,7 +6,6 @@ import type { State } from "./state.ts";
 
 export function Root(props: Readonly<RootProps<State>>) {
   const profile = props.ctx.state.profile;
-  const scripts = props.ctx.state.scripts;
   const hasNotifications =
     props.ctx.state.notifications?.find((n) => n.isRead === false) !==
       undefined;
@@ -26,9 +25,6 @@ export function Root(props: Readonly<RootProps<State>>) {
             />
           )
           : null}
-        <script src="https://unpkg.com/htmx.org@1.9.10" />
-        <script src="https://unpkg.com/hyperscript.org@0.9.14" />
-        <script src="https://unpkg.com/sortablejs@1.15.6" />
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <link
           rel="stylesheet"
@@ -49,12 +45,11 @@ export function Root(props: Readonly<RootProps<State>>) {
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
           preload
         />
-        {scripts?.map((file) => (
-          <script
-            key={file}
-            src={`/static/${file}?${staticFilesHash?.get(file)}`}
-          />
-        ))}
+        <script
+          type="module"
+          key="app.esm.js"
+          src={`/static/app.esm.js?${staticFilesHash?.get("app.esm.js")}`}
+        />
       </head>
       <body class="h-full dark:bg-zinc-950 dark:text-white">
         <Layout id="layout">

@@ -35,7 +35,8 @@ export function UploadPage({
             type="file"
             multiple
             accept="image/*"
-            _="on change call Grain.uploadPhotos(me)"
+            hx-encoding="multipart/form-data"
+            _="on change call Grain.uploadPage.uploadPhotos(me)"
           />
         </label>
       </Button>

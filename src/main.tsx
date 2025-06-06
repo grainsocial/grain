@@ -103,15 +103,15 @@ bff({
     ),
     route("/actions/photo/:rkey", ["PUT"], actionHandlers.photoEdit),
     route("/actions/photo/:rkey", ["DELETE"], actionHandlers.photoDelete),
+    route("/actions/photo", ["POST"], actionHandlers.uploadPhoto),
     route("/actions/favorite", ["POST"], actionHandlers.galleryFavorite),
-    route("/actions/profile/update", ["POST"], actionHandlers.profileUpdate),
+    route("/actions/profile", ["PUT"], actionHandlers.profileUpdate),
     route(
       "/actions/gallery/:rkey/sort",
       ["POST"],
       actionHandlers.gallerySort,
     ),
     route("/actions/get-blob", ["GET"], actionHandlers.getBlob),
-    route("/actions/photo/upload", ["POST"], actionHandlers.uploadPhoto),
     route("/:did/:collection/:rkey", recordHandler),
   ],
 });

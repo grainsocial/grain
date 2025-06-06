@@ -9,7 +9,7 @@ import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { FavoriteButton } from "../components/FavoriteButton.tsx";
 import { FollowButton } from "../components/FollowButton.tsx";
-import { PhotoButton } from "../components/PhotoButton.tsx";
+import { GalleryLayout } from "../components/GalleryLayout.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
 import { getFollowers } from "../lib/follow.ts";
@@ -164,8 +164,8 @@ export const galleryAddPhoto: RouteHandler = async (
   ];
   return ctx.html(
     <>
-      <div hx-swap-oob="beforeend:#masonry-container">
-        <PhotoButton
+      <div hx-swap-oob="beforeend:#gallery-container">
+        <GalleryLayout.Item
           key={photo.cid}
           photo={photoToView(photo.did, photo)}
           gallery={gallery}
