@@ -6,6 +6,8 @@ import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
+import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
+import { ExifOverlayDialog } from "../components/ExifOverlayDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
@@ -146,6 +148,21 @@ export const photoExif: RouteHandler = (
   );
 };
 
+export const photoExifOverlay: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const photoRkey = params.rkey;
+  const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
+  const photo = getPhoto(photoUri, ctx);
+  if (!photo) return ctx.next();
+  return ctx.html(
+    <ExifOverlayDialog photo={photo} />,
+  );
+};
+
 export const galleryPhotoSelect: RouteHandler = (
   _req,
   params,
@@ -168,4 +185,12 @@ export const galleryPhotoSelect: RouteHandler = (
       photos={photos}
     />,
   );
+};
+
+export const createAccount: RouteHandler = (
+  _req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  return ctx.html(<CreateAccountDialog />);
 };

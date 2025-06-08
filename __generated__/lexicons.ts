@@ -2296,6 +2296,101 @@ export const schemaDict = {
       },
     },
   },
+  ShTangledGraphFollow: {
+    lexicon: 1,
+    id: 'sh.tangled.graph.follow',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'did',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  ShTangledActorProfile: {
+    lexicon: 1,
+    id: 'sh.tangled.actor.profile',
+    defs: {
+      main: {
+        type: 'record',
+        description: 'A declaration of a Tangled account profile.',
+        key: 'literal:self',
+        record: {
+          type: 'object',
+          required: ['bluesky'],
+          properties: {
+            description: {
+              type: 'string',
+              description: 'Free-form profile description text.',
+              maxGraphemes: 256,
+              maxLength: 2560,
+            },
+            links: {
+              type: 'array',
+              minLength: 0,
+              maxLength: 5,
+              items: {
+                type: 'string',
+                description:
+                  'Any URI, intended for social profiles or websites, can be used to link DIDs/AT-URIs too.',
+              },
+            },
+            stats: {
+              type: 'array',
+              minLength: 0,
+              maxLength: 2,
+              items: {
+                type: 'string',
+                description: 'Vanity stats.',
+                enum: [
+                  'merged-pull-request-count',
+                  'closed-pull-request-count',
+                  'open-pull-request-count',
+                  'open-issue-count',
+                  'closed-issue-count',
+                  'repository-count',
+                ],
+              },
+            },
+            bluesky: {
+              type: 'boolean',
+              description: 'Include link to this account on Bluesky.',
+            },
+            location: {
+              type: 'string',
+              description: 'Free-form location text.',
+              maxGraphemes: 40,
+              maxLength: 400,
+            },
+            pinnedRepositories: {
+              type: 'array',
+              description:
+                'Any ATURI, it is up to appviews to validate these fields.',
+              minLength: 0,
+              maxLength: 6,
+              items: {
+                type: 'string',
+                format: 'at-uri',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainDefs: {
     lexicon: 1,
     id: 'social.grain.defs',
@@ -2349,8 +2444,8 @@ export const schemaDict = {
           reason: {
             type: 'string',
             description:
-              "Expected values are 'gallery-favorite', and 'unknown'.",
-            knownValues: ['gallery-favorite', 'unknown'],
+              'The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower.',
+            knownValues: ['follow', 'gallery-favorite', 'unknown'],
           },
           reasonSubject: {
             type: 'string',
@@ -2458,6 +2553,30 @@ export const schemaDict = {
             description: {
               type: 'string',
               maxLength: 1000,
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGraphFollow: {
+    lexicon: 1,
+    id: 'social.grain.graph.follow',
+    defs: {
+      main: {
+        key: 'tid',
+        type: 'record',
+        record: {
+          type: 'object',
+          required: ['subject', 'createdAt'],
+          properties: {
+            subject: {
+              type: 'string',
+              format: 'did',
             },
             createdAt: {
               type: 'string',
@@ -2632,139 +2751,35 @@ export const schemaDict = {
             type: 'string',
             format: 'datetime',
           },
-          apertureValue: {
-            type: 'integer',
-          },
-          brightnessValue: {
-            type: 'integer',
-          },
-          colorSpace: {
-            type: 'integer',
-          },
-          contrast: {
-            type: 'string',
-            enum: ['Normal', 'Soft', 'Hard'],
-          },
-          createDate: {
-            type: 'string',
-            format: 'datetime',
-          },
-          customRendered: {
-            type: 'string',
-          },
           dateTimeOriginal: {
-            type: 'string',
-            format: 'datetime',
-          },
-          digitalZoomRatio: {
-            type: 'integer',
-          },
-          exifVersion: {
-            type: 'string',
-          },
-          exposureCompensation: {
-            type: 'integer',
-          },
-          exposureMode: {
-            type: 'string',
-          },
-          exposureProgram: {
             type: 'string',
           },
           exposureTime: {
-            type: 'integer',
+            type: 'string',
           },
           fNumber: {
-            type: 'integer',
-          },
-          fileSource: {
             type: 'string',
           },
           flash: {
             type: 'string',
           },
-          focalLength: {
-            type: 'integer',
-          },
           focalLengthIn35mmFormat: {
-            type: 'integer',
-          },
-          focalPlaneResolutionUnit: {
             type: 'string',
-          },
-          focalPlaneXResolution: {
-            type: 'integer',
-          },
-          focalPlaneYResolution: {
-            type: 'integer',
           },
           iSO: {
             type: 'integer',
           },
-          lensInfo: {
-            type: 'array',
-            items: {
-              type: 'integer',
-            },
-            maxLength: 4,
-          },
-          lensModel: {
+          lensMake: {
             type: 'string',
           },
-          lightSource: {
+          lensModel: {
             type: 'string',
           },
           make: {
             type: 'string',
           },
-          maxApertureValue: {
-            type: 'integer',
-          },
-          meteringMode: {
-            type: 'string',
-          },
           model: {
             type: 'string',
-          },
-          modifyDate: {
-            type: 'string',
-            format: 'datetime',
-          },
-          recommendedExposureIndex: {
-            type: 'integer',
-          },
-          resolutionUnit: {
-            type: 'string',
-          },
-          saturation: {
-            type: 'string',
-          },
-          sceneCaptureType: {
-            type: 'string',
-          },
-          sceneType: {
-            type: 'string',
-          },
-          sensitivityType: {
-            type: 'integer',
-          },
-          sharpness: {
-            type: 'string',
-          },
-          shutterSpeedValue: {
-            type: 'integer',
-          },
-          software: {
-            type: 'string',
-          },
-          whiteBalance: {
-            type: 'string',
-          },
-          xResolution: {
-            type: 'integer',
-          },
-          yResolution: {
-            type: 'integer',
           },
         },
       },
@@ -2776,7 +2791,7 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'record',
-        description: 'EXIF metadata for a photo',
+        description: 'Basic EXIF metadata for a photo',
         key: 'tid',
         record: {
           type: 'object',
@@ -2790,44 +2805,9 @@ export const schemaDict = {
               type: 'string',
               format: 'datetime',
             },
-            apertureValue: {
-              type: 'integer',
-            },
-            brightnessValue: {
-              type: 'integer',
-            },
-            colorSpace: {
-              type: 'integer',
-            },
-            contrast: {
-              type: 'string',
-              enum: ['Normal', 'Soft', 'Hard'],
-            },
-            createDate: {
-              type: 'string',
-              format: 'datetime',
-            },
-            customRendered: {
-              type: 'string',
-            },
             dateTimeOriginal: {
               type: 'string',
               format: 'datetime',
-            },
-            digitalZoomRatio: {
-              type: 'integer',
-            },
-            exifVersion: {
-              type: 'string',
-            },
-            exposureCompensation: {
-              type: 'integer',
-            },
-            exposureMode: {
-              type: 'string',
-            },
-            exposureProgram: {
-              type: 'string',
             },
             exposureTime: {
               type: 'integer',
@@ -2835,94 +2815,26 @@ export const schemaDict = {
             fNumber: {
               type: 'integer',
             },
-            fileSource: {
-              type: 'string',
-            },
             flash: {
               type: 'string',
             },
-            focalLength: {
-              type: 'integer',
-            },
             focalLengthIn35mmFormat: {
-              type: 'integer',
-            },
-            focalPlaneResolutionUnit: {
-              type: 'string',
-            },
-            focalPlaneXResolution: {
-              type: 'integer',
-            },
-            focalPlaneYResolution: {
               type: 'integer',
             },
             iSO: {
               type: 'integer',
             },
-            lensInfo: {
-              type: 'array',
-              items: {
-                type: 'integer',
-              },
-              maxLength: 4,
-            },
-            lensModel: {
+            lensMake: {
               type: 'string',
             },
-            lightSource: {
+            lensModel: {
               type: 'string',
             },
             make: {
               type: 'string',
             },
-            maxApertureValue: {
-              type: 'integer',
-            },
-            meteringMode: {
-              type: 'string',
-            },
             model: {
               type: 'string',
-            },
-            modifyDate: {
-              type: 'string',
-              format: 'datetime',
-            },
-            recommendedExposureIndex: {
-              type: 'integer',
-            },
-            resolutionUnit: {
-              type: 'string',
-            },
-            saturation: {
-              type: 'string',
-            },
-            sceneCaptureType: {
-              type: 'string',
-            },
-            sceneType: {
-              type: 'string',
-            },
-            sensitivityType: {
-              type: 'integer',
-            },
-            sharpness: {
-              type: 'string',
-            },
-            shutterSpeedValue: {
-              type: 'integer',
-            },
-            software: {
-              type: 'string',
-            },
-            whiteBalance: {
-              type: 'string',
-            },
-            xResolution: {
-              type: 'integer',
-            },
-            yResolution: {
-              type: 'integer',
             },
           },
         },
@@ -3211,11 +3123,14 @@ export const ids = {
   AppBskyActorDefs: 'app.bsky.actor.defs',
   AppBskyActorProfile: 'app.bsky.actor.profile',
   AppBskyLabelerDefs: 'app.bsky.labeler.defs',
+  ShTangledGraphFollow: 'sh.tangled.graph.follow',
+  ShTangledActorProfile: 'sh.tangled.actor.profile',
   SocialGrainDefs: 'social.grain.defs',
   SocialGrainNotificationDefs: 'social.grain.notification.defs',
   SocialGrainGalleryItem: 'social.grain.gallery.item',
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
   SocialGrainGallery: 'social.grain.gallery',
+  SocialGrainGraphFollow: 'social.grain.graph.follow',
   SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorProfile: 'social.grain.actor.profile',

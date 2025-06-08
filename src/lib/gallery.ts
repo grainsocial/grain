@@ -11,16 +11,21 @@ import {
   isPhotoView,
   PhotoView,
 } from "$lexicon/types/social/grain/photo/defs.ts";
+import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 import { photoToView } from "./photo.ts";
 
+type PhotoWithExif = WithBffMeta<Photo> & {
+  exif?: WithBffMeta<PhotoExif>;
+};
+
 export function getGalleryItemsAndPhotos(
   ctx: BffContext,
   galleries: WithBffMeta<Gallery>[],
-): Map<string, WithBffMeta<Photo>[]> {
+): Map<string, PhotoWithExif[]> {
   const galleryUris = galleries.map(
     (gallery) =>
       `at://${gallery.did}/social.grain.gallery/${new AtUri(gallery.uri).rkey}`,
@@ -45,12 +50,26 @@ export function getGalleryItemsAndPhotos(
     },
   );
 
-  const photosMap = new Map<string, WithBffMeta<Photo>>();
+  const { items: photosExif } = ctx.indexService.getRecords<
+    WithBffMeta<PhotoExif>
+  >(
+    "social.grain.photo.exif",
+    {
+      where: [{ field: "photo", in: photoUris }],
+    },
+  );
+
+  const photosMap = new Map<string, PhotoWithExif>();
+  const exifMap = new Map<string, WithBffMeta<PhotoExif>>();
+  for (const exif of photosExif) {
+    exifMap.set(exif.photo, exif);
+  }
   for (const photo of photos) {
-    photosMap.set(photo.uri, photo);
+    const exif = exifMap.get(photo.uri);
+    photosMap.set(photo.uri, exif ? { ...photo, exif } : photo);
   }
 
-  const galleryPhotosMap = new Map<string, WithBffMeta<Photo>[]>();
+  const galleryPhotosMap = new Map<string, PhotoWithExif[]>();
   for (const item of galleryItems) {
     const galleryUri = item.gallery;
     const photo = photosMap.get(item.item);
@@ -130,7 +149,7 @@ export function getGalleryFavs(galleryUri: string, ctx: BffContext) {
 export function galleryToView(
   record: WithBffMeta<Gallery>,
   creator: Un$Typed<ProfileView>,
-  items: Photo[],
+  items: PhotoWithExif[],
 ): Un$Typed<GalleryView> {
   return {
     uri: record.uri,
@@ -147,13 +166,31 @@ export function galleryToView(
 function itemToView(
   did: string,
   item:
-    | WithBffMeta<Photo>
+    | PhotoWithExif
     | {
       $type: string;
     },
 ): Un$Typed<PhotoView> | undefined {
   if (isPhoto(item)) {
-    return photoToView(did, item);
+    return photoToView(did, item, item.exif);
   }
   return undefined;
+}
+
+export function getGalleryCameras(
+  gallery: GalleryView,
+): string[] {
+  const photos = gallery.items?.filter(isPhotoView) ?? [];
+  const cameras = new Set<string>();
+  for (const photo of photos) {
+    if (photo.exif?.make) {
+      // Capitalize first letter of each word for make only, leave model raw
+      const make = photo.exif.make.charAt(0).toUpperCase() +
+        photo.exif.make.slice(1).toLowerCase();
+      const model = photo.exif.model ?? "";
+      console.log(make, model);
+      cameras.add(`${make} ${model}`.trim());
+    }
+  }
+  return Array.from(cameras);
 }

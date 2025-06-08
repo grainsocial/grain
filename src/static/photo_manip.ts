@@ -1,5 +1,34 @@
-// deno-lint-ignore-file no-window
-function readFileAsDataURL(file) {
+type ResizeOptions = {
+  width: number;
+  height: number;
+  quality: number;
+  mode: "cover" | "contain" | "stretch";
+};
+
+type ResizeResult = {
+  dataUrl: string;
+  width: number;
+  height: number;
+};
+
+type DoResizeOptions = {
+  width: number;
+  height: number;
+  maxSize: number;
+  mode: "cover" | "contain" | "stretch";
+};
+
+type DoResizeResult = {
+  path: string;
+  mime: string;
+  size: number;
+  width: number;
+  height: number;
+};
+
+export function readFileAsDataURL(
+  file: File,
+): Promise<string | ArrayBuffer | null> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
@@ -8,9 +37,12 @@ function readFileAsDataURL(file) {
   });
 }
 
-function dataURLToBlob(dataUrl) {
+export function dataURLToBlob(dataUrl: string): Blob {
   const [meta, base64] = dataUrl.split(",");
-  const mime = meta.match(/:(.*?);/)[1];
+  // Use RegExp.exec instead of match for type safety
+  const mimeMatch = /:(.*?);/.exec(meta);
+  if (!mimeMatch) throw new Error("Invalid data URL");
+  const mime = mimeMatch[1];
   const binary = atob(base64);
   const array = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -19,16 +51,19 @@ function dataURLToBlob(dataUrl) {
   return new Blob([array], { type: mime });
 }
 
-function getDataUriSize(dataUri) {
+function getDataUriSize(dataUri: string): number {
   const base64 = dataUri.split(",")[1];
   return Math.ceil((base64.length * 3) / 4);
 }
 
-function createResizedImage(dataUri, options) {
+function createResizedImage(
+  dataUri: string,
+  options: ResizeOptions,
+): Promise<ResizeResult> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      let scale = 1;
+      let scale: number;
       if (options.mode === "cover") {
         scale = Math.max(
           options.width / img.width,
@@ -70,8 +105,11 @@ function createResizedImage(dataUri, options) {
   });
 }
 
-async function doResize(dataUri, opts) {
-  let bestResult = null;
+export async function doResize(
+  dataUri: string,
+  opts: DoResizeOptions,
+): Promise<DoResizeResult> {
+  let bestResult: ResizeResult | null = null;
   let minQuality = 0;
   let maxQuality = 101;
 
@@ -106,8 +144,3 @@ async function doResize(dataUri, opts) {
     height: bestResult.height,
   };
 }
-
-window.Grain = window.Grain || {};
-window.Grain.readFileAsDataURL = readFileAsDataURL;
-window.Grain.dataURLToBlob = dataURLToBlob;
-window.Grain.doResize = doResize;

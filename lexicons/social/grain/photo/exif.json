@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "EXIF metadata for a photo",
+      "description": "Basic EXIF metadata for a photo",
       "key": "tid",
       "record": {
         "type": "object",
@@ -15,52 +15,16 @@
         "properties": {
           "photo": { "type": "string", "format": "at-uri" },
           "createdAt": { "type": "string", "format": "datetime" },
-          "apertureValue": { "type": "integer" },
-          "brightnessValue": { "type": "integer" },
-          "colorSpace": { "type": "integer" },
-          "contrast": { "type": "string", "enum": ["Normal", "Soft", "Hard"] },
-          "createDate": { "type": "string", "format": "datetime" },
-          "customRendered": { "type": "string" },
           "dateTimeOriginal": { "type": "string", "format": "datetime" },
-          "digitalZoomRatio": { "type": "integer" },
-          "exifVersion": { "type": "string" },
-          "exposureCompensation": { "type": "integer" },
-          "exposureMode": { "type": "string" },
-          "exposureProgram": { "type": "string" },
           "exposureTime": { "type": "integer" },
           "fNumber": { "type": "integer" },
-          "fileSource": { "type": "string" },
           "flash": { "type": "string" },
-          "focalLength": { "type": "integer" },
           "focalLengthIn35mmFormat": { "type": "integer" },
-          "focalPlaneResolutionUnit": { "type": "string" },
-          "focalPlaneXResolution": { "type": "integer" },
-          "focalPlaneYResolution": { "type": "integer" },
           "iSO": { "type": "integer" },
-          "lensInfo": {
-            "type": "array",
-            "items": { "type": "integer" },
-            "maxLength": 4
-          },
+          "lensMake": { "type": "string" },
           "lensModel": { "type": "string" },
-          "lightSource": { "type": "string" },
           "make": { "type": "string" },
-          "maxApertureValue": { "type": "integer" },
-          "meteringMode": { "type": "string" },
-          "model": { "type": "string" },
-          "modifyDate": { "type": "string", "format": "datetime" },
-          "recommendedExposureIndex": { "type": "integer" },
-          "resolutionUnit": { "type": "string" },
-          "saturation": { "type": "string" },
-          "sceneCaptureType": { "type": "string" },
-          "sceneType": { "type": "string" },
-          "sensitivityType": { "type": "integer" },
-          "sharpness": { "type": "string" },
-          "shutterSpeedValue": { "type": "integer" },
-          "software": { "type": "string" },
-          "whiteBalance": { "type": "string" },
-          "xResolution": { "type": "integer" },
-          "yResolution": { "type": "integer" }
+          "model": { "type": "string" }
         }
       }
     }

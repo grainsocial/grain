@@ -1,7 +1,8 @@
 import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { getCookies, setCookie } from "@std/http";
 import { Timeline } from "../components/Timeline.tsx";
-import { getTimeline } from "../lib/timeline.ts";
+import { getActorProfiles } from "../lib/actor.ts";
+import { getTimeline, SocialNetwork } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 
@@ -12,43 +13,52 @@ export const handler: RouteHandler = (
 ) => {
   const url = new URL(req.url);
   const tabSearchParam = url.searchParams.get("tab") || "";
-  const cookieState = getCookieState(req.headers);
+  const graphSearchParam = url.searchParams.get("graph") as SocialNetwork ||
+    "grain";
+  const cookieState = getCookieState(ctx?.currentUser?.did, req.headers);
+  const isHxRequest = req.headers.get("hx-request") !== null;
+  const render = isHxRequest ? ctx.html : ctx.render;
+
   let tab;
+  let graph: SocialNetwork = "grain";
   let headers: Record<string, string> = {};
+
+  const actorProfiles = getActorProfiles(ctx?.currentUser?.did ?? "", ctx);
 
   if (!ctx.currentUser) {
     tab = "";
-  } else if (!req.headers.get("hx-request")) {
+  } else if (!isHxRequest) {
     tab = cookieState.lastSelectedHomeFeed || "";
+    graph = cookieState.lastSelectedFollowGraph || "grain";
   } else {
     tab = tabSearchParam || "";
+    graph = graphSearchParam;
     headers = setCookieState(url.hostname, {
+      did: ctx.currentUser.did,
       lastSelectedHomeFeed: tab,
+      lastSelectedFollowGraph: graph,
     });
+  }
+
+  if (!graph && actorProfiles.length > 0) {
+    graph = actorProfiles[0];
   }
 
   const items = getTimeline(
     ctx,
     tab === "following" ? "following" : "timeline",
+    graph,
   );
 
   if (tab === "following") {
-    if (!req.headers.get("hx-request")) {
-      ctx.state.meta = [{ title: "Following — Grain" }, ...getPageMeta("")];
-      return ctx.render(
-        <Timeline
-          isLoggedIn={!!ctx.currentUser}
-          selectedTab={tab}
-          items={items}
-        />,
-        headers,
-      );
-    }
-    return ctx.html(
+    ctx.state.meta = [{ title: "Following — Grain" }, ...getPageMeta("")];
+    return render(
       <Timeline
         isLoggedIn={!!ctx.currentUser}
         selectedTab={tab}
         items={items}
+        selectedGraph={graph}
+        actorProfiles={actorProfiles}
       />,
       headers,
     );
@@ -56,18 +66,22 @@ export const handler: RouteHandler = (
 
   ctx.state.meta = [{ title: "Timeline — Grain" }, ...getPageMeta("")];
 
-  return ctx.render(
-    <Timeline isLoggedIn={!!ctx.currentUser} selectedTab={tab} items={items} />,
+  return render(
+    <Timeline
+      isLoggedIn={!!ctx.currentUser}
+      selectedTab={tab}
+      items={items}
+      selectedGraph={graph}
+      actorProfiles={actorProfiles}
+    />,
     headers,
   );
 };
 
 type GrainStorageState = {
+  did?: string;
   lastSelectedHomeFeed?: string;
-};
-
-const defaultGrainStorageState: GrainStorageState = {
-  lastSelectedHomeFeed: undefined,
+  lastSelectedFollowGraph?: SocialNetwork;
 };
 
 function setCookieState(
@@ -92,19 +106,38 @@ function setCookieState(
 }
 
 function getCookieState(
+  did: string | undefined,
   headers: Headers,
 ): GrainStorageState {
   const cookies = getCookies(headers);
   if (!cookies.grain_storage) {
-    return defaultGrainStorageState;
+    return createDefaultCookieState(did);
   }
   const grainStorage = atob(cookies.grain_storage);
   if (grainStorage) {
     try {
-      return JSON.parse(grainStorage);
+      const parsed = JSON.parse(grainStorage);
+      if (parsed.did && parsed.did !== did) {
+        // If the did in the cookie doesn't match the current user, reset the state
+        return createDefaultCookieState(did);
+      }
+      if (!parsed.did && did) {
+        return createDefaultCookieState(did);
+      }
+      return parsed as GrainStorageState;
     } catch {
-      return defaultGrainStorageState;
+      return createDefaultCookieState(did);
     }
   }
-  return defaultGrainStorageState;
+  return createDefaultCookieState(did);
+}
+
+function createDefaultCookieState(
+  did: string | undefined,
+): GrainStorageState {
+  return {
+    did,
+    lastSelectedHomeFeed: "",
+    lastSelectedFollowGraph: "grain",
+  };
 }

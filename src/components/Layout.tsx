@@ -111,11 +111,15 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
             )
             : (
               <div class="flex items-center space-x-4">
-                <form hx-post="/signup" hx-swap="none" class="inline">
-                  <Button variant="secondary" type="submit">
-                    Create account
-                  </Button>
-                </form>
+                <Button
+                  variant="secondary"
+                  hx-get={`/dialogs/create-account`}
+                  hx-trigger="click"
+                  hx-target="body"
+                  hx-swap="afterbegin"
+                >
+                  Create account
+                </Button>
                 <Button variant="secondary" asChild>
                   <a href="/login">
                     Sign in

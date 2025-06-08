@@ -1,15 +1,18 @@
 import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
+import { Record as TangledFollow } from "$lexicon/types/sh/tangled/graph/follow.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
-import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
+import { Record as GrainFollow } from "$lexicon/types/social/grain/graph/follow.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
 
-type TimelineItemType = "gallery" | "favorite";
+export type TimelineItemType = "gallery";
+
+export type SocialNetwork = "bluesky" | "grain" | "tangled";
 
 export type TimelineItem = {
   createdAt: string;
@@ -34,11 +37,15 @@ function processGalleries(
     ? [{ field: "did", equals: options.actorDid }]
     : undefined;
 
-  if (options?.followingDids && options.followingDids.size > 0) {
-    whereClause = [
-      ...(whereClause ?? []),
-      { field: "did", in: Array.from(options.followingDids) },
-    ];
+  if (options?.followingDids) {
+    if (options.followingDids.size > 0) {
+      whereClause = [
+        ...(whereClause ?? []),
+        { field: "did", in: Array.from(options.followingDids) },
+      ];
+    } else {
+      return [];
+    }
   }
 
   const { items: galleries } = ctx.indexService.getRecords<
@@ -77,121 +84,31 @@ function processGalleries(
   return items;
 }
 
-function processFavs(
-  ctx: BffContext,
-  options?: TimelineOptions,
-): TimelineItem[] {
-  const items: TimelineItem[] = [];
-
-  let whereClause: QueryOptions["where"] = options?.actorDid
-    ? [{ field: "did", equals: options.actorDid }]
-    : undefined;
-
-  if (options?.followingDids && options.followingDids.size > 0) {
-    whereClause = [
-      ...(whereClause ?? []),
-      { field: "did", in: Array.from(options.followingDids) },
-    ];
-  }
-
-  const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
-    "social.grain.favorite",
-    {
-      orderBy: [{ field: "createdAt", direction: "desc" }],
-      where: whereClause,
-    },
-  );
-
-  if (favs.length === 0) return items;
-
-  // Collect all gallery references from favorites
-  const galleryRefs = new Map<string, WithBffMeta<Gallery>>();
-
-  for (const favorite of favs) {
-    if (!favorite.subject) continue;
-
-    try {
-      const atUri = new AtUri(favorite.subject);
-      const galleryDid = atUri.hostname;
-      const galleryRkey = atUri.rkey;
-      const galleryUri =
-        `at://${galleryDid}/social.grain.gallery/${galleryRkey}`;
-
-      const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(
-        galleryUri,
-      );
-      if (gallery) {
-        galleryRefs.set(galleryUri, gallery);
-      }
-    } catch (e) {
-      console.error("Error processing favorite:", e);
-    }
-  }
-
-  const galleries = Array.from(galleryRefs.values());
-  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
-
-  for (const favorite of favs) {
-    if (!favorite.subject) continue;
-
-    try {
-      const atUri = new AtUri(favorite.subject);
-      const galleryDid = atUri.hostname;
-      const galleryRkey = atUri.rkey;
-      const galleryUri =
-        `at://${galleryDid}/social.grain.gallery/${galleryRkey}`;
-
-      const gallery = galleryRefs.get(galleryUri);
-      if (!gallery) continue;
-
-      const galleryActor = ctx.indexService.getActor(galleryDid);
-      if (!galleryActor) continue;
-      const galleryProfile = getActorProfile(galleryActor.did, ctx);
-      if (!galleryProfile) continue;
-
-      const favActor = ctx.indexService.getActor(favorite.did);
-      if (!favActor) continue;
-      const favProfile = getActorProfile(favActor.did, ctx);
-      if (!favProfile) continue;
-
-      const galleryPhotos = galleryPhotosMap.get(galleryUri) || [];
-      const galleryView = galleryToView(gallery, galleryProfile, galleryPhotos);
-
-      items.push({
-        itemType: "favorite",
-        createdAt: favorite.createdAt,
-        itemUri: favorite.uri,
-        actor: favProfile,
-        gallery: galleryView,
-      });
-    } catch (e) {
-      console.error("Error processing favorite:", e);
-      continue;
-    }
-  }
-
-  return items;
-}
-
 function getTimelineItems(
   ctx: BffContext,
   options?: TimelineOptions,
 ): TimelineItem[] {
   const galleryItems = processGalleries(ctx, options);
-  const favsItems = processFavs(ctx, options);
-  const timelineItems = [...galleryItems, ...favsItems];
-
-  return timelineItems.sort(
+  return galleryItems.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 }
 
-function getFollowingDids(ctx: BffContext): Set<string> {
+function getFollowingDids(type: SocialNetwork, ctx: BffContext): Set<string> {
   if (!ctx.currentUser?.did) return new Set();
+  const typeToCollection: Record<SocialNetwork, string> = {
+    bluesky: "app.bsky.graph.follow",
+    grain: "social.grain.graph.follow",
+    tangled: "sh.tangled.graph.follow",
+  };
+  const collection = typeToCollection[type];
+  if (!collection) {
+    throw new Error(`Unsupported social graph type: ${type}`);
+  }
   const { items: follows } = ctx.indexService.getRecords<
-    WithBffMeta<BskyFollow>
+    WithBffMeta<BskyFollow | GrainFollow | TangledFollow>
   >(
-    "app.bsky.graph.follow",
+    collection,
     { where: [{ field: "did", equals: ctx.currentUser.did }] },
   );
   return new Set(follows.map((f) => f.subject).filter(Boolean));
@@ -199,19 +116,15 @@ function getFollowingDids(ctx: BffContext): Set<string> {
 
 export function getTimeline(
   ctx: BffContext,
-  type: "timeline" | "following" = "timeline",
+  type: "timeline" | "following",
+  graph: SocialNetwork,
 ): TimelineItem[] {
   let followingDids: Set<string> | undefined = undefined;
   if (type === "following") {
-    followingDids = getFollowingDids(ctx);
+    followingDids = getFollowingDids(graph, ctx);
   }
   const galleryItems = processGalleries(ctx, { followingDids });
-  const favsItems = processFavs(
-    ctx,
-    followingDids ? { followingDids } : undefined,
-  );
-  const timelineItems = [...galleryItems, ...favsItems];
-  return timelineItems.sort(
+  return galleryItems.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 }

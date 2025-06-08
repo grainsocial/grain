@@ -10,11 +10,13 @@ import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { FavoriteButton } from "../components/FavoriteButton.tsx";
 import { FollowButton } from "../components/FollowButton.tsx";
-import { PhotoButton } from "../components/PhotoButton.tsx";
+import { GalleryInfo } from "../components/GalleryInfo.tsx";
+import { GalleryLayout } from "../components/GalleryLayout.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
+import { getFollowers } from "../lib/follow.ts";
 import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
-import { photoToView } from "../lib/photo.ts";
+import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";
 
@@ -34,16 +36,24 @@ export const follow: RouteHandler = async (
   ctx: BffContext<State>,
 ) => {
   ctx.requireAuth();
-  const did = params.did;
-  if (!did) return ctx.next();
+  const followeeDid = params.followeeDid;
+  if (!followeeDid) return ctx.next();
   const followUri = await ctx.createRecord<BskyFollow>(
-    "app.bsky.graph.follow",
+    "social.grain.graph.follow",
     {
-      subject: did,
+      subject: followeeDid,
       createdAt: new Date().toISOString(),
     },
   );
-  return ctx.html(<FollowButton followeeDid={did} followUri={followUri} />);
+  const followers = getFollowers(followeeDid, ctx);
+  return ctx.html(
+    <>
+      <div hx-swap-oob="innerHTML:#followers-count">
+        {followers.length}
+      </div>
+      <FollowButton followeeDid={followeeDid} followUri={followUri} />
+    </>,
+  );
 };
 
 export const unfollow: RouteHandler = async (
@@ -55,10 +65,16 @@ export const unfollow: RouteHandler = async (
   const followeeDid = params.followeeDid;
   const rkey = params.rkey;
   await ctx.deleteRecord(
-    `at://${did}/app.bsky.graph.follow/${rkey}`,
+    `at://${did}/social.grain.graph.follow/${rkey}`,
   );
+  const followers = getFollowers(followeeDid, ctx);
   return ctx.html(
-    <FollowButton followeeDid={followeeDid} followUri={undefined} />,
+    <>
+      <div hx-swap-oob="innerHTML:#followers-count">
+        {followers.length}
+      </div>
+      <FollowButton followeeDid={followeeDid} followUri={undefined} />
+    </>,
   );
 };
 
@@ -129,7 +145,7 @@ export const galleryAddPhoto: RouteHandler = async (
   const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
   const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
   const gallery = getGallery(did, galleryRkey, ctx);
-  const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
+  const photo = getPhoto(photoUri, ctx);
   if (!gallery || !photo) return ctx.next();
   if (
     gallery.items
@@ -146,22 +162,25 @@ export const galleryAddPhoto: RouteHandler = async (
   });
   gallery.items = [
     ...(gallery.items ?? []),
-    photoToView(photo.did, photo),
+    photo,
   ];
   return ctx.html(
     <>
-      <div hx-swap-oob="beforeend:#masonry-container">
-        <PhotoButton
+      <div hx-swap-oob="beforeend:#gallery-container">
+        <GalleryLayout.Item
           key={photo.cid}
-          photo={photoToView(photo.did, photo)}
+          photo={photo}
           gallery={gallery}
         />
+      </div>
+      <div hx-swap-oob="outerHTML:#gallery-info">
+        <GalleryInfo gallery={gallery} />
       </div>
       <PhotoSelectButton
         galleryUri={galleryUri}
         itemUris={gallery.items?.filter(isPhotoView).map((item) => item.uri) ??
           []}
-        photo={photoToView(photo.did, photo)}
+        photo={photo}
       />
     </>,
   );
@@ -202,12 +221,17 @@ export const galleryRemovePhoto: RouteHandler = async (
   const gallery = getGallery(did, galleryRkey, ctx);
   if (!gallery) return ctx.next();
   return ctx.html(
-    <PhotoSelectButton
-      galleryUri={galleryUri}
-      itemUris={gallery.items?.filter(isPhotoView).map((item) => item.uri) ??
-        []}
-      photo={photoToView(photo.did, photo)}
-    />,
+    <>
+      <div hx-swap-oob="outerHTML:#gallery-info">
+        <GalleryInfo gallery={gallery} />
+      </div>
+      <PhotoSelectButton
+        galleryUri={galleryUri}
+        itemUris={gallery.items?.filter(isPhotoView).map((item) => item.uri) ??
+          []}
+        photo={photoToView(photo.did, photo)}
+      />
+    </>,
   );
 };
 
@@ -498,7 +522,6 @@ export const uploadPhoto: RouteHandler = async (
     if (exifJsonString) {
       try {
         exif = JSON.parse(exifJsonString);
-        console.log("Parsed EXIF data:", exif);
       } catch (e) {
         console.error("Failed to parse EXIF data:", e);
       }
@@ -530,23 +553,29 @@ export const uploadPhoto: RouteHandler = async (
       createdAt: new Date().toISOString(),
     });
 
-    const exifUri = await ctx.createRecord<PhotoExif>(
-      "social.grain.photo.exif",
-      {
-        photo: photoUri,
-        createdAt: new Date().toISOString(),
-        ...exif,
-      },
-    );
+    let exifUri: string | undefined = undefined;
+    if (exif) {
+      exifUri = await ctx.createRecord<PhotoExif>(
+        "social.grain.photo.exif",
+        {
+          photo: photoUri,
+          createdAt: new Date().toISOString(),
+          ...exif,
+        },
+      );
+    }
 
     const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
     if (!photo) {
       return new Response("Photo not found after creation", { status: 404 });
     }
 
-    const exifRecord = ctx.indexService.getRecord<WithBffMeta<PhotoExif>>(
-      exifUri,
-    );
+    let exifRecord: WithBffMeta<PhotoExif> | undefined = undefined;
+    if (exifUri) {
+      exifRecord = ctx.indexService.getRecord<WithBffMeta<PhotoExif>>(
+        exifUri,
+      );
+    }
 
     return ctx.html(
       <PhotoPreview

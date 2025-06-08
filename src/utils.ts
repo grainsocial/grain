@@ -32,6 +32,14 @@ export function profileLink(handle: string) {
   return `/profile/${handle}`;
 }
 
+export function followersLink(handle: string) {
+  return `/profile/${handle}/followers`;
+}
+
+export function followingLink(handle: string) {
+  return `/profile/${handle}/follows`;
+}
+
 export function galleryLink(handle: string, galleryRkey: string) {
   return `/profile/${handle}/gallery/${galleryRkey}`;
 }
@@ -68,6 +76,8 @@ export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
     externalCollections: [
       "app.bsky.actor.profile",
       "app.bsky.graph.follow",
+      "sh.tangled.actor.profile",
+      "sh.tangled.graph.follow",
     ],
     repos: [actor.did],
   });

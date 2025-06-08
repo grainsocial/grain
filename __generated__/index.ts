@@ -39,12 +39,14 @@ export function createServer(options?: XrpcOptions): Server {
 export class Server {
   xrpc: XrpcServer
   app: AppNS
+  sh: ShNS
   social: SocialNS
   com: ComNS
 
   constructor(options?: XrpcOptions) {
     this.xrpc = createXrpcServer(schemas, options)
     this.app = new AppNS(this)
+    this.sh = new ShNS(this)
     this.social = new SocialNS(this)
     this.com = new ComNS(this)
   }
@@ -118,6 +120,44 @@ export class AppBskyActorNS {
   }
 }
 
+export class ShNS {
+  _server: Server
+  tangled: ShTangledNS
+
+  constructor(server: Server) {
+    this._server = server
+    this.tangled = new ShTangledNS(server)
+  }
+}
+
+export class ShTangledNS {
+  _server: Server
+  graph: ShTangledGraphNS
+  actor: ShTangledActorNS
+
+  constructor(server: Server) {
+    this._server = server
+    this.graph = new ShTangledGraphNS(server)
+    this.actor = new ShTangledActorNS(server)
+  }
+}
+
+export class ShTangledGraphNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
+export class ShTangledActorNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
 export class SocialNS {
   _server: Server
   grain: SocialGrainNS
@@ -131,18 +171,28 @@ export class SocialNS {
 export class SocialGrainNS {
   _server: Server
   gallery: SocialGrainGalleryNS
+  graph: SocialGrainGraphNS
   actor: SocialGrainActorNS
   photo: SocialGrainPhotoNS
 
   constructor(server: Server) {
     this._server = server
     this.gallery = new SocialGrainGalleryNS(server)
+    this.graph = new SocialGrainGraphNS(server)
     this.actor = new SocialGrainActorNS(server)
     this.photo = new SocialGrainPhotoNS(server)
   }
 }
 
 export class SocialGrainGalleryNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
+export class SocialGrainGraphNS {
   _server: Server
 
   constructor(server: Server) {

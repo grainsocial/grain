@@ -22,8 +22,9 @@
         },
         "reason": {
           "type": "string",
-          "description": "Expected values are 'gallery-favorite', and 'unknown'.",
+          "description": "The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower.",
           "knownValues": [
+            "follow",
             "gallery-favorite",
             "unknown"
           ]

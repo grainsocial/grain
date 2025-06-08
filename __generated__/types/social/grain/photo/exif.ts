@@ -18,48 +18,16 @@ export interface Record {
   $type: 'social.grain.photo.exif'
   photo: string
   createdAt: string
-  apertureValue?: number
-  brightnessValue?: number
-  colorSpace?: number
-  contrast?: 'Normal' | 'Soft' | 'Hard'
-  createDate?: string
-  customRendered?: string
   dateTimeOriginal?: string
-  digitalZoomRatio?: number
-  exifVersion?: string
-  exposureCompensation?: number
-  exposureMode?: string
-  exposureProgram?: string
   exposureTime?: number
   fNumber?: number
-  fileSource?: string
   flash?: string
-  focalLength?: number
   focalLengthIn35mmFormat?: number
-  focalPlaneResolutionUnit?: string
-  focalPlaneXResolution?: number
-  focalPlaneYResolution?: number
   iSO?: number
-  lensInfo?: number[]
+  lensMake?: string
   lensModel?: string
-  lightSource?: string
   make?: string
-  maxApertureValue?: number
-  meteringMode?: string
   model?: string
-  modifyDate?: string
-  recommendedExposureIndex?: number
-  resolutionUnit?: string
-  saturation?: string
-  sceneCaptureType?: string
-  sceneType?: string
-  sensitivityType?: number
-  sharpness?: string
-  shutterSpeedValue?: number
-  software?: string
-  whiteBalance?: string
-  xResolution?: number
-  yResolution?: number
   [k: string]: unknown
 }
 

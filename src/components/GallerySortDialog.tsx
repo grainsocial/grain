@@ -7,7 +7,7 @@ export function GallerySortDialog(
   { gallery }: Readonly<{ gallery: GalleryView }>,
 ) {
   return (
-    <Dialog class="z-100">
+    <Dialog class="z-100" id="gallery-sort-dialog">
       <Dialog.Content class="dark:bg-zinc-950 relative">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Sort gallery</Dialog.Title>

@@ -1,6 +1,8 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
+import { AtUri } from "@atproto/syntax";
 import { Dialog } from "https://jsr.io/@bigmoves/bff/0.3.0-beta.21/components/Dialog.tsx";
+import { cn } from "../../../bff/packages/bff/components/utils.ts";
 import { photoDialogLink } from "../utils.ts";
 
 export function PhotoDialog({
@@ -38,7 +40,7 @@ export function PhotoDialog({
         )
         : null}
       <div
-        class="flex flex-col w-5xl h-[calc(100vh-100px)] sm:h-screen z-20"
+        class="flex flex-col w-5xl h-[calc(100vh-100px)] sm:h-screen z-20 relative sm:static"
         _={Dialog._closeOnClick}
       >
         <div class="flex flex-col p-4 z-20 flex-1 relative">
@@ -48,14 +50,55 @@ export function PhotoDialog({
             class="absolute inset-0 w-full h-full object-contain"
           />
         </div>
+        {image.exif
+          ? (
+            <div class="hidden sm:block absolute bottom-2 right-2">
+              <ExifButton photo={image} />
+            </div>
+          )
+          : null}
         {image.alt
           ? (
-            <div class="px-4 sm:px-0 py-4 bg-black text-white text-left">
+            <div class="px-4 sm:px-0 py-4 bg-black text-white text-left flex">
               {image.alt}
+              {image.exif
+                ? (
+                  <div class="block sm:hidden self-end justify-end -m-2">
+                    <ExifButton photo={image} />
+                  </div>
+                )
+                : null}
             </div>
+          )
+          : null}
+        {!image.alt && image.exif
+          ? (
+            <ExifButton
+              photo={image}
+              class="block sm:hidden absolute bottom-2 right-2 z-100"
+            />
           )
           : null}
       </div>
     </Dialog>
+  );
+}
+
+function ExifButton(
+  { photo, class: classProp }: Readonly<{ photo: PhotoView; class?: string }>,
+) {
+  return (
+    <button
+      type="button"
+      class={cn("text-zinc-50 p-2 cursor-pointer", classProp)}
+      hx-get={`/dialogs/photo/${new AtUri(photo.uri).rkey}/exif-overlay`}
+      hx-trigger="click"
+      hx-target="#layout"
+      hx-swap="afterbegin"
+      _="on click halt"
+    >
+      <i class="fa fa-camera" />
+      <span class="sr-only">Show EXIF</span>
+    </button>
   );
 }

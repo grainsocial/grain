@@ -19,7 +19,7 @@ export function ProfileDialog({
               halt the event
               put 'Updating...' into #submit-button.innerText
               add @disabled to #submit-button
-              call Grain.updateProfile(me)
+              call Grain.profileDialog.updateProfile(me)
           on htmx:afterOnLoad
             put 'Update' into #submit-button.innerText
             remove @disabled from #submit-button

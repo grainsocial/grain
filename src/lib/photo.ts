@@ -3,6 +3,7 @@ import { ExifView, PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { $Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
+import { format, parseISO } from "date-fns";
 import { PUBLIC_URL, USE_CDN } from "../env.ts";
 
 export function getPhoto(
@@ -64,15 +65,43 @@ export function exifToView(
   const deserializedExif = deserializeExif(exif);
   return {
     ...deserializedExif,
+    fNumber: deserializedExif.fNumber
+      ? formatAperture(deserializedExif.fNumber)
+      : undefined,
+    dateTimeOriginal: deserializedExif.dateTimeOriginal
+      ? format(
+        parseISO(deserializedExif.dateTimeOriginal),
+        "MMM d, yyyy, h:mm a",
+      )
+      : undefined,
+    focalLengthIn35mmFormat: deserializedExif.focalLengthIn35mmFormat
+      ? `${deserializedExif.focalLengthIn35mmFormat}mm`
+      : undefined,
+    exposureTime: deserializedExif.exposureTime !== undefined
+      ? formatExposureTime(deserializedExif.exposureTime)
+      : undefined,
     $type: "social.grain.photo.defs#exifView",
   };
 }
 
-const EXIF_SCALE = 1000000;
+function formatAperture(fNumber: number): string {
+  return `ƒ/${Number.isInteger(fNumber) ? fNumber : fNumber.toFixed(1)}`;
+}
+
+function formatExposureTime(seconds: number): string {
+  if (seconds >= 1) {
+    return `${seconds}s`;
+  }
+
+  const denominator = Math.round(1 / seconds);
+  return `1/${denominator}`;
+}
+
+const SCALE_FACTOR = 1000000;
 
 export function deserializeExif(
   exif: WithBffMeta<PhotoExif>,
-  scale: number = EXIF_SCALE,
+  scale: number = SCALE_FACTOR,
 ): WithBffMeta<PhotoExif> {
   const deserialized: Partial<WithBffMeta<PhotoExif>> = {
     $type: exif.$type,
@@ -98,4 +127,61 @@ export function deserializeExif(
   deserialized.uri = exif.uri;
 
   return deserialized as WithBffMeta<PhotoExif>;
+}
+
+const exifDisplayNames: Record<string, string> = {
+  Make: "Make",
+  Model: "Model",
+  LensMake: "Lens Make",
+  LensModel: "Lens Model",
+  FNumber: "Aperture",
+  FocalLengthIn35mmFormat: "Focal Length",
+  ExposureTime: "Exposure Time",
+  ISO: "ISO",
+  Flash: "Flash",
+  DateTimeOriginal: "Date Taken",
+};
+
+const tagOrder = [
+  "Make",
+  "Model",
+  "LensMake",
+  "LensModel",
+  "FNumber",
+  "FocalLengthIn35mmFormat",
+  "ExposureTime",
+  "ISO",
+  "Flash",
+  "DateTimeOriginal",
+];
+
+export function getOrderedExifData(photo: PhotoView) {
+  const exif = photo.exif || {};
+  const entries = Object.entries(exif)
+    .filter(([key]) =>
+      tagOrder.some((tag) => tag.toLowerCase() === key.toLowerCase())
+    )
+    .map(([key, value]) => {
+      const tagKey = tagOrder.find(
+        (tag) => tag.toLowerCase() === key.toLowerCase(),
+      );
+      const displayKey = tagKey && exifDisplayNames[tagKey]
+        ? exifDisplayNames[tagKey]
+        : key;
+      return { key, displayKey, value };
+    });
+
+  // Sort according to tagOrder, unknown tags go last in original order
+  return entries.sort((a, b) => {
+    const aIdx = tagOrder.findIndex(
+      (tag) => tag.toLowerCase() === a.key.toLowerCase(),
+    );
+    const bIdx = tagOrder.findIndex(
+      (tag) => tag.toLowerCase() === b.key.toLowerCase(),
+    );
+    if (aIdx === -1 && bIdx === -1) return 0;
+    if (aIdx === -1) return 1;
+    if (bIdx === -1) return -1;
+    return aIdx - bIdx;
+  });
 }

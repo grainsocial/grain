@@ -17,14 +17,19 @@ export const handler: RouteHandler = (
   const handle = params.handle;
   const rkey = params.rkey;
   const gallery = getGallery(handle, rkey, ctx);
+
   if (!gallery) return ctx.next();
+
   favs = getGalleryFavs(gallery.uri, ctx);
+
   ctx.state.meta = [
     { title: `${(gallery.record as Gallery).title} — Grain` },
     ...getPageMeta(galleryLink(handle, rkey)),
     ...getGalleryMeta(gallery),
   ];
+
   ctx.state.scripts = ["photo_dialog.js", "masonry.js", "sortable.js"];
+
   return ctx.render(
     <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
   );

@@ -22,7 +22,7 @@ export function AvatarInput(
         id="file"
         name="file"
         accept="image/*"
-        _="on change call Grain.handleAvatarImageSelect(me)"
+        _="on change call Grain.profileDialog.handleAvatarImageSelect(me)"
       />
     </label>
   );
