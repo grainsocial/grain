@@ -1,4 +1,5 @@
 import htmx from "htmx.org";
+import hyperscript from "hyperscript.org";
 import { dataURLToBlob, doResize, readFileAsDataURL } from "./photo_manip.ts";
 
 export class UploadPage {
@@ -33,12 +34,40 @@ export class UploadPage {
         fd.append("width", String(resized.width));
         fd.append("height", String(resized.height));
 
-        htmx.ajax("POST", "/actions/photo", {
-          "swap": "afterbegin",
-          "target": "#image-preview",
-          "values": Object.fromEntries(fd),
-          "source": inputElement,
+        const response = await fetch("/actions/photo", {
+          method: "POST",
+          body: fd,
         });
+
+        if (!response.ok) {
+          alert(await response.text());
+          return;
+        }
+
+        const html = await response.text();
+        const temp = document.createElement("div");
+        temp.innerHTML = html;
+        const photoId = temp?.firstElementChild?.id;
+
+        const preview = document.querySelector("#image-preview");
+        if (preview) {
+          const firstChild = temp.firstElementChild;
+
+          if (firstChild) {
+            preview.insertBefore(firstChild, preview.firstChild);
+          }
+
+          htmx.process(preview);
+
+          const deleteButton = preview.querySelector(
+            `#delete-photo-${photoId}`,
+          );
+          if (!deleteButton) {
+            return;
+          }
+          htmx.process(deleteButton);
+          hyperscript.processNode(deleteButton);
+        }
       } catch (err) {
         console.error("Error uploading photo:", err);
         alert("Error uploading photo");
