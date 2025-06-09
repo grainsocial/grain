@@ -6,7 +6,7 @@ import { getTimeline, SocialNetwork } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 
-export const handler: RouteHandler = (
+export const handler: RouteHandler = async (
   req,
   _params,
   ctx: BffContext<State>,
@@ -44,7 +44,7 @@ export const handler: RouteHandler = (
     graph = actorProfiles[0];
   }
 
-  const items = getTimeline(
+  const items = await getTimeline(
     ctx,
     tab === "following" ? "following" : "timeline",
     graph,

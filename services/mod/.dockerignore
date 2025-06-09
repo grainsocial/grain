@@ -1,0 +1,4 @@
+**/node_modules
+**/*.db
+*.toml
+.env

@@ -3,11 +3,12 @@ import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { GalleryPage } from "../components/GalleryPage.tsx";
 import { getGallery, getGalleryFavs } from "../lib/gallery.ts";
+import { moderateGallery, ModerationDecsion } from "../lib/moderation.ts";
 import { getGalleryMeta, getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";
 
-export const handler: RouteHandler = (
+export const handler: RouteHandler = async (
   _req,
   params,
   ctx: BffContext<State>,
@@ -30,7 +31,17 @@ export const handler: RouteHandler = (
 
   ctx.state.scripts = ["photo_dialog.js", "masonry.js", "sortable.js"];
 
+  let modDecision: ModerationDecsion | undefined = undefined;
+  if (gallery.labels?.length) {
+    modDecision = await moderateGallery(gallery.labels ?? [], ctx);
+  }
+
   return ctx.render(
-    <GalleryPage favs={favs} gallery={gallery} currentUserDid={did} />,
+    <GalleryPage
+      favs={favs}
+      gallery={gallery}
+      currentUserDid={did}
+      modDecision={modDecision}
+    />,
   );
 };

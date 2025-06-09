@@ -4,6 +4,8 @@
     "app.bsky.feed.post",
     "app.bsky.actor.profile",
     "app.bsky.actor.defs",
-    "app.bsky.graph.follow"
+    "app.bsky.graph.follow",
+    "com.atproto.label.defs",
+    "com.atproto.moderation.defs"
   ]
 }

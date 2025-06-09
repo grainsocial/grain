@@ -1,0 +1,29 @@
+# fly.toml app configuration file generated for grain-mod on 2025-06-08T23:51:19-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'grain-mod'
+primary_region = 'sea'
+
+[build]
+  dockerfile = './Dockerfile'
+
+[env]
+  MOD_SERVICE_DATABASE_URL = '/data/sqlite.db'
+  MOD_SERVICE_PORT = '8080'
+
+[[mounts]]
+  source = 'data'
+  destination = '/data'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  size = 'shared-cpu-1x'

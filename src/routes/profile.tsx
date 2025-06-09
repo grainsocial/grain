@@ -1,4 +1,4 @@
-import { BffContext, RouteHandler } from "@bigmoves/bff";
+import { BffContext, LabelerPolicies, RouteHandler } from "@bigmoves/bff";
 import { ProfilePage, ProfileTabs } from "../components/ProfilePage.tsx";
 import {
   getActorGalleries,
@@ -7,12 +7,17 @@ import {
   getActorProfiles,
 } from "../lib/actor.ts";
 import { getFollow, getFollowers, getFollowing } from "../lib/follow.ts";
+import {
+  isLabeler as isLabelerFn,
+  moderateGallery,
+  ModerationDecsion,
+} from "../lib/moderation.ts";
 import { type SocialNetwork } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 import { profileLink } from "../utils.ts";
 
-export const handler: RouteHandler = (
+export const handler: RouteHandler = async (
   req,
   params,
   ctx: BffContext<State>,
@@ -30,6 +35,28 @@ export const handler: RouteHandler = (
   const galleries = getActorGalleries(handle, ctx);
   const followers = getFollowers(actor.did, ctx);
   const following = getFollowing(actor.did, ctx);
+
+  let labelerDefinitions: LabelerPolicies | undefined = undefined;
+  const isLabeler = await isLabelerFn(actor.did, ctx);
+  if (isLabeler) {
+    const labelerDefs = await ctx.getLabelerDefinitions();
+    labelerDefinitions = labelerDefs[actor.did] ?? [];
+  }
+
+  const galleryModDecisionsMap = new Map<string, ModerationDecsion>();
+  for (const gallery of galleries) {
+    if (!gallery.labels || gallery.labels.length === 0) {
+      continue;
+    }
+    const modDecision = await moderateGallery(
+      gallery.labels ?? [],
+      ctx,
+    );
+    if (!modDecision) {
+      continue;
+    }
+    galleryModDecisionsMap.set(gallery.uri, modDecision);
+  }
 
   if (!profile) return ctx.next();
 
@@ -69,6 +96,7 @@ export const handler: RouteHandler = (
         selectedTab="favs"
         galleries={galleries}
         galleryFavs={galleryFavs}
+        galleryModDecisionsMap={galleryModDecisionsMap}
       />,
     );
   }
@@ -81,8 +109,11 @@ export const handler: RouteHandler = (
       followUri={followUri}
       loggedInUserDid={ctx.currentUser?.did}
       profile={profile}
-      selectedTab="galleries"
+      selectedTab={isLabeler ? "labels" : "galleries"}
       galleries={galleries}
+      galleryModDecisionsMap={galleryModDecisionsMap}
+      isLabeler={isLabeler}
+      labelerDefinitions={labelerDefinitions}
     />,
   );
 };

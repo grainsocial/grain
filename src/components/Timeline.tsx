@@ -93,7 +93,7 @@ export function Timeline(
                   </form>
                 )
                 : null}
-              <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y w-fit">
+              <ul class="space-y-4 relative divide-zinc-200 dark:divide-zinc-800 divide-y sm:w-fit">
                 {items.length > 0
                   ? items.map((item) => <Item item={item} key={item.itemUri} />)
                   : (

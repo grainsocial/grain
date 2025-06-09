@@ -2527,6 +2527,13 @@ export const schemaDict = {
               refs: ['lex:social.grain.photo.defs#photoView'],
             },
           },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
           indexedAt: {
             type: 'string',
             format: 'datetime',
@@ -2553,6 +2560,12 @@ export const schemaDict = {
             description: {
               type: 'string',
               maxLength: 1000,
+            },
+            labels: {
+              type: 'union',
+              description:
+                'Self-label values for this post. Effectively content warnings.',
+              refs: ['lex:com.atproto.label.defs#selfLabels'],
             },
             createdAt: {
               type: 'string',
@@ -2581,6 +2594,206 @@ export const schemaDict = {
             createdAt: {
               type: 'string',
               format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainLabelerDefs: {
+    lexicon: 1,
+    id: 'social.grain.labeler.defs',
+    defs: {
+      labelerView: {
+        type: 'object',
+        required: ['uri', 'cid', 'creator', 'indexedAt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          creator: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#profileView',
+          },
+          favoriteCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          viewer: {
+            type: 'ref',
+            ref: 'lex:social.grain.labeler.defs#labelerViewerState',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+        },
+      },
+      labelerViewDetailed: {
+        type: 'object',
+        required: ['uri', 'cid', 'creator', 'policies', 'indexedAt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          creator: {
+            type: 'ref',
+            ref: 'lex:app.bsky.actor.defs#profileView',
+          },
+          policies: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#labelerPolicies',
+          },
+          favoriteCount: {
+            type: 'integer',
+            minimum: 0,
+          },
+          viewer: {
+            type: 'ref',
+            ref: 'lex:social.grain.labeler.defs#labelerViewerState',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+          reasonTypes: {
+            description:
+              "The set of report reason 'codes' which are in-scope for this service to review and action. These usually align to policy categories. If not defined (distinct from empty array), all reason types are allowed.",
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.moderation.defs#reasonType',
+            },
+          },
+          subjectTypes: {
+            description:
+              'The set of subject types (account, record, etc) this service accepts reports on.',
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.moderation.defs#subjectType',
+            },
+          },
+          subjectCollections: {
+            type: 'array',
+            description:
+              'Set of record types (collection NSIDs) which can be reported to this service. If not defined (distinct from empty array), default is any record type.',
+            items: {
+              type: 'string',
+              format: 'nsid',
+            },
+          },
+        },
+      },
+      labelerViewerState: {
+        type: 'object',
+        properties: {
+          like: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+      labelerPolicies: {
+        type: 'object',
+        required: ['labelValues'],
+        properties: {
+          labelValues: {
+            type: 'array',
+            description:
+              'The label values which this labeler publishes. May include global or custom labels.',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#labelValue',
+            },
+          },
+          labelValueDefinitions: {
+            type: 'array',
+            description:
+              'Label values created by this labeler and scoped exclusively to it. Labels defined here will override global label definitions for this labeler.',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#labelValueDefinition',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainLabelerService: {
+    lexicon: 1,
+    id: 'social.grain.labeler.service',
+    defs: {
+      main: {
+        type: 'record',
+        description: 'A declaration of the existence of labeler service.',
+        key: 'literal:self',
+        record: {
+          type: 'object',
+          required: ['policies', 'createdAt'],
+          properties: {
+            policies: {
+              type: 'ref',
+              ref: 'lex:app.bsky.labeler.defs#labelerPolicies',
+            },
+            labels: {
+              type: 'union',
+              refs: ['lex:com.atproto.label.defs#selfLabels'],
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            reasonTypes: {
+              description:
+                "The set of report reason 'codes' which are in-scope for this service to review and action. These usually align to policy categories. If not defined (distinct from empty array), all reason types are allowed.",
+              type: 'array',
+              items: {
+                type: 'ref',
+                ref: 'lex:com.atproto.moderation.defs#reasonType',
+              },
+            },
+            subjectTypes: {
+              description:
+                'The set of subject types (account, record, etc) this service accepts reports on.',
+              type: 'array',
+              items: {
+                type: 'ref',
+                ref: 'lex:com.atproto.moderation.defs#subjectType',
+              },
+            },
+            subjectCollections: {
+              type: 'array',
+              description:
+                'Set of record types (collection NSIDs) which can be reported to this service. If not defined (distinct from empty array), default is any record type.',
+              items: {
+                type: 'string',
+                format: 'nsid',
+              },
             },
           },
         },
@@ -2636,6 +2849,13 @@ export const schemaDict = {
             type: 'string',
             maxLength: 2560,
             maxGraphemes: 256,
+          },
+          labels: {
+            type: 'array',
+            items: {
+              ref: 'lex:com.atproto.label.defs#label',
+              type: 'ref',
+            },
           },
           avatar: {
             type: 'string',
@@ -2962,6 +3182,58 @@ export const schemaDict = {
       },
     },
   },
+  ComAtprotoModerationDefs: {
+    lexicon: 1,
+    id: 'com.atproto.moderation.defs',
+    defs: {
+      reasonRude: {
+        type: 'token',
+        description:
+          'Rude, harassing, explicit, or otherwise unwelcoming behavior',
+      },
+      reasonSpam: {
+        type: 'token',
+        description: 'Spam: frequent unwanted promotion, replies, mentions',
+      },
+      reasonType: {
+        type: 'string',
+        knownValues: [
+          'com.atproto.moderation.defs#reasonSpam',
+          'com.atproto.moderation.defs#reasonViolation',
+          'com.atproto.moderation.defs#reasonMisleading',
+          'com.atproto.moderation.defs#reasonSexual',
+          'com.atproto.moderation.defs#reasonRude',
+          'com.atproto.moderation.defs#reasonOther',
+          'com.atproto.moderation.defs#reasonAppeal',
+        ],
+      },
+      reasonOther: {
+        type: 'token',
+        description: 'Other: reports not falling under another report category',
+      },
+      subjectType: {
+        type: 'string',
+        description: 'Tag describing a type of subject that might be reported.',
+        knownValues: ['account', 'record', 'chat'],
+      },
+      reasonAppeal: {
+        type: 'token',
+        description: 'Appeal: appeal a previously taken moderation action',
+      },
+      reasonSexual: {
+        type: 'token',
+        description: 'Unwanted or mislabeled sexual content',
+      },
+      reasonViolation: {
+        type: 'token',
+        description: 'Direct violation of server rules, laws, terms of service',
+      },
+      reasonMisleading: {
+        type: 'token',
+        description: 'Misleading identity, affiliation, or content',
+      },
+    },
+  },
 } as const satisfies Record<string, LexiconDoc>
 export const schemas = Object.values(schemaDict) satisfies LexiconDoc[]
 export const lexicons: Lexicons = new Lexicons(schemas)
@@ -3018,6 +3290,8 @@ export const ids = {
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
   SocialGrainGallery: 'social.grain.gallery',
   SocialGrainGraphFollow: 'social.grain.graph.follow',
+  SocialGrainLabelerDefs: 'social.grain.labeler.defs',
+  SocialGrainLabelerService: 'social.grain.labeler.service',
   SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorProfile: 'social.grain.actor.profile',
@@ -3025,4 +3299,5 @@ export const ids = {
   SocialGrainPhoto: 'social.grain.photo',
   ComAtprotoLabelDefs: 'com.atproto.label.defs',
   ComAtprotoRepoStrongRef: 'com.atproto.repo.strongRef',
+  ComAtprotoModerationDefs: 'com.atproto.moderation.defs',
 } as const

@@ -9,6 +9,7 @@ import { AtUri } from "@atproto/syntax";
 import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
+import { moderateGallery, ModerationDecsion } from "./moderation.ts";
 
 export type TimelineItemType = "gallery";
 
@@ -20,6 +21,7 @@ export type TimelineItem = {
   itemUri: string;
   actor: Un$Typed<ProfileView>;
   gallery: GalleryView;
+  modDecision?: ModerationDecsion;
 };
 
 type TimelineOptions = {
@@ -27,10 +29,10 @@ type TimelineOptions = {
   followingDids?: Set<string>;
 };
 
-function processGalleries(
+async function processGalleries(
   ctx: BffContext,
   options?: TimelineOptions,
-): TimelineItem[] {
+): Promise<TimelineItem[]> {
   const items: TimelineItem[] = [];
 
   let whereClause: QueryOptions["where"] = options?.actorDid
@@ -70,25 +72,34 @@ function processGalleries(
       new AtUri(gallery.uri).rkey
     }`;
     const galleryPhotos = galleryPhotosMap.get(galleryUri) || [];
+    const labels = ctx.indexService.queryLabels({
+      subjects: [gallery.uri],
+    });
+    const galleryView = galleryToView(gallery, profile, galleryPhotos, labels);
 
-    const galleryView = galleryToView(gallery, profile, galleryPhotos);
+    let modDecision: ModerationDecsion | undefined = undefined;
+    if (galleryView.labels?.length) {
+      modDecision = await moderateGallery(labels, ctx);
+    }
+
     items.push({
       itemType: "gallery",
       createdAt: gallery.createdAt,
       itemUri: galleryView.uri,
       actor: galleryView.creator,
       gallery: galleryView,
+      modDecision,
     });
   }
 
   return items;
 }
 
-function getTimelineItems(
+async function getTimelineItems(
   ctx: BffContext,
   options?: TimelineOptions,
-): TimelineItem[] {
-  const galleryItems = processGalleries(ctx, options);
+): Promise<TimelineItem[]> {
+  const galleryItems = await processGalleries(ctx, options);
   return galleryItems.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
@@ -114,16 +125,16 @@ function getFollowingDids(type: SocialNetwork, ctx: BffContext): Set<string> {
   return new Set(follows.map((f) => f.subject).filter(Boolean));
 }
 
-export function getTimeline(
+export async function getTimeline(
   ctx: BffContext,
   type: "timeline" | "following",
   graph: SocialNetwork,
-): TimelineItem[] {
+): Promise<TimelineItem[]> {
   let followingDids: Set<string> | undefined = undefined;
   if (type === "following") {
     followingDids = getFollowingDids(graph, ctx);
   }
-  const galleryItems = processGalleries(ctx, { followingDids });
+  const galleryItems = await processGalleries(ctx, { followingDids });
   return galleryItems.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );

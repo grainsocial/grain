@@ -21,7 +21,7 @@ export DID=""
 #     --header "Content-Type: application/json" \
 #     --user "admin:${PDS_ADMIN_PASSWORD}" \
 #     --data '{"useCount": 1}' \
-#     "https://${PDS_HOST}/xrpc/com.atproto.server.createInviteCode"
+#     "https://${PDS_HOSTNAME}/xrpc/com.atproto.server.createInviteCode"
 
 # delete an account
 # curl \
@@ -32,4 +32,4 @@ export DID=""
 #     --header "Content-Type: application/json" \
 #     --user "admin:${PDS_ADMIN_PASSWORD}" \
 #     --data "{\"did\": \"${DID}\"}" \
-#     "https://${PDS_HOST}/xrpc/com.atproto.admin.deleteAccount"
+#     "https://${PDS_HOSTNAME}/xrpc/com.atproto.admin.deleteAccount"
