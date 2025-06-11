@@ -11,6 +11,11 @@
         "properties": {
           "title": { "type": "string", "maxLength": 100 },
           "description": { "type": "string", "maxLength": 1000 },
+          "labels": {
+            "type": "union",
+            "description": "Self-label values for this post. Effectively content warnings.",
+            "refs": ["com.atproto.label.defs#selfLabels"]
+          },
           "createdAt": { "type": "string", "format": "datetime" }
         }
       }

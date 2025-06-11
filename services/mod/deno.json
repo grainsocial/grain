@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "$lexicon/": "./__generated__/",
+    "@atproto/common": "npm:@atproto/common@^0.4.11",
+    "@atproto/crypto": "npm:@atproto/crypto@^0.4.4",
+    "@atproto/lexicon": "npm:@atproto/lexicon@^0.4.11",
+    "@std/assert": "jsr:@std/assert@^1.0.13",
+    "uint8arrays": "npm:uint8arrays@^5.1.0"
+  },
+  "tasks": {
+    "start": "deno run -A ./main.ts",
+    "dev": "deno run -A --watch --env=.env ./main.ts",
+    "test": "deno test -A  main.ts",
+    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.30 lexgen"
+  },
+  "nodeModulesDir": "auto"
+}

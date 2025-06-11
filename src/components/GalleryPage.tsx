@@ -5,19 +5,23 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { WithBffMeta } from "@bigmoves/bff";
 import { Button } from "@bigmoves/bff/components";
+import { ModerationDecsion } from "../lib/moderation.ts";
 import { ActorInfo } from "./ActorInfo.tsx";
 import { FavoriteButton } from "./FavoriteButton.tsx";
 import { GalleryLayout } from "./GalleryLayout.tsx";
+import { ModerationWrapper } from "./ModerationWrapper.tsx";
 import { ShareGalleryButton } from "./ShareGalleryButton.tsx";
 
 export function GalleryPage({
   gallery,
   favs = [],
   currentUserDid,
+  modDecision,
 }: Readonly<{
   gallery: GalleryView;
   favs: WithBffMeta<Favorite>[];
   currentUserDid?: string;
+  modDecision?: ModerationDecsion;
 }>) {
   const isCreator = currentUserDid === gallery.creator.did;
   const isLoggedIn = !!currentUserDid;
@@ -85,26 +89,30 @@ export function GalleryPage({
           )
           : null}
       </div>
-      <GalleryLayout
-        layoutButtons={
-          <>
-            <GalleryLayout.ModeButton mode="justified" />
-            <GalleryLayout.ModeButton mode="masonry" />
-          </>
-        }
-      >
-        <GalleryLayout.Container>
-          {galleryItems?.length
-            ? galleryItems.map((photo) => (
-              <GalleryLayout.Item
-                key={photo.cid}
-                photo={photo}
-                gallery={gallery}
-              />
-            ))
-            : null}
-        </GalleryLayout.Container>
-      </GalleryLayout>
+      {
+        <ModerationWrapper moderationDecision={modDecision} class="mb-2">
+          <GalleryLayout
+            layoutButtons={
+              <>
+                <GalleryLayout.ModeButton mode="justified" />
+                <GalleryLayout.ModeButton mode="masonry" />
+              </>
+            }
+          >
+            <GalleryLayout.Container>
+              {galleryItems?.length
+                ? galleryItems.map((photo) => (
+                  <GalleryLayout.Item
+                    key={photo.cid}
+                    photo={photo}
+                    gallery={gallery}
+                  />
+                ))
+                : null}
+            </GalleryLayout.Container>
+          </GalleryLayout>
+        </ModerationWrapper>
+      }
     </div>
   );
 }

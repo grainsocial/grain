@@ -5,11 +5,12 @@ import { type TimelineItem } from "../lib/timeline.ts";
 import { formatRelativeTime, galleryLink } from "../utils.ts";
 import { ActorInfo } from "./ActorInfo.tsx";
 import { GalleryPreviewLink } from "./GalleryPreviewLink.tsx";
+import { ModerationWrapper } from "./ModerationWrapper.tsx";
 
 export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   return (
     <li>
-      <div class="w-fit flex flex-col gap-4 pb-4">
+      <div class="flex flex-col gap-4 pb-4 max-w-md">
         <div class="flex items-center justify-between gap-2 w-full">
           <ActorInfo profile={item.actor} />
           <span class="shrink-0">
@@ -18,13 +19,18 @@ export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
         </div>
         {item.gallery.items?.filter(isPhotoView).length
           ? (
-            <GalleryPreviewLink
-              gallery={item.gallery}
-            />
+            <ModerationWrapper
+              moderationDecision={item.modDecision}
+              class="gap-2 sm:min-w-md"
+            >
+              <GalleryPreviewLink
+                gallery={item.gallery}
+              />
+            </ModerationWrapper>
           )
           : null}
         <p class="w-full flex items-baseline gap-1">
-          {item.itemType === "favorite" ? "Favorited" : "Created"}{" "}
+          Created{" "}
           <a
             href={galleryLink(
               item.gallery.creator.handle,

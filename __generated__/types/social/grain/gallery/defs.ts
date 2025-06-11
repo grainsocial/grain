@@ -11,6 +11,7 @@ import {
 } from '../../../../util.ts'
 import type * as SocialGrainActorDefs from '../actor/defs.ts'
 import type * as SocialGrainPhotoDefs from '../photo/defs.ts'
+import type * as ComAtprotoLabelDefs from '../../../com/atproto/label/defs.ts'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -23,6 +24,7 @@ export interface GalleryView {
   creator: SocialGrainActorDefs.ProfileView
   record: { [_ in string]: unknown }
   items?: ($Typed<SocialGrainPhotoDefs.PhotoView> | { $type: string })[]
+  labels?: ComAtprotoLabelDefs.Label[]
   indexedAt: string
 }
 

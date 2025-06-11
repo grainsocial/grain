@@ -1,4 +1,5 @@
 import { Record as BskyProfile } from "$lexicon/types/app/bsky/actor/profile.ts";
+import { Label } from "$lexicon/types/com/atproto/label/defs.ts";
 import { Record as TangledProfile } from "$lexicon/types/sh/tangled/actor/profile.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as GrainProfile } from "$lexicon/types/social/grain/actor/profile.ts";
@@ -77,11 +78,21 @@ export function getActorGalleries(handleOrDid: string, ctx: BffContext) {
 
   const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
   const creator = getActorProfile(did, ctx);
+  const labelMap = new Map<string, Label[]>();
+  for (const gallery of galleries) {
+    const labels = ctx.indexService.queryLabels({ subjects: [gallery.uri] });
+    labelMap.set(gallery.uri, labels);
+  }
 
   if (!creator) return [];
 
   return galleries.map((gallery) =>
-    galleryToView(gallery, creator, galleryPhotosMap.get(gallery.uri) ?? [])
+    galleryToView(
+      gallery,
+      creator,
+      galleryPhotosMap.get(gallery.uri) ?? [],
+      labelMap.get(gallery.uri) ?? [],
+    )
   );
 }
 
@@ -127,6 +138,12 @@ export function getActorGalleryFavs(handleOrDid: string, ctx: BffContext) {
     new Set(galleries.map((gallery) => gallery.did)),
   );
 
+  const labelMap = new Map<string, Label[]>();
+  for (const gallery of galleries) {
+    const labels = ctx.indexService.queryLabels({ subjects: [gallery.uri] });
+    labelMap.set(gallery.uri, labels);
+  }
+
   const { items: profiles } = ctx.indexService.getRecords<
     WithBffMeta<GrainProfile>
   >(
@@ -152,6 +169,7 @@ export function getActorGalleryFavs(handleOrDid: string, ctx: BffContext) {
         gallery,
         creator,
         galleryPhotosMap.get(gallery.uri) ?? [],
+        labelMap.get(gallery.uri) ?? [],
       );
     })
     .filter((g) => g !== null);

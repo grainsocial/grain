@@ -16,7 +16,7 @@ export function GalleryPreviewLink({
         gallery.creator.handle,
         new AtUri(gallery.uri).rkey,
       )}
-      class={cn("flex w-full max-w-md aspect-[3/2] overflow-hidden", gap)}
+      class={cn("flex w-full aspect-[3/2] overflow-hidden", gap)}
     >
       <div class="w-2/3 h-full">
         <img

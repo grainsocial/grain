@@ -22,6 +22,10 @@
             ]
           }
         },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
+        },
         "indexedAt": { "type": "string", "format": "datetime" }
       }
     }
