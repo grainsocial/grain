@@ -2,7 +2,7 @@
   "imports": {
     "$lexicon/": "./__generated__/",
     "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
-    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.33",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.35",
     "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.11.1",
     "@std/http": "jsr:@std/http@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
