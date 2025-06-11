@@ -5,6 +5,7 @@ import { LoginPage } from "./components/LoginPage.tsx";
 import { PDS_HOST_URL } from "./env.ts";
 import { onError } from "./lib/errors.ts";
 import * as actionHandlers from "./routes/actions.tsx";
+import { handler as communityGuidelinesHandler } from "./routes/community_guidelines.tsx";
 import * as dialogHandlers from "./routes/dialogs.tsx";
 import { handler as exploreHandler } from "./routes/explore.tsx";
 import { handler as followersHandler } from "./routes/followers.tsx";
@@ -25,6 +26,8 @@ let staticFilesHash = new Map<string, string>();
 
 bff({
   appName: "Grain Social",
+  appLabelers: ["did:plc:nd45zozo34cr4pvxqu4rtr7e"],
+  appLabelerCollection: "social.grain.labeler.service",
   collections: [
     "social.grain.actor.profile",
     "social.grain.gallery",
@@ -71,10 +74,12 @@ bff({
     route("/support/privacy", legalHandlers.privacyHandler),
     route("/support/terms", legalHandlers.termsHandler),
     route("/support/copyright", legalHandlers.copyrightHandler),
+    route("/support/community-guidelines", communityGuidelinesHandler),
     route("/dialogs/create-account", dialogHandlers.createAccount),
     route("/dialogs/gallery/new", dialogHandlers.createGallery),
     route("/dialogs/gallery/:rkey", dialogHandlers.editGallery),
     route("/dialogs/gallery/:rkey/sort", dialogHandlers.sortGallery),
+    route("/dialogs/label/:src/:val", dialogHandlers.labelValueDefinition),
     route("/dialogs/profile", dialogHandlers.editProfile),
     route("/dialogs/avatar/:handle", dialogHandlers.avatar),
     route("/dialogs/image", dialogHandlers.image),
@@ -86,6 +91,10 @@ bff({
     route(
       "/dialogs/photo/:rkey/exif-overlay",
       dialogHandlers.photoExifOverlay,
+    ),
+    route(
+      "/dialogs/exif-info",
+      dialogHandlers.exifInfo,
     ),
     route(
       "/dialogs/photo-select/:galleryRkey",

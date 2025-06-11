@@ -59,6 +59,15 @@ export function UploadPage({
             checked
           />
           Include image metadata (EXIF)
+          <button
+            type="button"
+            hx-get="/dialogs/exif-info"
+            hx-target="#layout"
+            hx-swap="afterbegin"
+            class="cursor-pointer"
+          >
+            <i class="fa fa-info-circle ml-1" />
+          </button>
         </label>
       </form>
       <div

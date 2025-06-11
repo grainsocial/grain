@@ -7,9 +7,11 @@ import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
 import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
+import { ExifInfoDialog } from "../components/ExifInfoDialog.tsx";
 import { ExifOverlayDialog } from "../components/ExifOverlayDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
+import { LabelDefinitionDialog } from "../components/LabelDefinitionDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
 import { PhotoDialog } from "../components/PhotoDialog.tsx";
 import { PhotoExifDialog } from "../components/PhotoExifDialog.tsx";
@@ -17,6 +19,7 @@ import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
 import { getActorPhotos, getActorProfile } from "../lib/actor.ts";
 import { getGallery, getGalleryItemsAndPhotos } from "../lib/gallery.ts";
+import { atprotoLabelValueDefinitions } from "../lib/moderation.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 
@@ -193,4 +196,42 @@ export const createAccount: RouteHandler = (
   ctx: BffContext<State>,
 ) => {
   return ctx.html(<CreateAccountDialog />);
+};
+
+export const labelValueDefinition: RouteHandler = async (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const src = params.src;
+  const val = params.val;
+  const labelerDeinitionsMap = await ctx.getLabelerDefinitions();
+  if (!labelerDeinitionsMap) return ctx.next();
+  const labelValueDefinitions = labelerDeinitionsMap[src]
+    ?.labelValueDefinitions;
+  if (!labelValueDefinitions) return ctx.next();
+
+  let valDef = labelValueDefinitions.find((def) => def.identifier === val);
+  if (!valDef && typeof val === "string") {
+    valDef = atprotoLabelValueDefinitions[val];
+  }
+
+  if (!valDef) return ctx.next();
+  const labelerAtpData = await ctx.didResolver.resolveAtprotoData(src);
+  return ctx.html(
+    <LabelDefinitionDialog
+      labelByHandle={labelerAtpData?.handle}
+      labelValueDefinition={valDef}
+    />,
+  );
+};
+
+export const exifInfo: RouteHandler = (
+  _req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  return ctx.html(
+    <ExifInfoDialog />,
+  );
 };

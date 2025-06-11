@@ -5,6 +5,7 @@ import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { Input } from "@bigmoves/bff/components";
 import { ComponentChildren } from "preact";
 import { ActorAvatar } from "../components/ActorAvatar.tsx";
+import { LabelerAvatar } from "../components/LabelerAvatar.tsx";
 import { profileToView } from "../lib/actor.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
@@ -85,7 +86,10 @@ function SearchResults(
         {profileViews.map((profile) => (
           <li key={profile.did}>
             <a class="flex items-center" href={`/profile/${profile.handle}`}>
-              <ActorAvatar profile={profile} size={32} class="mr-2" />
+              {/* @TODO remove hard-coded handler */}
+              {profile.handle === "moderation.grain.social"
+                ? <LabelerAvatar profile={profile} size={32} class="mr-2" />
+                : <ActorAvatar profile={profile} size={32} class="mr-2" />}
               <div class="flex flex-col">
                 <div class="font-semibold">
                   {profile.displayName || profile.handle}

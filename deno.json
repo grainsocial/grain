@@ -2,7 +2,7 @@
   "imports": {
     "$lexicon/": "./__generated__/",
     "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
-    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.32",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.33",
     "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.11.1",
     "@std/http": "jsr:@std/http@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
@@ -18,9 +18,6 @@
     "tailwindcss": "npm:tailwindcss@^4.1.4",
     "typed-htmx": "npm:typed-htmx@^0.3.1"
   },
-  "patch": [
-    "../bff/packages/bff"
-  ],
   "tasks": {
     "start": "deno run -A ./src/main.tsx",
     "build": "rm -f ./static/app.esm.js.map && deno run -A build.ts",
@@ -28,7 +25,7 @@
     "dev:build": "deno -A --watch=src/static/ build.ts",
     "dev:server": "deno run -A --env-file=.env --watch ./src/main.tsx",
     "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./src/input.css -o ./static/styles.css --watch",
-    "sync": "deno run -A --env=.env jsr:@bigmoves/bff-cli@0.3.0-beta.30 sync --collections=social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.favorite,social.grain.gallery.item,social.grain.graph.follow --external-collections=app.bsky.actor.profile,app.bsky.graph.follow,sh.tangled.graph.follow,sh.tangled.actor.profile",
+    "sync": "deno run -A --env=.env jsr:@bigmoves/bff-cli@0.3.0-beta.30 sync --collections=social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.photo.exif,social.grain.favorite,social.grain.gallery.item,social.grain.graph.follow --external-collections=app.bsky.actor.profile,app.bsky.graph.follow,sh.tangled.graph.follow,sh.tangled.actor.profile",
     "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.30 lexgen"
   },
   "compilerOptions": {

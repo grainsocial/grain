@@ -18,6 +18,13 @@
           "maxLength": 2560,
           "maxGraphemes": 256
         },
+        "labels": {
+          "type": "array",
+          "items": {
+            "ref": "com.atproto.label.defs#label",
+            "type": "ref"
+          }
+        },
         "avatar": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "datetime" }
       }

@@ -7,7 +7,6 @@ export function PhotoExifDialog({
 }: Readonly<{
   photo: PhotoView;
 }>) {
-  console.log(getOrderedExifData(photo));
   return (
     <Dialog id="photo-alt-dialog" class="z-100">
       <Dialog.Content class="dark:bg-zinc-950 relative">
@@ -21,15 +20,15 @@ export function PhotoExifDialog({
           />
         </div>
         {photo.exif && (
-          <div className="mt-4 text-sm">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-              {getOrderedExifData(photo).map(({ displayKey, value }) => (
-                <>
-                  <dt className="font-medium text-right">{displayKey}:</dt>
-                  <dd className="text-left">{String(value)}</dd>
-                </>
-              ))}
-            </dl>
+          <div className="mt-4 text-sm space-y-1">
+            {getOrderedExifData(photo).map(({ displayKey, value }) => (
+              <div key={displayKey} className="flex justify-between gap-4">
+                <dt className="font-medium">{displayKey}</dt>
+                <dd className="text-right max-w-[60%] break-words">
+                  {String(value)}
+                </dd>
+              </div>
+            ))}
           </div>
         )}
       </Dialog.Content>

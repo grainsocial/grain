@@ -31,6 +31,15 @@ export const APP_BSKY_FEED = {
   DefsClickthroughReposter: 'app.bsky.feed.defs#clickthroughReposter',
   DefsContentModeUnspecified: 'app.bsky.feed.defs#contentModeUnspecified',
 }
+export const COM_ATPROTO_MODERATION = {
+  DefsReasonRude: 'com.atproto.moderation.defs#reasonRude',
+  DefsReasonSpam: 'com.atproto.moderation.defs#reasonSpam',
+  DefsReasonOther: 'com.atproto.moderation.defs#reasonOther',
+  DefsReasonAppeal: 'com.atproto.moderation.defs#reasonAppeal',
+  DefsReasonSexual: 'com.atproto.moderation.defs#reasonSexual',
+  DefsReasonViolation: 'com.atproto.moderation.defs#reasonViolation',
+  DefsReasonMisleading: 'com.atproto.moderation.defs#reasonMisleading',
+}
 
 export function createServer(options?: XrpcOptions): Server {
   return new Server(options)
@@ -172,6 +181,7 @@ export class SocialGrainNS {
   _server: Server
   gallery: SocialGrainGalleryNS
   graph: SocialGrainGraphNS
+  labeler: SocialGrainLabelerNS
   actor: SocialGrainActorNS
   photo: SocialGrainPhotoNS
 
@@ -179,6 +189,7 @@ export class SocialGrainNS {
     this._server = server
     this.gallery = new SocialGrainGalleryNS(server)
     this.graph = new SocialGrainGraphNS(server)
+    this.labeler = new SocialGrainLabelerNS(server)
     this.actor = new SocialGrainActorNS(server)
     this.photo = new SocialGrainPhotoNS(server)
   }
@@ -193,6 +204,14 @@ export class SocialGrainGalleryNS {
 }
 
 export class SocialGrainGraphNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
+export class SocialGrainLabelerNS {
   _server: Server
 
   constructor(server: Server) {

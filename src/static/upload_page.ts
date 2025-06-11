@@ -1,5 +1,6 @@
 import exifr from "exifr";
 import htmx from "htmx.org";
+import hyperscript from "hyperscript.org";
 import { dataURLToBlob, doResize, readFileAsDataURL } from "./photo_manip.ts";
 import { tags as supportedTags } from "./tags.ts";
 
@@ -58,7 +59,7 @@ export class UploadPage {
       const blob = dataURLToBlob(resized.path);
 
       const fd = new FormData();
-      fd.append("file", blob, file.name);
+      fd.append("file", blob, (file as File).name);
       fd.append("width", String(resized.width));
       fd.append("height", String(resized.height));
 
@@ -66,19 +67,49 @@ export class UploadPage {
         fd.append("exif", JSON.stringify(tags));
       }
 
-      htmx.ajax("POST", "/actions/photo", {
-        "swap": "afterbegin",
-        "target": "#image-preview",
-        "values": Object.fromEntries(fd),
-        "source": formElement,
+      const response = await fetch("/actions/photo", {
+        method: "POST",
+        body: fd,
       });
+
+      if (!response.ok) {
+        alert(await response.text());
+        return;
+      }
+
+      const html = await response.text();
+      const temp = document.createElement("div");
+      temp.innerHTML = html;
+      const photoId = temp?.firstElementChild?.id;
+
+      const preview = document.querySelector("#image-preview");
+      if (preview) {
+        const firstChild = temp.firstElementChild;
+
+        if (firstChild) {
+          preview.insertBefore(firstChild, preview.firstChild);
+        }
+
+        htmx.process(preview);
+
+        const deleteButton = preview.querySelector(
+          `#delete-photo-${photoId}`,
+        );
+        if (!deleteButton) {
+          return;
+        }
+        htmx.process(deleteButton);
+        hyperscript.processNode(deleteButton);
+      }
     });
 
     await Promise.all(uploadPromises);
 
     // Clear the file input after upload
-    (formElement.querySelector("input[type='file']") as HTMLInputElement)!
-      .value = "";
+    const fileInput = formElement.querySelector("input[type='file']");
+    if (fileInput instanceof HTMLInputElement) {
+      fileInput.value = "";
+    }
   }
 }
 

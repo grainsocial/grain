@@ -1,3 +1,4 @@
+import { Label } from "$lexicon/types/com/atproto/label/defs.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
@@ -102,10 +103,14 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
   const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, [gallery]);
   const profile = getActorProfile(did, ctx);
   if (!profile) return null;
+  const labels = ctx.indexService.queryLabels({
+    subjects: [gallery.uri],
+  });
   return galleryToView(
     gallery,
     profile,
     galleryPhotosMap.get(gallery.uri) ?? [],
+    labels,
   );
 }
 
@@ -150,6 +155,7 @@ export function galleryToView(
   record: WithBffMeta<Gallery>,
   creator: Un$Typed<ProfileView>,
   items: PhotoWithExif[],
+  labels: Label[] = [],
 ): Un$Typed<GalleryView> {
   return {
     uri: record.uri,
@@ -159,6 +165,7 @@ export function galleryToView(
     items: items
       ?.map((item) => itemToView(record.did, item))
       .filter(isPhotoView),
+    labels,
     indexedAt: record.indexedAt,
   };
 }
@@ -184,12 +191,7 @@ export function getGalleryCameras(
   const cameras = new Set<string>();
   for (const photo of photos) {
     if (photo.exif?.make) {
-      // Capitalize first letter of each word for make only, leave model raw
-      const make = photo.exif.make.charAt(0).toUpperCase() +
-        photo.exif.make.slice(1).toLowerCase();
-      const model = photo.exif.model ?? "";
-      console.log(make, model);
-      cameras.add(`${make} ${model}`.trim());
+      cameras.add(`${photo.exif.make} ${photo.exif.model}`.trim());
     }
   }
   return Array.from(cameras);

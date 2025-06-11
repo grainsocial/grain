@@ -65,6 +65,7 @@ export function exifToView(
   const deserializedExif = deserializeExif(exif);
   return {
     ...deserializedExif,
+    make: deserializedExif.make ? formatMake(deserializedExif.make) : undefined,
     fNumber: deserializedExif.fNumber
       ? formatAperture(deserializedExif.fNumber)
       : undefined,
@@ -82,6 +83,14 @@ export function exifToView(
       : undefined,
     $type: "social.grain.photo.defs#exifView",
   };
+}
+
+function formatMake(make: string) {
+  return make
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 function formatAperture(fNumber: number): string {
@@ -156,8 +165,8 @@ const tagOrder = [
 ];
 
 export function getOrderedExifData(photo: PhotoView) {
-  const exif = photo.exif || {};
-  const entries = Object.entries(exif)
+  if (!photo.exif) return [];
+  const entries = Object.entries(photo.exif)
     .filter(([key]) =>
       tagOrder.some((tag) => tag.toLowerCase() === key.toLowerCase())
     )

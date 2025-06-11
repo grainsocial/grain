@@ -1,8 +1,7 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { Dialog } from "https://jsr.io/@bigmoves/bff/0.3.0-beta.21/components/Dialog.tsx";
-import { cn } from "../../../bff/packages/bff/components/utils.ts";
+import { cn, Dialog } from "@bigmoves/bff/components";
 import { photoDialogLink } from "../utils.ts";
 
 export function PhotoDialog({

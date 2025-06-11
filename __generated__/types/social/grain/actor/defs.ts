@@ -9,6 +9,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.ts'
+import type * as ComAtprotoLabelDefs from '../../../com/atproto/label/defs.ts'
 
 const is$typed = _is$typed,
   validate = _validate
@@ -20,6 +21,7 @@ export interface ProfileView {
   handle: string
   displayName?: string
   description?: string
+  labels?: ComAtprotoLabelDefs.Label[]
   avatar?: string
   createdAt?: string
 }
