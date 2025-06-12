@@ -80,8 +80,6 @@ export const handler: RouteHandler = async (
     ...getPageMeta(profileLink(handle)),
   ];
 
-  ctx.state.scripts = ["photo_manip.js", "profile_dialog.js"];
-
   if (tab === "favs") {
     const galleryFavs = getActorGalleryFavs(handle, ctx);
     return render(

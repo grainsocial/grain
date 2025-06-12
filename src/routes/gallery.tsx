@@ -29,8 +29,6 @@ export const handler: RouteHandler = async (
     ...getGalleryMeta(gallery),
   ];
 
-  ctx.state.scripts = ["photo_dialog.js", "masonry.js", "sortable.js"];
-
   let modDecision: ModerationDecsion | undefined = undefined;
   if (gallery.labels?.length) {
     modDecision = await moderateGallery(gallery.labels ?? [], ctx);
