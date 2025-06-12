@@ -169,15 +169,14 @@ export function PrivacyPolicy() {
         </p>
       </Section>
 
-      {
-        /* Coming soon */
-        /* <Section title="EXIF Metadata">
+      <Section title="EXIF Metadata">
         <p>
-          We optionally collect and display EXIF metadata (excluding location)
-          from your photos. At upload time, you can choose whether to allow this
-          metadata to be collected. The metadata is stored according to standard
-          AT Protocol storage mechanisms and is not retained outside the
-          protocol or used for other purposes.
+          We optionally collect and display EXIF metadata from your photos. At
+          upload time, you can choose whether to allow this metadata to be
+          collected. The metadata is stored according to standard AT Protocol
+          storage mechanisms and is not retained outside the protocol or used
+          for other purposes. We do not collect GPS or location data from your
+          photos.
         </p>
         <p>
           You can learn more about the types of metadata commonly embedded in
@@ -192,8 +191,7 @@ export function PrivacyPolicy() {
           </a>
           .
         </p>
-      </Section> */
-      }
+      </Section>
 
       <Section title="Analytics">
         <p>

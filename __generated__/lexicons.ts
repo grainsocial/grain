@@ -2944,6 +2944,119 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:social.grain.defs#aspectRatio',
           },
+          exif: {
+            type: 'ref',
+            ref: 'lex:social.grain.photo.defs#exifView',
+            description: 'EXIF metadata for the photo, if available.',
+          },
+        },
+      },
+      exifView: {
+        type: 'object',
+        required: ['photo', 'createdAt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          photo: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          dateTimeOriginal: {
+            type: 'string',
+          },
+          exposureTime: {
+            type: 'string',
+          },
+          fNumber: {
+            type: 'string',
+          },
+          flash: {
+            type: 'string',
+          },
+          focalLengthIn35mmFormat: {
+            type: 'string',
+          },
+          iSO: {
+            type: 'integer',
+          },
+          lensMake: {
+            type: 'string',
+          },
+          lensModel: {
+            type: 'string',
+          },
+          make: {
+            type: 'string',
+          },
+          model: {
+            type: 'string',
+          },
+        },
+      },
+    },
+  },
+  SocialGrainPhotoExif: {
+    lexicon: 1,
+    id: 'social.grain.photo.exif',
+    defs: {
+      main: {
+        type: 'record',
+        description: 'Basic EXIF metadata for a photo',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['photo', 'createdAt'],
+          properties: {
+            photo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            dateTimeOriginal: {
+              type: 'string',
+              format: 'datetime',
+            },
+            exposureTime: {
+              type: 'integer',
+            },
+            fNumber: {
+              type: 'integer',
+            },
+            flash: {
+              type: 'string',
+            },
+            focalLengthIn35mmFormat: {
+              type: 'integer',
+            },
+            iSO: {
+              type: 'integer',
+            },
+            lensMake: {
+              type: 'string',
+            },
+            lensModel: {
+              type: 'string',
+            },
+            make: {
+              type: 'string',
+            },
+            model: {
+              type: 'string',
+            },
+          },
         },
       },
     },
@@ -3296,6 +3409,7 @@ export const ids = {
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorProfile: 'social.grain.actor.profile',
   SocialGrainPhotoDefs: 'social.grain.photo.defs',
+  SocialGrainPhotoExif: 'social.grain.photo.exif',
   SocialGrainPhoto: 'social.grain.photo',
   ComAtprotoLabelDefs: 'com.atproto.label.defs',
   ComAtprotoRepoStrongRef: 'com.atproto.repo.strongRef',

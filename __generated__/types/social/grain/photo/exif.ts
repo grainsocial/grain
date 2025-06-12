@@ -12,27 +12,22 @@ import {
 
 const is$typed = _is$typed,
   validate = _validate
-const id = 'sh.tangled.actor.profile'
+const id = 'social.grain.photo.exif'
 
 export interface Record {
-  $type: 'sh.tangled.actor.profile'
-  /** Free-form profile description text. */
-  description?: string
-  links?: string[]
-  stats?: (
-    | 'merged-pull-request-count'
-    | 'closed-pull-request-count'
-    | 'open-pull-request-count'
-    | 'open-issue-count'
-    | 'closed-issue-count'
-    | 'repository-count'
-  )[]
-  /** Include link to this account on Bluesky. */
-  bluesky: boolean
-  /** Free-form location text. */
-  location?: string
-  /** Any ATURI, it is up to appviews to validate these fields. */
-  pinnedRepositories?: string[]
+  $type: 'social.grain.photo.exif'
+  photo: string
+  createdAt: string
+  dateTimeOriginal?: string
+  exposureTime?: number
+  fNumber?: number
+  flash?: string
+  focalLengthIn35mmFormat?: number
+  iSO?: number
+  lensMake?: string
+  lensModel?: string
+  make?: string
+  model?: string
   [k: string]: unknown
 }
 

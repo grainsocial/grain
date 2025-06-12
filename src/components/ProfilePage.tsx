@@ -7,6 +7,7 @@ import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { LabelerPolicies } from "@bigmoves/bff";
 import { Button, cn } from "@bigmoves/bff/components";
+import { getGalleryCameras } from "../lib/gallery.ts";
 import {
   atprotoLabelValueDefinitions,
   ModerationDecsion,
@@ -21,6 +22,7 @@ import {
 } from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
 import { AvatarButton } from "./AvatarButton.tsx";
+import { CameraBadges } from "./CameraBadges.tsx";
 import { FollowButton } from "./FollowButton.tsx";
 import { LabelDefinitionButton } from "./LabelDefinitionButton.tsx";
 import { LabelerAvatar } from "./LabelerAvatar.tsx";
@@ -57,6 +59,9 @@ export function ProfilePage({
 }>) {
   const isCreator = loggedInUserDid === profile.did;
   const displayName = profile.displayName || profile.handle;
+  const cameras = Array.from(
+    new Set(galleries?.flatMap(getGalleryCameras) ?? []),
+  );
   return (
     <div class="px-4 mb-4" id="profile-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
@@ -67,22 +72,29 @@ export function ProfilePage({
           <p class="text-2xl font-bold">{displayName}</p>
           <p class="text-zinc-600 dark:text-zinc-500">@{profile.handle}</p>
           {!isLabeler && (
-            <p class="space-x-1">
-              <a href={followersLink(profile.handle)}>
-                <span class="font-semibold" id="followers-count">
-                  {followersCount ?? 0}
-                </span>{" "}
-                <span class="text-zinc-600 dark:text-zinc-500">followers</span>
-              </a>{" "}
-              <a href={followingLink(profile.handle)}>
-                <span class="font-semibold" id="following-count">
-                  {followingCount ?? 0}
-                </span>{" "}
-                <span class="text-zinc-600 dark:text-zinc-500">following</span>
-              </a>{" "}
-              <span class="font-semibold">{galleries?.length ?? 0}</span>
-              <span class="text-zinc-600 dark:text-zinc-500">galleries</span>
-            </p>
+            <>
+              <p class="space-x-1">
+                <a href={followersLink(profile.handle)}>
+                  <span class="font-semibold" id="followers-count">
+                    {followersCount ?? 0}
+                  </span>{" "}
+                  <span class="text-zinc-600 dark:text-zinc-500">
+                    followers
+                  </span>
+                </a>{" "}
+                <a href={followingLink(profile.handle)}>
+                  <span class="font-semibold" id="following-count">
+                    {followingCount ?? 0}
+                  </span>{" "}
+                  <span class="text-zinc-600 dark:text-zinc-500">
+                    following
+                  </span>
+                </a>{" "}
+                <span class="font-semibold">{galleries?.length ?? 0}</span>
+                <span class="text-zinc-600 dark:text-zinc-500">galleries</span>
+              </p>
+              <CameraBadges cameras={cameras} class="mt-2" />
+            </>
           )}
           {profile.description
             ? <p class="mt-2 sm:max-w-[500px]">{profile.description}</p>

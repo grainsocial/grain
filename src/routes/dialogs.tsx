@@ -7,17 +7,20 @@ import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
 import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
+import { ExifInfoDialog } from "../components/ExifInfoDialog.tsx";
+import { ExifOverlayDialog } from "../components/ExifOverlayDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { LabelDefinitionDialog } from "../components/LabelDefinitionDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
 import { PhotoDialog } from "../components/PhotoDialog.tsx";
+import { PhotoExifDialog } from "../components/PhotoExifDialog.tsx";
 import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
 import { getActorPhotos, getActorProfile } from "../lib/actor.ts";
 import { getGallery, getGalleryItemsAndPhotos } from "../lib/gallery.ts";
 import { atprotoLabelValueDefinitions } from "../lib/moderation.ts";
-import { photoToView } from "../lib/photo.ts";
+import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 
 export const createGallery: RouteHandler = (
@@ -133,6 +136,36 @@ export const photoAlt: RouteHandler = (
   );
 };
 
+export const photoExif: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const photoRkey = params.rkey;
+  const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
+  const photo = getPhoto(photoUri, ctx);
+  if (!photo) return ctx.next();
+  return ctx.html(
+    <PhotoExifDialog photo={photo} />,
+  );
+};
+
+export const photoExifOverlay: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const photoRkey = params.rkey;
+  const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
+  const photo = getPhoto(photoUri, ctx);
+  if (!photo) return ctx.next();
+  return ctx.html(
+    <ExifOverlayDialog photo={photo} />,
+  );
+};
+
 export const galleryPhotoSelect: RouteHandler = (
   _req,
   params,
@@ -190,5 +223,15 @@ export const labelValueDefinition: RouteHandler = async (
       labelByHandle={labelerAtpData?.handle}
       labelValueDefinition={valDef}
     />,
+  );
+};
+
+export const exifInfo: RouteHandler = (
+  _req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  return ctx.html(
+    <ExifInfoDialog />,
   );
 };

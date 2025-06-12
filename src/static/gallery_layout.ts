@@ -61,9 +61,6 @@ export class GalleryLayout {
   }
 
   public setLayoutMode(mode: LayoutMode) {
-    console.log(
-      `Setting layout mode to: ${mode} (current: ${this.layoutMode})`,
-    );
     this.layoutMode = mode;
     this.computeLayout();
   }
@@ -235,7 +232,6 @@ export class GalleryLayout {
       const container = document.querySelector(
         options.containerSelector ?? "#gallery-container",
       );
-      console.log("Initializing GalleryLayout for container:", container);
       if (container) {
         this.computeLayout();
         this.observe();

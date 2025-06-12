@@ -29,11 +29,12 @@ bff({
   appLabelers: ["did:plc:nd45zozo34cr4pvxqu4rtr7e"],
   appLabelerCollection: "social.grain.labeler.service",
   collections: [
-    "social.grain.gallery",
     "social.grain.actor.profile",
-    "social.grain.photo",
-    "social.grain.favorite",
+    "social.grain.gallery",
     "social.grain.gallery.item",
+    "social.grain.photo",
+    "social.grain.photo.exif",
+    "social.grain.favorite",
     "social.grain.graph.follow",
   ],
   externalCollections: [
@@ -83,6 +84,18 @@ bff({
     route("/dialogs/avatar/:handle", dialogHandlers.avatar),
     route("/dialogs/image", dialogHandlers.image),
     route("/dialogs/photo/:rkey/alt", dialogHandlers.photoAlt),
+    route(
+      "/dialogs/photo/:rkey/exif",
+      dialogHandlers.photoExif,
+    ),
+    route(
+      "/dialogs/photo/:rkey/exif-overlay",
+      dialogHandlers.photoExifOverlay,
+    ),
+    route(
+      "/dialogs/exif-info",
+      dialogHandlers.exifInfo,
+    ),
     route(
       "/dialogs/photo-select/:galleryRkey",
       dialogHandlers.galleryPhotoSelect,

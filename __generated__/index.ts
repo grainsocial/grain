@@ -183,6 +183,7 @@ export class SocialGrainNS {
   graph: SocialGrainGraphNS
   labeler: SocialGrainLabelerNS
   actor: SocialGrainActorNS
+  photo: SocialGrainPhotoNS
 
   constructor(server: Server) {
     this._server = server
@@ -190,6 +191,7 @@ export class SocialGrainNS {
     this.graph = new SocialGrainGraphNS(server)
     this.labeler = new SocialGrainLabelerNS(server)
     this.actor = new SocialGrainActorNS(server)
+    this.photo = new SocialGrainPhotoNS(server)
   }
 }
 
@@ -218,6 +220,14 @@ export class SocialGrainLabelerNS {
 }
 
 export class SocialGrainActorNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+}
+
+export class SocialGrainPhotoNS {
   _server: Server
 
   constructor(server: Server) {
