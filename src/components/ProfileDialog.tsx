@@ -36,7 +36,7 @@ export function ProfileDialog({
               type="text"
               id="displayName"
               name="displayName"
-              placeholder="e.g. Alice Lastname"
+              placeholder="e.g. Ansel Lastname"
               class="dark:bg-zinc-800 dark:text-white"
               value={profile.displayName}
               autoFocus
