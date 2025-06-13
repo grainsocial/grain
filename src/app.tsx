@@ -26,6 +26,13 @@ export function Root(props: Readonly<RootProps<State>>) {
           : null}
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <link
+          rel="preload"
+          href="/build/fonts/Jersey20-Regular.ttf"
+          as="font"
+          type="font/ttf"
+          crossorigin="anonymous"
+        />
+        <link
           rel="stylesheet"
           href={`/build/styles.css?${
             props.ctx.fileFingerprints.get("styles.css")
