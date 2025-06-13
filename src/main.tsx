@@ -83,7 +83,7 @@ bff({
       dialogHandlers.photoExif,
     ),
     route(
-      "/dialogs/photo/:rkey/exif-overlay",
+      "/dialogs/photo/:did/:rkey/exif-overlay",
       dialogHandlers.photoExifOverlay,
     ),
     route(

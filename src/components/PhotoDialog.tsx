@@ -86,11 +86,14 @@ export function PhotoDialog({
 function ExifButton(
   { photo, class: classProp }: Readonly<{ photo: PhotoView; class?: string }>,
 ) {
+  const atUri = new AtUri(photo.uri);
+  const did = atUri.hostname;
+  const rkey = atUri.rkey;
   return (
     <button
       type="button"
       class={cn("text-zinc-50 p-2 cursor-pointer", classProp)}
-      hx-get={`/dialogs/photo/${new AtUri(photo.uri).rkey}/exif-overlay`}
+      hx-get={`/dialogs/photo/${did}/${rkey}/exif-overlay`}
       hx-trigger="click"
       hx-target="#layout"
       hx-swap="afterbegin"

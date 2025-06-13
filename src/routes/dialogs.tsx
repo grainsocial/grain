@@ -156,9 +156,9 @@ export const photoExifOverlay: RouteHandler = (
   params,
   ctx: BffContext<State>,
 ) => {
-  const { did } = ctx.requireAuth();
-  const photoRkey = params.rkey;
-  const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
+  const did = params.did;
+  const rkey = params.rkey;
+  const photoUri = `at://${did}/social.grain.photo/${rkey}`;
   const photo = getPhoto(photoUri, ctx);
   if (!photo) return ctx.next();
   return ctx.html(
