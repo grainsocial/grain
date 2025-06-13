@@ -10,11 +10,16 @@ import type { State } from "../state.ts";
 import { galleryLink } from "../utils.ts";
 
 export const handler: RouteHandler = (
-  _req,
+  req,
   params,
   ctx: BffContext<State>,
 ) => {
+  const url = new URL(req.url);
   const { did, collection, rkey } = params;
+
+  if (url.pathname.includes("/build/")) {
+    return ctx.next(); // ignore build assets
+  }
 
   if (!did || !collection || !rkey) {
     throw new BadRequestError("Invalid parameters for record handler");

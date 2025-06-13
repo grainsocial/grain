@@ -31,16 +31,6 @@ export function Root(props: Readonly<RootProps<State>>) {
             props.ctx.fileFingerprints.get("styles.css")
           }`}
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Jersey+20&display=swap"
-          rel="stylesheet"
-        />
         <link
           rel="stylesheet"
           href="https://unpkg.com/@fortawesome/fontawesome-free@6.7.2/css/all.min.css"
