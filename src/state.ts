@@ -11,7 +11,6 @@ export type State = {
   scripts?: string[];
   meta?: MetaDescriptor[];
   notifications?: Un$Typed<NotificationView>[];
-  staticFilesHash?: Map<string, string>;
 };
 
 export const appStateMiddleware: BffMiddleware = (req, ctx) => {

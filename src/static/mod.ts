@@ -3,7 +3,6 @@ import _hyperscript from "hyperscript.org";
 import Sortable from "sortablejs";
 import { GalleryLayout } from "./gallery_layout.ts";
 import { PhotoDialog } from "./photo_dialog.ts";
-import * as PhotoManip from "./photo_manip.ts";
 import { ProfileDialog } from "./profile_dialog.ts";
 import { UploadPage } from "./upload_page.ts";
 
@@ -32,7 +31,6 @@ type GrainGlobal = typeof globalThis & {
     uploadPage?: UploadPage;
     profileDialog?: ProfileDialog;
     galleryLayout?: GalleryLayout;
-    photoManip?: typeof PhotoManip;
   };
 };
 
@@ -43,4 +41,3 @@ g.Grain = g.Grain ?? {};
 g.Grain.uploadPage = new UploadPage();
 g.Grain.profileDialog = new ProfileDialog();
 g.Grain.galleryLayout = galleryLayout;
-g.Grain.photoManip = PhotoManip;

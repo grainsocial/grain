@@ -4,7 +4,6 @@ import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { onSignedInArgs } from "@bigmoves/bff";
-import { join } from "@std/path/join";
 import {
   differenceInDays,
   differenceInHours,
@@ -107,26 +106,4 @@ export async function onSignedIn({ actor, ctx }: onSignedInArgs) {
   );
 
   return "/onboard";
-}
-
-export async function generateStaticFilesHash(): Promise<Map<string, string>> {
-  const staticFilesHash = new Map<string, string>();
-
-  for (const entry of Deno.readDirSync(join(Deno.cwd(), "static"))) {
-    if (
-      entry.isFile &&
-      (entry.name.endsWith(".js") || entry.name.endsWith(".css"))
-    ) {
-      const fileContent = await Deno.readFile(
-        join(Deno.cwd(), "static", entry.name),
-      );
-      const hashBuffer = await crypto.subtle.digest("SHA-256", fileContent);
-      const hash = Array.from(new Uint8Array(hashBuffer))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-      staticFilesHash.set(entry.name, hash);
-    }
-  }
-
-  return staticFilesHash;
 }

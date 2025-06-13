@@ -1,5 +1,9 @@
+import {
+  dataURLToBlob,
+  doResize,
+  readFileAsDataURL,
+} from "@bigmoves/bff/browser";
 import htmx from "htmx.org";
-import { dataURLToBlob, doResize, readFileAsDataURL } from "./photo_manip.ts";
 
 export class ProfileDialog {
   public handleAvatarImageSelect(fileInput: HTMLInputElement): void {

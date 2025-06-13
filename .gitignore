@@ -6,3 +6,4 @@ image_storage
 .env
 grain-root.crt
 *.log
+build

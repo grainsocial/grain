@@ -20,9 +20,7 @@ import { handler as supportHandler } from "./routes/support.tsx";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
 import { appStateMiddleware, type State } from "./state.ts";
-import { generateStaticFilesHash, onSignedIn } from "./utils.ts";
-
-let staticFilesHash = new Map<string, string>();
+import { onSignedIn } from "./utils.ts";
 
 bff({
   appName: "Grain Social",
@@ -46,13 +44,9 @@ bff({
   jetstreamUrl: JETSTREAM.WEST_1,
   lexicons,
   rootElement: Root,
-  onListen: async () => {
-    staticFilesHash = await generateStaticFilesHash();
-  },
   onError,
   middlewares: [
     (_req, ctx: BffContext<State>) => {
-      ctx.state.staticFilesHash = staticFilesHash;
       return ctx.next();
     },
     appStateMiddleware,

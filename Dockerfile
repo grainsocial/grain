@@ -8,6 +8,8 @@ COPY . .
 RUN chown -R deno:deno /app && \
 	deno cache ./src/main.tsx
 
+RUN deno task build
+
 FROM denoland/deno:alpine-2.3.3
 
 COPY --from=flyio/litefs:0.5 /usr/local/bin/litefs /usr/local/bin/litefs

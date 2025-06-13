@@ -9,7 +9,6 @@ export function Root(props: Readonly<RootProps<State>>) {
   const hasNotifications =
     props.ctx.state.notifications?.find((n) => n.isRead === false) !==
       undefined;
-  const staticFilesHash = props.ctx.state.staticFilesHash;
   return (
     <html lang="en" class="h-full">
       <head>
@@ -28,7 +27,9 @@ export function Root(props: Readonly<RootProps<State>>) {
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <link
           rel="stylesheet"
-          href={`/static/styles.css?${staticFilesHash?.get("styles.css")}`}
+          href={`/build/styles.css?${
+            props.ctx.fileFingerprints.get("styles.css")
+          }`}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -48,7 +49,9 @@ export function Root(props: Readonly<RootProps<State>>) {
         <script
           type="module"
           key="app.esm.js"
-          src={`/static/app.esm.js?${staticFilesHash?.get("app.esm.js")}`}
+          src={`/build/app.esm.js?${
+            props.ctx.fileFingerprints.get("app.esm.js")
+          }`}
         />
       </head>
       <body class="h-full dark:bg-zinc-950 dark:text-white">
