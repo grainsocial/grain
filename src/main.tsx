@@ -1,5 +1,5 @@
 import { lexicons } from "$lexicon/lexicons.ts";
-import { bff, BffContext, JETSTREAM, oauth, route } from "@bigmoves/bff";
+import { bff, oauth, route } from "@bigmoves/bff";
 import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
 import { PDS_HOST_URL } from "./env.ts";
@@ -19,7 +19,7 @@ import { handler as recordHandler } from "./routes/record.ts";
 import { handler as supportHandler } from "./routes/support.tsx";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
-import { appStateMiddleware, type State } from "./state.ts";
+import { appStateMiddleware } from "./state.ts";
 import { onSignedIn } from "./utils.ts";
 
 bff({
@@ -41,14 +41,10 @@ bff({
     "sh.tangled.actor.profile",
     "sh.tangled.graph.follow",
   ],
-  jetstreamUrl: JETSTREAM.WEST_1,
   lexicons,
   rootElement: Root,
   onError,
   middlewares: [
-    (_req, ctx: BffContext<State>) => {
-      return ctx.next();
-    },
     appStateMiddleware,
     oauth({
       onSignedIn,

@@ -46,6 +46,8 @@ Protocol ecosystem. It enables users to:
 ```bash
 # .env
 BFF_DATABASE_URL=grain.db             # SQLite db file
+BFF_JETSTREAM_URL=wss://jetstream1.us-west.bsky.network
+PDS_HOST_URL=https://ansel.grainsocial.network
 USE_CDN=true                          # Use bsky cdn
 ```
 

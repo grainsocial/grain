@@ -59,7 +59,7 @@ export function PhotoDialog({
         {image.alt
           ? (
             <div class="px-4 sm:px-0 py-4 bg-black text-white text-left flex">
-              {image.alt}
+              <span class="flex-1 mr-2">{image.alt}</span>
               {image.exif
                 ? (
                   <div class="block sm:hidden self-end justify-end -m-2">
