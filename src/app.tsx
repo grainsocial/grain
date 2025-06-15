@@ -55,7 +55,12 @@ export function Root(props: Readonly<RootProps<State>>) {
         <Layout id="layout">
           <Layout.Nav
             heading={
-              <h1 class="font-['Jersey_20'] text-4xl text-zinc-900 dark:text-white">
+              <h1
+                class="text-4xl text-zinc-900 dark:text-white"
+                style={{
+                  fontFamily: "'Jersey 20', sans-serif",
+                }}
+              >
                 grain
                 <sub class="bottom-[0.75rem] text-[1rem]">beta</sub>
               </h1>

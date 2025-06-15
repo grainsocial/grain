@@ -40,6 +40,7 @@ export function onError(err: unknown): Response {
       },
     );
   }
+  console.error("Unhandled error:", err);
   return errorResponse("Internal Server Error", 500);
 }
 

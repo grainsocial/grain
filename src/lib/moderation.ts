@@ -22,7 +22,18 @@ export async function moderateGallery(labels: Label[], ctx: BffContext<State>) {
 
   for (const label of labels ?? []) {
     const labelSubject = new AtUri(label.uri).hostname;
-    const labelerAtpData = await ctx.didResolver.resolveAtprotoData(label.src);
+    let labelerHandle: string | undefined = undefined;
+    try {
+      const labelerAtpData = await ctx.didResolver.resolveAtprotoData(
+        label.src,
+      );
+      labelerHandle = labelerAtpData.handle;
+    } catch (e) {
+      console.error(
+        `Failed to resolve labeler atproto data for ${label.src}: ${e}`,
+      );
+      continue;
+    }
     // Try labelDefinitions first, then fallback to atprotoLabelValueDefinitions
     let defs = labelDefinitions[label.src]?.labelValueDefinitions?.filter((
       def,
@@ -38,7 +49,7 @@ export async function moderateGallery(labels: Label[], ctx: BffContext<State>) {
         return {
           name: enLocale.name,
           description: enLocale.description,
-          labeledBy: labelerAtpData.handle ?? label.src,
+          labeledBy: labelerHandle ?? label.src,
           blurs: defs[0].blurs ?? "",
           isMe: labelSubject === did,
           src: label.src,
