@@ -4,7 +4,7 @@ export function AltTextButton({ photoUri }: Readonly<{ photoUri: string }>) {
   return (
     <button
       type="button"
-      class="bg-zinc-950 dark:bg-zinc-950 py-[1px] px-[3px] absolute top-2 left-2 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
+      class="bg-zinc-950/50 dark:bg-zinc-950/50 py-[1px] px-[3px] absolute top-2 left-2 cursor-pointer flex items-center justify-center text-xs text-white font-semibold z-10"
       hx-get={`/dialogs/photo/${new AtUri(photoUri).rkey}/alt`}
       hx-trigger="click"
       hx-target="#layout"

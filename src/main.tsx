@@ -4,14 +4,14 @@ import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
 import { PDS_HOST_URL } from "./env.ts";
 import { onError } from "./lib/errors.ts";
-import * as actionHandlers from "./routes/actions.tsx";
+import * as actions from "./routes/actions.tsx";
 import { handler as communityGuidelinesHandler } from "./routes/community_guidelines.tsx";
-import * as dialogHandlers from "./routes/dialogs.tsx";
+import * as dialogs from "./routes/dialogs.tsx";
 import { handler as exploreHandler } from "./routes/explore.tsx";
 import { handler as followersHandler } from "./routes/followers.tsx";
 import { handler as followsHandler } from "./routes/follows.tsx";
 import { handler as galleryHandler } from "./routes/gallery.tsx";
-import * as legalHandlers from "./routes/legal.tsx";
+import * as legal from "./routes/legal.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
 import { handler as profileHandler } from "./routes/profile.tsx";
@@ -65,65 +65,48 @@ bff({
     route("/upload", uploadHandler),
     route("/onboard", onboardHandler),
     route("/support", supportHandler),
-    route("/support/privacy", legalHandlers.privacyHandler),
-    route("/support/terms", legalHandlers.termsHandler),
-    route("/support/copyright", legalHandlers.copyrightHandler),
+    route("/support/privacy", legal.privacyHandler),
+    route("/support/terms", legal.termsHandler),
+    route("/support/copyright", legal.copyrightHandler),
     route("/support/community-guidelines", communityGuidelinesHandler),
-    route("/dialogs/create-account", dialogHandlers.createAccount),
-    route("/dialogs/gallery/new", dialogHandlers.createGallery),
-    route("/dialogs/gallery/:rkey", dialogHandlers.editGallery),
-    route("/dialogs/gallery/:rkey/sort", dialogHandlers.sortGallery),
-    route("/dialogs/label/:src/:val", dialogHandlers.labelValueDefinition),
-    route("/dialogs/profile", dialogHandlers.editProfile),
-    route("/dialogs/avatar/:handle", dialogHandlers.avatar),
-    route("/dialogs/image", dialogHandlers.image),
-    route("/dialogs/photo/:rkey/alt", dialogHandlers.photoAlt),
-    route(
-      "/dialogs/photo/:rkey/exif",
-      dialogHandlers.photoExif,
-    ),
-    route(
-      "/dialogs/photo/:did/:rkey/exif-overlay",
-      dialogHandlers.photoExifOverlay,
-    ),
-    route(
-      "/dialogs/exif-info",
-      dialogHandlers.exifInfo,
-    ),
-    route(
-      "/dialogs/photo-select/:galleryRkey",
-      dialogHandlers.galleryPhotoSelect,
-    ),
-    route("/actions/update-seen", ["POST"], actionHandlers.updateSeen),
-    route("/actions/follow/:followeeDid", ["POST"], actionHandlers.follow),
-    route(
-      "/actions/follow/:followeeDid/:rkey",
-      ["DELETE"],
-      actionHandlers.unfollow,
-    ),
-    route("/actions/create-edit", ["POST"], actionHandlers.galleryCreateEdit),
-    route("/actions/gallery/delete", ["POST"], actionHandlers.galleryDelete),
+    route("/dialogs/create-account", dialogs.createAccount),
+    route("/dialogs/gallery/new", dialogs.createGallery),
+    route("/dialogs/gallery/:rkey", dialogs.editGallery),
+    route("/dialogs/gallery/:rkey/sort", dialogs.sortGallery),
+    route("/dialogs/gallery/:did/select", dialogs.gallerySelect),
+    route("/dialogs/label/:src/:val", dialogs.labelValueDefinition),
+    route("/dialogs/profile", dialogs.editProfile),
+    route("/dialogs/avatar/:handle", dialogs.avatar),
+    route("/dialogs/image", dialogs.image),
+    route("/dialogs/add-photos", dialogs.addPhotos),
+    route("/dialogs/photo/:rkey/remove", dialogs.photoRemove),
+    route("/dialogs/photo/:rkey/alt", dialogs.photoAlt),
+    route("/dialogs/photo/:rkey/exif", dialogs.photoExif),
+    route("/dialogs/photo/:did/:rkey/exif-overlay", dialogs.photoExifOverlay),
+    route("/dialogs/exif-info", dialogs.exifInfo),
+    route("/dialogs/photo-select/:galleryRkey", dialogs.galleryPhotoSelect),
+    route("/actions/update-seen", ["POST"], actions.updateSeen),
+    route("/actions/follow/:followeeDid", ["POST"], actions.follow),
+    route("/actions/follow/:followeeDid/:rkey", ["DELETE"], actions.unfollow),
+    route("/actions/create-edit", ["POST"], actions.galleryCreateEdit),
+    route("/actions/gallery/delete", ["POST"], actions.galleryDelete),
     route(
       "/actions/gallery/:galleryRkey/add-photo/:photoRkey",
       ["PUT"],
-      actionHandlers.galleryAddPhoto,
+      actions.galleryAddPhoto,
     ),
     route(
       "/actions/gallery/:galleryRkey/remove-photo/:photoRkey",
       ["PUT"],
-      actionHandlers.galleryRemovePhoto,
+      actions.galleryRemovePhoto,
     ),
-    route("/actions/photo/:rkey", ["PUT"], actionHandlers.photoEdit),
-    route("/actions/photo/:rkey", ["DELETE"], actionHandlers.photoDelete),
-    route("/actions/photo", ["POST"], actionHandlers.uploadPhoto),
-    route("/actions/favorite", ["POST"], actionHandlers.galleryFavorite),
-    route("/actions/profile", ["PUT"], actionHandlers.profileUpdate),
-    route(
-      "/actions/gallery/:rkey/sort",
-      ["POST"],
-      actionHandlers.gallerySort,
-    ),
-    route("/actions/get-blob", ["GET"], actionHandlers.getBlob),
+    route("/actions/photo/:rkey", ["PUT"], actions.photoEdit),
+    route("/actions/photo/:rkey", ["DELETE"], actions.photoDelete),
+    route("/actions/photo", ["POST"], actions.uploadPhoto),
+    route("/actions/favorite", ["POST"], actions.galleryFavorite),
+    route("/actions/profile", ["PUT"], actions.profileUpdate),
+    route("/actions/gallery/:rkey/sort", ["POST"], actions.gallerySort),
+    route("/actions/get-blob", ["GET"], actions.getBlob),
     route("/:did/:collection/:rkey", recordHandler),
   ],
 });

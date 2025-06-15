@@ -5,6 +5,7 @@ import { AtUri } from "@atproto/syntax";
 import { WithBffMeta } from "@bigmoves/bff";
 import { Button } from "@bigmoves/bff/components";
 import { ModerationDecsion } from "../lib/moderation.ts";
+import { uploadPageLink } from "../utils.ts";
 import { FavoriteButton } from "./FavoriteButton.tsx";
 import { GalleryInfo } from "./GalleryInfo.tsx";
 import { GalleryLayout } from "./GalleryLayout.tsx";
@@ -25,6 +26,8 @@ export function GalleryPage({
   const isCreator = currentUserDid === gallery.creator.did;
   const isLoggedIn = !!currentUserDid;
   const galleryItems = gallery.items?.filter(isPhotoView) ?? [];
+  const atUri = new AtUri(gallery.uri);
+  const rkey = atUri.rkey;
   return (
     <div class="px-4" id="gallery-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 mb-2">
@@ -35,25 +38,23 @@ export function GalleryPage({
               <Button
                 variant="primary"
                 class="self-start w-full sm:w-fit whitespace-nowrap"
-                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}`}
+                hx-get={`/dialogs/gallery/${rkey}`}
                 hx-target="#layout"
                 hx-swap="afterbegin"
               >
                 Edit
               </Button>
               <Button
-                hx-get={`/dialogs/photo-select/${new AtUri(gallery.uri).rkey}`}
-                hx-target="#layout"
-                hx-swap="afterbegin"
                 variant="primary"
                 class="self-start w-full sm:w-fit whitespace-nowrap"
+                asChild
               >
-                Add photos
+                <a href={uploadPageLink(rkey)}>Upload</a>
               </Button>
               <Button
                 variant="primary"
                 class="self-start w-full sm:w-fit whitespace-nowrap"
-                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}/sort`}
+                hx-get={`/dialogs/gallery/${rkey}/sort`}
                 hx-target="#layout"
                 hx-swap="afterbegin"
               >

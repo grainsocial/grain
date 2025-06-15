@@ -13,6 +13,7 @@ export class UploadPage {
     const formData = new FormData(formElement);
     const fileList = formData.getAll("files") as File[] ?? [];
     const parseExif = formData.get("parseExif") === "on";
+    const galleryUri = formData.get("galleryUri") as string;
 
     if (fileList.length > 10) {
       alert("You can only upload 10 photos at a time");
@@ -69,6 +70,10 @@ export class UploadPage {
 
       if (tags) {
         fd.append("exif", JSON.stringify(tags));
+      }
+
+      if (galleryUri) {
+        fd.append("galleryUri", galleryUri);
       }
 
       const response = await fetch("/actions/photo", {

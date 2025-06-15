@@ -1,11 +1,19 @@
+import { cn } from "@bigmoves/bff/components";
+
 type BreadcrumbItem = {
   label: string;
   href?: string;
 };
 
-export function Breadcrumb({ items }: Readonly<{ items: BreadcrumbItem[] }>) {
+export function Breadcrumb(
+  { class: classProp, items }: Readonly<
+    { class?: string; items: BreadcrumbItem[] }
+  >,
+) {
   return (
-    <nav className="mb-4 text-sm text-zinc-500 dark:text-zinc-300">
+    <nav
+      className={cn("mb-4 text-sm text-zinc-500 dark:text-zinc-300", classProp)}
+    >
       {items.map((item, idx) => (
         <>
           {item.href

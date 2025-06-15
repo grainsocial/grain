@@ -27,6 +27,11 @@ export function formatRelativeTime(date: Date) {
   return `${Math.max(1, minutes)}m`;
 }
 
+export function uploadPageLink(selectedGalleryRkey?: string) {
+  return "/upload" +
+    (selectedGalleryRkey ? "?gallery=" + selectedGalleryRkey : "");
+}
+
 export function profileLink(handle: string) {
   return `/profile/${handle}`;
 }

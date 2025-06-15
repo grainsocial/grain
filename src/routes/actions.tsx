@@ -18,7 +18,7 @@ import { getFollowers } from "../lib/follow.ts";
 import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
-import { galleryLink } from "../utils.ts";
+import { galleryLink, uploadPageLink } from "../utils.ts";
 
 export const updateSeen: RouteHandler = (
   _req,
@@ -135,18 +135,22 @@ export const galleryDelete: RouteHandler = async (
 };
 
 export const galleryAddPhoto: RouteHandler = async (
-  _req,
+  req,
   params,
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
+  const url = new URL(req.url);
+  const page = url.searchParams.get("page") as string ?? undefined;
   const galleryRkey = params.galleryRkey;
   const photoRkey = params.photoRkey;
   const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
   const photoUri = `at://${did}/social.grain.photo/${photoRkey}`;
   const gallery = getGallery(did, galleryRkey, ctx);
   const photo = getPhoto(photoUri, ctx);
+
   if (!gallery || !photo) return ctx.next();
+
   if (
     gallery.items
       ?.filter(isPhotoView)
@@ -154,16 +158,23 @@ export const galleryAddPhoto: RouteHandler = async (
   ) {
     return new Response(null, { status: 500 });
   }
-  await ctx.createRecord<Gallery>("social.grain.gallery.item", {
+
+  await ctx.createRecord<GalleryItem>("social.grain.gallery.item", {
     gallery: galleryUri,
     item: photoUri,
     position: gallery.items?.length ?? 0,
     createdAt: new Date().toISOString(),
   });
+
   gallery.items = [
     ...(gallery.items ?? []),
     photo,
   ];
+
+  if (page === "upload") {
+    return ctx.redirect(uploadPageLink(galleryRkey));
+  }
+
   return ctx.html(
     <>
       <div hx-swap-oob="beforeend:#gallery-container">
@@ -517,6 +528,7 @@ export const uploadPhoto: RouteHandler = async (
     const width = Number(formData.get("width")) || undefined;
     const height = Number(formData.get("height")) || undefined;
     const exifJsonString = formData.get("exif") as string;
+    const galleryUri = formData.get("galleryUri") as string || undefined;
     let exif = undefined;
 
     if (exifJsonString) {
@@ -568,6 +580,18 @@ export const uploadPhoto: RouteHandler = async (
     const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
     if (!photo) {
       return new Response("Photo not found after creation", { status: 404 });
+    }
+
+    if (galleryUri) {
+      const gallery = getGallery(did, new AtUri(galleryUri).rkey, ctx);
+      if (gallery) {
+        await ctx.createRecord<GalleryItem>("social.grain.gallery.item", {
+          gallery: galleryUri,
+          item: photoUri,
+          position: gallery.items?.length ?? 0,
+          createdAt: new Date().toISOString(),
+        });
+      }
     }
 
     let exifRecord: WithBffMeta<PhotoExif> | undefined = undefined;

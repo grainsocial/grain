@@ -196,3 +196,100 @@ export function getGalleryCameras(
   }
   return Array.from(cameras);
 }
+
+export function queryGalleriesByName(
+  userDid: string,
+  nameQuery: string,
+  ctx: BffContext,
+): GalleryView[] {
+  if (!nameQuery || !userDid) return [];
+  const { items: galleries } = ctx.indexService.getRecords<
+    WithBffMeta<Gallery>
+  >(
+    "social.grain.gallery",
+    {
+      where: [
+        { field: "did", equals: userDid },
+        { field: "title", contains: nameQuery },
+      ],
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+    },
+  );
+  if (!galleries.length) return [];
+
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
+
+  const profile = getActorProfile(userDid, ctx);
+  if (!profile) return [];
+
+  const uris = galleries.map((g) => g.uri);
+  const labels = ctx.indexService.queryLabels({ subjects: uris });
+
+  return galleries.map((gallery) =>
+    galleryToView(
+      gallery,
+      profile,
+      galleryPhotosMap.get(gallery.uri) ?? [],
+      labels,
+    )
+  );
+}
+
+export function getGalleryPhotos(
+  galleryUri: string,
+  ctx: BffContext,
+): PhotoView[] {
+  if (!galleryUri) return [];
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >(
+    "social.grain.gallery.item",
+    {
+      orderBy: [{ field: "position", direction: "asc" }],
+      where: [{ field: "gallery", equals: galleryUri }],
+    },
+  );
+  const photoUris = galleryItems.map((item) => item.item).filter(Boolean);
+  if (!photoUris.length) return [];
+  const { items: photos } = ctx.indexService.getRecords<WithBffMeta<Photo>>(
+    "social.grain.photo",
+    {
+      where: [{ field: "uri", in: photoUris }],
+    },
+  );
+  const { items: photosExif } = ctx.indexService.getRecords<
+    WithBffMeta<PhotoExif>
+  >(
+    "social.grain.photo.exif",
+    {
+      where: [{ field: "photo", in: photoUris }],
+    },
+  );
+  const photosMap = new Map<string, PhotoWithExif>();
+  const exifMap = new Map<string, WithBffMeta<PhotoExif>>();
+  for (const exif of photosExif) {
+    exifMap.set(exif.photo, exif);
+  }
+  for (const photo of photos) {
+    const exif = exifMap.get(photo.uri);
+    photosMap.set(photo.uri, exif ? { ...photo, exif } : photo);
+  }
+  // Get the gallery DID from the URI
+  const did = (() => {
+    try {
+      return new AtUri(galleryUri).hostname;
+    } catch {
+      return undefined;
+    }
+  })();
+  // Return PhotoView[] in gallery item order
+  return galleryItems
+    .map((item) => {
+      const photo = photosMap.get(item.item);
+      if (photo && did) {
+        return photoToView(did, photo, photo.exif);
+      }
+      return undefined;
+    })
+    .filter(isPhotoView);
+}

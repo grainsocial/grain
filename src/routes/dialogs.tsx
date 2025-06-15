@@ -5,11 +5,16 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
+import { AddPhotosDialog } from "../components/AddPhotosDialog.tsx";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
 import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
 import { ExifInfoDialog } from "../components/ExifInfoDialog.tsx";
 import { ExifOverlayDialog } from "../components/ExifOverlayDialog.tsx";
 import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
+import {
+  GallerySelectDialog,
+  GallerySelectDialogSearchResults,
+} from "../components/GallerySelectDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { LabelDefinitionDialog } from "../components/LabelDefinitionDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
@@ -17,8 +22,17 @@ import { PhotoDialog } from "../components/PhotoDialog.tsx";
 import { PhotoExifDialog } from "../components/PhotoExifDialog.tsx";
 import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
-import { getActorPhotos, getActorProfile } from "../lib/actor.ts";
-import { getGallery, getGalleryItemsAndPhotos } from "../lib/gallery.ts";
+import { RemovePhotoDialog } from "../components/RemovePhotoDialog.tsx";
+import {
+  getActorGalleries,
+  getActorPhotos,
+  getActorProfile,
+} from "../lib/actor.ts";
+import {
+  getGallery,
+  getGalleryItemsAndPhotos,
+  queryGalleriesByName,
+} from "../lib/gallery.ts";
 import { atprotoLabelValueDefinitions } from "../lib/moderation.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
@@ -234,4 +248,52 @@ export const exifInfo: RouteHandler = (
   return ctx.html(
     <ExifInfoDialog />,
   );
+};
+
+export const gallerySelect: RouteHandler = (
+  req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const url = new URL(req.url);
+  const photoUri = url.searchParams.get("photoUri") as string || undefined;
+  const galleries = getActorGalleries(did, ctx);
+  const query = url.searchParams.get("q");
+
+  if (query) {
+    const galleries = queryGalleriesByName(did, query, ctx);
+    return ctx.html(
+      <GallerySelectDialogSearchResults galleries={galleries} />,
+    );
+  }
+
+  if (query === "") {
+    // no-op keep the original dialog open
+    return ctx.html(<GallerySelectDialogSearchResults galleries={galleries} />);
+  }
+
+  return ctx.html(
+    <GallerySelectDialog
+      photoUri={photoUri}
+      userDid={did}
+      galleries={galleries ?? []}
+    />,
+  );
+};
+
+export const photoRemove: RouteHandler = (
+  req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  return ctx.html(<RemovePhotoDialog />);
+};
+
+export const addPhotos: RouteHandler = (
+  req,
+  _params,
+  ctx: BffContext<State>,
+) => {
+  return ctx.html(<AddPhotosDialog />);
 };
