@@ -1,26 +1,26 @@
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { wrap } from "popmotion";
-import { AddPhotosDialog } from "../components/AddPhotosDialog.tsx";
 import { AvatarDialog } from "../components/AvatarDialog.tsx";
 import { CreateAccountDialog } from "../components/CreateAccountDialog.tsx";
+import { EditGalleryDialog } from "../components/EditGalleryDialog.tsx";
 import { ExifInfoDialog } from "../components/ExifInfoDialog.tsx";
 import { ExifOverlayDialog } from "../components/ExifOverlayDialog.tsx";
-import { GalleryCreateEditDialog } from "../components/GalleryCreateEditDialog.tsx";
+import { GalleryDetailsDialog } from "../components/GalleryDetailsDialog.tsx";
+import { GalleryEditPhotosDialog } from "../components/GalleryEditPhotosDialog.tsx";
 import {
   GallerySelectDialog,
   GallerySelectDialogSearchResults,
 } from "../components/GallerySelectDialog.tsx";
 import { GallerySortDialog } from "../components/GallerySortDialog.tsx";
 import { LabelDefinitionDialog } from "../components/LabelDefinitionDialog.tsx";
+import { LibraryPhotoSelectDialog } from "../components/LibraryPhotoSelectDialog.tsx";
 import { PhotoAltDialog } from "../components/PhotoAltDialog.tsx";
 import { PhotoDialog } from "../components/PhotoDialog.tsx";
 import { PhotoExifDialog } from "../components/PhotoExifDialog.tsx";
-import { PhotoSelectDialog } from "../components/PhotoSelectDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
 import { RemovePhotoDialog } from "../components/RemovePhotoDialog.tsx";
 import {
@@ -28,13 +28,9 @@ import {
   getActorPhotos,
   getActorProfile,
 } from "../lib/actor.ts";
-import {
-  getGallery,
-  getGalleryItemsAndPhotos,
-  queryGalleriesByName,
-} from "../lib/gallery.ts";
+import { getGallery, queryGalleriesByName } from "../lib/gallery.ts";
 import { atprotoLabelValueDefinitions } from "../lib/moderation.ts";
-import { getPhoto, photoToView } from "../lib/photo.ts";
+import { getPhoto, getPhotoGalleries, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 
 export const createGallery: RouteHandler = (
@@ -43,7 +39,7 @@ export const createGallery: RouteHandler = (
   ctx: BffContext<State>,
 ) => {
   ctx.requireAuth();
-  return ctx.html(<GalleryCreateEditDialog />);
+  return ctx.html(<GalleryDetailsDialog />);
 };
 
 export const editGallery: RouteHandler = (
@@ -54,7 +50,19 @@ export const editGallery: RouteHandler = (
   const { handle } = ctx.requireAuth();
   const rkey = params.rkey;
   const gallery = getGallery(handle, rkey, ctx);
-  return ctx.html(<GalleryCreateEditDialog gallery={gallery} />);
+  if (!gallery) return ctx.next();
+  return ctx.html(<EditGalleryDialog gallery={gallery} />);
+};
+
+export const editGalleryDetails: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { handle } = ctx.requireAuth();
+  const rkey = params.rkey;
+  const gallery = getGallery(handle, rkey, ctx);
+  return ctx.html(<GalleryDetailsDialog gallery={gallery} />);
 };
 
 export const sortGallery: RouteHandler = (
@@ -186,19 +194,36 @@ export const galleryPhotoSelect: RouteHandler = (
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
-  const photos = getActorPhotos(did, ctx);
-  const galleryUri = `at://${did}/social.grain.gallery/${params.galleryRkey}`;
-  const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(
-    galleryUri,
-  );
+  const galleryUri = `at://${did}/social.grain.gallery/${params.rkey}`;
+  const gallery = getGallery(did, params.rkey, ctx);
   if (!gallery) return ctx.next();
-  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, [gallery]);
-  const itemUris =
-    galleryPhotosMap.get(galleryUri)?.map((photo) => photo.uri) ?? [];
   return ctx.html(
-    <PhotoSelectDialog
+    <GalleryEditPhotosDialog
       galleryUri={galleryUri}
-      itemUris={itemUris}
+      photos={gallery?.items
+        ?.filter(isPhotoView) ?? []}
+    />,
+  );
+};
+
+export const galleryAddFromLibrary: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const galleryUri = `at://${did}/social.grain.gallery/${params.rkey}`;
+  const gallery = getGallery(did, params.rkey, ctx);
+  if (!gallery) return ctx.next();
+  const galleryPhotoUris = new Set(
+    gallery.items?.filter(isPhotoView).map((item) => item.uri),
+  );
+  const photos = getActorPhotos(did, ctx).filter((photo) => {
+    return !galleryPhotoUris.has(photo.uri);
+  });
+  return ctx.html(
+    <LibraryPhotoSelectDialog
+      galleryUri={galleryUri}
       photos={photos}
     />,
   );
@@ -284,16 +309,25 @@ export const gallerySelect: RouteHandler = (
 
 export const photoRemove: RouteHandler = (
   req,
-  _params,
+  params,
   ctx: BffContext<State>,
 ) => {
-  return ctx.html(<RemovePhotoDialog />);
-};
+  const { did } = ctx.requireAuth();
+  const url = new URL(req.url);
+  const selectedGalleryUri = url.searchParams.get("selectedGallery");
+  const rkey = params.rkey;
+  const photoUri = `at://${did}/social.grain.photo/${rkey}`;
+  const galleries = getPhotoGalleries(photoUri, ctx);
 
-export const addPhotos: RouteHandler = (
-  req,
-  _params,
-  ctx: BffContext<State>,
-) => {
-  return ctx.html(<AddPhotosDialog />);
+  const selectedGallery = selectedGalleryUri
+    ? galleries.find((gallery) => gallery.uri === selectedGalleryUri)
+    : undefined;
+
+  return ctx.html(
+    <RemovePhotoDialog
+      photoUri={photoUri}
+      galleries={galleries ?? []}
+      selectedGallery={selectedGallery}
+    />,
+  );
 };

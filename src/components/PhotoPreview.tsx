@@ -1,3 +1,4 @@
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
@@ -7,8 +8,10 @@ import { RemovePhotoDialogButton } from "./RemovePhotoDialog.tsx";
 
 export function PhotoPreview({
   photo,
+  selectedGallery,
 }: Readonly<{
   photo: Un$Typed<PhotoView>;
+  selectedGallery?: GalleryView;
 }>) {
   const atUri = new AtUri(photo.uri);
   const did = atUri.hostname;
@@ -16,16 +19,22 @@ export function PhotoPreview({
   return (
     <div
       class="relative aspect-square bg-zinc-200 dark:bg-zinc-900"
-      id={rkey}
+      id={`photo-${rkey}`}
     >
       {photo.uri ? <AltTextButton photoUri={photo.uri} /> : null}
       {photo.exif ? <PhotoExifButton photoUri={photo.uri} /> : null}
-      {photo.uri ? <RemovePhotoDialogButton photoUri={photo.uri} /> : null}
+      {photo.uri
+        ? (
+          <RemovePhotoDialogButton
+            selectedGallery={selectedGallery}
+            photoUri={photo.uri}
+          />
+        )
+        : null}
       {photo.uri
         ? (
           <button
             type="button"
-            id={`delete-photo-${rkey}`}
             hx-get={`/dialogs/gallery/${did}/select?photoUri=${photo.uri}`}
             hx-trigger="click"
             hx-target="#layout"

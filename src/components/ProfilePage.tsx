@@ -125,24 +125,24 @@ export function ProfilePage({
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
               <Button
-                variant="primary"
+                variant="secondary"
                 class="w-full sm:w-fit whitespace-nowrap"
                 asChild
               >
                 <a href="/upload">
                   <i class="fa-solid fa-upload mr-2" />
-                  Upload
+                  Photo library
                 </a>
               </Button>
               <Button
-                variant="primary"
+                variant="secondary"
                 type="button"
                 hx-get="/dialogs/profile"
                 hx-target="#layout"
                 hx-swap="afterbegin"
                 class="w-full sm:w-fit whitespace-nowrap"
               >
-                Edit Profile
+                Edit profile
               </Button>
               <Button
                 variant="primary"
@@ -152,7 +152,7 @@ export function ProfilePage({
                 hx-target="#layout"
                 hx-swap="afterbegin"
               >
-                Create Gallery
+                Create gallery
               </Button>
             </div>
           )

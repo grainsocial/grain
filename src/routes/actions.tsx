@@ -2,6 +2,7 @@ import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
@@ -10,6 +11,7 @@ import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import { FavoriteButton } from "../components/FavoriteButton.tsx";
 import { FollowButton } from "../components/FollowButton.tsx";
+import { GalleryEditPhotosDialog } from "../components/GalleryEditPhotosDialog.tsx";
 import { GalleryInfo } from "../components/GalleryInfo.tsx";
 import { GalleryLayout } from "../components/GalleryLayout.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
@@ -18,7 +20,7 @@ import { getFollowers } from "../lib/follow.ts";
 import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
-import { galleryLink, uploadPageLink } from "../utils.ts";
+import { galleryLink, profileLink, uploadPageLink } from "../utils.ts";
 
 export const updateSeen: RouteHandler = (
   _req,
@@ -127,11 +129,64 @@ export const galleryDelete: RouteHandler = async (
   _params,
   ctx: BffContext<State>,
 ) => {
-  ctx.requireAuth();
+  const { handle } = ctx.requireAuth();
   const formData = await req.formData();
   const uri = formData.get("uri") as string;
   await deleteGallery(uri, ctx);
-  return ctx.redirect("/");
+  return ctx.redirect(profileLink(handle));
+};
+
+export const galleryAddPhotos: RouteHandler = async (
+  req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const { did } = ctx.requireAuth();
+  const galleryRkey = params.rkey;
+  const formData = await req.formData();
+  const uris = formData.getAll("photoUri") as string[];
+  const gallery = getGallery(did, galleryRkey, ctx);
+  if (!gallery) return ctx.next();
+
+  const creates = [];
+  let position = gallery.items?.length ?? 0;
+  for (const uri of uris) {
+    creates.push({
+      collection: "social.grain.gallery.item",
+      data: {
+        gallery: gallery.uri,
+        item: uri,
+        createdAt: new Date().toISOString(),
+        position,
+      },
+    });
+    position++;
+  }
+  await ctx.createRecords<WithBffMeta<GalleryItem>>(creates);
+
+  const updatedGallery = getGallery(did, galleryRkey, ctx);
+  if (!updatedGallery) return ctx.next();
+
+  return ctx.html(
+    <>
+      <GalleryEditPhotosDialog
+        galleryUri={gallery.uri}
+        photos={updatedGallery?.items
+          ?.filter(isPhotoView) ?? []}
+      />
+      <div hx-swap-oob="beforeend:#gallery-container">
+        {updatedGallery.items?.filter(isPhotoView).filter((i) =>
+          uris.includes(i.uri)
+        ).map((item) => (
+          <GalleryLayout.Item
+            key={item.uri}
+            photo={item}
+            gallery={updatedGallery}
+          />
+        ))}
+      </div>
+    </>,
+  );
 };
 
 export const galleryAddPhoto: RouteHandler = async (
@@ -141,7 +196,7 @@ export const galleryAddPhoto: RouteHandler = async (
 ) => {
   const { did } = ctx.requireAuth();
   const url = new URL(req.url);
-  const page = url.searchParams.get("page") as string ?? undefined;
+  const page = url.searchParams.get("page") || undefined;
   const galleryRkey = params.galleryRkey;
   const photoRkey = params.photoRkey;
   const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
@@ -166,11 +221,6 @@ export const galleryAddPhoto: RouteHandler = async (
     createdAt: new Date().toISOString(),
   });
 
-  gallery.items = [
-    ...(gallery.items ?? []),
-    photo,
-  ];
-
   if (page === "upload") {
     return ctx.redirect(uploadPageLink(galleryRkey));
   }
@@ -189,8 +239,6 @@ export const galleryAddPhoto: RouteHandler = async (
       </div>
       <PhotoSelectButton
         galleryUri={galleryUri}
-        itemUris={gallery.items?.filter(isPhotoView).map((item) => item.uri) ??
-          []}
         photo={photo}
       />
     </>,
@@ -198,11 +246,13 @@ export const galleryAddPhoto: RouteHandler = async (
 };
 
 export const galleryRemovePhoto: RouteHandler = async (
-  _req,
+  req,
   params,
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
+  const url = new URL(req.url);
+  const selectedGallery = url.searchParams.get("selectedGallery");
   const galleryRkey = params.galleryRkey;
   const photoRkey = params.photoRkey;
   const galleryUri = `at://${did}/social.grain.gallery/${galleryRkey}`;
@@ -236,12 +286,10 @@ export const galleryRemovePhoto: RouteHandler = async (
       <div hx-swap-oob="outerHTML:#gallery-info">
         <GalleryInfo gallery={gallery} />
       </div>
-      <PhotoSelectButton
-        galleryUri={galleryUri}
-        itemUris={gallery.items?.filter(isPhotoView).map((item) => item.uri) ??
-          []}
-        photo={photoToView(photo.did, photo)}
-      />
+      {/* Remove from gallery container or image previews */}
+      {selectedGallery
+        ? <div hx-swap-oob={`delete:#photo-${photoRkey}`} />
+        : null}
     </>,
   );
 };
@@ -268,11 +316,16 @@ export const photoEdit: RouteHandler = async (
 };
 
 export const photoDelete: RouteHandler = async (
-  _req,
+  req,
   params,
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
+  const url = new URL(req.url);
+  const selectedGallery = url.searchParams.get("selectedGallery");
+  const selectedGalleryRkey = selectedGallery
+    ? new AtUri(selectedGallery).rkey
+    : undefined;
   const deleteUris: string[] = [];
   await ctx.deleteRecord(
     `at://${did}/social.grain.photo/${params.rkey}`,
@@ -328,7 +381,7 @@ export const photoDelete: RouteHandler = async (
   for (const uri of deleteUris) {
     await ctx.deleteRecord(uri);
   }
-  return new Response(null, { status: 200 });
+  return ctx.redirect(uploadPageLink(selectedGalleryRkey));
 };
 
 export const galleryFavorite: RouteHandler = async (
@@ -529,6 +582,7 @@ export const uploadPhoto: RouteHandler = async (
     const height = Number(formData.get("height")) || undefined;
     const exifJsonString = formData.get("exif") as string;
     const galleryUri = formData.get("galleryUri") as string || undefined;
+    const page = formData.get("page") as string || undefined;
     let exif = undefined;
 
     if (exifJsonString) {
@@ -582,8 +636,9 @@ export const uploadPhoto: RouteHandler = async (
       return new Response("Photo not found after creation", { status: 404 });
     }
 
+    let gallery: GalleryView | undefined = undefined;
     if (galleryUri) {
-      const gallery = getGallery(did, new AtUri(galleryUri).rkey, ctx);
+      gallery = getGallery(did, new AtUri(galleryUri).rkey, ctx) ?? undefined;
       if (gallery) {
         await ctx.createRecord<GalleryItem>("social.grain.gallery.item", {
           gallery: galleryUri,
@@ -601,9 +656,29 @@ export const uploadPhoto: RouteHandler = async (
       );
     }
 
+    if (page === "gallery" && gallery) {
+      const p = photoToView(did, photo, exifRecord);
+      return ctx.html(
+        <>
+          <PhotoSelectButton
+            galleryUri={gallery.uri}
+            photo={p}
+          />
+          <div hx-swap-oob="beforeend:#gallery-container">
+            <GalleryLayout.Item
+              key={photo.cid}
+              photo={p}
+              gallery={gallery}
+            />
+          </div>
+        </>,
+      );
+    }
+
     return ctx.html(
       <PhotoPreview
         photo={photoToView(did, photo, exifRecord)}
+        selectedGallery={gallery}
       />,
     );
   } catch (e) {

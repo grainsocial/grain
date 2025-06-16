@@ -33,6 +33,7 @@
     "jsr:@std/streams@^1.0.10": "1.0.10",
     "jsr:@std/testing@^1.0.11": "1.0.11",
     "npm:@atproto-labs/handle-resolver-node@~0.1.14": "0.1.16",
+    "npm:@atproto-labs/simple-store@~0.1.2": "0.1.2",
     "npm:@atproto/api@~0.15.7": "0.15.15",
     "npm:@atproto/common@~0.4.10": "0.4.11",
     "npm:@atproto/identity@~0.4.7": "0.4.8",
@@ -41,8 +42,10 @@
     "npm:@atproto/lexicon@0.4.11": "0.4.11",
     "npm:@atproto/lexicon@~0.4.11": "0.4.11",
     "npm:@atproto/oauth-client@~0.3.13": "0.3.22",
+    "npm:@atproto/oauth-types@~0.2.4": "0.2.8",
     "npm:@atproto/syntax@0.4": "0.4.0",
     "npm:@atproto/xrpc-server@*": "0.7.19",
+    "npm:@atproto/xrpc-server@0.7.18": "0.7.18",
     "npm:@tailwindcss/cli@*": "4.1.9",
     "npm:@tailwindcss/cli@^4.0.12": "4.1.9",
     "npm:@tailwindcss/cli@^4.1.3": "4.1.9",
@@ -81,8 +84,10 @@
       "integrity": "5c3ca124dd52eff51dace83790779ebe48c4b41559b799e16c8750bd415f2124",
       "dependencies": [
         "npm:@atproto-labs/handle-resolver-node",
+        "npm:@atproto-labs/simple-store",
         "npm:@atproto/jwk",
         "npm:@atproto/oauth-client",
+        "npm:@atproto/oauth-types",
         "npm:jose"
       ]
     },
@@ -98,9 +103,11 @@
         "npm:@atproto/api",
         "npm:@atproto/common",
         "npm:@atproto/identity",
+        "npm:@atproto/lexicon@0.4.11",
         "npm:@atproto/lexicon@~0.4.11",
         "npm:@atproto/oauth-client",
         "npm:@atproto/syntax",
+        "npm:@atproto/xrpc-server@0.7.18",
         "npm:clsx",
         "npm:multiformats@^13.3.2",
         "npm:preact",
@@ -227,7 +234,7 @@
       "dependencies": [
         "@atproto-labs/fetch",
         "@atproto-labs/pipe",
-        "@atproto-labs/simple-store",
+        "@atproto-labs/simple-store@0.2.0",
         "@atproto-labs/simple-store-memory",
         "@atproto/did",
         "zod"
@@ -259,7 +266,7 @@
     "@atproto-labs/handle-resolver@0.1.8": {
       "integrity": "sha512-Y0ckccoCGDo/3g4thPkgp9QcORmc+qqEaCBCYCZYtfLIQp4775u22wd+4fyEyJP4DqoReKacninkICgRGfs3dQ==",
       "dependencies": [
-        "@atproto-labs/simple-store",
+        "@atproto-labs/simple-store@0.2.0",
         "@atproto-labs/simple-store-memory",
         "@atproto/did",
         "zod"
@@ -279,9 +286,12 @@
     "@atproto-labs/simple-store-memory@0.1.3": {
       "integrity": "sha512-jkitT9+AtU+0b28DoN92iURLaCt/q/q4yX8q6V+9LSwYlUTqKoj/5NFKvF7x6EBuG+gpUdlcycbH7e60gjOhRQ==",
       "dependencies": [
-        "@atproto-labs/simple-store",
+        "@atproto-labs/simple-store@0.2.0",
         "lru-cache"
       ]
+    },
+    "@atproto-labs/simple-store@0.1.2": {
+      "integrity": "sha512-9vTNvyPPBs44tKVFht16wGlilW8u4wpEtKwLkWbuNEh3h9TTQ8zjVhEoGZh/v73G4Otr9JUOSIq+/5+8OZD2mQ=="
     },
     "@atproto-labs/simple-store@0.2.0": {
       "integrity": "sha512-0bRbAlI8Ayh03wRwncAMEAyUKtZ+AuTS1jgPrfym1WVOAOiottI/ZmgccqLl6w5MbxVcClNQF7WYGKvGwGoIhA=="
@@ -371,7 +381,7 @@
         "@atproto-labs/fetch",
         "@atproto-labs/handle-resolver",
         "@atproto-labs/identity-resolver",
-        "@atproto-labs/simple-store",
+        "@atproto-labs/simple-store@0.2.0",
         "@atproto-labs/simple-store-memory",
         "@atproto/did",
         "@atproto/jwk@0.2.0",
@@ -390,6 +400,23 @@
     },
     "@atproto/syntax@0.4.0": {
       "integrity": "sha512-b9y5ceHS8YKOfP3mdKmwAx5yVj9294UN7FG2XzP6V5aKUdFazEYRnR9m5n5ZQFKa3GNvz7de9guZCJ/sUTcOAA=="
+    },
+    "@atproto/xrpc-server@0.7.18": {
+      "integrity": "sha512-kjlAsI+UNbbm6AK3Y5Hb4BJ7VQHNKiYYu2kX5vhZJZHO8qfO40GPYYb/2TknZV8IG6fDPBQhUpcDRolI86sgag==",
+      "dependencies": [
+        "@atproto/common",
+        "@atproto/crypto",
+        "@atproto/lexicon",
+        "@atproto/xrpc",
+        "cbor-x",
+        "express",
+        "http-errors",
+        "mime-types",
+        "rate-limiter-flexible",
+        "uint8arrays",
+        "ws",
+        "zod"
+      ]
     },
     "@atproto/xrpc-server@0.7.19": {
       "integrity": "sha512-YSCl/tU2NDykgDYslFSOYCr96esUgDwncFiADKL59/fyIFPLoT0qY8Uq/budpxUh0qPzjow4HHgVWESOaOpUmA==",

@@ -2,7 +2,7 @@
 
 # Helpful when running local-infra. Specify the repos you've created on a local pds instance.
 
-REPOS="did:plc:gdvspmipkels2qp43m4czqhp"
+REPOS="did:plc:sa4nv5txbv6yp55vnvrufxec"
 COLLECTIONS="social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.favorite,social.grain.gallery.item,social.grain.graph.follow,social.grain.photo.exif"
 EXTERNAL_COLLECTIONS="app.bsky.actor.profile,app.bsky.graph.follow,sh.tangled.graph.follow,sh.tangled.actor.profile"
 

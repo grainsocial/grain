@@ -104,11 +104,12 @@ export function UploadPage({
           ? (
             <div class="flex-1 flex items-center my-2">
               Showing photos for "{(selectedGallery?.record as Gallery).title}"
+              ({photos.length})
             </div>
           )
           : (
             <div class="flex-1 flex items-center my-2">
-              Showing "All Photos"
+              All photos ({photos.length})
             </div>
           )}
         <div class="flex items-center flex-col sm:flex-row gap-2 w-full justify-end flex-1">
@@ -158,7 +159,13 @@ export function UploadPage({
         id="image-preview"
         class="w-full h-full grid grid-cols-2 sm:grid-cols-5 gap-2"
       >
-        {photos.map((photo) => <PhotoPreview key={photo.cid} photo={photo} />)}
+        {photos.map((photo) => (
+          <PhotoPreview
+            key={photo.cid}
+            photo={photo}
+            selectedGallery={selectedGallery}
+          />
+        ))}
       </div>
     </div>
   );

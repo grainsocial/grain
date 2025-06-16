@@ -2,7 +2,7 @@ import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Button, Dialog, Input, Textarea } from "@bigmoves/bff/components";
 
-export function GalleryCreateEditDialog({
+export function GalleryDetailsDialog({
   gallery,
 }: Readonly<{ gallery?: GalleryView | null }>) {
   return (
@@ -70,7 +70,8 @@ export function GalleryCreateEditDialog({
           >
             {gallery ? "Update gallery" : "Create gallery"}
           </Button>
-          {gallery
+          {
+            /* {gallery
             ? (
               <Button
                 variant="destructive"
@@ -81,7 +82,8 @@ export function GalleryCreateEditDialog({
                 Delete gallery
               </Button>
             )
-            : null}
+            : null} */
+          }
           <Button
             variant="secondary"
             type="button"

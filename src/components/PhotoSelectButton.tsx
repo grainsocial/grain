@@ -3,39 +3,31 @@ import { AtUri } from "@atproto/syntax";
 
 export function PhotoSelectButton({
   galleryUri,
-  itemUris,
   photo,
 }: Readonly<{
   galleryUri: string;
-  itemUris: string[];
   photo: PhotoView;
 }>) {
+  const galleryRkey = new AtUri(galleryUri).rkey;
+  const photoRkey = new AtUri(photo.uri).rkey;
   return (
     <button
-      hx-put={`/actions/gallery/${new AtUri(galleryUri).rkey}/${
-        itemUris.includes(photo.uri) ? "remove-photo" : "add-photo"
-      }/${new AtUri(photo.uri).rkey}`}
-      hx-swap="outerHTML"
+      hx-put={`/actions/gallery/${galleryRkey}/remove-photo/${photoRkey}?selectedGallery=${
+        galleryUri ?? ""
+      }`}
+      hx-swap="none"
       type="button"
-      data-added={itemUris.includes(photo.uri) ? "true" : "false"}
-      class="group cursor-pointer relative aspect-square data-[added=true]:ring-2 ring-sky-500 disabled:opacity-50"
-      _={`on htmx:beforeRequest add @disabled to me
-     then on htmx:afterOnLoad
-       remove @disabled from me
-       if @data-added == 'true'
-         set @data-added to 'false' 
-         remove #photo-${new AtUri(photo.uri).rkey}
-       else
-         set @data-added to 'true'
-       end`}
+      class="group cursor-pointer aspect-square relative"
+      _={`on htmx:afterOnLoad remove me`}
     >
-      <div class="hidden group-data-[added=true]:block absolute top-2 right-2 z-30">
-        <i class="fa-check fa-solid text-sky-500 z-10" />
+      <div class="absolute top-2 right-2 z-30">
+        <i class="fa-trash fa-solid text-zinc-50 z-10" />
       </div>
       <img
         src={photo.fullsize}
         alt={photo.alt}
-        class="absolute inset-0 w-full h-full object-contain"
+        class="w-full h-full object-cover"
+        loading="lazy"
       />
     </button>
   );

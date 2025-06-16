@@ -48,6 +48,7 @@ export function getGalleryItemsAndPhotos(
     "social.grain.photo",
     {
       where: [{ field: "uri", in: photoUris }],
+      orderBy: [{ field: "createdAt", direction: "asc" }],
     },
   );
 
@@ -245,7 +246,6 @@ export function getGalleryPhotos(
   >(
     "social.grain.gallery.item",
     {
-      orderBy: [{ field: "position", direction: "asc" }],
       where: [{ field: "gallery", equals: galleryUri }],
     },
   );
@@ -255,6 +255,7 @@ export function getGalleryPhotos(
     "social.grain.photo",
     {
       where: [{ field: "uri", in: photoUris }],
+      orderBy: [{ field: "createdAt", direction: "desc" }],
     },
   );
   const { items: photosExif } = ctx.indexService.getRecords<
@@ -282,12 +283,12 @@ export function getGalleryPhotos(
       return undefined;
     }
   })();
-  // Return PhotoView[] in gallery item order
-  return galleryItems
-    .map((item) => {
-      const photo = photosMap.get(item.item);
-      if (photo && did) {
-        return photoToView(did, photo, photo.exif);
+  // Return PhotoView[] in the order of photo creation time (already sorted by SQL)
+  return photos
+    .map((photo) => {
+      const exif = exifMap.get(photo.uri);
+      if (did) {
+        return photoToView(did, exif ? { ...photo, exif } : photo, exif);
       }
       return undefined;
     })

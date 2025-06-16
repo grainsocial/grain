@@ -5,15 +5,15 @@ import {
 } from "@bigmoves/bff/browser";
 import exifr from "exifr";
 import htmx from "htmx.org";
-import hyperscript from "hyperscript.org";
 import { Exif, normalizeExif, tags as supportedTags } from "./exif.ts";
 
-export class UploadPage {
+export class GalleryPhotosDialog {
   public async uploadPhotos(formElement: HTMLFormElement): Promise<void> {
     const formData = new FormData(formElement);
     const fileList = formData.getAll("files") as File[] ?? [];
     const parseExif = formData.get("parseExif") === "on";
     const galleryUri = formData.get("galleryUri") as string;
+    const page = formData.get("page") as string;
 
     if (fileList.length > 10) {
       alert("You can only upload 10 photos at a time");
@@ -76,7 +76,11 @@ export class UploadPage {
         fd.append("galleryUri", galleryUri);
       }
 
-      const response = await fetch("/actions/photo", {
+      if (page) {
+        fd.append("page", page);
+      }
+
+      const response = await fetch(`/actions/photo`, {
         method: "POST",
         body: fd,
       });
@@ -89,26 +93,24 @@ export class UploadPage {
       const html = await response.text();
       const temp = document.createElement("div");
       temp.innerHTML = html;
-      const photoId = temp?.firstElementChild?.id;
 
       const preview = document.querySelector("#image-preview");
       if (preview) {
-        const firstChild = temp.firstElementChild;
-
-        if (firstChild) {
-          preview.insertBefore(firstChild, preview.firstChild);
+        const child = temp.firstElementChild;
+        if (child) {
+          preview.appendChild(child);
         }
-
         htmx.process(preview);
+      }
 
-        const deleteButton = preview.querySelector(
-          `#delete-photo-${photoId}`,
-        );
-        if (!deleteButton) {
-          return;
+      const galleryContainer = document.querySelector(
+        "#gallery-container",
+      );
+      if (galleryContainer) {
+        const child = temp.firstElementChild;
+        if (child) {
+          galleryContainer.appendChild(child);
         }
-        htmx.process(deleteButton);
-        hyperscript.processNode(deleteButton);
       }
     });
 
