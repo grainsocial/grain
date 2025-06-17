@@ -60,6 +60,7 @@ export function RemovePhotoDialog(
             selectedGallery?.uri ?? ""
           }`}
           hx-swap="none"
+          hx-confirm="Are you sure you want to delete this photo? This action cannot be undone."
         >
           Delete photo
         </Button>

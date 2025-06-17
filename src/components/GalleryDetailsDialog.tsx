@@ -59,7 +59,6 @@ export function GalleryDetailsDialog({
             class="hidden"
           />
         </div>
-
         <div class="flex flex-col gap-2 mt-2">
           <Button
             variant="primary"
@@ -69,20 +68,6 @@ export function GalleryDetailsDialog({
           >
             {gallery ? "Update gallery" : "Create gallery"}
           </Button>
-          {
-            /* {gallery
-            ? (
-              <Button
-                variant="destructive"
-                form="delete-form"
-                type="submit"
-                class="w-full"
-              >
-                Delete gallery
-              </Button>
-            )
-            : null} */
-          }
           <Button
             variant="secondary"
             type="button"

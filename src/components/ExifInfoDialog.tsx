@@ -3,7 +3,7 @@ import { Dialog } from "./Dialog.tsx";
 export function ExifInfoDialog() {
   return (
     <Dialog class="z-101">
-      <Dialog.Content class="flex flex-col gap-2">
+      <Dialog.Content class="flex flex-col gap-4">
         <Dialog.Title>EXIF Info</Dialog.Title>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <div class="text-sm mt-2">

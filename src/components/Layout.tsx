@@ -78,14 +78,13 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
         <div class="flex space-x-2">
           {profile
             ? (
-              <div class="flex items-center ts:space-x-1 sm:space-x-2">
+              <div class="flex items-center space-x-1 sm:space-x-2">
                 <form hx-post="/logout" hx-swap="none" class="inline">
-                  <Button type="submit" variant="ghost">Sign out</Button>
+                  <Button type="submit" variant="secondary">Sign out</Button>
                 </form>
                 <Button
                   asChild
                   variant="ghost"
-                  class="relative pl-2"
                 >
                   <a href="/explore">
                     <i class="fas fa-search text-zinc-950 dark:text-zinc-50" />
@@ -94,7 +93,7 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
                 <Button
                   asChild
                   variant="ghost"
-                  class="relative pl-2"
+                  class="relative"
                 >
                   <a href="/notifications">
                     <i class="fas fa-bell text-zinc-950 dark:text-zinc-50" />
@@ -111,9 +110,9 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
               </div>
             )
             : (
-              <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-2">
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   hx-get={`/dialogs/create-account`}
                   hx-trigger="click"
                   hx-target="body"
@@ -121,7 +120,7 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
                 >
                   Create account
                 </Button>
-                <Button variant="ghost" asChild>
+                <Button variant="primary" asChild>
                   <a href="/login">
                     Sign in
                   </a>

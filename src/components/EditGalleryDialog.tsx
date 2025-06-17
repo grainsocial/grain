@@ -57,6 +57,7 @@ export function EditGalleryDialog({ gallery }: Readonly<{
         <form
           id="delete-form"
           hx-post={`/actions/gallery/delete`}
+          hx-confirm="Are you sure you want to delete this gallery? This action cannot be undone."
         >
           <input type="hidden" name="uri" value={gallery?.uri} />
         </form>

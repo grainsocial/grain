@@ -1,5 +1,5 @@
-import { Login } from "@bigmoves/bff/components";
 import { profileLink } from "../utils.ts";
+import { Login } from "./Login.tsx";
 
 export function LoginPage({ error }: Readonly<{ error?: string }>) {
   return (
