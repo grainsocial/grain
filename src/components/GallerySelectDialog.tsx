@@ -16,13 +16,13 @@ export function GallerySelectDialog(
 ) {
   return (
     <Dialog id="gallery-select-dialog">
-      <Dialog.Content class="min-h-[calc(100vh-100px)] overflow-hidden flex flex-col">
+      <Dialog.Content class="min-h-[calc(100vh-100px)] overflow-hidden flex flex-col gap-4">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>
           {photoUri ? "Add to gallery" : "Select gallery"}
         </Dialog.Title>
 
-        <form class="my-4">
+        <form>
           <Input
             type="text"
             name="q"
@@ -41,6 +41,9 @@ export function GallerySelectDialog(
             galleries={galleries}
           />
         </div>
+        <Dialog.Close variant="secondary">
+          Close
+        </Dialog.Close>
       </Dialog.Content>
     </Dialog>
   );

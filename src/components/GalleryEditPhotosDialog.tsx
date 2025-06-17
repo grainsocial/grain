@@ -14,7 +14,7 @@ export function GalleryEditPhotosDialog({
 }>) {
   return (
     <Dialog id="photo-select-dialog">
-      <Dialog.Content class="flex flex-col">
+      <Dialog.Content class="flex flex-col gap-4">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Edit photos</Dialog.Title>
         <div class="flex flex-col gap-4">
@@ -63,7 +63,7 @@ export function GalleryEditPhotosDialog({
           <LibaryPhotoSelectDialogButton galleryUri={galleryUri} />
         </div>
         <div class="flex-1 overflow-y-auto">
-          <div id="image-preview" class="grid grid-cols-3 gap-2 my-4">
+          <div id="image-preview" class="grid grid-cols-3 gap-2">
             {photos.length
               ? (
                 photos.map((photo) => (
@@ -77,9 +77,7 @@ export function GalleryEditPhotosDialog({
               : null}
           </div>
         </div>
-        <div class="w-full flex flex-col gap-2 mt-2">
-          <Dialog.Close variant="secondary" class="w-full">Close</Dialog.Close>
-        </div>
+        <Dialog.Close variant="secondary" class="w-full">Close</Dialog.Close>
       </Dialog.Content>
     </Dialog>
   );

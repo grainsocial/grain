@@ -14,7 +14,7 @@ export function LibraryPhotoSelectDialog({
   const rkey = new AtUri(galleryUri).rkey;
   return (
     <Dialog id="photo-select-dialog" class="z-101">
-      <Dialog.Content class="flex flex-col gap-2">
+      <Dialog.Content class="flex flex-col gap-4">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>My library</Dialog.Title>
 
@@ -45,7 +45,7 @@ export function LibraryPhotoSelectDialog({
 
         <div
           id="photo-select-overlay"
-          class="w-full bg-white dark:bg-zinc-900 my-2 flex justify-between items-center z-102"
+          class="w-full bg-white dark:bg-zinc-900 flex justify-between items-center z-102"
           _="on load set my.count to 0"
         >
           <span id="selected-count">0 selected</span>
@@ -58,9 +58,7 @@ export function LibraryPhotoSelectDialog({
           </Button>
         </div>
 
-        <div class="w-full flex flex-col gap-2 mt-2">
-          <Dialog.Close variant="secondary" class="w-full">Close</Dialog.Close>
-        </div>
+        <Dialog.Close variant="secondary" class="w-full">Close</Dialog.Close>
       </Dialog.Content>
     </Dialog>
   );
@@ -73,7 +71,6 @@ export function LibaryPhotoSelectDialogButton({ galleryUri }: Readonly<{
   return (
     <Button
       type="button"
-      class="mb-2"
       variant="secondary"
       hx-get={`/dialogs/gallery/${rkey}/library`}
       hx-trigger="click"

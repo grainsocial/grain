@@ -16,12 +16,13 @@ export function PhotoSelectButton({
         galleryUri ?? ""
       }`}
       hx-swap="none"
+      hx-confirm="Are you sure you want to remove this photo from the gallery?"
       type="button"
       class="group cursor-pointer aspect-square relative"
       _={`on htmx:afterOnLoad remove me`}
     >
-      <div class="absolute top-2 right-2 z-30">
-        <i class="fa-trash fa-solid text-zinc-50 z-10" />
+      <div class="absolute top-2 right-2 z-30 size-4 bg-zinc-950/50 flex items-center justify-center">
+        <i class="fa-close fa-solid text-white z-10" />
       </div>
       <img
         src={photo.fullsize}
