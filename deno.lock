@@ -84,8 +84,10 @@
       "integrity": "5c3ca124dd52eff51dace83790779ebe48c4b41559b799e16c8750bd415f2124",
       "dependencies": [
         "npm:@atproto-labs/handle-resolver-node",
+        "npm:@atproto-labs/simple-store",
         "npm:@atproto/jwk",
         "npm:@atproto/oauth-client",
+        "npm:@atproto/oauth-types",
         "npm:jose"
       ]
     },
@@ -101,9 +103,11 @@
         "npm:@atproto/api",
         "npm:@atproto/common",
         "npm:@atproto/identity",
+        "npm:@atproto/lexicon@0.4.11",
         "npm:@atproto/lexicon@~0.4.11",
         "npm:@atproto/oauth-client",
         "npm:@atproto/syntax",
+        "npm:@atproto/xrpc-server@0.7.18",
         "npm:clsx",
         "npm:multiformats@^13.3.2",
         "npm:preact",
