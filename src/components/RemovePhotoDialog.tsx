@@ -91,13 +91,3 @@ export function RemovePhotoDialogButton(
     </button>
   );
 }
-
-// <button
-//   type="button"
-//   id={`delete-photo-${rkey}`}
-//   hx-delete={`/actions/photo/${rkey}`}
-//   class="bg-zinc-950/50 z-10 absolute top-2 right-2 cursor-pointer size-4 flex items-center justify-center"
-//   _="on htmx:afterOnLoad remove me.parentNode"
-// >
-//   <i class="fas fa-close text-white"></i>
-// </button>
