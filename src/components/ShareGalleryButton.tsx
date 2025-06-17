@@ -1,6 +1,6 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
-import { Button } from "@bigmoves/bff/components";
 import { publicGalleryLink } from "../utils.ts";
+import { Button } from "./Button.tsx";
 
 export function ShareGalleryButton(
   { gallery }: Readonly<{ gallery: GalleryView }>,

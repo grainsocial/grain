@@ -6,7 +6,6 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { LabelerPolicies } from "@bigmoves/bff";
-import { Button, cn } from "@bigmoves/bff/components";
 import { getGalleryCameras } from "../lib/gallery.ts";
 import {
   atprotoLabelValueDefinitions,
@@ -22,6 +21,7 @@ import {
 } from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
 import { AvatarButton } from "./AvatarButton.tsx";
+import { Button } from "./Button.tsx";
 import { CameraBadges } from "./CameraBadges.tsx";
 import { FollowButton } from "./FollowButton.tsx";
 import { LabelDefinitionButton } from "./LabelDefinitionButton.tsx";
@@ -125,24 +125,24 @@ export function ProfilePage({
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
               <Button
-                variant="primary"
+                variant="secondary"
                 class="w-full sm:w-fit whitespace-nowrap"
                 asChild
               >
                 <a href="/upload">
                   <i class="fa-solid fa-upload mr-2" />
-                  Upload
+                  Photo library
                 </a>
               </Button>
               <Button
-                variant="primary"
+                variant="secondary"
                 type="button"
                 hx-get="/dialogs/profile"
                 hx-target="#layout"
                 hx-swap="afterbegin"
                 class="w-full sm:w-fit whitespace-nowrap"
               >
-                Edit Profile
+                Edit profile
               </Button>
               <Button
                 variant="primary"
@@ -152,7 +152,7 @@ export function ProfilePage({
                 hx-target="#layout"
                 hx-swap="afterbegin"
               >
-                Create Gallery
+                Create gallery
               </Button>
             </div>
           )
@@ -165,62 +165,53 @@ export function ProfilePage({
       >
         {isLabeler
           ? (
-            <button
-              type="button"
+            <Button
+              variant="tab"
               name="tab"
+              class="flex-1"
               value="favs"
               hx-get={profileLink(profile.handle)}
               hx-target="#profile-page"
               hx-swap="outerHTML"
-              class={cn(
-                "flex-1 min-w-[120px] py-2 px-4 cursor-pointer font-semibold",
-                selectedTab === "labels" && "bg-zinc-100 dark:bg-zinc-800",
-              )}
               role="tab"
               aria-selected={selectedTab === "labels"}
               aria-controls="tab-content"
             >
               Labels
-            </button>
+            </Button>
           )
           : (
-            <button
-              type="button"
+            <Button
+              variant="tab"
               name="tab"
+              class="flex-1"
               value="galleries"
               hx-get={profileLink(profile.handle)}
               hx-target="#profile-page"
               hx-swap="outerHTML"
-              class={cn(
-                "flex-1 min-w-[120px] py-2 px-4 cursor-pointer font-semibold",
-                selectedTab === "galleries" && "bg-zinc-100 dark:bg-zinc-800",
-              )}
               role="tab"
               aria-selected={selectedTab === "galleries"}
               aria-controls="tab-content"
             >
               Galleries
-            </button>
+            </Button>
           )}
 
         {isCreator && (
-          <button
-            type="button"
+          <Button
+            variant="tab"
             name="tab"
+            class="flex-1"
             value="favs"
             hx-get={profileLink(profile.handle)}
             hx-target="#profile-page"
             hx-swap="outerHTML"
-            class={cn(
-              "flex-1 min-w-[120px] py-2 px-4 cursor-pointer font-semibold",
-              selectedTab === "favs" && "bg-zinc-100 dark:bg-zinc-800",
-            )}
             role="tab"
             aria-selected={selectedTab === "favs"}
             aria-controls="tab-content"
           >
             Favs
-          </button>
+          </Button>
         )}
       </div>
       {selectedTab === "labels" && labelerDefinitions
@@ -228,7 +219,7 @@ export function ProfilePage({
         : null}
       {selectedTab === "galleries"
         ? (
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+          <div class="grid grid-cols-3 gap-1 mb-4">
             {galleries?.length
               ? (
                 galleries.map((gallery) => (
@@ -245,7 +236,7 @@ export function ProfilePage({
         : null}
       {selectedTab === "favs"
         ? (
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
+          <div class="grid grid-cols-3 gap-1 mb-4">
             {galleryFavs?.length
               ? (
                 galleryFavs.map((gallery) => (
@@ -321,7 +312,7 @@ function GalleryItem({
         gallery.creator.handle,
         new AtUri(gallery.uri).rkey,
       )}
-      class="cursor-pointer relative aspect-square"
+      class="cursor-pointer relative aspect-3/4"
     >
       {modDecision && !modDecision.isMe
         ? (
@@ -345,7 +336,7 @@ function GalleryItem({
           />
         )
         : <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />}
-      <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2 flex items-center gap-2">
+      <div class="absolute sm:flex hidden bottom-0 left-0 bg-black/80 text-white p-2 items-center gap-2">
         {(gallery.record as Gallery).title}
       </div>
     </a>
@@ -365,7 +356,7 @@ function GalleryFavItem({
         gallery.creator.handle,
         new AtUri(gallery.uri).rkey,
       )}
-      class="cursor-pointer relative aspect-square"
+      class="cursor-pointer relative aspect-3/4"
     >
       {gallery.items?.length
         ? (
@@ -376,7 +367,7 @@ function GalleryFavItem({
           />
         )
         : <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />}
-      <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2 flex items-center gap-2">
+      <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2 hidden sm:flex items-center gap-2">
         <ActorAvatar profile={gallery.creator} size={20} />{" "}
         {(gallery.record as Gallery).title}
       </div>

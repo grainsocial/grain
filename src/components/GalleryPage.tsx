@@ -3,8 +3,8 @@ import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { WithBffMeta } from "@bigmoves/bff";
-import { Button } from "@bigmoves/bff/components";
 import { ModerationDecsion } from "../lib/moderation.ts";
+import { EditGalleryButton } from "./EditGalleryDialog.tsx";
 import { FavoriteButton } from "./FavoriteButton.tsx";
 import { GalleryInfo } from "./GalleryInfo.tsx";
 import { GalleryLayout } from "./GalleryLayout.tsx";
@@ -27,38 +27,13 @@ export function GalleryPage({
   const galleryItems = gallery.items?.filter(isPhotoView) ?? [];
   return (
     <div class="px-4" id="gallery-page">
+      <div id="dialog-target" />
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4 mb-2">
         <GalleryInfo gallery={gallery} />
         {isLoggedIn && isCreator
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
-              <Button
-                variant="primary"
-                class="self-start w-full sm:w-fit whitespace-nowrap"
-                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}`}
-                hx-target="#layout"
-                hx-swap="afterbegin"
-              >
-                Edit
-              </Button>
-              <Button
-                hx-get={`/dialogs/photo-select/${new AtUri(gallery.uri).rkey}`}
-                hx-target="#layout"
-                hx-swap="afterbegin"
-                variant="primary"
-                class="self-start w-full sm:w-fit whitespace-nowrap"
-              >
-                Add photos
-              </Button>
-              <Button
-                variant="primary"
-                class="self-start w-full sm:w-fit whitespace-nowrap"
-                hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}/sort`}
-                hx-target="#layout"
-                hx-swap="afterbegin"
-              >
-                Sort order
-              </Button>
+              <EditGalleryButton gallery={gallery} />
               <ShareGalleryButton gallery={gallery} />
               <FavoriteButton
                 currentUserDid={currentUserDid}
@@ -81,6 +56,16 @@ export function GalleryPage({
           )
           : null}
       </div>
+      {isLoggedIn && isCreator && gallery.items?.length === 0
+        ? (
+          <div
+            hx-get={`/dialogs/gallery/${new AtUri(gallery.uri).rkey}/photos`}
+            hx-trigger="load"
+            hx-target="#dialog-target"
+            hx-swap="innerHTML"
+          />
+        )
+        : null}
       {
         <ModerationWrapper moderationDecision={modDecision} class="mb-2">
           <GalleryLayout

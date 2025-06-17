@@ -1,6 +1,6 @@
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
-import { Dialog } from "@bigmoves/bff/components";
 import { getOrderedExifData } from "../lib/photo.ts";
+import { Dialog } from "./Dialog.tsx";
 
 export function ExifOverlayDialog({
   photo,
@@ -10,7 +10,7 @@ export function ExifOverlayDialog({
   return (
     <Dialog class="z-101">
       <Dialog.Content
-        class="bg-transparent text-zinc-50 relative"
+        class="bg-transparent! text-zinc-50 relative"
         _={Dialog._closeOnClick}
       >
         <Dialog.Title>Camera Settings</Dialog.Title>

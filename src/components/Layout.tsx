@@ -1,8 +1,9 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
-import { Button, cn } from "@bigmoves/bff/components";
+import { cn } from "@bigmoves/bff/components";
 import type { FunctionalComponent, JSX } from "preact";
 import { ActorAvatar } from "./ActorAvatar.tsx";
+import { Button } from "./Button.tsx";
 
 type LayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
   children: preact.ComponentChildren;
@@ -77,14 +78,13 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
         <div class="flex space-x-2">
           {profile
             ? (
-              <div class="flex items-center ts:space-x-1 sm:space-x-2">
+              <div class="flex items-center space-x-1 sm:space-x-2">
                 <form hx-post="/logout" hx-swap="none" class="inline">
                   <Button type="submit" variant="secondary">Sign out</Button>
                 </form>
                 <Button
                   asChild
-                  variant="secondary"
-                  class="relative pl-2"
+                  variant="ghost"
                 >
                   <a href="/explore">
                     <i class="fas fa-search text-zinc-950 dark:text-zinc-50" />
@@ -92,8 +92,8 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
                 </Button>
                 <Button
                   asChild
-                  variant="secondary"
-                  class="relative pl-2"
+                  variant="ghost"
+                  class="relative"
                 >
                   <a href="/notifications">
                     <i class="fas fa-bell text-zinc-950 dark:text-zinc-50" />
@@ -110,7 +110,7 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
               </div>
             )
             : (
-              <div class="flex items-center space-x-4">
+              <div class="flex items-center space-x-2">
                 <Button
                   variant="secondary"
                   hx-get={`/dialogs/create-account`}
@@ -120,7 +120,7 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
                 >
                   Create account
                 </Button>
-                <Button variant="secondary" asChild>
+                <Button variant="primary" asChild>
                   <a href="/login">
                     Sign in
                   </a>

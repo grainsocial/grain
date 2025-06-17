@@ -1,3 +1,6 @@
+import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
+import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { ExifView, PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
@@ -5,6 +8,8 @@ import { $Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { format, parseISO } from "date-fns";
 import { PUBLIC_URL, USE_CDN } from "../env.ts";
+import { getActorProfile } from "./actor.ts";
+import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
 
 export function getPhoto(
   uri: string,
@@ -193,4 +198,48 @@ export function getOrderedExifData(photo: PhotoView) {
     if (bIdx === -1) return -1;
     return aIdx - bIdx;
   });
+}
+
+export function getPhotoGalleries(
+  photoUri: string,
+  ctx: BffContext,
+): GalleryView[] {
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >(
+    "social.grain.gallery.item",
+    {
+      where: [{ field: "item", equals: photoUri }],
+    },
+  );
+
+  const galleryUris = Array.from(
+    new Set(galleryItems.map((item) => item.gallery)),
+  );
+  if (galleryUris.length === 0) return [];
+
+  const { items: galleries } = ctx.indexService.getRecords<
+    WithBffMeta<Gallery>
+  >(
+    "social.grain.gallery",
+    {
+      where: [{ field: "uri", in: galleryUris }],
+    },
+  );
+  if (!galleries.length) return [];
+
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
+  const labels = ctx.indexService.queryLabels({ subjects: galleryUris });
+  return galleries
+    .map((gallery) => {
+      const profile = getActorProfile(gallery.did, ctx);
+      if (!profile) return undefined;
+      return galleryToView(
+        gallery,
+        profile,
+        galleryPhotosMap.get(gallery.uri) ?? [],
+        labels ?? [],
+      );
+    })
+    .filter((g): g is GalleryView => Boolean(g));
 }

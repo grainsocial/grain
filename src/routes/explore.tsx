@@ -2,9 +2,9 @@ import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
-import { Input } from "@bigmoves/bff/components";
 import { ComponentChildren } from "preact";
 import { ActorAvatar } from "../components/ActorAvatar.tsx";
+import { Input } from "../components/Input.tsx";
 import { LabelerAvatar } from "../components/LabelerAvatar.tsx";
 import { profileToView } from "../lib/actor.ts";
 import { getPageMeta } from "../meta.ts";
@@ -54,7 +54,6 @@ function ExplorePage(
       <div class="my-4">
         <Input
           name="q"
-          class="dark:bg-zinc-800 dark:text-white border-zinc-100 bg-zinc-100 dark:border-zinc-800"
           placeholder="Search for users"
           hx-get="/explore"
           hx-target="#search-results"

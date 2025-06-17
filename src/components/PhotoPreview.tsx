@@ -1,32 +1,47 @@
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { AltTextButton } from "./AltTextButton.tsx";
 import { PhotoExifButton } from "./PhotoExifButton.tsx";
+import { RemovePhotoDialogButton } from "./RemovePhotoDialog.tsx";
 
 export function PhotoPreview({
   photo,
+  selectedGallery,
 }: Readonly<{
   photo: Un$Typed<PhotoView>;
+  selectedGallery?: GalleryView;
 }>) {
-  const rkey = new AtUri(photo.uri).rkey;
+  const atUri = new AtUri(photo.uri);
+  const did = atUri.hostname;
+  const rkey = atUri.rkey;
   return (
     <div
       class="relative aspect-square bg-zinc-200 dark:bg-zinc-900"
-      id={rkey}
+      id={`photo-${rkey}`}
     >
       {photo.uri ? <AltTextButton photoUri={photo.uri} /> : null}
       {photo.exif ? <PhotoExifButton photoUri={photo.uri} /> : null}
       {photo.uri
         ? (
+          <RemovePhotoDialogButton
+            selectedGallery={selectedGallery}
+            photoUri={photo.uri}
+          />
+        )
+        : null}
+      {photo.uri
+        ? (
           <button
             type="button"
-            id={`delete-photo-${rkey}`}
-            hx-delete={`/actions/photo/${rkey}`}
-            class="bg-zinc-950 z-10 absolute top-2 right-2 cursor-pointer size-4 flex items-center justify-center"
-            _="on htmx:afterOnLoad remove me.parentNode"
+            hx-get={`/dialogs/gallery/${did}/select?photoUri=${photo.uri}`}
+            hx-trigger="click"
+            hx-target="#layout"
+            hx-swap="afterbegin"
+            class="bg-zinc-950/50 z-10 absolute bottom-2 right-2 cursor-pointer size-4 flex items-center justify-center"
           >
-            <i class="fas fa-close text-white"></i>
+            <i class="fas fa-plus text-white"></i>
           </button>
         )
         : null}

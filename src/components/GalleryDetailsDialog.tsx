@@ -1,13 +1,17 @@
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
-import { Button, Dialog, Input, Textarea } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
+import { Input } from "./Input.tsx";
+import { Label } from "./Label.tsx";
+import { Textarea } from "./Textarea.tsx";
 
-export function GalleryCreateEditDialog({
+export function GalleryDetailsDialog({
   gallery,
 }: Readonly<{ gallery?: GalleryView | null }>) {
   return (
-    <Dialog id="gallery-dialog" class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog id="gallery-dialog">
+      <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>
           {gallery ? "Edit gallery" : "Create a new gallery"}
@@ -24,7 +28,7 @@ export function GalleryCreateEditDialog({
               alert('Error: ' + event.detail.xhr.responseText)"
         >
           <div class="mb-4 relative">
-            <label htmlFor="title">Gallery name</label>
+            <Label htmlFor="title">Gallery name</Label>
             <Input
               type="text"
               id="title"
@@ -36,7 +40,7 @@ export function GalleryCreateEditDialog({
             />
           </div>
           <div class="mb-2 relative">
-            <label htmlFor="description">Description</label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               name="description"
@@ -55,12 +59,6 @@ export function GalleryCreateEditDialog({
             class="hidden"
           />
         </div>
-        <form
-          id="delete-form"
-          hx-post={`/actions/gallery/delete?uri=${gallery?.uri}`}
-        >
-          <input type="hidden" name="uri" value={gallery?.uri} />
-        </form>
         <div class="flex flex-col gap-2 mt-2">
           <Button
             variant="primary"
@@ -70,18 +68,6 @@ export function GalleryCreateEditDialog({
           >
             {gallery ? "Update gallery" : "Create gallery"}
           </Button>
-          {gallery
-            ? (
-              <Button
-                variant="destructive"
-                form="delete-form"
-                type="submit"
-                class="w-full"
-              >
-                Delete gallery
-              </Button>
-            )
-            : null}
           <Button
             variant="secondary"
             type="button"

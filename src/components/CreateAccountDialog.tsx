@@ -1,11 +1,12 @@
 import { OAUTH_ROUTES } from "@bigmoves/bff";
-import { Button, Dialog } from "@bigmoves/bff/components";
 import { PDS_HOST_URL } from "../env.ts";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
 
 export function CreateAccountDialog({}: Readonly<{}>) {
   return (
-    <Dialog id="photo-alt-dialog" class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog id="photo-alt-dialog">
+      <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Choose your handle</Dialog.Title>
         <div className="flex flex-col space-y-4 my-10">

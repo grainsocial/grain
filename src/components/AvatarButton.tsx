@@ -10,7 +10,7 @@ export function AvatarButton({
       ? (
         <button
           type="button"
-          class="cursor-pointer"
+          class="cursor-pointer w-fit"
           hx-get={`/dialogs/avatar/${profile.handle}`}
           hx-trigger="click"
           hx-target="body"

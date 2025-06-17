@@ -1,7 +1,8 @@
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { AtUri } from "@atproto/syntax";
 import { WithBffMeta } from "@bigmoves/bff";
-import { Button, cn } from "@bigmoves/bff/components";
+import { cn } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
 
 export function FavoriteButton({
   currentUserDid,
