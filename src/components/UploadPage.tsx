@@ -76,14 +76,18 @@ export function UploadPage({
       <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
         {selectedGallery
           ? (
-            <div class="flex-1 flex items-center my-2">
-              Showing photos for "{(selectedGallery?.record as Gallery).title}"
-              (<div id="photos-count">{photos.length}</div>)
+            <div className="flex-1 flex items-center my-2">
+              Showing photos for &quot;{(selectedGallery?.record as Gallery)
+                .title}&quot;&nbsp; (
+              <span id="photos-count">{photos.length}</span>
+              )
             </div>
           )
           : (
-            <div class="flex-1 flex items-center my-2">
-              All photos (<div id="photos-count">{photos.length}</div>)
+            <div className="flex-1 flex items-center my-2">
+              All photos&nbsp;(
+              <span id="photos-count">{photos.length}</span>
+              )
             </div>
           )}
         <div class="flex items-center flex-col sm:flex-row gap-2 w-full justify-end flex-1">
