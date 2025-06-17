@@ -109,8 +109,20 @@ export class GalleryPhotosDialog {
       if (galleryContainer) {
         const child = temp.firstElementChild;
         if (child) {
-          galleryContainer.appendChild(child);
+          galleryContainer.appendChild(child.children[0]);
         }
+        htmx.process(galleryContainer);
+      }
+
+      const galleryInfo = document.querySelector(
+        "#gallery-info",
+      );
+      if (galleryInfo) {
+        const child = temp.children[1];
+        if (child) {
+          galleryInfo.replaceWith(child.children[0]);
+        }
+        htmx.process(galleryInfo);
       }
     });
 

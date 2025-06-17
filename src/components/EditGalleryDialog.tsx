@@ -1,14 +1,15 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { Button, Dialog } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
 
 export function EditGalleryDialog({ gallery }: Readonly<{
   gallery: GalleryView;
 }>) {
   const rkey = new AtUri(gallery.uri).rkey;
   return (
-    <Dialog class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative gap-4">
+    <Dialog>
+      <Dialog.Content class="gap-4">
         <Dialog.Title>Edit gallery</Dialog.Title>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
 
@@ -16,7 +17,7 @@ export function EditGalleryDialog({ gallery }: Readonly<{
           <li class="w-full hover:bg-zinc-200 dark:hover:bg-zinc-800">
             <button
               type="button"
-              class="flex flex-col justify-start items-start text-left w-full px-2 py-4 focus:outline-2 focus:outline-sky-500 focus:outline-offset-[-2px] cursor-pointer"
+              class="flex flex-col justify-start items-start text-left w-full px-2 py-4 cursor-pointer"
               hx-get={`/dialogs/gallery/${rkey}/edit`}
               hx-target="#dialog-target"
               hx-swap="innerHTML"
@@ -30,7 +31,7 @@ export function EditGalleryDialog({ gallery }: Readonly<{
           <li class="w-full hover:bg-zinc-200 dark:hover:bg-zinc-800">
             <button
               type="button"
-              class="flex flex-col justify-start items-start text-left w-full px-2 py-4 focus:outline-2 focus:outline-sky-500 focus:outline-offset-[-2px] cursor-pointer"
+              class="flex flex-col justify-start items-start text-left w-full px-2 py-4 cursor-pointer"
               hx-get={`/dialogs/gallery/${rkey}/photos`}
               hx-target="#dialog-target"
               hx-swap="innerHTML"
@@ -47,16 +48,21 @@ export function EditGalleryDialog({ gallery }: Readonly<{
               hx-get={`/dialogs/gallery/${rkey}/sort`}
               hx-target="#dialog-target"
               hx-swap="innerHTML"
-              class="flex justify-between items-center text-left w-full px-2 py-4 focus:outline-2 focus:outline-sky-500 focus:outline-offset-[-2px] cursor-pointer"
+              class="flex justify-between items-center text-left w-full px-2 py-4 cursor-pointer"
             >
               Change sort order
             </button>
           </li>
         </ul>
-
+        <form
+          id="delete-form"
+          hx-post={`/actions/gallery/delete`}
+        >
+          <input type="hidden" name="uri" value={gallery?.uri} />
+        </form>
         <Button
           variant="destructive"
-          hx-post={`/actions/gallery/delete?uri=${gallery?.uri}`}
+          form="delete-form"
         >
           Delete gallery
         </Button>

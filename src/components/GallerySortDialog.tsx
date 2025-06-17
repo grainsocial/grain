@@ -1,14 +1,15 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { Button, Dialog } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
 
 export function GallerySortDialog(
   { gallery }: Readonly<{ gallery: GalleryView }>,
 ) {
   return (
-    <Dialog class="z-100" id="gallery-sort-dialog">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog id="gallery-sort-dialog">
+      <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Sort gallery</Dialog.Title>
         <p class="my-2 text-center">Drag photos to rearrange</p>

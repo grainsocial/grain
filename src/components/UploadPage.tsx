@@ -2,9 +2,9 @@ import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
-import { Button } from "@bigmoves/bff/components";
 import { profileLink } from "../utils.ts";
 import { Breadcrumb } from "./Breadcrumb.tsx";
+import { Button } from "./Button.tsx";
 import { GallerySelectDialogButton } from "./GallerySelectDialog.tsx";
 import { PhotoPreview } from "./PhotoPreview.tsx";
 
@@ -33,32 +33,7 @@ export function UploadPage({
           { label: "Upload" },
         ]}
       />
-      <Button
-        variant="primary"
-        class="w-full sm:w-fit"
-        hx-get="/dialogs/add-photos"
-        hx-target="#layout"
-        hx-swap="afterbegin"
-      >
-        <i class="fa fa-plus"></i> Add photos
-      </Button>
-      {
-        /* <div>
-        Upload 10 photos at a time. Click{" "}
-        <button
-          type="button"
-          hx-get="/dialogs/gallery/new"
-          hx-target="#layout"
-          hx-swap="afterbegin"
-          class="font-semibold hover:underline cursor-pointer text-sky-500"
-        >
-          here
-        </button>{" "}
-        to create a gallery or add to existing galleries once you're done!
-      </div> */
-      }
-      {
-        /* <form
+      <form
         hx-encoding="multipart/form-data"
         _="on change from #file-input call Grain.uploadPage.uploadPhotos(me)"
       >
@@ -97,19 +72,18 @@ export function UploadPage({
             <i class="fa fa-info-circle ml-1" />
           </button>
         </label>
-      </form> */
-      }
+      </form>
       <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
         {selectedGallery
           ? (
             <div class="flex-1 flex items-center my-2">
               Showing photos for "{(selectedGallery?.record as Gallery).title}"
-              ({photos.length})
+              (<div id="photos-count">{photos.length}</div>)
             </div>
           )
           : (
             <div class="flex-1 flex items-center my-2">
-              All photos ({photos.length})
+              All photos (<div id="photos-count">{photos.length}</div>)
             </div>
           )}
         <div class="flex items-center flex-col sm:flex-row gap-2 w-full justify-end flex-1">

@@ -1,6 +1,6 @@
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
-import { Dialog } from "@bigmoves/bff/components";
 import { getOrderedExifData } from "../lib/photo.ts";
+import { Dialog } from "./Dialog.tsx";
 
 export function PhotoExifDialog({
   photo,
@@ -8,8 +8,8 @@ export function PhotoExifDialog({
   photo: PhotoView;
 }>) {
   return (
-    <Dialog id="photo-alt-dialog" class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog id="photo-alt-dialog">
+      <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Camera Settings</Dialog.Title>
         <div class="aspect-square relative">
@@ -31,6 +31,9 @@ export function PhotoExifDialog({
             ))}
           </div>
         )}
+        <Dialog.Close variant="secondary" class="w-full mt-4">
+          Close
+        </Dialog.Close>
       </Dialog.Content>
     </Dialog>
   );

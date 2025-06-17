@@ -1,6 +1,10 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
-import { Button, Dialog, Input, Textarea } from "@bigmoves/bff/components";
 import { AvatarInput } from "./AvatarInput.tsx";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
+import { Input } from "./Input.tsx";
+import { Label } from "./Label.tsx";
+import { Textarea } from "./Textarea.tsx";
 
 export function ProfileDialog({
   profile,
@@ -8,13 +12,14 @@ export function ProfileDialog({
   profile: ProfileView;
 }>) {
   return (
-    <Dialog class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog>
+      <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Edit my profile</Dialog.Title>
         <form
           id="profile-form"
           hx-encoding="multipart/form-data"
+          autocomplete="off"
           _="on submit
               halt the event
               put 'Updating...' into #submit-button.innerText
@@ -31,19 +36,19 @@ export function ProfileDialog({
         >
           <AvatarInput profile={profile} />
           <div class="mb-4 relative">
-            <label htmlFor="displayName">Display Name</label>
+            <Label htmlFor="displayName">Display Name</Label>
             <Input
               type="text"
               id="displayName"
               name="displayName"
               placeholder="e.g. Ansel Lastname"
-              class="dark:bg-zinc-800 dark:text-white"
               value={profile.displayName}
               autoFocus
+              autocomplete="off"
             />
           </div>
           <div class="mb-4 relative">
-            <label htmlFor="description">Description</label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               name="description"
@@ -54,22 +59,24 @@ export function ProfileDialog({
               {profile.description}
             </Textarea>
           </div>
-          <Button
-            type="submit"
-            id="submit-button"
-            variant="primary"
-            class="w-full"
-          >
-            Update
-          </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            class="w-full"
-            _={Dialog._closeOnClick}
-          >
-            Cancel
-          </Button>
+          <div class="flex flex-col gap-2">
+            <Button
+              type="submit"
+              id="submit-button"
+              variant="primary"
+              class="w-full"
+            >
+              Update
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              class="w-full"
+              _={Dialog._closeOnClick}
+            >
+              Cancel
+            </Button>
+          </div>
         </form>
       </Dialog.Content>
     </Dialog>

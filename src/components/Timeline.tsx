@@ -1,5 +1,5 @@
-import { cn } from "@bigmoves/bff/components";
 import { type TimelineItem } from "../lib/timeline.ts";
+import { Button } from "./Button.tsx";
 import { Header } from "./Header.tsx";
 import { TimelineItem as Item } from "./TimelineItem.tsx";
 
@@ -21,39 +21,31 @@ export function Timeline(
           <>
             <div class="my-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
               <div class="flex sm:w-fit">
-                <button
-                  type="button"
+                <Button
+                  variant="tab"
+                  class="flex-1"
                   hx-get={`/?graph=${selectedGraph}`}
                   hx-target="#timeline-page"
                   hx-swap="outerHTML"
-                  class={cn(
-                    "flex-1 py-2 sm:min-w-[120px] px-4 cursor-pointer font-semibold",
-                    !selectedTab &&
-                      "bg-zinc-100 dark:bg-zinc-800 font-semibold",
-                  )}
                   role="tab"
                   aria-selected={!selectedTab}
                   aria-controls="tab-content"
                 >
                   Timeline
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="tab"
+                  class="flex-1"
                   hx-get={`/?tab=following&graph=${selectedGraph}`}
                   hx-target="#timeline-page"
                   hx-swap="outerHTML"
-                  class={cn(
-                    "flex-1 py-2 sm:min-w-[120px] px-4 cursor-pointer font-semibold",
-                    selectedTab === "following" &&
-                      "bg-zinc-100 dark:bg-zinc-800 font-semibold",
-                  )}
                   role="tab"
                   aria-selected={selectedTab === "following"}
                   aria-controls="tab-content"
                   _="on click js document.title = 'Following — Grain'; end"
                 >
                   Following
-                </button>
+                </Button>
               </div>
             </div>
             <div id="tab-content" role="tabpanel">

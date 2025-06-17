@@ -1,8 +1,9 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { cn, Dialog } from "@bigmoves/bff/components";
+import { cn } from "@bigmoves/bff/components";
 import { photoDialogLink } from "../utils.ts";
+import { Dialog } from "./Dialog.tsx";
 
 export function PhotoDialog({
   gallery,
@@ -16,7 +17,7 @@ export function PhotoDialog({
   prevImage?: PhotoView;
 }>) {
   return (
-    <Dialog id="photo-dialog" class="bg-zinc-950 z-100">
+    <Dialog id="photo-dialog" class="bg-zinc-950">
       <Dialog.X />
       {nextImage
         ? (

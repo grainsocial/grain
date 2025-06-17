@@ -1,6 +1,9 @@
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { Button, Dialog, Textarea } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
+import { Label } from "./Label.tsx";
+import { Textarea } from "./Textarea.tsx";
 
 export function PhotoAltDialog({
   photo,
@@ -8,8 +11,8 @@ export function PhotoAltDialog({
   photo: PhotoView;
 }>) {
   return (
-    <Dialog id="photo-alt-dialog" class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog id="photo-alt-dialog">
+      <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Add alt text</Dialog.Title>
         <div class="aspect-square relative">
@@ -24,7 +27,7 @@ export function PhotoAltDialog({
           _="on htmx:afterOnLoad trigger closeDialog"
         >
           <div class="my-2">
-            <label htmlFor="alt">Descriptive alt text</label>
+            <Label htmlFor="alt">Descriptive alt text</Label>
             <Textarea
               id="alt"
               name="alt"
@@ -39,7 +42,9 @@ export function PhotoAltDialog({
             <Button type="submit" variant="primary" class="w-full">
               Save
             </Button>
-            <Dialog.Close class="w-full">Cancel</Dialog.Close>
+            <Dialog.Close variant="secondary" class="w-full">
+              Close
+            </Dialog.Close>
           </div>
         </form>
       </Dialog.Content>

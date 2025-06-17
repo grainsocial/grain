@@ -1,9 +1,9 @@
-import { Dialog } from "@bigmoves/bff/components";
+import { Dialog } from "./Dialog.tsx";
 
 export function ExifInfoDialog() {
   return (
-    <Dialog class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative">
+    <Dialog class="z-101">
+      <Dialog.Content class="flex flex-col gap-2">
         <Dialog.Title>EXIF Info</Dialog.Title>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <div class="text-sm mt-2">
@@ -70,6 +70,7 @@ export function ExifInfoDialog() {
             .
           </p>
         </div>
+        <Dialog.Close variant="secondary">Close</Dialog.Close>
       </Dialog.Content>
     </Dialog>
   );

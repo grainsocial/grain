@@ -1,9 +1,9 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { Button } from "@bigmoves/bff/components";
 import { ComponentChildren } from "preact";
 import { photoDialogLink } from "../utils.ts";
+import { Button } from "./Button.tsx";
 import { JustifiedSvg } from "./JustifiedSvg.tsx";
 import { MasonrySvg } from "./MasonrySvg.tsx";
 

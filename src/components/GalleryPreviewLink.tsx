@@ -9,7 +9,7 @@ export function GalleryPreviewLink({
   gallery,
   size = "default",
 }: Readonly<{ gallery: Un$Typed<GalleryView>; size?: "small" | "default" }>) {
-  const gap = size === "small" ? "gap-1" : "gap-2";
+  const gap = size === "small" ? "gap-1" : "gap-1";
   return (
     <a
       href={galleryLink(

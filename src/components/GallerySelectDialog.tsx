@@ -1,7 +1,9 @@
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { Button, Dialog, Input } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
+import { Input } from "./Input.tsx";
 
 export function GallerySelectDialog(
   { photoUri, userDid, galleries }: Readonly<
@@ -13,8 +15,8 @@ export function GallerySelectDialog(
   >,
 ) {
   return (
-    <Dialog id="gallery-select-dialog" class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative max-h-[calc(100vh-100px)] min-h-[calc(100vh-100px)] overflow-hidden flex flex-col">
+    <Dialog id="gallery-select-dialog">
+      <Dialog.Content class="min-h-[calc(100vh-100px)] overflow-hidden flex flex-col">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>
           {photoUri ? "Add to gallery" : "Select gallery"}
@@ -25,7 +27,6 @@ export function GallerySelectDialog(
             type="text"
             name="q"
             placeholder="Enter gallery name or select from the list"
-            class="dark:bg-zinc-800 dark:text-white border-zinc-100 bg-zinc-100 dark:border-zinc-800"
             hx-get={`/dialogs/gallery/${userDid}/select`}
             hx-target="#search-results"
             hx-trigger="input changed delay:500ms, keyup[key=='Enter']"
@@ -66,7 +67,7 @@ export function GallerySelectDialogSearchResults(
                     type="button"
                     hx-put={addToGalleryActionLink(photoUri, gallery.uri)}
                     hx-swap="none"
-                    class="block text-left w-full px-2 py-4 focus:outline-2 focus:outline-sky-500 focus:outline-offset-[-2px]"
+                    class="block text-left w-full px-2 py-4"
                   >
                     {(gallery.record as Gallery).title}
                     <div class="text-sm text-zinc-600 dark:text-zinc-500">
@@ -77,7 +78,7 @@ export function GallerySelectDialogSearchResults(
                 : (
                   <a
                     href={uploadPageLink(gallery.uri)}
-                    class="block w-full px-2 py-4 focus:outline-2 focus:outline-sky-500 focus:outline-offset-[-2px]"
+                    class="block w-full px-2 py-4"
                   >
                     {(gallery.record as Gallery).title}
                     <div class="text-sm text-zinc-600 dark:text-zinc-500">

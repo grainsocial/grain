@@ -1,5 +1,6 @@
 import { AtUri } from "@atproto/syntax";
-import { Button, cn } from "@bigmoves/bff/components";
+import { cn } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
 
 export function FollowButton({
   followeeDid,

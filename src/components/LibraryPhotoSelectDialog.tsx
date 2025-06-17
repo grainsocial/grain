@@ -1,7 +1,8 @@
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { $Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
-import { Button, Dialog } from "@bigmoves/bff/components";
+import { Button } from "./Button.tsx";
+import { Dialog } from "./Dialog.tsx";
 
 export function LibraryPhotoSelectDialog({
   galleryUri,
@@ -13,7 +14,7 @@ export function LibraryPhotoSelectDialog({
   const rkey = new AtUri(galleryUri).rkey;
   return (
     <Dialog id="photo-select-dialog" class="z-101">
-      <Dialog.Content class="dark:bg-zinc-950 flex flex-col relative">
+      <Dialog.Content class="flex flex-col gap-2">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>My library</Dialog.Title>
 
@@ -26,7 +27,7 @@ export function LibraryPhotoSelectDialog({
         >
           {photos.length
             ? (
-              <div class="grid grid-cols-3 gap-2 my-4">
+              <div class="grid grid-cols-3 gap-2">
                 {photos.map((photo) => (
                   <PhotoItem
                     key={photo.cid}
@@ -44,7 +45,7 @@ export function LibraryPhotoSelectDialog({
 
         <div
           id="photo-select-overlay"
-          class="w-full bg-white dark:bg-zinc-950 py-4 flex justify-between items-center z-102"
+          class="w-full bg-white dark:bg-zinc-900 my-2 flex justify-between items-center z-102"
           _="on load set my.count to 0"
         >
           <span id="selected-count">0 selected</span>
@@ -52,14 +53,13 @@ export function LibraryPhotoSelectDialog({
             type="submit"
             form="photo-select-form"
             variant="primary"
-            class="px-4 py-2"
           >
-            Add
+            Add to gallery
           </Button>
         </div>
 
         <div class="w-full flex flex-col gap-2 mt-2">
-          <Dialog.Close class="w-full">Close</Dialog.Close>
+          <Dialog.Close variant="secondary" class="w-full">Close</Dialog.Close>
         </div>
       </Dialog.Content>
     </Dialog>
@@ -94,7 +94,7 @@ export function PhotoItem({
   return (
     <button
       type="button"
-      class="group cursor-pointer aspect-square relative"
+      class="group relative aspect-square cursor-pointer"
       _="
     on click
       set checkbox to me.querySelector('input[type=checkbox]')
@@ -102,29 +102,25 @@ export function PhotoItem({
       trigger change on checkbox
   "
     >
-      <div class="absolute top-2 left-2 z-30 pointer-events-none">
-        <input
-          type="checkbox"
-          name="photoUri"
-          value={photo.uri}
-          class="accent-sky-600 w-5 h5 scale-150 pointer-events-auto"
-          _="
-        on change
-          set checkedCount to my.closest('form') or document
-            then set checkedInputs to checkedCount.querySelectorAll('input[type=checkbox]:checked')
-            then set count to checkedInputs.length
-            then set #selected-count's innerText to `${count} selected`"
-        />
-      </div>
+      <input
+        type="checkbox"
+        name="photoUri"
+        value={photo.uri}
+        class="peer absolute top-2 left-2 z-30 w-5 h-5 accent-sky-600"
+        _="
+      on change
+        set checkedCount to my.closest('form') or document
+        then set checkedInputs to checkedCount.querySelectorAll('input[type=checkbox]:checked')
+        then set count to checkedInputs.length
+        then set #selected-count's innerText to `${count} selected`"
+      />
+
       <img
         src={photo.fullsize}
         alt={photo.alt}
-        class="w-full h-full object-cover pointer-events-none"
         loading="lazy"
+        class="w-full h-full object-cover transition-opacity duration-200 peer-checked:opacity-50"
       />
     </button>
   );
 }
-
-// const galleryRkey = new AtUri(galleryUri).rkey;
-// const photoRkey = new AtUri(photo.uri).rkey;

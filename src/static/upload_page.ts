@@ -104,11 +104,18 @@ export class UploadPage {
         const deleteButton = preview.querySelector(
           `#delete-photo-${photoId}`,
         );
-        if (!deleteButton) {
-          return;
+        if (deleteButton) {
+          htmx.process(deleteButton);
+          hyperscript.processNode(deleteButton);
         }
-        htmx.process(deleteButton);
-        hyperscript.processNode(deleteButton);
+      }
+
+      const photosCount = document.querySelector("#photos-count");
+      if (photosCount) {
+        const firstChild = temp.firstElementChild;
+        if (firstChild) {
+          photosCount.replaceWith(firstChild.innerHTML);
+        }
       }
     });
 

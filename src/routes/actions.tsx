@@ -16,6 +16,7 @@ import { GalleryInfo } from "../components/GalleryInfo.tsx";
 import { GalleryLayout } from "../components/GalleryLayout.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
+import { getActorPhotos } from "../lib/actor.ts";
 import { getFollowers } from "../lib/follow.ts";
 import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
@@ -211,6 +212,9 @@ export const galleryAddPhoto: RouteHandler = async (
       ?.filter(isPhotoView)
       .some((item) => item.uri === photoUri)
   ) {
+    if (page === "upload") {
+      return ctx.redirect(uploadPageLink(galleryRkey));
+    }
     return new Response(null, { status: 500 });
   }
 
@@ -656,7 +660,13 @@ export const uploadPhoto: RouteHandler = async (
       );
     }
 
-    if (page === "gallery" && gallery) {
+    if (page === "gallery" && gallery && galleryUri) {
+      const rkey = new AtUri(gallery.uri).rkey;
+      // updated gallery post gallery item creation
+      const updatedGallery = getGallery(did, rkey, ctx);
+      if (!updatedGallery) {
+        return ctx.next();
+      }
       const p = photoToView(did, photo, exifRecord);
       return ctx.html(
         <>
@@ -668,18 +678,35 @@ export const uploadPhoto: RouteHandler = async (
             <GalleryLayout.Item
               key={photo.cid}
               photo={p}
-              gallery={gallery}
+              gallery={updatedGallery}
             />
+          </div>
+          <div hx-swap-oob="outerHTML:#gallery-info">
+            <GalleryInfo gallery={updatedGallery} />
           </div>
         </>,
       );
     }
 
+    // @TODO: Use count queries
+    let photosCount = 0;
+    if (gallery && galleryUri) {
+      const rkey = new AtUri(gallery.uri).rkey;
+      const updatedGallery = getGallery(did, rkey, ctx);
+      photosCount = updatedGallery?.items?.length ?? 0;
+    } else {
+      const photos = getActorPhotos(did, ctx);
+      photosCount = photos.length;
+    }
+
     return ctx.html(
-      <PhotoPreview
-        photo={photoToView(did, photo, exifRecord)}
-        selectedGallery={gallery}
-      />,
+      <>
+        <PhotoPreview
+          photo={photoToView(did, photo, exifRecord)}
+          selectedGallery={gallery}
+        />
+        <div hx-swap-oob="photos-count">{photosCount}</div>
+      </>,
     );
   } catch (e) {
     console.error("Error in uploadStart:", e);

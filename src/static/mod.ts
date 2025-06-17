@@ -7,7 +7,10 @@ import { PhotoDialog } from "./photo_dialog.ts";
 import { ProfileDialog } from "./profile_dialog.ts";
 import { UploadPage } from "./upload_page.ts";
 
-const galleryLayout = new GalleryLayout({ layoutMode: "justified" });
+const galleryLayout = new GalleryLayout({
+  layoutMode: "justified",
+  spacing: 4,
+});
 galleryLayout.init();
 
 htmx.onLoad(function (element) {

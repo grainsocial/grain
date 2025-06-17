@@ -1,6 +1,6 @@
 import { LabelValueDefinition } from "$lexicon/types/com/atproto/label/defs.ts";
-import { Dialog } from "@bigmoves/bff/components";
 import { profileLink } from "../utils.ts";
+import { Dialog } from "./Dialog.tsx";
 
 export function LabelDefinitionDialog({
   labelValueDefinition,
@@ -13,8 +13,8 @@ export function LabelDefinitionDialog({
     (locale) => locale.lang === "en",
   );
   return (
-    <Dialog id="mod-decision-dialog" class="z-100">
-      <Dialog.Content class="dark:bg-zinc-950 relative gap-2">
+    <Dialog id="mod-decision-dialog">
+      <Dialog.Content class="gap-2">
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>{enLocale?.name}</Dialog.Title>
         <p>{enLocale?.description}</p>
