@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.38": "0.3.0-beta.38",
+    "jsr:@bigmoves/bff@0.3.0-beta.39": "0.3.0-beta.39",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
@@ -84,15 +84,13 @@
       "integrity": "5c3ca124dd52eff51dace83790779ebe48c4b41559b799e16c8750bd415f2124",
       "dependencies": [
         "npm:@atproto-labs/handle-resolver-node",
-        "npm:@atproto-labs/simple-store",
         "npm:@atproto/jwk",
         "npm:@atproto/oauth-client",
-        "npm:@atproto/oauth-types",
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.38": {
-      "integrity": "74b8b77f451a00b16c9a43ce776bdac87753429bf2d15bf6c81b5eda1e2f9e0e",
+    "@bigmoves/bff@0.3.0-beta.39": {
+      "integrity": "6841d6b04aa91f5c79b8530af1d2721c0f1bf5b4038270da528121f3ab57765f",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
@@ -103,11 +101,9 @@
         "npm:@atproto/api",
         "npm:@atproto/common",
         "npm:@atproto/identity",
-        "npm:@atproto/lexicon@0.4.11",
         "npm:@atproto/lexicon@~0.4.11",
         "npm:@atproto/oauth-client",
         "npm:@atproto/syntax",
-        "npm:@atproto/xrpc-server@0.7.18",
         "npm:clsx",
         "npm:multiformats@^13.3.2",
         "npm:preact",
@@ -1910,7 +1906,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.38",
+      "jsr:@bigmoves/bff@0.3.0-beta.39",
       "jsr:@std/http@^1.0.17",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/syntax@0.4",

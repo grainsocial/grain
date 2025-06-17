@@ -186,6 +186,9 @@ export const galleryAddPhotos: RouteHandler = async (
           />
         ))}
       </div>
+      <div hx-swap-oob="outerHTML:#gallery-info">
+        <GalleryInfo gallery={updatedGallery} />
+      </div>
     </>,
   );
 };
