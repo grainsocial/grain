@@ -9,7 +9,10 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
-import { FavoriteButton } from "../components/FavoriteButton.tsx";
+import {
+  ButtonVariant,
+  FavoriteButton,
+} from "../components/FavoriteButton.tsx";
 import { FollowButton } from "../components/FollowButton.tsx";
 import { GalleryEditPhotosDialog } from "../components/GalleryEditPhotosDialog.tsx";
 import { GalleryInfo } from "../components/GalleryInfo.tsx";
@@ -18,7 +21,7 @@ import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
 import { getActorPhotos } from "../lib/actor.ts";
 import { getFollowers } from "../lib/follow.ts";
-import { deleteGallery, getGallery, getGalleryFavs } from "../lib/gallery.ts";
+import { deleteGallery, getGallery } from "../lib/gallery.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 import { galleryLink, profileLink, uploadPageLink } from "../utils.ts";
@@ -393,37 +396,57 @@ export const photoDelete: RouteHandler = async (
 
 export const galleryFavorite: RouteHandler = async (
   req,
-  _params,
+  params,
+  ctx: BffContext<State>,
+) => {
+  ctx.requireAuth();
+  const url = new URL(req.url);
+  const variant = url.searchParams.get("variant") as ButtonVariant || "button";
+  const creatorDid = params.creatorDid;
+  const galleryRkey = params.rkey;
+  const galleryUri = `at://${creatorDid}/social.grain.gallery/${galleryRkey}`;
+
+  try {
+    await ctx.createRecord<WithBffMeta<Favorite>>("social.grain.favorite", {
+      subject: galleryUri,
+      createdAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("Error creating favorite record:", e);
+  }
+
+  const gallery = getGallery(creatorDid, galleryRkey, ctx);
+  if (!gallery) return ctx.next();
+
+  return ctx.html(
+    <FavoriteButton gallery={gallery} variant={variant} />,
+  );
+};
+
+export const galleryUnfavorite: RouteHandler = async (
+  req,
+  params,
   ctx: BffContext<State>,
 ) => {
   const { did } = ctx.requireAuth();
   const url = new URL(req.url);
-  const searchParams = new URLSearchParams(url.search);
-  const galleryUri = searchParams.get("galleryUri");
-  const favUri = searchParams.get("favUri") ?? undefined;
-  if (!galleryUri) return ctx.next();
-  if (favUri) {
+  const variant = url.searchParams.get("variant") as ButtonVariant || "button";
+  const creatorDid = params.creatorDid;
+  const galleryRkey = params.rkey;
+  const favRkey = params.favRkey;
+  const favUri = `at://${did}/social.grain.favorite/${favRkey}`;
+
+  try {
     await ctx.deleteRecord(favUri);
-    const favs = getGalleryFavs(galleryUri, ctx);
-    return ctx.html(
-      <FavoriteButton
-        currentUserDid={did}
-        favs={favs}
-        galleryUri={galleryUri}
-      />,
-    );
+  } catch (e) {
+    console.error("Error deleting favorite record:", e);
   }
-  await ctx.createRecord<WithBffMeta<Favorite>>("social.grain.favorite", {
-    subject: galleryUri,
-    createdAt: new Date().toISOString(),
-  });
-  const favs = getGalleryFavs(galleryUri, ctx);
+
+  const gallery = getGallery(creatorDid, galleryRkey, ctx);
+  if (!gallery) return ctx.next();
+
   return ctx.html(
-    <FavoriteButton
-      currentUserDid={did}
-      galleryUri={galleryUri}
-      favs={favs}
-    />,
+    <FavoriteButton gallery={gallery} variant={variant} />,
   );
 };
 

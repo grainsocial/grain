@@ -1,41 +1,61 @@
-import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
+import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { WithBffMeta } from "@bigmoves/bff";
 import { cn } from "@bigmoves/bff/components";
 import { Button } from "./Button.tsx";
 
+export type ButtonVariant = "button" | "icon-button";
+
 export function FavoriteButton({
-  currentUserDid,
-  favs = [],
-  galleryUri,
+  class: classProp,
+  variant,
+  gallery,
 }: Readonly<{
-  currentUserDid?: string;
-  favs: WithBffMeta<Favorite>[];
-  galleryUri: string;
+  class?: string;
+  variant?: "button" | "icon-button";
+  gallery: GalleryView;
 }>) {
-  const isCreator = currentUserDid === new AtUri(galleryUri).hostname;
-  const favUri = favs.find((s) => currentUserDid === s.did)?.uri;
+  const variantClass = variant === "icon-button"
+    ? "flex w-fit items-center gap-2 m-0 p-0 mt-2"
+    : undefined;
+  const galleryRkey = new AtUri(gallery.uri).rkey;
+  const favRrkey = gallery.viewer?.fav
+    ? new AtUri(gallery.viewer.fav).rkey
+    : undefined;
   return (
     <Button
-      variant="primary"
+      variant={variant === "icon-button" ? "ghost" : "primary"}
       class={cn(
         "self-start w-full sm:w-fit whitespace-nowrap",
-        isCreator &&
-          "bg-zinc-100 dark:bg-zinc-800 border-zinc-100 dark:border-zinc-800 text-zinc-950 dark:text-zinc-50",
+        variant === "icon-button" && gallery.viewer?.fav
+          ? "text-pink-500"
+          : undefined,
+        variantClass,
+        classProp,
       )}
       type="button"
-      hx-post={`/actions/favorite?galleryUri=${galleryUri}${
-        favUri ? "&favUri=" + favUri : ""
-      }`}
+      {...gallery.viewer?.fav
+        ? {
+          "hx-delete":
+            `/actions/${gallery.creator.did}/gallery/${galleryRkey}/favorite/${favRrkey}?variant=${variant}`,
+        }
+        : {
+          "hx-post":
+            `/actions/${gallery.creator.did}/gallery/${galleryRkey}/favorite?variant=${variant}`,
+        }}
       hx-target="this"
       hx-swap="outerHTML"
-      disabled={isCreator}
     >
       <i
-        class={cn("fa-heart", favUri || isCreator ? "fa-solid" : "fa-regular")}
+        class={cn(
+          "fa-heart",
+          variant === "icon-button" && gallery.viewer?.fav
+            ? "text-pink-500"
+            : undefined,
+          gallery.viewer?.fav ? "fa-solid" : "fa-regular",
+        )}
       >
       </i>{" "}
-      {favs.length}
+      {gallery.favCount}
     </Button>
   );
 }

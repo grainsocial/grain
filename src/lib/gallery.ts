@@ -2,7 +2,10 @@ import { Label } from "$lexicon/types/com/atproto/label/defs.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
-import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
+import {
+  GalleryView,
+  ViewerState,
+} from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import {
   isRecord as isPhoto,
@@ -107,12 +110,18 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
   const labels = ctx.indexService.queryLabels({
     subjects: [gallery.uri],
   });
-  return galleryToView(
-    gallery,
-    profile,
-    galleryPhotosMap.get(gallery.uri) ?? [],
+  const favs = getGalleryFavs(gallery.uri, ctx);
+  const viewerFav = favs.find((fav) => fav.did === ctx.currentUser?.did);
+  return galleryToView({
+    record: gallery,
+    creator: profile,
+    items: galleryPhotosMap.get(gallery.uri) ?? [],
     labels,
-  );
+    favCount: favs.length,
+    viewerState: {
+      fav: viewerFav ? viewerFav.uri : undefined,
+    },
+  });
 }
 
 export async function deleteGallery(uri: string, ctx: BffContext) {
@@ -152,12 +161,21 @@ export function getGalleryFavs(galleryUri: string, ctx: BffContext) {
   return results.items;
 }
 
-export function galleryToView(
-  record: WithBffMeta<Gallery>,
-  creator: Un$Typed<ProfileView>,
-  items: PhotoWithExif[],
-  labels: Label[] = [],
-): Un$Typed<GalleryView> {
+export function galleryToView({
+  record,
+  creator,
+  items,
+  labels = [],
+  favCount,
+  viewerState,
+}: {
+  record: WithBffMeta<Gallery>;
+  creator: Un$Typed<ProfileView>;
+  items: PhotoWithExif[];
+  labels: Label[];
+  favCount?: number;
+  viewerState?: ViewerState;
+}): Un$Typed<GalleryView> {
   return {
     uri: record.uri,
     cid: record.cid,
@@ -168,6 +186,8 @@ export function galleryToView(
       .filter(isPhotoView),
     labels,
     indexedAt: record.indexedAt,
+    favCount,
+    viewer: viewerState,
   };
 }
 
@@ -227,12 +247,12 @@ export function queryGalleriesByName(
   const labels = ctx.indexService.queryLabels({ subjects: uris });
 
   return galleries.map((gallery) =>
-    galleryToView(
-      gallery,
-      profile,
-      galleryPhotosMap.get(gallery.uri) ?? [],
+    galleryToView({
+      record: gallery,
+      creator: profile,
+      items: galleryPhotosMap.get(gallery.uri) ?? [],
       labels,
-    )
+    })
   );
 }
 

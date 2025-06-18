@@ -22,11 +22,20 @@
             ]
           }
         },
+        "favCount": { "type": "integer" },
         "labels": {
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "indexedAt": { "type": "string", "format": "datetime" }
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "viewer": { "type": "ref", "ref": "#viewerState" }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "description": "Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests.",
+      "properties": {
+        "fav": { "type": "string", "format": "at-uri" }
       }
     }
   }

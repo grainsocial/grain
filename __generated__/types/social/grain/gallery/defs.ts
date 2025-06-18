@@ -24,8 +24,10 @@ export interface GalleryView {
   creator: SocialGrainActorDefs.ProfileView
   record: { [_ in string]: unknown }
   items?: ($Typed<SocialGrainPhotoDefs.PhotoView> | { $type: string })[]
+  favCount?: number
   labels?: ComAtprotoLabelDefs.Label[]
   indexedAt: string
+  viewer?: ViewerState
 }
 
 const hashGalleryView = 'galleryView'
@@ -36,4 +38,20 @@ export function isGalleryView<V>(v: V) {
 
 export function validateGalleryView<V>(v: V) {
   return validate<GalleryView & V>(v, id, hashGalleryView)
+}
+
+/** Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests. */
+export interface ViewerState {
+  $type?: 'social.grain.gallery.defs#viewerState'
+  fav?: string
+}
+
+const hashViewerState = 'viewerState'
+
+export function isViewerState<V>(v: V) {
+  return is$typed(v, id, hashViewerState)
+}
+
+export function validateViewerState<V>(v: V) {
+  return validate<ViewerState & V>(v, id, hashViewerState)
 }

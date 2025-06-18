@@ -41,7 +41,7 @@ export function ModerationWrapper({
               data-state="closed"
               class={classProp}
             >
-              <div class="bg-zinc-200 dark:bg-zinc-800 p-4 w-full">
+              <div class="bg-zinc-200 dark:bg-zinc-800 p-4 w-full rounded-md">
                 <div class="flex items-center justify-between gap-2 w-full">
                   <div class="flex items-center gap-2">
                     <i class="fa fa-circle-info text-zinc-500"></i>

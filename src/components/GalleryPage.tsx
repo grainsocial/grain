@@ -1,8 +1,6 @@
-import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
-import { WithBffMeta } from "@bigmoves/bff";
 import { ModerationDecsion } from "../lib/moderation.ts";
 import { EditGalleryButton } from "./EditGalleryDialog.tsx";
 import { FavoriteButton } from "./FavoriteButton.tsx";
@@ -13,12 +11,10 @@ import { ShareGalleryButton } from "./ShareGalleryButton.tsx";
 
 export function GalleryPage({
   gallery,
-  favs = [],
   currentUserDid,
   modDecision,
 }: Readonly<{
   gallery: GalleryView;
-  favs: WithBffMeta<Favorite>[];
   currentUserDid?: string;
   modDecision?: ModerationDecsion;
 }>) {
@@ -35,11 +31,7 @@ export function GalleryPage({
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
               <EditGalleryButton gallery={gallery} />
               <ShareGalleryButton gallery={gallery} />
-              <FavoriteButton
-                currentUserDid={currentUserDid}
-                favs={favs}
-                galleryUri={gallery.uri}
-              />
+              <FavoriteButton gallery={gallery} />
             </div>
           )
           : null}
@@ -47,11 +39,7 @@ export function GalleryPage({
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
               <ShareGalleryButton gallery={gallery} />
-              <FavoriteButton
-                currentUserDid={currentUserDid}
-                favs={favs}
-                galleryUri={gallery.uri}
-              />
+              <FavoriteButton gallery={gallery} />
             </div>
           )
           : null}

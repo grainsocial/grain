@@ -100,12 +100,12 @@ export function getActorGalleries(handleOrDid: string, ctx: BffContext) {
   if (!creator) return [];
 
   return galleries.map((gallery) =>
-    galleryToView(
-      gallery,
+    galleryToView({
+      record: gallery,
       creator,
-      galleryPhotosMap.get(gallery.uri) ?? [],
-      labelMap.get(gallery.uri) ?? [],
-    )
+      items: galleryPhotosMap.get(gallery.uri) ?? [],
+      labels: labelMap.get(gallery.uri) ?? [],
+    })
   );
 }
 
@@ -178,12 +178,12 @@ export function getActorGalleryFavs(handleOrDid: string, ctx: BffContext) {
       if (!gallery) return null;
       const creator = creators.get(gallery.did);
       if (!creator) return null;
-      return galleryToView(
-        gallery,
+      return galleryToView({
+        record: gallery,
         creator,
-        galleryPhotosMap.get(gallery.uri) ?? [],
-        labelMap.get(gallery.uri) ?? [],
-      );
+        items: galleryPhotosMap.get(gallery.uri) ?? [],
+        labels: labelMap.get(gallery.uri) ?? [],
+      });
     })
     .filter((g) => g !== null);
 }
