@@ -44,7 +44,6 @@ export function FavoriteButton({
         }}
       hx-target="this"
       hx-swap="outerHTML"
-      disabled={false}
     >
       <i
         class={cn(
