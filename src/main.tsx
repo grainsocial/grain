@@ -105,7 +105,16 @@ bff({
     route("/actions/photo/:rkey", ["PUT"], actions.photoEdit),
     route("/actions/photo/:rkey", ["DELETE"], actions.photoDelete),
     route("/actions/photo", ["POST"], actions.uploadPhoto),
-    route("/actions/favorite", ["POST"], actions.galleryFavorite),
+    route(
+      "/actions/:creatorDid/gallery/:rkey/favorite",
+      ["POST"],
+      actions.galleryFavorite,
+    ),
+    route(
+      "/actions/:creatorDid/gallery/:rkey/favorite/:favRkey",
+      ["DELETE"],
+      actions.galleryUnfavorite,
+    ),
     route("/actions/profile", ["PUT"], actions.profileUpdate),
     route("/actions/gallery/:rkey/sort", ["POST"], actions.gallerySort),
     route("/actions/get-blob", ["GET"], actions.getBlob),

@@ -8,7 +8,11 @@ import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
-import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
+import {
+  galleryToView,
+  getGalleryFavs,
+  getGalleryItemsAndPhotos,
+} from "./gallery.ts";
 import { moderateGallery, ModerationDecsion } from "./moderation.ts";
 
 export type TimelineItemType = "gallery";
@@ -75,7 +79,18 @@ async function processGalleries(
     const labels = ctx.indexService.queryLabels({
       subjects: [gallery.uri],
     });
-    const galleryView = galleryToView(gallery, profile, galleryPhotos, labels);
+    const favs = getGalleryFavs(gallery.uri, ctx);
+    const viewerFav = favs.find((fav) => fav.did === ctx.currentUser?.did);
+    const galleryView = galleryToView({
+      record: gallery,
+      creator: profile,
+      items: galleryPhotos,
+      labels,
+      favCount: favs.length,
+      viewerState: {
+        fav: viewerFav ? viewerFav.uri : undefined,
+      },
+    });
 
     let modDecision: ModerationDecsion | undefined = undefined;
     if (galleryView.labels?.length) {

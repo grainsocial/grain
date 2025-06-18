@@ -2527,6 +2527,9 @@ export const schemaDict = {
               refs: ['lex:social.grain.photo.defs#photoView'],
             },
           },
+          favCount: {
+            type: 'integer',
+          },
           labels: {
             type: 'array',
             items: {
@@ -2537,6 +2540,21 @@ export const schemaDict = {
           indexedAt: {
             type: 'string',
             format: 'datetime',
+          },
+          viewer: {
+            type: 'ref',
+            ref: 'lex:social.grain.gallery.defs#viewerState',
+          },
+        },
+      },
+      viewerState: {
+        type: 'object',
+        description:
+          "Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests.",
+        properties: {
+          fav: {
+            type: 'string',
+            format: 'at-uri',
           },
         },
       },
@@ -3011,7 +3029,8 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'record',
-        description: 'Basic EXIF metadata for a photo',
+        description:
+          'Basic EXIF metadata for a photo. Integers are scaled by 1000000 to accommodate decimal values and potentially other tags in the future.',
         key: 'tid',
         record: {
           type: 'object',

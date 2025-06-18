@@ -234,12 +234,12 @@ export function getPhotoGalleries(
     .map((gallery) => {
       const profile = getActorProfile(gallery.did, ctx);
       if (!profile) return undefined;
-      return galleryToView(
-        gallery,
-        profile,
-        galleryPhotosMap.get(gallery.uri) ?? [],
-        labels ?? [],
-      );
+      return galleryToView({
+        record: gallery,
+        creator: profile,
+        items: galleryPhotosMap.get(gallery.uri) ?? [],
+        labels: labels ?? [],
+      });
     })
     .filter((g): g is GalleryView => Boolean(g));
 }
