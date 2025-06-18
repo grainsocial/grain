@@ -110,16 +110,25 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
   const labels = ctx.indexService.queryLabels({
     subjects: [gallery.uri],
   });
+
   const favs = getGalleryFavs(gallery.uri, ctx);
-  const viewerFav = favs.find((fav) => fav.did === ctx.currentUser?.did);
+
+  let viewerFav: string | undefined = undefined;
+  if (ctx.currentUser?.did) {
+    const fav = getGalleryFav(ctx.currentUser?.did, gallery.uri, ctx);
+    if (fav) {
+      viewerFav = fav.uri;
+    }
+  }
+
   return galleryToView({
     record: gallery,
     creator: profile,
     items: galleryPhotosMap.get(gallery.uri) ?? [],
     labels,
-    favCount: favs.length,
+    favCount: favs,
     viewerState: {
-      fav: viewerFav ? viewerFav.uri : undefined,
+      fav: viewerFav,
     },
   });
 }
@@ -147,7 +156,7 @@ export async function deleteGallery(uri: string, ctx: BffContext) {
 
 export function getGalleryFavs(galleryUri: string, ctx: BffContext) {
   const atUri = new AtUri(galleryUri);
-  const results = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
+  const count = ctx.indexService.countRecords(
     "social.grain.favorite",
     {
       where: [
@@ -158,7 +167,28 @@ export function getGalleryFavs(galleryUri: string, ctx: BffContext) {
       ],
     },
   );
-  return results.items;
+  return count;
+}
+
+export function getGalleryFav(
+  did: string,
+  galleryUri: string,
+  ctx: BffContext,
+) {
+  const atUri = new AtUri(galleryUri);
+  const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
+    "social.grain.favorite",
+    {
+      where: [
+        {
+          field: "subject",
+          equals: `at://${atUri.hostname}/social.grain.gallery/${atUri.rkey}`,
+        },
+        { field: "did", equals: did },
+      ],
+    },
+  );
+  return favs[0];
 }
 
 export function galleryToView({

@@ -10,6 +10,7 @@ import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 import {
   galleryToView,
+  getGalleryFav,
   getGalleryFavs,
   getGalleryItemsAndPhotos,
 } from "./gallery.ts";
@@ -79,16 +80,25 @@ async function processGalleries(
     const labels = ctx.indexService.queryLabels({
       subjects: [gallery.uri],
     });
+
     const favs = getGalleryFavs(gallery.uri, ctx);
-    const viewerFav = favs.find((fav) => fav.did === ctx.currentUser?.did);
+
+    let viewerFav: string | undefined = undefined;
+    if (ctx.currentUser?.did) {
+      const fav = getGalleryFav(ctx.currentUser?.did, gallery.uri, ctx);
+      if (fav) {
+        viewerFav = fav.uri;
+      }
+    }
+
     const galleryView = galleryToView({
       record: gallery,
       creator: profile,
       items: galleryPhotos,
       labels,
-      favCount: favs.length,
+      favCount: favs,
       viewerState: {
-        fav: viewerFav ? viewerFav.uri : undefined,
+        fav: viewerFav,
       },
     });
 

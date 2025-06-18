@@ -41,6 +41,12 @@ bff({
     "sh.tangled.actor.profile",
     "sh.tangled.graph.follow",
   ],
+  collectionKeyMap: {
+    "social.grain.favorite": ["subject"],
+    "social.grain.graph.follow": ["subject"],
+    "social.grain.gallery.item": ["gallery", "item"],
+    "social.grain.photo.exif": ["photo"],
+  },
   lexicons,
   rootElement: Root,
   onError,
