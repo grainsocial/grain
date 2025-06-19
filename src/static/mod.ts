@@ -6,6 +6,7 @@ import { GalleryPhotosDialog } from "./gallery_photos_dialog.ts";
 import { PhotoDialog } from "./photo_dialog.ts";
 import { ProfileDialog } from "./profile_dialog.ts";
 import { UploadPage } from "./upload_page.ts";
+import * as utils from "./utils.ts";
 
 const galleryLayout = new GalleryLayout({
   layoutMode: "justified",
@@ -36,6 +37,7 @@ type GrainGlobal = typeof globalThis & {
     profileDialog?: ProfileDialog;
     galleryLayout?: GalleryLayout;
     galleryPhotosDialog?: GalleryPhotosDialog;
+    utils?: typeof utils;
   };
 };
 
@@ -47,3 +49,4 @@ g.Grain.uploadPage = new UploadPage();
 g.Grain.profileDialog = new ProfileDialog();
 g.Grain.galleryPhotosDialog = new GalleryPhotosDialog();
 g.Grain.galleryLayout = galleryLayout;
+g.Grain.utils = utils;

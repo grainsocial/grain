@@ -23,6 +23,7 @@ import { PhotoDialog } from "../components/PhotoDialog.tsx";
 import { PhotoExifDialog } from "../components/PhotoExifDialog.tsx";
 import { ProfileDialog } from "../components/ProfileDialog.tsx";
 import { RemovePhotoDialog } from "../components/RemovePhotoDialog.tsx";
+import { ShareGalleryDialog } from "../components/ShareGalleryDialog.tsx";
 import {
   getActorGalleries,
   getActorPhotos,
@@ -226,6 +227,20 @@ export const galleryAddFromLibrary: RouteHandler = (
       galleryUri={galleryUri}
       photos={photos}
     />,
+  );
+};
+
+export const galleryShare: RouteHandler = (
+  _req,
+  params,
+  ctx: BffContext<State>,
+) => {
+  const did = params.creatorDid;
+  const rkey = params.rkey;
+  const gallery = getGallery(did, rkey, ctx);
+  if (!gallery) return ctx.next();
+  return ctx.html(
+    <ShareGalleryDialog gallery={gallery} />,
   );
 };
 

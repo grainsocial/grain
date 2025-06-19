@@ -78,6 +78,7 @@ bff({
     route("/dialogs/gallery/:rkey/edit", dialogs.editGalleryDetails),
     route("/dialogs/gallery/:rkey/sort", dialogs.sortGallery),
     route("/dialogs/gallery/:rkey/library", dialogs.galleryAddFromLibrary),
+    route("/dialogs/:creatorDid/gallery/:rkey/share", dialogs.galleryShare),
     route("/dialogs/gallery/:did/select", dialogs.gallerySelect),
     route("/dialogs/label/:src/:val", dialogs.labelValueDefinition),
     route("/dialogs/profile", dialogs.editProfile),

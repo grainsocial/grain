@@ -7,7 +7,7 @@ import { FavoriteButton } from "./FavoriteButton.tsx";
 import { GalleryInfo } from "./GalleryInfo.tsx";
 import { GalleryLayout } from "./GalleryLayout.tsx";
 import { ModerationWrapper } from "./ModerationWrapper.tsx";
-import { ShareGalleryButton } from "./ShareGalleryButton.tsx";
+import { ShareGalleryDialogButton } from "./ShareGalleryDialog.tsx";
 
 export function GalleryPage({
   gallery,
@@ -30,7 +30,7 @@ export function GalleryPage({
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
               <EditGalleryButton gallery={gallery} />
-              <ShareGalleryButton gallery={gallery} />
+              <ShareGalleryDialogButton gallery={gallery} />
               <FavoriteButton gallery={gallery} />
             </div>
           )
@@ -38,7 +38,7 @@ export function GalleryPage({
         {!isCreator
           ? (
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              <ShareGalleryButton gallery={gallery} />
+              <ShareGalleryDialogButton gallery={gallery} />
               <FavoriteButton gallery={gallery} />
             </div>
           )
