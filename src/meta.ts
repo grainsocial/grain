@@ -36,7 +36,7 @@ export function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
     },
     {
       property: "og:image",
-      content: gallery?.items?.filter(isPhotoView)?.[0]?.thumb,
+      content: gallery?.items?.filter(isPhotoView)?.[0]?.fullsize,
     },
   ];
 }
