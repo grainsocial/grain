@@ -4,6 +4,7 @@ import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
 import { PDS_HOST_URL } from "./env.ts";
 import { onError } from "./lib/errors.ts";
+import { middlewares as comments } from "./modules/comments.tsx";
 import * as actions from "./routes/actions.tsx";
 import { handler as communityGuidelinesHandler } from "./routes/community_guidelines.tsx";
 import * as dialogs from "./routes/dialogs.tsx";
@@ -46,6 +47,7 @@ bff({
     "social.grain.graph.follow": ["subject"],
     "social.grain.gallery.item": ["gallery", "item"],
     "social.grain.photo.exif": ["photo"],
+    "social.grain.comment": ["subject"],
   },
   lexicons,
   rootElement: Root,
@@ -125,6 +127,7 @@ bff({
     route("/actions/profile", ["PUT"], actions.profileUpdate),
     route("/actions/gallery/:rkey/sort", ["POST"], actions.gallerySort),
     route("/actions/get-blob", ["GET"], actions.getBlob),
+    ...comments,
     route("/:did/:collection/:rkey", recordHandler),
   ],
 });

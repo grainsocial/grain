@@ -21,7 +21,12 @@ export interface NotificationView {
   cid: string
   author: SocialGrainActorDefs.ProfileView
   /** The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower. */
-  reason: 'follow' | 'gallery-favorite' | 'unknown' | (string & {})
+  reason:
+    | 'follow'
+    | 'gallery-favorite'
+    | 'gallery-comment'
+    | 'unknown'
+    | (string & {})
   reasonSubject?: string
   record: { [_ in string]: unknown }
   isRead: boolean

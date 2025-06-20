@@ -241,5 +241,34 @@ export function getPhotoGalleries(
         labels: labels ?? [],
       });
     })
-    .filter((g): g is GalleryView => Boolean(g));
+    .filter((g): g is $Typed<GalleryView> => Boolean(g));
+}
+
+export function getPhotosBulk(
+  uris: string[],
+  ctx: BffContext,
+) {
+  if (!uris.length) return [];
+  const { items: photos } = ctx.indexService.getRecords<WithBffMeta<Photo>>(
+    "social.grain.photo",
+    {
+      where: [{ field: "uri", in: uris }],
+    },
+  );
+  if (!photos.length) return [];
+  const { items: exifItems } = ctx.indexService.getRecords<
+    WithBffMeta<PhotoExif>
+  >(
+    "social.grain.photo.exif",
+    {
+      where: [{ field: "photo", in: uris }],
+    },
+  );
+  const exifMap = new Map<string, WithBffMeta<PhotoExif>>();
+  for (const exif of exifItems) {
+    exifMap.set(exif.photo, exif);
+  }
+  return photos.map((photo) =>
+    photoToView(photo.did, photo, exifMap.get(photo.uri))
+  );
 }

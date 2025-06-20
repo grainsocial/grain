@@ -26,6 +26,7 @@
           "knownValues": [
             "follow",
             "gallery-favorite",
+            "gallery-comment",
             "unknown"
           ]
         },

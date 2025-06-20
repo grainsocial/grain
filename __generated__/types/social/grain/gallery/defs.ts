@@ -25,6 +25,7 @@ export interface GalleryView {
   record: { [_ in string]: unknown }
   items?: ($Typed<SocialGrainPhotoDefs.PhotoView> | { $type: string })[]
   favCount?: number
+  commentCount?: number
   labels?: ComAtprotoLabelDefs.Label[]
   indexedAt: string
   viewer?: ViewerState

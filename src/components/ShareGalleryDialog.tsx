@@ -1,5 +1,6 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { AtUri } from "@atproto/syntax";
+import { cn } from "@bigmoves/bff/components";
 import { publicGalleryLink } from "../utils.ts";
 import { Button } from "./Button.tsx";
 import { Dialog } from "./Dialog.tsx";
@@ -53,13 +54,15 @@ export function ShareGalleryDialog({ gallery }: Readonly<{
 }
 
 export function ShareGalleryDialogButton(
-  { gallery }: Readonly<{ gallery: GalleryView }>,
+  { class: classProp, gallery }: Readonly<
+    { class?: string; gallery: GalleryView }
+  >,
 ) {
   const rkey = new AtUri(gallery.uri).rkey;
   return (
     <Button
-      variant="primary"
-      class="whitespace-nowrap"
+      variant="secondary"
+      class={cn("whitespace-nowrap", classProp)}
       hx-get={`/dialogs/${gallery.creator.did}/gallery/${rkey}/share`}
       hx-trigger="click"
       hx-target="#dialog-target"

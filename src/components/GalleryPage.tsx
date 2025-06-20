@@ -2,6 +2,7 @@ import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { ModerationDecsion } from "../lib/moderation.ts";
+import { CommentsButton } from "../modules/comments.tsx";
 import { EditGalleryButton } from "./EditGalleryDialog.tsx";
 import { FavoriteButton } from "./FavoriteButton.tsx";
 import { GalleryInfo } from "./GalleryInfo.tsx";
@@ -28,18 +29,22 @@ export function GalleryPage({
         <GalleryInfo gallery={gallery} />
         {isLoggedIn && isCreator
           ? (
-            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row sm:flex-wrap sm:justify-end">
+            <div class="flex self-start gap-2 w-full flex-col sm:flex-row sm:justify-end">
               <EditGalleryButton gallery={gallery} />
-              <ShareGalleryDialogButton gallery={gallery} />
-              <FavoriteButton gallery={gallery} />
+              <div class="flex flex-row gap-2">
+                <FavoriteButton class="flex-1" gallery={gallery} />
+                <CommentsButton class="flex-1" gallery={gallery} />
+                <ShareGalleryDialogButton class="flex-1" gallery={gallery} />
+              </div>
             </div>
           )
           : null}
         {!isCreator
           ? (
-            <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
-              <ShareGalleryDialogButton gallery={gallery} />
-              <FavoriteButton gallery={gallery} />
+            <div class="flex self-start gap-2 flex-row">
+              <FavoriteButton class="flex-1" gallery={gallery} />
+              <CommentsButton class="flex-1" gallery={gallery} />
+              <ShareGalleryDialogButton class="flex-1" gallery={gallery} />
             </div>
           )
           : null}

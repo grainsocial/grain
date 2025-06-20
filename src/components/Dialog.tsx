@@ -38,12 +38,12 @@ const Dialog: FunctionalComponent<DialogProps> & {
       {...{
         _: `on closeDialog
               remove me
-              remove .tw:pointer-events-none from document.body
+              remove .pointer-events-none from document.body
               remove [@data-scroll-locked] from document.body
             on keyup[key is 'Escape'] from <body/> trigger closeDialog
             init
-              add .tw:pointer-events-none to document.body
-              add .tw:pointer-events-auto to me
+              add .pointer-events-none to document.body
+              add .pointer-events-auto to me
               add [@data-scroll-locked=true] to document.body
             ${_}`,
       }}

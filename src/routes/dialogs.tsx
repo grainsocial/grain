@@ -1,3 +1,4 @@
+import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
@@ -134,8 +135,14 @@ export const image: RouteHandler = (
   const next = wrap(0, gallery.items.length, imageAtIndex + 1);
   const prev = wrap(0, gallery.items.length, imageAtIndex - 1);
   if (!image) return ctx.next();
+  let userProfile: ProfileView | undefined;
+  if (ctx.currentUser) {
+    const profile = getActorProfile(ctx.currentUser.did, ctx);
+    userProfile = profile ?? undefined;
+  }
   return ctx.html(
     <PhotoDialog
+      userProfile={userProfile}
       gallery={gallery}
       image={image}
       nextImage={gallery.items.filter(isPhotoView).at(next)}

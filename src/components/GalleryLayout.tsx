@@ -74,8 +74,8 @@ function GalleryLayoutItem({
       type="button"
       hx-get={photoDialogLink(gallery, photo)}
       hx-trigger="click"
-      hx-target="#layout"
-      hx-swap="afterbegin"
+      hx-target="#dialog-target"
+      hx-swap="innerHTML"
       class="gallery-item absolute cursor-pointer"
       data-width={photo.aspectRatio?.width}
       data-height={photo.aspectRatio?.height}

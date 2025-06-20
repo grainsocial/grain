@@ -2445,7 +2445,12 @@ export const schemaDict = {
             type: 'string',
             description:
               'The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower.',
-            knownValues: ['follow', 'gallery-favorite', 'unknown'],
+            knownValues: [
+              'follow',
+              'gallery-favorite',
+              'gallery-comment',
+              'unknown',
+            ],
           },
           reasonSubject: {
             type: 'string',
@@ -2460,6 +2465,94 @@ export const schemaDict = {
           indexedAt: {
             type: 'string',
             format: 'datetime',
+          },
+        },
+      },
+    },
+  },
+  SocialGrainCommentDefs: {
+    lexicon: 1,
+    id: 'social.grain.comment.defs',
+    defs: {
+      commentView: {
+        type: 'object',
+        required: ['uri', 'cid', 'author', 'text', 'createdAt'],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          author: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#profileView',
+          },
+          text: {
+            type: 'string',
+            maxLength: 3000,
+            maxGraphemes: 300,
+          },
+          subject: {
+            type: 'union',
+            refs: ['lex:social.grain.gallery.defs#galleryView'],
+            description:
+              'The subject of the comment, which can be a gallery or a photo.',
+          },
+          focus: {
+            type: 'union',
+            refs: ['lex:social.grain.photo.defs#photoView'],
+            description:
+              'The photo that the comment is focused on, if applicable.',
+          },
+          replyTo: {
+            type: 'string',
+            format: 'at-uri',
+            description:
+              'The URI of the comment this comment is replying to, if applicable.',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+    },
+  },
+  SocialGrainComment: {
+    lexicon: 1,
+    id: 'social.grain.comment',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['text', 'subject', 'createdAt'],
+          properties: {
+            text: {
+              type: 'string',
+              maxLength: 3000,
+              maxGraphemes: 300,
+            },
+            subject: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            focus: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            replyTo: {
+              type: 'string',
+              format: 'at-uri',
+            },
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
           },
         },
       },
@@ -2528,6 +2621,9 @@ export const schemaDict = {
             },
           },
           favCount: {
+            type: 'integer',
+          },
+          commentCount: {
             type: 'integer',
           },
           labels: {
@@ -3418,6 +3514,8 @@ export const ids = {
   ShTangledActorProfile: 'sh.tangled.actor.profile',
   SocialGrainDefs: 'social.grain.defs',
   SocialGrainNotificationDefs: 'social.grain.notification.defs',
+  SocialGrainCommentDefs: 'social.grain.comment.defs',
+  SocialGrainComment: 'social.grain.comment',
   SocialGrainGalleryItem: 'social.grain.gallery.item',
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
   SocialGrainGallery: 'social.grain.gallery',

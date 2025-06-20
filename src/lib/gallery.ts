@@ -16,9 +16,10 @@ import {
   PhotoView,
 } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
-import { Un$Typed } from "$lexicon/util.ts";
+import { $Typed, Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
+import { getGalleryCommentsCount } from "../modules/comments.tsx";
 import { getActorProfile } from "./actor.ts";
 import { photoToView } from "./photo.ts";
 
@@ -113,6 +114,8 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
 
   const favs = getGalleryFavs(gallery.uri, ctx);
 
+  const comments = getGalleryCommentsCount(gallery.uri, ctx);
+
   let viewerFav: string | undefined = undefined;
   if (ctx.currentUser?.did) {
     const fav = getGalleryFav(ctx.currentUser?.did, gallery.uri, ctx);
@@ -127,6 +130,7 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
     items: galleryPhotosMap.get(gallery.uri) ?? [],
     labels,
     favCount: favs,
+    commentCount: comments,
     viewerState: {
       fav: viewerFav,
     },
@@ -197,6 +201,7 @@ export function galleryToView({
   items,
   labels = [],
   favCount,
+  commentCount,
   viewerState,
 }: {
   record: WithBffMeta<Gallery>;
@@ -204,9 +209,11 @@ export function galleryToView({
   items: PhotoWithExif[];
   labels: Label[];
   favCount?: number;
+  commentCount?: number;
   viewerState?: ViewerState;
-}): Un$Typed<GalleryView> {
+}): $Typed<GalleryView> {
   return {
+    $type: "social.grain.gallery.defs#galleryView",
     uri: record.uri,
     cid: record.cid,
     creator,
@@ -217,6 +224,7 @@ export function galleryToView({
     labels,
     indexedAt: record.indexedAt,
     favCount,
+    commentCount,
     viewer: viewerState,
   };
 }
@@ -343,4 +351,36 @@ export function getGalleryPhotos(
       return undefined;
     })
     .filter(isPhotoView);
+}
+
+export function getGalleriesBulk(
+  uris: string[],
+  ctx: BffContext,
+) {
+  if (!uris.length) return [];
+  const { items: galleries } = ctx.indexService.getRecords<
+    WithBffMeta<Gallery>
+  >(
+    "social.grain.gallery",
+    {
+      where: [{ field: "uri", in: uris }],
+    },
+  );
+  if (!galleries.length) return [];
+
+  const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
+
+  const profile = getActorProfile(galleries[0].did, ctx);
+  if (!profile) return [];
+
+  const labels = ctx.indexService.queryLabels({ subjects: uris });
+
+  return galleries.map((gallery) =>
+    galleryToView({
+      record: gallery,
+      creator: profile,
+      items: galleryPhotosMap.get(gallery.uri) ?? [],
+      labels,
+    })
+  );
 }

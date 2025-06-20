@@ -27,8 +27,8 @@
     "dev:server": "deno run -A --env-file --watch ./src/main.tsx",
     "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./src/input.css -o ./build/styles.css --watch",
     "dev:fonts": "rm -rf ./build/fonts && cp -r ./static/fonts/. ./build/fonts",
-    "sync": "deno run -A --env=.env jsr:@bigmoves/bff-cli@0.3.0-beta.40 sync --collections=social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.favorite,social.grain.gallery.item,social.grain.graph.follow,social.grain.photo.exif --external-collections=app.bsky.actor.profile,app.bsky.graph.follow,sh.tangled.graph.follow,sh.tangled.actor.profile --collection-key-map=\"{\"social.grain.favorite\":[\"subject\"],\"social.grain.graph.follow\":[\"subject\"],\"social.grain.gallery.item\":[\"gallery\",\"item\"],\"social.grain.photo.exif\":[\"photo\"]}\"",
-    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.37 lexgen"
+    "sync": "deno run -A --env=.env jsr:@bigmoves/bff-cli@0.3.0-beta.40 sync --collections=social.grain.gallery,social.grain.actor.profile,social.grain.photo,social.grain.favorite,social.grain.gallery.item,social.grain.graph.follow,social.grain.photo.exif,social.grain.comment --external-collections=app.bsky.actor.profile,app.bsky.graph.follow,sh.tangled.graph.follow,sh.tangled.actor.profile --collection-key-map=\"{\\\"social.grain.favorite\\\":[\\\"subject\\\"],\\\"social.grain.graph.follow\\\":[\\\"subject\\\"],\\\"social.grain.gallery.item\\\":[\\\"gallery\\\",\\\"item\\\"],\\\"social.grain.photo.exif\\\":[\\\"photo\\\"],\\\"social.grain.comment\\\":[\\\"subject\\\"]}\"",
+    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.40 lexgen"
   },
   "compilerOptions": {
     "jsx": "precompile",

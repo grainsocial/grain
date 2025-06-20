@@ -165,4 +165,19 @@
     margin-top: 0;
     margin-right: 0px !important;
   }
+
+  .grain-scroll-area {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin; /* Firefox */
+  }
+
+  .grain-scroll-area::-webkit-scrollbar {
+    width: 8px; /* Chrome/Safari */
+  }
+
+  .grain-scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(100, 100, 100, 0.4);
+    border-radius: 4px;
+  }
 }

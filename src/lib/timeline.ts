@@ -7,6 +7,7 @@ import { Record as GrainFollow } from "$lexicon/types/social/grain/graph/follow.
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, QueryOptions, WithBffMeta } from "@bigmoves/bff";
+import { getGalleryCommentsCount } from "../modules/comments.tsx";
 import { getActorProfile } from "./actor.ts";
 import {
   galleryToView,
@@ -91,12 +92,15 @@ async function processGalleries(
       }
     }
 
+    const comments = getGalleryCommentsCount(gallery.uri, ctx);
+
     const galleryView = galleryToView({
       record: gallery,
       creator: profile,
       items: galleryPhotos,
       labels,
       favCount: favs,
+      commentCount: comments,
       viewerState: {
         fav: viewerFav,
       },

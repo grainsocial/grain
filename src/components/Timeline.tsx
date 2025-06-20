@@ -16,6 +16,7 @@ export function Timeline(
 ) {
   return (
     <div class="px-4 mb-4" id="timeline-page">
+      <div id="dialog-target" />
       {isLoggedIn
         ? (
           <>

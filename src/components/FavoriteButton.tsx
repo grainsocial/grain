@@ -23,12 +23,10 @@ export function FavoriteButton({
     : undefined;
   return (
     <Button
-      variant={variant === "icon-button" ? "ghost" : "primary"}
+      variant={variant === "icon-button" ? "ghost" : "secondary"}
       class={cn(
-        "self-start w-full sm:w-fit whitespace-nowrap",
-        variant === "icon-button" && gallery.viewer?.fav
-          ? "text-pink-500"
-          : undefined,
+        "whitespace-nowrap",
+        gallery.viewer?.fav ? "text-pink-500" : undefined,
         variantClass,
         classProp,
       )}

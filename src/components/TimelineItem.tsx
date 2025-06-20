@@ -1,6 +1,7 @@
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { type TimelineItem } from "../lib/timeline.ts";
+import { CommentsButton } from "../modules/comments.tsx";
 import { formatRelativeTime } from "../utils.ts";
 import { ActorInfo } from "./ActorInfo.tsx";
 import { FavoriteButton } from "./FavoriteButton.tsx";
@@ -14,7 +15,7 @@ export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
     <li>
       <div class="flex flex-col pb-4 max-w-md">
         <div class="flex items-center justify-between gap-2 w-full mb-4">
-          <ActorInfo profile={item.actor} />
+          <ActorInfo profile={item.actor} class="flex-1" />
           <span class="shrink-0">
             {formatRelativeTime(new Date(item.createdAt))}
           </span>
@@ -47,10 +48,16 @@ export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
             {description}
           </p>
         )}
-        <FavoriteButton
-          gallery={item.gallery}
-          variant="icon-button"
-        />
+        <div class="flex gap-4">
+          <FavoriteButton
+            gallery={item.gallery}
+            variant="icon-button"
+          />
+          <CommentsButton
+            gallery={item.gallery}
+            variant="icon-button"
+          />
+        </div>
       </div>
     </li>
   );

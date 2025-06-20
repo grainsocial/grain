@@ -1,16 +1,20 @@
+import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { cn } from "@bigmoves/bff/components";
+import { ReplyButton } from "../modules/comments.tsx";
 import { photoDialogLink } from "../utils.ts";
 import { Dialog } from "./Dialog.tsx";
 
 export function PhotoDialog({
+  userProfile,
   gallery,
   image,
   nextImage,
   prevImage,
 }: Readonly<{
+  userProfile?: ProfileView;
   gallery: GalleryView;
   image: PhotoView;
   nextImage?: PhotoView;
@@ -50,33 +54,28 @@ export function PhotoDialog({
             class="absolute inset-0 w-full h-full object-contain"
           />
         </div>
-        {image.exif
-          ? (
-            <div class="hidden sm:block absolute bottom-2 right-2">
-              <ExifButton photo={image} />
-            </div>
-          )
-          : null}
         {image.alt
           ? (
             <div class="px-4 sm:px-0 py-4 bg-black text-white text-left flex">
               <span class="flex-1 mr-2">{image.alt}</span>
-              {image.exif
-                ? (
-                  <div class="block sm:hidden self-end justify-end -m-2">
-                    <ExifButton photo={image} />
-                  </div>
-                )
-                : null}
             </div>
           )
           : null}
-        {!image.alt && image.exif
+        {(userProfile || image.exif)
           ? (
-            <ExifButton
-              photo={image}
-              class="block sm:hidden absolute bottom-2 right-2 z-100"
-            />
+            <div class="flex w-full gap-2 p-2 sm:px-0 sm:py-2">
+              {userProfile
+                ? (
+                  <ReplyButton
+                    class="flex-1 bg-zinc-800 sm:bg-transparent sm:hover:bg-zinc-800 text-zinc-50"
+                    gallery={gallery}
+                    photo={image}
+                    userProfile={userProfile}
+                  />
+                )
+                : <div class="flex-1" />}
+              {image.exif ? <ExifButton photo={image} /> : null}
+            </div>
           )
           : null}
       </div>

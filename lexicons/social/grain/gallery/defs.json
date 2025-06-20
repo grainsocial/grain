@@ -23,6 +23,7 @@
           }
         },
         "favCount": { "type": "integer" },
+        "commentCount": { "type": "integer" },
         "labels": {
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }

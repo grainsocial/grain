@@ -250,3 +250,26 @@ export function getActorProfiles(
   if (tangledProfiles.length) profiles.push("tangled");
   return profiles;
 }
+
+export function getActorProfilesBulk(
+  dids: string[],
+  ctx: BffContext,
+) {
+  const { items: profiles } = ctx.indexService.getRecords<
+    WithBffMeta<GrainProfile>
+  >(
+    "social.grain.actor.profile",
+    {
+      where: {
+        AND: [
+          { field: "did", in: dids },
+        ],
+      },
+    },
+  );
+
+  return profiles.map((profile) => {
+    const handle = ctx.indexService.getActor(profile.did)?.handle ?? "";
+    return profileToView(profile, handle);
+  });
+}
