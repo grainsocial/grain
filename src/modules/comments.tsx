@@ -233,7 +233,7 @@ function CommentBlock({ comment }: Readonly<{ comment: CommentView }>) {
 export function CommentsButton(
   { class: classProp, variant, gallery }: Readonly<{
     class?: string;
-    variant: "button" | "icon-button";
+    variant?: "button" | "icon-button";
     gallery: GalleryView;
   }>,
 ) {

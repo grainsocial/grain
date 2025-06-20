@@ -31,7 +31,7 @@ export function GalleryPage({
           ? (
             <div class="flex self-start gap-2 w-full flex-col sm:flex-row sm:justify-end">
               <EditGalleryButton gallery={gallery} />
-              <div class="flex flex-row gap-2">
+              <div class="flex flex-row gap-2 w-full sm:w-fit">
                 <FavoriteButton class="flex-1" gallery={gallery} />
                 <CommentsButton class="flex-1" gallery={gallery} />
                 <ShareGalleryDialogButton class="flex-1" gallery={gallery} />
@@ -41,7 +41,7 @@ export function GalleryPage({
           : null}
         {!isCreator
           ? (
-            <div class="flex self-start gap-2 flex-row">
+            <div class="flex self-start gap-2 flex-row w-full sm:w-fit">
               <FavoriteButton class="flex-1" gallery={gallery} />
               <CommentsButton class="flex-1" gallery={gallery} />
               <ShareGalleryDialogButton class="flex-1" gallery={gallery} />
