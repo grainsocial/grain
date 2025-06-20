@@ -466,49 +466,10 @@ export const middlewares: BffMiddleware[] = [
   ),
 ];
 
-function groupComments(comments: CommentView[]) {
-  const repliesByParent = new Map<string, CommentView[]>();
-  const topLevel: CommentView[] = [];
-
-  for (const comment of comments) {
-    if (comment.replyTo) {
-      if (!repliesByParent.has(comment.replyTo)) {
-        repliesByParent.set(comment.replyTo, []);
-      }
-      repliesByParent.get(comment.replyTo)!.push(comment);
-    } else {
-      topLevel.push(comment);
-    }
-  }
-
-  return { topLevel, repliesByParent };
-}
-
-export function getGalleryCommentsCount(uri: string, ctx: BffContext): number {
-  return ctx.indexService.countRecords(
-    "social.grain.comment",
-    {
-      where: {
-        "AND": [{ field: "subject", equals: uri }],
-      },
-      limit: 0,
-    },
-  );
-}
-
-function getGalleryComments(uri: string, ctx: BffContext): CommentView[] {
-  const { items: comments } = ctx.indexService.getRecords<WithBffMeta<Comment>>(
-    "social.grain.comment",
-    {
-      orderBy: [{ field: "createdAt", direction: "desc" }],
-      where: {
-        "AND": [{ field: "subject", equals: uri }],
-      },
-      limit: 100,
-    },
-  );
-
-  // Batch fetch all authors, subjects, and focus photos for comments using bulk functions
+function hydrateComments(
+  comments: WithBffMeta<Comment>[],
+  ctx: BffContext,
+): CommentView[] {
   const authorDids = Array.from(new Set(comments.map((c) => c.did)));
   const subjectUris = Array.from(new Set(comments.map((c) => c.subject)));
   const focusUris: string[] = Array.from(
@@ -537,6 +498,63 @@ function getGalleryComments(uri: string, ctx: BffContext): CommentView[] {
     acc.push(commentToView(comment, author, subject, focus));
     return acc;
   }, []);
+}
+
+function getGalleryComments(uri: string, ctx: BffContext): CommentView[] {
+  const { items: comments } = ctx.indexService.getRecords<WithBffMeta<Comment>>(
+    "social.grain.comment",
+    {
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+      where: {
+        "AND": [{ field: "subject", equals: uri }],
+      },
+      limit: 100,
+    },
+  );
+  return hydrateComments(comments, ctx);
+}
+
+export function getCommentsBulk(
+  uris: string[],
+  ctx: BffContext,
+): CommentView[] {
+  const { items: comments } = ctx.indexService.getRecords<WithBffMeta<Comment>>(
+    "social.grain.comment",
+    {
+      where: [{ field: "uri", in: uris }],
+    },
+  );
+  return hydrateComments(comments, ctx);
+}
+
+function groupComments(comments: CommentView[]) {
+  const repliesByParent = new Map<string, CommentView[]>();
+  const topLevel: CommentView[] = [];
+
+  for (const comment of comments) {
+    if (comment.replyTo) {
+      if (!repliesByParent.has(comment.replyTo)) {
+        repliesByParent.set(comment.replyTo, []);
+      }
+      repliesByParent.get(comment.replyTo)!.push(comment);
+    } else {
+      topLevel.push(comment);
+    }
+  }
+
+  return { topLevel, repliesByParent };
+}
+
+export function getGalleryCommentsCount(uri: string, ctx: BffContext): number {
+  return ctx.indexService.countRecords(
+    "social.grain.comment",
+    {
+      where: {
+        "AND": [{ field: "subject", equals: uri }],
+      },
+      limit: 0,
+    },
+  );
 }
 
 function getComment(uri: string, ctx: BffContext) {

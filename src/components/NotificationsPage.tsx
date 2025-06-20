@@ -1,20 +1,26 @@
 import { Record as Comment } from "$lexicon/types/social/grain/comment.ts";
+import { CommentView } from "$lexicon/types/social/grain/comment/defs.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as Follow } from "$lexicon/types/social/grain/graph/follow.ts";
 import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
-import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
+import {
+  isPhotoView,
+  PhotoView,
+} from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
-import { formatRelativeTime, profileLink } from "../utils.ts";
+import { AtUri } from "@atproto/syntax";
+import { formatRelativeTime, galleryLink, profileLink } from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
 import { GalleryPreviewLink } from "./GalleryPreviewLink.tsx";
 import { Header } from "./Header.tsx";
 
 export function NotificationsPage(
-  { photosMap, galleriesMap, notifications }: Readonly<
+  { photosMap, galleriesMap, notifications, commentsMap }: Readonly<
     {
       photosMap: Map<string, Un$Typed<PhotoView>>;
       galleriesMap: Map<string, Un$Typed<GalleryView>>;
+      commentsMap: Map<string, Un$Typed<CommentView>>;
       notifications: Un$Typed<NotificationView>[];
     }
   >,
@@ -78,59 +84,168 @@ export function NotificationsPage(
                     )}
                   </span>
                 </div>
-                {notification.reason === "gallery-favorite" && galleriesMap.get(
-                    (notification.record as Favorite).subject,
-                  )
-                  ? (
-                    <div class="w-[200px]">
-                      <GalleryPreviewLink
-                        gallery={galleriesMap.get(
-                          (notification.record as Favorite).subject,
-                        ) as GalleryView}
-                        size="small"
-                      />
-                    </div>
-                  )
-                  : null}
-                {(notification.reason === "gallery-comment" ||
-                    notification.reason === "reply") && galleriesMap.get(
-                      (notification.record as Comment).subject,
-                    )
-                  ? (
-                    <>
-                      {(notification.record as Comment).text}
-                      {(notification.record as Comment).focus
-                        ? (
-                          <div class="w-[200px] pointer-events-none">
-                            <img
-                              src={photosMap.get(
-                                (notification.record as Comment).focus ?? "",
-                              )?.thumb}
-                              alt={photosMap.get(
-                                (notification.record as Comment).focus ?? "",
-                              )?.alt}
-                              class="rounded-md"
-                            />
-                          </div>
-                        )
-                        : (
-                          <div class="w-[200px]">
-                            <GalleryPreviewLink
-                              gallery={galleriesMap.get(
-                                (notification.record as Favorite).subject,
-                              ) as GalleryView}
-                              size="small"
-                            />
-                          </div>
-                        )}
-                    </>
-                  )
-                  : null}
+                {notification.reason === "gallery-favorite" &&
+                  (
+                    <GalleryFavoriteNotification
+                      notification={notification}
+                      galleriesMap={galleriesMap}
+                    />
+                  )}
+                {notification.reason === "gallery-comment" &&
+                  (
+                    <GalleryCommentNotification
+                      notification={notification}
+                      galleriesMap={galleriesMap}
+                      photosMap={photosMap}
+                    />
+                  )}
+                {notification.reason === "reply" &&
+                  (
+                    <ReplyNotification
+                      notification={notification}
+                      galleriesMap={galleriesMap}
+                      photosMap={photosMap}
+                      commentsMap={commentsMap}
+                    />
+                  )}
               </li>
             ))
           )
           : <li>No notifications yet.</li>}
       </ul>
+    </div>
+  );
+}
+
+function GalleryCommentNotification(
+  { notification, galleriesMap, photosMap }: {
+    notification: NotificationView;
+    galleriesMap: Map<string, GalleryView>;
+    photosMap: Map<string, PhotoView>;
+  },
+) {
+  const comment = notification.record as Comment;
+  const gallery = galleriesMap.get(comment.subject) as GalleryView | undefined;
+  if (!gallery) return null;
+  return (
+    <>
+      {comment.text}
+      {comment.focus
+        ? (
+          <a
+            href={galleryLink(
+              gallery.creator.handle,
+              new AtUri(gallery.uri).rkey,
+            )}
+            class="w-[200px]"
+          >
+            <img
+              src={photosMap.get(comment.focus ?? "")?.thumb}
+              alt={photosMap.get(comment.focus ?? "")?.alt}
+              class="rounded-md"
+            />
+          </a>
+        )
+        : (
+          <div class="w-[200px]">
+            <GalleryPreviewLink
+              gallery={gallery}
+              size="small"
+            />
+          </div>
+        )}
+    </>
+  );
+}
+
+function ReplyNotification(
+  { notification, galleriesMap, photosMap, commentsMap }: {
+    notification: NotificationView;
+    galleriesMap: Map<string, GalleryView>;
+    photosMap: Map<string, PhotoView>;
+    commentsMap: Map<string, CommentView>;
+  },
+) {
+  const comment = notification.record as Comment;
+  const gallery = galleriesMap.get(comment.subject) as GalleryView | undefined;
+  let replyToComment: CommentView | undefined = undefined;
+  if (comment.replyTo) {
+    replyToComment = commentsMap.get(comment.replyTo);
+  }
+  if (!gallery) return null;
+  return (
+    <>
+      {replyToComment && (
+        <div class="text-sm border-l-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-500 pl-2 max-w-[200px]">
+          {replyToComment.text}
+          {isPhotoView(replyToComment?.focus)
+            ? (
+              <a
+                class="block mt-2"
+                href={galleryLink(
+                  gallery.creator.handle,
+                  new AtUri(gallery.uri).rkey,
+                )}
+              >
+                <img
+                  src={photosMap.get(replyToComment.focus.uri)?.thumb}
+                  alt={photosMap.get(replyToComment.focus.uri)?.alt}
+                  class="rounded-md"
+                />
+              </a>
+            )
+            : (
+              <GalleryPreviewLink
+                gallery={gallery}
+                size="small"
+              />
+            )}
+        </div>
+      )}
+      {comment.text}
+      {comment.focus
+        ? (
+          <a
+            href={galleryLink(
+              gallery.creator.handle,
+              new AtUri(gallery.uri).rkey,
+            )}
+            class="max-w-[200px]"
+          >
+            <img
+              src={photosMap.get(comment.focus ?? "")?.thumb}
+              alt={photosMap.get(comment.focus ?? "")?.alt}
+              class="rounded-md"
+            />
+          </a>
+        )
+        : !replyToComment
+        ? (
+          <div class="w-[200px]">
+            <GalleryPreviewLink
+              gallery={gallery}
+              size="small"
+            />
+          </div>
+        )
+        : null}
+    </>
+  );
+}
+
+function GalleryFavoriteNotification({ notification, galleriesMap }: {
+  notification: NotificationView;
+  galleriesMap: Map<string, GalleryView>;
+}) {
+  const favorite = notification.record as Favorite;
+  const gallery = galleriesMap.get(favorite.subject) as GalleryView | undefined;
+  if (!gallery) return null;
+  return (
+    <div class="w-[200px]">
+      <GalleryPreviewLink
+        gallery={gallery}
+        size="small"
+      />
     </div>
   );
 }

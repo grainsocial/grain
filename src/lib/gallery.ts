@@ -20,7 +20,7 @@ import { $Typed, Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { getGalleryCommentsCount } from "../modules/comments.tsx";
-import { getActorProfile } from "./actor.ts";
+import { getActorProfile, getActorProfilesBulk } from "./actor.ts";
 import { photoToView } from "./photo.ts";
 
 type PhotoWithExif = WithBffMeta<Photo> & {
@@ -370,17 +370,22 @@ export function getGalleriesBulk(
 
   const galleryPhotosMap = getGalleryItemsAndPhotos(ctx, galleries);
 
-  const profile = getActorProfile(galleries[0].did, ctx);
-  if (!profile) return [];
+  const uniqueDids = Array.from(new Set(galleries.map((g) => g.did)));
+  const creators = getActorProfilesBulk(uniqueDids, ctx);
+  const creatorMap = new Map(creators.map((c) => [c.did, c]));
 
   const labels = ctx.indexService.queryLabels({ subjects: uris });
 
-  return galleries.map((gallery) =>
-    galleryToView({
-      record: gallery,
-      creator: profile,
-      items: galleryPhotosMap.get(gallery.uri) ?? [],
-      labels,
+  return galleries
+    .map((gallery) => {
+      const creator = creatorMap.get(gallery.did);
+      if (!creator) return null;
+      return galleryToView({
+        record: gallery,
+        creator,
+        items: galleryPhotosMap.get(gallery.uri) ?? [],
+        labels,
+      });
     })
-  );
+    .filter((g): g is ReturnType<typeof galleryToView> => g !== null);
 }

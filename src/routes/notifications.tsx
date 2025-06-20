@@ -1,13 +1,18 @@
 import { Record as Comment } from "$lexicon/types/social/grain/comment.ts";
+import { CommentView } from "$lexicon/types/social/grain/comment/defs.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
-import { PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
+import {
+  isPhotoView,
+  PhotoView,
+} from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { NotificationsPage } from "../components/NotificationsPage.tsx";
 import { getGalleriesBulk } from "../lib/gallery.ts";
 import { getPhotosBulk } from "../lib/photo.ts";
+import { getCommentsBulk } from "../modules/comments.tsx";
 import type { State } from "../state.ts";
 
 export const handler: RouteHandler = (
@@ -35,10 +40,22 @@ export const handler: RouteHandler = (
   for (const photo of photos) {
     photosMap.set(photo.uri, photo);
   }
+  const commentUris = getReplyToUrisForNotifications(
+    ctx.state.notifications ?? [],
+  );
+  const comments = getCommentsBulk(commentUris, ctx);
+  const commentsMap = new Map<string, CommentView>();
+  for (const comment of comments) {
+    commentsMap.set(comment.uri, comment);
+    if (isPhotoView(comment.focus)) {
+      photosMap.set(comment.focus.uri, comment.focus);
+    }
+  }
   return ctx.render(
     <NotificationsPage
       photosMap={photosMap}
       galleriesMap={galleriesMap}
+      commentsMap={commentsMap}
       notifications={ctx.state.notifications ?? []}
     />,
   );
@@ -68,4 +85,15 @@ function getPhotoUrisForNotifications(
     .filter((n) => n.record.$type === "social.grain.comment")
     .map((n) => (n.record as Comment).focus)
     .filter((focus): focus is string => typeof focus === "string" && !!focus);
+}
+
+function getReplyToUrisForNotifications(
+  notifications: Un$Typed<NotificationView>[],
+): string[] {
+  return notifications
+    .filter((n) => n.record.$type === "social.grain.comment")
+    .map((n) => (n.record as Comment).replyTo)
+    .filter((replyTo): replyTo is string =>
+      typeof replyTo === "string" && !!replyTo
+    );
 }
