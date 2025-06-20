@@ -196,6 +196,7 @@ function ReplyNotification(
             )
             : (
               <GalleryPreviewLink
+                class="mt-2"
                 gallery={gallery}
                 size="small"
               />

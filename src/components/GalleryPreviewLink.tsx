@@ -6,9 +6,12 @@ import { cn } from "@bigmoves/bff/components";
 import { galleryLink } from "../utils.ts";
 
 export function GalleryPreviewLink({
+  class: classProp,
   gallery,
   size = "default",
-}: Readonly<{ gallery: Un$Typed<GalleryView>; size?: "small" | "default" }>) {
+}: Readonly<
+  { class?: string; gallery: Un$Typed<GalleryView>; size?: "small" | "default" }
+>) {
   const gap = size === "small" ? "gap-1" : "gap-1";
   return (
     <a
@@ -16,7 +19,7 @@ export function GalleryPreviewLink({
         gallery.creator.handle,
         new AtUri(gallery.uri).rkey,
       )}
-      class={cn("flex w-full aspect-[3/2] overflow-hidden", gap)}
+      class={cn("flex w-full aspect-[3/2] overflow-hidden", gap, classProp)}
     >
       <div class="w-2/3 h-full">
         <img
