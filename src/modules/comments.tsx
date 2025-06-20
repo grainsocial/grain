@@ -30,7 +30,6 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
   photo?: PhotoView;
   comment?: CommentView;
 }>) {
-  console.log({ userProfile, gallery, photo, comment });
   const galleryRkey = gallery ? new AtUri(gallery.uri).rkey : undefined;
   const profile = gallery?.creator;
   return (
@@ -96,7 +95,7 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
             <Textarea
               class="flex-1"
               name="text"
-              placeholder="Add a comment"
+              placeholder={comment ? "Write a reply" : "Add a comment"}
               rows={5}
               autoFocus
             />
@@ -104,7 +103,7 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
         </div>
         <div class="flex flex-col gap-2">
           <Button type="submit" form="reply-form" variant="primary">
-            Reply
+            {comment ? "Reply" : "Add comment"}
           </Button>
           <Dialog.Close variant="secondary">Cancel</Dialog.Close>
         </div>
