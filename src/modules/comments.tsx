@@ -158,11 +158,11 @@ export function GalleryCommentsDialog(
             <div class="flex-1 flex flex-col py-4 gap-6 overflow-y-scroll grain-scroll-area">
               {topLevel.map((comment) => (
                 <div key={comment.cid} class="flex flex-col gap-4">
-                  <CommentBlock comment={comment} />
+                  <CommentBlock userProfile={userProfile} comment={comment} />
 
                   {repliesByParent.get(comment.uri)?.map((reply) => (
                     <div key={reply.cid} class="ml-6">
-                      <CommentBlock comment={reply} />
+                      <CommentBlock userProfile={userProfile} comment={reply} />
                     </div>
                   ))}
                 </div>
@@ -183,7 +183,11 @@ export function GalleryCommentsDialog(
   );
 }
 
-function CommentBlock({ comment }: Readonly<{ comment: CommentView }>) {
+function CommentBlock(
+  { userProfile, comment }: Readonly<
+    { userProfile: ProfileView; comment: CommentView }
+  >,
+) {
   const gallery = isGalleryView(comment.subject) ? comment.subject : undefined;
   const rkey = gallery ? new AtUri(gallery.uri).rkey : undefined;
   return (
@@ -209,22 +213,40 @@ function CommentBlock({ comment }: Readonly<{ comment: CommentView }>) {
           />
         )}
 
-        {!comment.replyTo
-          ? (
-            <button
-              type="button"
-              class="w-fit p-0 mt-2 cursor-pointer text-zinc-600 dark:text-zinc-500 font-semibold text-sm"
-              hx-get={`/ui/comments/${gallery?.creator.did}/gallery/${rkey}/reply?comment=${
-                encodeURIComponent(comment.uri)
-              }`}
-              hx-trigger="click"
-              hx-target="#dialog-target"
-              hx-swap="innerHTML"
-            >
-              Reply
-            </button>
-          )
-          : null}
+        <div class="flex gap-2">
+          {!comment.replyTo
+            ? (
+              <button
+                type="button"
+                class="w-fit p-0 mt-2 cursor-pointer text-zinc-600 dark:text-zinc-500 font-semibold text-sm"
+                hx-get={`/ui/comments/${gallery?.creator.did}/gallery/${rkey}/reply?comment=${
+                  encodeURIComponent(comment.uri)
+                }`}
+                hx-trigger="click"
+                hx-target="#dialog-target"
+                hx-swap="innerHTML"
+              >
+                Reply
+              </button>
+            )
+            : null}
+          {userProfile.did === comment.author.did
+            ? (
+              <button
+                type="button"
+                class="w-fit p-0 mt-2 cursor-pointer text-zinc-600 dark:text-zinc-500 font-semibold text-sm"
+                hx-delete={`/actions/comments/${gallery?.creator.did}/gallery/${rkey}?comment=${
+                  encodeURIComponent(comment.uri)
+                }`}
+                hx-confirm="Are you sure you want to delete this comment?"
+                hx-target="#dialog-target"
+                hx-swap="innerHTML"
+              >
+                Delete
+              </button>
+            )
+            : null}
+        </div>
       </div>
     </div>
   );
@@ -324,6 +346,45 @@ export const middlewares: BffMiddleware[] = [
         );
       } catch (error) {
         console.error("Error creating comment:", error);
+      }
+
+      const comments = getGalleryComments(gallery.uri, ctx);
+
+      return ctx.html(
+        <GalleryCommentsDialog
+          userProfile={profile}
+          comments={comments}
+          gallery={gallery}
+        />,
+      );
+    },
+  ),
+
+  route(
+    "/actions/comments/:creatorDid/gallery/:rkey",
+    ["DELETE"],
+    async (req, params, ctx) => {
+      const { did } = ctx.requireAuth();
+      const profile = getActorProfile(did, ctx);
+      if (!profile) return ctx.next();
+
+      const url = new URL(req.url);
+      const commentUri = url.searchParams.get("comment");
+
+      if (!commentUri) {
+        return new Response("Comment URI is required", { status: 400 });
+      }
+
+      const creatorDid = params.creatorDid;
+      const rkey = params.rkey;
+
+      const gallery = getGallery(creatorDid, rkey, ctx);
+      if (!gallery) return ctx.next();
+
+      try {
+        await ctx.deleteRecord(commentUri);
+      } catch (error) {
+        console.error("Error deleting comment:", error);
       }
 
       const comments = getGalleryComments(gallery.uri, ctx);
