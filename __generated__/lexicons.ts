@@ -2449,6 +2449,7 @@ export const schemaDict = {
               'follow',
               'gallery-favorite',
               'gallery-comment',
+              'reply',
               'unknown',
             ],
           },

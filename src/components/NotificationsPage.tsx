@@ -62,6 +62,13 @@ export function NotificationsPage(
                         )}
                       </>
                     )}
+                    {notification.reason === "reply" && (
+                      <>
+                        replied to your comment · {formatRelativeTime(
+                          new Date((notification.record as Comment).createdAt),
+                        )}
+                      </>
+                    )}
                     {notification.reason === "follow" && (
                       <>
                         followed you · {formatRelativeTime(
@@ -85,9 +92,10 @@ export function NotificationsPage(
                     </div>
                   )
                   : null}
-                {notification.reason === "gallery-comment" && galleriesMap.get(
-                    (notification.record as Comment).subject,
-                  )
+                {(notification.reason === "gallery-comment" ||
+                    notification.reason === "reply") && galleriesMap.get(
+                      (notification.record as Comment).subject,
+                    )
                   ? (
                     <>
                       {(notification.record as Comment).text}

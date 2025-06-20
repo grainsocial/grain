@@ -45,6 +45,11 @@ export function notificationToView(
     reason = "gallery-favorite";
   } else if (record.$type === "social.grain.graph.follow") {
     reason = "follow";
+  } else if (
+    record.$type === "social.grain.comment" &&
+    record.replyTo
+  ) {
+    reason = "reply";
   } else if (record.$type === "social.grain.comment") {
     reason = "gallery-comment";
   } else {
