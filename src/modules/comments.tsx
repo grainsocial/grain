@@ -30,6 +30,7 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
   photo?: PhotoView;
   comment?: CommentView;
 }>) {
+  console.log({ userProfile, gallery, photo, comment });
   const galleryRkey = gallery ? new AtUri(gallery.uri).rkey : undefined;
   const profile = gallery?.creator;
   return (
@@ -46,9 +47,13 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
               ? <ActorAvatar profile={comment.author} size={42} />
               : null}
             <div class="flex flex-col gap-2">
-              {profile
-                ? <div class="font-semibold">{profile.displayName}</div>
-                : null}
+              {comment && comment.author
+                ? <div class="font-semibold">{comment.author.displayName}</div>
+                : (
+                  <div class="font-semibold">
+                    {gallery?.creator.displayName}
+                  </div>
+                )}
               {comment && comment.text}
               {!comment && !photo && gallery &&
                 (gallery.record as Gallery).title}
