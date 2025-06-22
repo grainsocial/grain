@@ -67,10 +67,28 @@ export function notificationToView(
     isComment(record) &&
     record.replyTo
   ) {
-    reason = "reply";
+    if (
+      recordHasMentionFacet(
+        record,
+        currentUser?.did,
+      )
+    ) {
+      reason = "gallery-comment-mention";
+    } else {
+      reason = "reply";
+    }
     // @TODO: check the nsid here if support other types of comments
   } else if (isComment(record)) {
-    reason = "gallery-comment";
+    if (
+      recordHasMentionFacet(
+        record,
+        currentUser?.did,
+      )
+    ) {
+      reason = "gallery-comment-mention";
+    } else {
+      reason = "gallery-comment";
+    }
   } else if (
     isGallery(record) && recordHasMentionFacet(
       record,
@@ -103,10 +121,7 @@ function recordHasMentionFacet(
   record: NotificationRecords,
   currentUserDid?: string,
 ): boolean {
-  if (
-    record.$type === "social.grain.gallery" &&
-    Array.isArray(record.facets)
-  ) {
+  if (Array.isArray(record.facets)) {
     return record.facets.some((facet) => {
       if (!currentUserDid) return true;
       const features = (facet as Facet).features;

@@ -42,7 +42,7 @@ export function NotificationsPage(
                 key={notification.uri}
                 class="flex flex-col gap-4 pb-4"
               >
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-1">
                   <a
                     href={profileLink(notification.author.handle)}
                     class="flex items-center gap-2 hover:underline"
@@ -71,10 +71,13 @@ export function NotificationsPage(
                         )}
                       </>
                     )}
-                    {notification.reason === "gallery-mention" && (
+                    {(notification.reason === "gallery-mention" ||
+                      notification.reason === "gallery-comment-mention") && (
                       <>
                         mentioned you in a gallery · {formatRelativeTime(
-                          new Date((notification.record as Comment).createdAt),
+                          new Date(
+                            (notification.record as Comment).createdAt,
+                          ),
                         )}
                       </>
                     )}
@@ -102,6 +105,14 @@ export function NotificationsPage(
                     />
                   )}
                 {notification.reason === "gallery-comment" &&
+                  (
+                    <GalleryCommentNotification
+                      notification={notification}
+                      galleriesMap={galleriesMap}
+                      photosMap={photosMap}
+                    />
+                  )}
+                {notification.reason === "gallery-comment-mention" &&
                   (
                     <GalleryCommentNotification
                       notification={notification}
@@ -146,7 +157,7 @@ function GalleryCommentNotification(
   if (!gallery) return null;
   return (
     <>
-      {comment.text}
+      {<RenderFacetedText text={comment.text} facets={comment.facets} />}
       {comment.focus
         ? (
           <a
@@ -288,7 +299,10 @@ function GalleryMentionNotification(
   if (!gallery) return null;
   return (
     <div class="text-sm border-l-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-500 pl-2">
-      {(gallery.record as Gallery).description}
+      <RenderFacetedText
+        text={(gallery.record as Gallery).description ?? ""}
+        facets={galleryRecord.facets}
+      />
       <div class="mt-2 max-w-[200px]">
         <GalleryPreviewLink
           gallery={gallery}
