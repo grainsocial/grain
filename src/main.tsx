@@ -18,6 +18,7 @@ import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
 import { handler as profileHandler } from "./routes/profile.tsx";
 import { handler as recordHandler } from "./routes/record.ts";
+import { handler as robotsHandler } from "./routes/robots.tsx";
 import { handler as supportHandler } from "./routes/support.tsx";
 import { handler as timelineHandler } from "./routes/timeline.tsx";
 import { handler as uploadHandler } from "./routes/upload.tsx";
@@ -131,5 +132,6 @@ bff({
     route("/actions/get-blob", ["GET"], actions.getBlob),
     ...comments,
     route("/:did/:collection/:rkey", recordHandler),
+    route("/robots.txt", robotsHandler),
   ],
 });
