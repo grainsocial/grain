@@ -42,7 +42,7 @@ export function GalleryPage({
         {!isCreator
           ? (
             <div class="flex self-start gap-2 flex-row w-full sm:w-fit">
-              <FavoriteButton class="flex-1" gallery={gallery} />
+              <FavoriteButton gallery={gallery} />
               <CommentsButton class="flex-1" gallery={gallery} />
               <ShareGalleryDialogButton class="flex-1" gallery={gallery} />
             </div>

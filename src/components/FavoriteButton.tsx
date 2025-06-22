@@ -16,7 +16,7 @@ export function FavoriteButton({
 }>) {
   const variantClass = variant === "icon-button"
     ? "flex w-fit items-center gap-2 m-0 p-0 mt-2"
-    : undefined;
+    : "flex-1";
   const galleryRkey = new AtUri(gallery.uri).rkey;
   const favRrkey = gallery.viewer?.fav
     ? new AtUri(gallery.viewer.fav).rkey
