@@ -7,6 +7,7 @@ import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
+import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import {
@@ -23,6 +24,7 @@ import { getActorPhotos } from "../lib/actor.ts";
 import { getFollowers } from "../lib/follow.ts";
 import { deleteGallery, getGallery } from "../lib/gallery.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
+import { parseFacetedText } from "../lib/rich_text.ts";
 import type { State } from "../state.ts";
 import { galleryLink, profileLink, uploadPageLink } from "../utils.ts";
 
@@ -97,6 +99,16 @@ export const galleryCreateEdit: RouteHandler = async (
   const searchParams = new URLSearchParams(url.search);
   const uri = searchParams.get("uri");
 
+  let facets: Facet[] | undefined = undefined;
+  if (description) {
+    try {
+      const resp = parseFacetedText(description, ctx);
+      facets = resp.facets;
+    } catch (e) {
+      console.error("Failed to parse facets:", e);
+    }
+  }
+
   if (uri) {
     const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(uri);
     if (!gallery) return ctx.next();
@@ -105,6 +117,8 @@ export const galleryCreateEdit: RouteHandler = async (
       await ctx.updateRecord<Gallery>("social.grain.gallery", rkey, {
         title,
         description,
+        facets,
+        updatedAt: new Date().toISOString(),
         createdAt: gallery.createdAt,
       });
     } catch (e) {
@@ -122,6 +136,8 @@ export const galleryCreateEdit: RouteHandler = async (
     {
       title,
       description,
+      facets,
+      updatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
     },
   );

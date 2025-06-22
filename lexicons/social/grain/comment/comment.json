@@ -14,6 +14,11 @@
             "maxLength": 3000,
             "maxGraphemes": 300
           },
+          "facets": {
+            "type": "array",
+            "description": "Annotations of description text (mentions and URLs, hashtags, etc)",
+            "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+          },
           "subject": {
             "type": "string",
             "format": "at-uri"

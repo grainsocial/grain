@@ -1,6 +1,7 @@
 import { Record as Comment } from "$lexicon/types/social/grain/comment.ts";
 import { CommentView } from "$lexicon/types/social/grain/comment/defs.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
+import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as Follow } from "$lexicon/types/social/grain/graph/follow.ts";
 import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
@@ -10,10 +11,12 @@ import {
 } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { AtUri } from "@atproto/syntax";
+import { WithBffMeta } from "@bigmoves/bff";
 import { formatRelativeTime, galleryLink, profileLink } from "../utils.ts";
 import { ActorAvatar } from "./ActorAvatar.tsx";
 import { GalleryPreviewLink } from "./GalleryPreviewLink.tsx";
 import { Header } from "./Header.tsx";
+import { RenderFacetedText } from "./RenderFacetedText.tsx";
 
 export function NotificationsPage(
   { photosMap, galleriesMap, notifications, commentsMap }: Readonly<
@@ -68,6 +71,13 @@ export function NotificationsPage(
                         )}
                       </>
                     )}
+                    {notification.reason === "gallery-mention" && (
+                      <>
+                        mentioned you in a gallery · {formatRelativeTime(
+                          new Date((notification.record as Comment).createdAt),
+                        )}
+                      </>
+                    )}
                     {notification.reason === "reply" && (
                       <>
                         replied to your comment · {formatRelativeTime(
@@ -108,6 +118,13 @@ export function NotificationsPage(
                       commentsMap={commentsMap}
                     />
                   )}
+                {notification.reason === "gallery-mention" &&
+                  (
+                    <GalleryMentionNotification
+                      notification={notification}
+                      galleriesMap={galleriesMap}
+                    />
+                  )}
               </li>
             ))
           )
@@ -118,11 +135,11 @@ export function NotificationsPage(
 }
 
 function GalleryCommentNotification(
-  { notification, galleriesMap, photosMap }: {
+  { notification, galleriesMap, photosMap }: Readonly<{
     notification: NotificationView;
     galleriesMap: Map<string, GalleryView>;
     photosMap: Map<string, PhotoView>;
-  },
+  }>,
 ) {
   const comment = notification.record as Comment;
   const gallery = galleriesMap.get(comment.subject) as GalleryView | undefined;
@@ -159,12 +176,12 @@ function GalleryCommentNotification(
 }
 
 function ReplyNotification(
-  { notification, galleriesMap, photosMap, commentsMap }: {
+  { notification, galleriesMap, photosMap, commentsMap }: Readonly<{
     notification: NotificationView;
     galleriesMap: Map<string, GalleryView>;
     photosMap: Map<string, PhotoView>;
     commentsMap: Map<string, CommentView>;
-  },
+  }>,
 ) {
   const comment = notification.record as Comment;
   const gallery = galleriesMap.get(comment.subject) as GalleryView | undefined;
@@ -176,12 +193,15 @@ function ReplyNotification(
   return (
     <>
       {replyToComment && (
-        <div class="text-sm border-l-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-500 pl-2 max-w-[200px]">
-          {replyToComment.text}
+        <div class="text-sm border-l-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-500 pl-2">
+          <RenderFacetedText
+            text={replyToComment.text}
+            facets={(replyToComment.record as Comment).facets}
+          />
           {isPhotoView(replyToComment?.focus)
             ? (
               <a
-                class="block mt-2"
+                class="block mt-2 max-w-[200px]"
                 href={galleryLink(
                   gallery.creator.handle,
                   new AtUri(gallery.uri).rkey,
@@ -195,15 +215,17 @@ function ReplyNotification(
               </a>
             )
             : (
-              <GalleryPreviewLink
-                class="mt-2"
-                gallery={gallery}
-                size="small"
-              />
+              <div class="mt-2 max-w-[200px]">
+                <GalleryPreviewLink
+                  class="mt-2"
+                  gallery={gallery}
+                  size="small"
+                />
+              </div>
             )}
         </div>
       )}
-      {comment.text}
+      <RenderFacetedText text={comment.text} facets={comment.facets} />
       {comment.focus
         ? (
           <a
@@ -234,10 +256,12 @@ function ReplyNotification(
   );
 }
 
-function GalleryFavoriteNotification({ notification, galleriesMap }: {
-  notification: NotificationView;
-  galleriesMap: Map<string, GalleryView>;
-}) {
+function GalleryFavoriteNotification(
+  { notification, galleriesMap }: Readonly<{
+    notification: NotificationView;
+    galleriesMap: Map<string, GalleryView>;
+  }>,
+) {
   const favorite = notification.record as Favorite;
   const gallery = galleriesMap.get(favorite.subject) as GalleryView | undefined;
   if (!gallery) return null;
@@ -247,6 +271,30 @@ function GalleryFavoriteNotification({ notification, galleriesMap }: {
         gallery={gallery}
         size="small"
       />
+    </div>
+  );
+}
+
+function GalleryMentionNotification(
+  { notification, galleriesMap }: Readonly<{
+    notification: NotificationView;
+    galleriesMap: Map<string, GalleryView>;
+  }>,
+) {
+  const galleryRecord = notification.record as WithBffMeta<Gallery>;
+  const gallery = galleriesMap.get(galleryRecord.uri) as
+    | GalleryView
+    | undefined;
+  if (!gallery) return null;
+  return (
+    <div class="text-sm border-l-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-500 pl-2">
+      {(gallery.record as Gallery).description}
+      <div class="mt-2 max-w-[200px]">
+        <GalleryPreviewLink
+          gallery={gallery}
+          size="small"
+        />
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Label } from "$lexicon/types/com/atproto/label/defs.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
+import { Record as Comment } from "$lexicon/types/social/grain/comment.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import {
@@ -291,6 +292,45 @@ export function queryGalleriesByName(
       items: galleryPhotosMap.get(gallery.uri) ?? [],
       labels,
     })
+  );
+}
+
+export function getGalleryUrisByFacet(
+  type: string,
+  value: string,
+  ctx: BffContext,
+) {
+  const { items: galleries } = ctx.indexService.getRecords<
+    WithBffMeta<Gallery>
+  >(
+    "social.grain.gallery",
+    {
+      facet: {
+        "type": type,
+        "value": value,
+      },
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+    },
+  );
+  return galleries.map((g) => g.uri);
+}
+
+export function getGalleryUrisByCommentFacet(
+  type: string,
+  value: string,
+  ctx: BffContext,
+) {
+  const { items: comments } = ctx.indexService.getRecords<Comment>(
+    "social.grain.comment",
+    {
+      facet: {
+        type,
+        value,
+      },
+    },
+  );
+  return comments.map((comment) => comment.subject).filter((uri) =>
+    uri.includes("social.grain.gallery")
   );
 }
 

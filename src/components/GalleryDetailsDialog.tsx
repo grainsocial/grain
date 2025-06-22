@@ -14,7 +14,7 @@ export function GalleryDetailsDialog({
       <Dialog.Content>
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>
-          {gallery ? "Edit gallery" : "Create a new gallery"}
+          {gallery ? "Edit details" : "Create a new gallery"}
         </Dialog.Title>
         <form
           id="gallery-form"

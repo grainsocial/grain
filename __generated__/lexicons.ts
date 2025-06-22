@@ -2450,6 +2450,8 @@ export const schemaDict = {
               'gallery-favorite',
               'gallery-comment',
               'reply',
+              'gallery-mention',
+              'gallery-comment-mention',
               'unknown',
             ],
           },
@@ -2490,6 +2492,9 @@ export const schemaDict = {
           author: {
             type: 'ref',
             ref: 'lex:social.grain.actor.defs#profileView',
+          },
+          record: {
+            type: 'unknown',
           },
           text: {
             type: 'string',
@@ -2537,6 +2542,15 @@ export const schemaDict = {
               type: 'string',
               maxLength: 3000,
               maxGraphemes: 300,
+            },
+            facets: {
+              type: 'array',
+              description:
+                'Annotations of description text (mentions and URLs, hashtags, etc)',
+              items: {
+                type: 'ref',
+                ref: 'lex:app.bsky.richtext.facet',
+              },
             },
             subject: {
               type: 'string',
@@ -2676,11 +2690,24 @@ export const schemaDict = {
               type: 'string',
               maxLength: 1000,
             },
+            facets: {
+              type: 'array',
+              description:
+                'Annotations of description text (mentions, URLs, hashtags, etc)',
+              items: {
+                type: 'ref',
+                ref: 'lex:app.bsky.richtext.facet',
+              },
+            },
             labels: {
               type: 'union',
               description:
                 'Self-label values for this post. Effectively content warnings.',
               refs: ['lex:com.atproto.label.defs#selfLabels'],
+            },
+            updatedAt: {
+              type: 'string',
+              format: 'datetime',
             },
             createdAt: {
               type: 'string',

@@ -6,6 +6,7 @@
     "app.bsky.actor.defs",
     "app.bsky.graph.follow",
     "com.atproto.label.defs",
-    "com.atproto.moderation.defs"
+    "com.atproto.moderation.defs",
+    "app.bsky.richtext.facet"
   ]
 }

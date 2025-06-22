@@ -26,6 +26,8 @@ export interface NotificationView {
     | 'gallery-favorite'
     | 'gallery-comment'
     | 'reply'
+    | 'gallery-mention'
+    | 'gallery-comment-mention'
     | 'unknown'
     | (string & {})
   reasonSubject?: string

@@ -1,4 +1,10 @@
-import { BffContext, LabelerPolicies, RouteHandler } from "@bigmoves/bff";
+import { RichText } from "@atproto/api";
+import {
+  ActorTable,
+  BffContext,
+  LabelerPolicies,
+  RouteHandler,
+} from "@bigmoves/bff";
 import { ProfilePage, ProfileTabs } from "../components/ProfilePage.tsx";
 import {
   getActorGalleries,
@@ -12,6 +18,7 @@ import {
   moderateGallery,
   ModerationDecsion,
 } from "../lib/moderation.ts";
+import { parseFacetedText } from "../lib/rich_text.ts";
 import { type SocialNetwork } from "../lib/timeline.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
@@ -24,17 +31,30 @@ export const handler: RouteHandler = async (
 ) => {
   const url = new URL(req.url);
   const tab = url.searchParams.get("tab") as ProfileTabs;
-  const handle = params.handle;
-  const actor = ctx.indexService.getActorByHandle(handle);
-  const isHxRequest = req.headers.get("hx-request") !== null;
-  const render = isHxRequest ? ctx.html : ctx.render;
+  const handleOrDid = params.handleOrDid;
+
+  let actor: ActorTable | undefined;
+  if (handleOrDid.includes("did:")) {
+    actor = ctx.indexService.getActor(handleOrDid);
+  } else {
+    actor = ctx.indexService.getActorByHandle(handleOrDid);
+  }
 
   if (!actor) return ctx.next();
 
+  const isHxRequest = req.headers.get("hx-request") !== null;
+  const render = isHxRequest ? ctx.html : ctx.render;
+
   const profile = getActorProfile(actor.did, ctx);
-  const galleries = getActorGalleries(handle, ctx);
+  const galleries = getActorGalleries(actor.did, ctx);
   const followers = getFollowers(actor.did, ctx);
   const following = getFollowing(actor.did, ctx);
+
+  let descriptionFacets: RichText["facets"] = undefined;
+  if (profile?.description) {
+    const resp = parseFacetedText(profile?.description, ctx);
+    descriptionFacets = resp.facets;
+  }
 
   let labelerDefinitions: LabelerPolicies | undefined = undefined;
   const isLabeler = await isLabelerFn(actor.did, ctx);
@@ -69,7 +89,7 @@ export const handler: RouteHandler = async (
     actorProfiles = getActorProfiles(ctx.currentUser.did, ctx);
   }
 
-  userProfiles = getActorProfiles(handle, ctx);
+  userProfiles = getActorProfiles(actor.did, ctx);
 
   ctx.state.meta = [
     {
@@ -77,11 +97,11 @@ export const handler: RouteHandler = async (
         ? `${profile.displayName} (${profile.handle}) — Grain`
         : `${profile.handle} — Grain`,
     },
-    ...getPageMeta(profileLink(handle)),
+    ...getPageMeta(profileLink(actor.did)),
   ];
 
   if (tab === "favs") {
-    const galleryFavs = getActorGalleryFavs(handle, ctx);
+    const galleryFavs = getActorGalleryFavs(actor.did, ctx);
     return render(
       <ProfilePage
         followersCount={followers.length}
@@ -107,6 +127,7 @@ export const handler: RouteHandler = async (
       followUri={followUri}
       loggedInUserDid={ctx.currentUser?.did}
       profile={profile}
+      descriptionFacets={descriptionFacets}
       selectedTab={isLabeler ? "labels" : "galleries"}
       galleries={galleries}
       galleryModDecisionsMap={galleryModDecisionsMap}

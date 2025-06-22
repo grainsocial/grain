@@ -12,6 +12,7 @@
           "type": "ref",
           "ref": "social.grain.actor.defs#profileView"
         },
+        "record": { "type": "unknown" },
         "text": {
           "type": "string",
           "maxLength": 3000,

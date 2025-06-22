@@ -32,8 +32,8 @@ export function uploadPageLink(selectedGalleryRkey?: string) {
     (selectedGalleryRkey ? "?gallery=" + selectedGalleryRkey : "");
 }
 
-export function profileLink(handle: string) {
-  return `/profile/${handle}`;
+export function profileLink(handleOrDid: string) {
+  return `/profile/${handleOrDid}`;
 }
 
 export function followersLink(handle: string) {

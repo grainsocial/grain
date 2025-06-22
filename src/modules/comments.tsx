@@ -10,6 +10,7 @@ import {
   isPhotoView,
   PhotoView,
 } from "$lexicon/types/social/grain/photo/defs.ts";
+import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, BffMiddleware, route, WithBffMeta } from "@bigmoves/bff";
 import { cn } from "@bigmoves/bff/components";
@@ -18,10 +19,13 @@ import { ActorAvatar } from "../components/ActorAvatar.tsx";
 import { ActorInfo } from "../components/ActorInfo.tsx";
 import { Button } from "../components/Button.tsx";
 import { GalleryPreviewLink } from "../components/GalleryPreviewLink.tsx";
+import { RenderFacetedText } from "../components/RenderFacetedText.tsx";
 import { Textarea } from "../components/Textarea.tsx";
 import { getActorProfile, getActorProfilesBulk } from "../lib/actor.ts";
+import { BadRequestError } from "../lib/errors.ts";
 import { getGalleriesBulk, getGallery } from "../lib/gallery.ts";
 import { getPhoto, getPhotosBulk } from "../lib/photo.ts";
+import { parseFacetedText } from "../lib/rich_text.ts";
 import { formatRelativeTime } from "../utils.ts";
 
 export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
@@ -46,14 +50,19 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
               ? <ActorAvatar profile={comment.author} size={42} />
               : null}
             <div class="flex flex-col gap-2">
-              {comment && comment.author
+              {comment?.author
                 ? <div class="font-semibold">{comment.author.displayName}</div>
                 : (
                   <div class="font-semibold">
                     {gallery?.creator.displayName}
                   </div>
                 )}
-              {comment && comment.text}
+              {comment?.text && (
+                <RenderFacetedText
+                  text={comment.text}
+                  facets={(comment.record as Comment).facets}
+                />
+              )}
               {!comment && !photo && gallery &&
                 (gallery.record as Gallery).title}
               {!comment && !photo && gallery
@@ -207,7 +216,12 @@ function CommentBlock(
           </span>
         </div>
 
-        <div class="mt-1">{comment.text}</div>
+        <div class="mt-1">
+          <RenderFacetedText
+            text={comment.text}
+            facets={(comment.record as Comment).facets}
+          />
+        </div>
 
         {isPhotoView(comment.focus) && (
           <img
@@ -337,11 +351,22 @@ export const middlewares: BffMiddleware[] = [
         return new Response("Text is required", { status: 400 });
       }
 
+      let facets: Facet[] | undefined = undefined;
+      if (text) {
+        try {
+          const resp = parseFacetedText(text, ctx);
+          facets = resp.facets;
+        } catch (e) {
+          console.error("Failed to parse facets:", e);
+        }
+      }
+
       try {
         await ctx.createRecord<WithBffMeta<Comment>>(
           "social.grain.comment",
           {
             text,
+            facets,
             subject: gallery.uri,
             focus: focus ?? undefined,
             replyTo: replyTo ?? undefined,
@@ -350,6 +375,11 @@ export const middlewares: BffMiddleware[] = [
         );
       } catch (error) {
         console.error("Error creating comment:", error);
+        if (error instanceof Error) {
+          throw new BadRequestError(error.message);
+        } else {
+          throw new BadRequestError("Unknown error");
+        }
       }
 
       const comments = getGalleryComments(gallery.uri, ctx);
@@ -593,6 +623,7 @@ function commentToView(
     focus: isPhotoView(focus) ? focus : undefined,
     replyTo: record.replyTo,
     author,
+    record,
     createdAt: record.createdAt,
   };
 }

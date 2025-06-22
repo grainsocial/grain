@@ -12,6 +12,7 @@ import { handler as exploreHandler } from "./routes/explore.tsx";
 import { handler as followersHandler } from "./routes/followers.tsx";
 import { handler as followsHandler } from "./routes/follows.tsx";
 import { handler as galleryHandler } from "./routes/gallery.tsx";
+import { handler as hashtagHandler } from "./routes/hashtag.tsx";
 import * as legal from "./routes/legal.tsx";
 import { handler as notificationsHandler } from "./routes/notifications.tsx";
 import { handler as onboardHandler } from "./routes/onboard.tsx";
@@ -62,10 +63,11 @@ bff({
     route("/", timelineHandler),
     route("/explore", exploreHandler),
     route("/notifications", notificationsHandler),
-    route("/profile/:handle", profileHandler),
+    route("/profile/:handleOrDid", profileHandler),
     route("/profile/:handle/followers", followersHandler),
     route("/profile/:handle/follows", followsHandler),
     route("/profile/:handle/gallery/:rkey", galleryHandler),
+    route("/hashtag/:tag", hashtagHandler),
     route("/upload", uploadHandler),
     route("/onboard", onboardHandler),
     route("/support", supportHandler),

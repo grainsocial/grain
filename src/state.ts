@@ -28,7 +28,7 @@ export const appStateMiddleware: BffMiddleware = (req, ctx) => {
     if (profile) {
       ctx.state.profile = profile;
     }
-    const notifications = getNotifications(ctx.currentUser, ctx);
+    const notifications = getNotifications(ctx);
     ctx.state.notifications = notifications;
     return ctx.next();
   }

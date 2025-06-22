@@ -1,26 +1,44 @@
+import {
+  isMention,
+  type Main as Facet,
+} from "$lexicon/types/app/bsky/richtext/facet.ts";
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
-import { Record as Comment } from "$lexicon/types/social/grain/comment.ts";
-import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
-import { Record as Follow } from "$lexicon/types/social/grain/graph/follow.ts";
+import {
+  isRecord as isComment,
+  Record as Comment,
+} from "$lexicon/types/social/grain/comment.ts";
+import {
+  isRecord as isFavorite,
+  Record as Favorite,
+} from "$lexicon/types/social/grain/favorite.ts";
+import {
+  isRecord as isGallery,
+  Record as Gallery,
+} from "$lexicon/types/social/grain/gallery.ts";
+import {
+  isRecord as isFollow,
+  Record as Follow,
+} from "$lexicon/types/social/grain/graph/follow.ts";
 import { NotificationView } from "$lexicon/types/social/grain/notification/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { ActorTable, BffContext, WithBffMeta } from "@bigmoves/bff";
 import { getActorProfile } from "./actor.ts";
 
-export type NotificationRecords = WithBffMeta<Favorite | Follow | Comment>;
+export type NotificationRecords = WithBffMeta<
+  Favorite | Follow | Comment | Gallery
+>;
 
 export function getNotifications(
-  currentUser: ActorTable,
   ctx: BffContext,
 ) {
-  const { lastSeenNotifs } = currentUser;
   const notifications = ctx.getNotifications<NotificationRecords>();
   return notifications
     .filter(
       (notification) =>
         notification.$type === "social.grain.favorite" ||
         notification.$type === "social.grain.graph.follow" ||
-        notification.$type === "social.grain.comment",
+        notification.$type === "social.grain.comment" ||
+        notification.$type === "social.grain.gallery",
     )
     .map((notification) => {
       const actor = ctx.indexService.getActor(notification.did);
@@ -29,7 +47,7 @@ export function getNotifications(
       return notificationToView(
         notification,
         authorProfile,
-        lastSeenNotifs,
+        ctx.currentUser,
       );
     })
     .filter((view): view is Un$Typed<NotificationView> => Boolean(view));
@@ -38,27 +56,37 @@ export function getNotifications(
 export function notificationToView(
   record: NotificationRecords,
   author: Un$Typed<ProfileView>,
-  lastSeenNotifs: string | undefined,
+  currentUser?: ActorTable,
 ): Un$Typed<NotificationView> {
   let reason: string;
-  if (record.$type === "social.grain.favorite") {
+  if (isFavorite(record)) {
     reason = "gallery-favorite";
-  } else if (record.$type === "social.grain.graph.follow") {
+  } else if (isFollow(record)) {
     reason = "follow";
   } else if (
-    record.$type === "social.grain.comment" &&
+    isComment(record) &&
     record.replyTo
   ) {
     reason = "reply";
-  } else if (record.$type === "social.grain.comment") {
+    // @TODO: check the nsid here if support other types of comments
+  } else if (isComment(record)) {
     reason = "gallery-comment";
+  } else if (
+    isGallery(record) && recordHasMentionFacet(
+      record,
+      currentUser?.did,
+    )
+  ) {
+    reason = "gallery-mention";
   } else {
     reason = "unknown";
   }
   const reasonSubject = record.$type === "social.grain.favorite"
     ? record.subject
     : undefined;
-  const isRead = lastSeenNotifs ? record.createdAt <= lastSeenNotifs : false;
+  const isRead = currentUser?.lastSeenNotifs
+    ? record.createdAt <= currentUser.lastSeenNotifs
+    : false;
   return {
     uri: record.uri,
     cid: record.cid,
@@ -69,4 +97,27 @@ export function notificationToView(
     isRead,
     indexedAt: record.indexedAt,
   };
+}
+
+function recordHasMentionFacet(
+  record: NotificationRecords,
+  currentUserDid?: string,
+): boolean {
+  if (
+    record.$type === "social.grain.gallery" &&
+    Array.isArray(record.facets)
+  ) {
+    return record.facets.some((facet) => {
+      if (!currentUserDid) return true;
+      const features = (facet as Facet).features;
+      // Check if facet features contain the current user's DID
+      if (Array.isArray(features)) {
+        return features.filter(isMention).some(
+          (feature) => feature.did === currentUserDid,
+        );
+      }
+      return false;
+    });
+  }
+  return false;
 }

@@ -4,6 +4,7 @@ import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
+import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { LabelerPolicies } from "@bigmoves/bff";
 import { getGalleryCameras } from "../lib/gallery.ts";
@@ -26,6 +27,7 @@ import { CameraBadges } from "./CameraBadges.tsx";
 import { FollowButton } from "./FollowButton.tsx";
 import { LabelDefinitionButton } from "./LabelDefinitionButton.tsx";
 import { LabelerAvatar } from "./LabelerAvatar.tsx";
+import { RenderFacetedText } from "./RenderFacetedText.tsx";
 
 export type ProfileTabs = "favs" | "galleries" | "labels";
 
@@ -36,6 +38,7 @@ export function ProfilePage({
   userProfiles,
   loggedInUserDid,
   profile,
+  descriptionFacets,
   selectedTab,
   galleries,
   galleryFavs,
@@ -50,6 +53,7 @@ export function ProfilePage({
   actorProfiles: SocialNetwork[];
   loggedInUserDid?: string;
   profile: Un$Typed<ProfileView>;
+  descriptionFacets?: Facet[];
   selectedTab?: ProfileTabs;
   galleries?: GalleryView[];
   galleryFavs?: GalleryView[];
@@ -97,7 +101,22 @@ export function ProfilePage({
             </>
           )}
           {profile.description
-            ? <p class="mt-2 sm:max-w-[500px]">{profile.description}</p>
+            ? (
+              descriptionFacets
+                ? (
+                  <p class="mt-2 sm:max-w-[500px]">
+                    <RenderFacetedText
+                      text={profile.description}
+                      facets={descriptionFacets}
+                    />
+                  </p>
+                )
+                : (
+                  <p class="mt-2 sm:max-w-[500px]">
+                    {profile.description}
+                  </p>
+                )
+            )
             : null}
           <p>
             {userProfiles.includes("bluesky") && (

@@ -10,7 +10,7 @@ import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
-import { photoToView } from "./photo.ts";
+import { photoToView, photoUrl } from "./photo.ts";
 import type { SocialNetwork } from "./timeline.ts";
 
 export function getActorProfile(did: string, ctx: BffContext) {
@@ -32,7 +32,7 @@ export function profileToView(
     displayName: record.displayName,
     description: record.description,
     avatar: record?.avatar
-      ? `https://cdn.bsky.app/img/feed_thumbnail/plain/${record.did}/${record.avatar.ref.toString()}`
+      ? photoUrl(record.did, record.avatar.ref.toString(), "thumbnail")
       : undefined,
   };
 }

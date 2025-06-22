@@ -7,10 +7,12 @@ import { ActorInfo } from "./ActorInfo.tsx";
 import { FavoriteButton } from "./FavoriteButton.tsx";
 import { GalleryPreviewLink } from "./GalleryPreviewLink.tsx";
 import { ModerationWrapper } from "./ModerationWrapper.tsx";
+import { RenderFacetedText } from "./RenderFacetedText.tsx";
 
 export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
   const title = (item.gallery.record as Gallery).title;
   const description = (item.gallery.record as Gallery).description;
+  const facets = (item.gallery.record as Gallery).facets;
   return (
     <li>
       <div class="flex flex-col pb-4 max-w-md">
@@ -45,7 +47,9 @@ export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
         )}
         {description && (
           <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-500">
-            {description}
+            {facets && facets.length > 0
+              ? <RenderFacetedText text={description} facets={facets} />
+              : description}
           </p>
         )}
         <div class="flex gap-4">

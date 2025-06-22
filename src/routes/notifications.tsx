@@ -66,15 +66,24 @@ type WithSubject = Favorite | Comment;
 function getGalleriesUrisForNotifications(
   notifications: Un$Typed<NotificationView>[],
 ): string[] {
-  const uris = notifications
-    .filter((n) =>
+  const uris: string[] = [];
+  for (const n of notifications) {
+    if (
       n.record.$type === "social.grain.favorite" ||
       n.record.$type === "social.grain.comment"
-    )
-    .filter((n) =>
-      (n.record as WithSubject).subject.includes("social.grain.gallery")
-    )
-    .map((n) => (n.record as WithSubject).subject);
+    ) {
+      if (
+        (n.record as WithSubject).subject &&
+        (n.record as WithSubject).subject.includes("social.grain.gallery")
+      ) {
+        uris.push((n.record as WithSubject).subject);
+      }
+    } else if (n.record.$type === "social.grain.gallery") {
+      if (typeof n.record.uri === "string") {
+        uris.push(n.record.uri);
+      }
+    }
+  }
   return uris;
 }
 

@@ -22,6 +22,7 @@ export interface CommentView {
   uri: string
   cid: string
   author: SocialGrainActorDefs.ProfileView
+  record?: { [_ in string]: unknown }
   text: string
   subject?: $Typed<SocialGrainGalleryDefs.GalleryView> | { $type: string }
   focus?: $Typed<SocialGrainPhotoDefs.PhotoView> | { $type: string }
