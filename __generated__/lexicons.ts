@@ -2473,6 +2473,54 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainNotificationGetNotifications: {
+    lexicon: 1,
+    id: 'social.grain.notification.getNotifications',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Enumerate notifications for the requesting account. Requires auth.',
+        parameters: {
+          type: 'params',
+          properties: {
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['notifications'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              notifications: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.notification.defs#notificationView',
+                },
+              },
+              seenAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainCommentDefs: {
     lexicon: 1,
     id: 'social.grain.comment.defs',
@@ -3820,6 +3868,8 @@ export const ids = {
   ShTangledActorProfile: 'sh.tangled.actor.profile',
   SocialGrainDefs: 'social.grain.defs',
   SocialGrainNotificationDefs: 'social.grain.notification.defs',
+  SocialGrainNotificationGetNotifications:
+    'social.grain.notification.getNotifications',
   SocialGrainCommentDefs: 'social.grain.comment.defs',
   SocialGrainComment: 'social.grain.comment',
   SocialGrainGalleryItem: 'social.grain.gallery.item',

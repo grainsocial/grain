@@ -9,6 +9,7 @@ import {
   type StreamAuthVerifier,
 } from "npm:@atproto/xrpc-server"
 import { schemas } from './lexicons.ts'
+import * as SocialGrainNotificationGetNotifications from './types/social/grain/notification/getNotifications.ts'
 import * as SocialGrainGalleryGetGalleryThread from './types/social/grain/gallery/getGalleryThread.ts'
 import * as SocialGrainGalleryGetActorGalleries from './types/social/grain/gallery/getActorGalleries.ts'
 import * as SocialGrainGalleryGetGallery from './types/social/grain/gallery/getGallery.ts'
@@ -184,6 +185,7 @@ export class SocialNS {
 
 export class SocialGrainNS {
   _server: Server
+  notification: SocialGrainNotificationNS
   gallery: SocialGrainGalleryNS
   graph: SocialGrainGraphNS
   labeler: SocialGrainLabelerNS
@@ -193,12 +195,32 @@ export class SocialGrainNS {
 
   constructor(server: Server) {
     this._server = server
+    this.notification = new SocialGrainNotificationNS(server)
     this.gallery = new SocialGrainGalleryNS(server)
     this.graph = new SocialGrainGraphNS(server)
     this.labeler = new SocialGrainLabelerNS(server)
     this.feed = new SocialGrainFeedNS(server)
     this.actor = new SocialGrainActorNS(server)
     this.photo = new SocialGrainPhotoNS(server)
+  }
+}
+
+export class SocialGrainNotificationNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  getNotifications<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainNotificationGetNotifications.Handler<ExtractAuth<AV>>,
+      SocialGrainNotificationGetNotifications.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.notification.getNotifications' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 }
 

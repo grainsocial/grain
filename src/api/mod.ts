@@ -17,11 +17,15 @@ import {
   OutputSchema as GetGalleryThreadOutputSchema,
   QueryParams as GetGalleryThreadQueryParams,
 } from "$lexicon/types/social/grain/gallery/getGalleryThread.ts";
+import {
+  OutputSchema as GetNotificationsOutputSchema,
+} from "$lexicon/types/social/grain/notification/getNotifications.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffMiddleware, OAUTH_ROUTES, route } from "@bigmoves/bff";
 import { getActorGalleries, getActorProfileDetailed } from "../lib/actor.ts";
 import { BadRequestError } from "../lib/errors.ts";
 import { getGallery } from "../lib/gallery.ts";
+import { getNotifications } from "../lib/notifications.ts";
 import { getTimeline } from "../lib/timeline.ts";
 import { getGalleryComments } from "../modules/comments.tsx";
 
@@ -100,6 +104,19 @@ export const middlewares: BffMiddleware[] = [
       { feed: items.map((i) => i.gallery) } as GetTimelineOutputSchema,
     );
   }),
+  route(
+    "/xrpc/social.grain.notification.getNotifications",
+    (_req, _params, ctx) => {
+      // @TODO: this redirects, we should have a json response
+      ctx.requireAuth();
+      const notifications = getNotifications(
+        ctx,
+      );
+      return ctx.json(
+        { notifications } as GetNotificationsOutputSchema,
+      );
+    },
+  ),
 ];
 
 function getProfileQueryParams(url: URL): GetProfileQueryParams {
@@ -130,6 +147,15 @@ function getGalleryThreadQueryParams(url: URL): GetGalleryThreadQueryParams {
   if (!uri) throw new BadRequestError("Missing uri parameter");
   return { uri };
 }
+
+// function getNotificationsQueryParams(url: URL): GetNotificationsQueryParams {
+//   const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+//   if (isNaN(limit) || limit <= 0) {
+//     throw new BadRequestError("Invalid limit parameter");
+//   }
+//   const cursor = url.searchParams.get("cursor") ?? undefined;
+//   return { limit, cursor };
+// }
 
 // function getTimelineQueryParams(url: URL): GetTimelineQueryParams {
 //   const algorithm = url.searchParams.get("algorithm") ?? undefined;
