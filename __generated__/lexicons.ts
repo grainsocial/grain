@@ -2718,6 +2718,136 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainGalleryGetGalleryThread: {
+    lexicon: 1,
+    id: 'social.grain.gallery.getGalleryThread',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Gets a hydrated gallery view and its comments for a specified gallery AT-URI.',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              description:
+                'The AT-URI of the gallery to return a hydrated view and comments for.',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['gallery', 'comments'],
+            properties: {
+              gallery: {
+                type: 'ref',
+                ref: 'lex:social.grain.gallery.defs#galleryView',
+              },
+              comments: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.comment.defs#commentView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGalleryGetActorGalleries: {
+    lexicon: 1,
+    id: 'social.grain.gallery.getActorGalleries',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Get a view of an actor's galleries. Does not require auth.",
+        parameters: {
+          type: 'params',
+          required: ['actor'],
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['items'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              items: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.gallery.defs#galleryView',
+                },
+              },
+            },
+          },
+        },
+        errors: [
+          {
+            name: 'BlockedActor',
+          },
+          {
+            name: 'BlockedByActor',
+          },
+        ],
+      },
+    },
+  },
+  SocialGrainGalleryGetGallery: {
+    lexicon: 1,
+    id: 'social.grain.gallery.getGallery',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Gets a hydrated gallery view for a specified gallery AT-URI.',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              description:
+                'The AT-URI of the gallery to return a hydrated view for.',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:social.grain.gallery.defs#galleryView',
+          },
+        },
+      },
+    },
+  },
   SocialGrainGraphFollow: {
     lexicon: 1,
     id: 'social.grain.graph.follow',
@@ -2942,6 +3072,54 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainFeedGetTimeline: {
+    lexicon: 1,
+    id: 'social.grain.feed.getTimeline',
+    defs: {
+      main: {
+        type: 'query',
+        description: "Get a view of the requesting account's home timeline.",
+        parameters: {
+          type: 'params',
+          properties: {
+            algorithm: {
+              type: 'string',
+              description:
+                "Variant 'algorithm' for timeline. Implementation-specific.",
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['feed'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              feed: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.gallery.defs#galleryView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainFavorite: {
     lexicon: 1,
     id: 'social.grain.favorite',
@@ -3006,6 +3184,106 @@ export const schemaDict = {
           createdAt: {
             type: 'string',
             format: 'datetime',
+          },
+        },
+      },
+      profileViewDetailed: {
+        type: 'object',
+        required: ['did', 'handle'],
+        properties: {
+          did: {
+            type: 'string',
+            format: 'did',
+          },
+          handle: {
+            type: 'string',
+            format: 'handle',
+          },
+          displayName: {
+            type: 'string',
+            maxGraphemes: 64,
+            maxLength: 640,
+          },
+          description: {
+            type: 'string',
+            maxGraphemes: 256,
+            maxLength: 2560,
+          },
+          avatar: {
+            type: 'string',
+            format: 'uri',
+          },
+          followersCount: {
+            type: 'integer',
+          },
+          followsCount: {
+            type: 'integer',
+          },
+          galleryCount: {
+            type: 'integer',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          viewer: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#viewerState',
+          },
+          labels: {
+            type: 'array',
+            items: {
+              type: 'ref',
+              ref: 'lex:com.atproto.label.defs#label',
+            },
+          },
+        },
+      },
+      viewerState: {
+        type: 'object',
+        description:
+          "Metadata about the requesting account's relationship with the subject account. Only has meaningful content for authed requests.",
+        properties: {
+          following: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          followedBy: {
+            type: 'string',
+            format: 'at-uri',
+          },
+        },
+      },
+    },
+  },
+  SocialGrainActorGetProfile: {
+    lexicon: 1,
+    id: 'social.grain.actor.getProfile',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Get detailed profile view of an actor. Does not require auth, but contains relevant metadata with auth.',
+        parameters: {
+          type: 'params',
+          required: ['actor'],
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'at-identifier',
+              description: 'Handle or DID of account to fetch profile of.',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#profileViewDetailed',
           },
         },
       },
@@ -3547,11 +3825,16 @@ export const ids = {
   SocialGrainGalleryItem: 'social.grain.gallery.item',
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
   SocialGrainGallery: 'social.grain.gallery',
+  SocialGrainGalleryGetGalleryThread: 'social.grain.gallery.getGalleryThread',
+  SocialGrainGalleryGetActorGalleries: 'social.grain.gallery.getActorGalleries',
+  SocialGrainGalleryGetGallery: 'social.grain.gallery.getGallery',
   SocialGrainGraphFollow: 'social.grain.graph.follow',
   SocialGrainLabelerDefs: 'social.grain.labeler.defs',
   SocialGrainLabelerService: 'social.grain.labeler.service',
+  SocialGrainFeedGetTimeline: 'social.grain.feed.getTimeline',
   SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainActorDefs: 'social.grain.actor.defs',
+  SocialGrainActorGetProfile: 'social.grain.actor.getProfile',
   SocialGrainActorProfile: 'social.grain.actor.profile',
   SocialGrainPhotoDefs: 'social.grain.photo.defs',
   SocialGrainPhotoExif: 'social.grain.photo.exif',

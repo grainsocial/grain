@@ -9,6 +9,11 @@ import {
   type StreamAuthVerifier,
 } from "npm:@atproto/xrpc-server"
 import { schemas } from './lexicons.ts'
+import * as SocialGrainGalleryGetGalleryThread from './types/social/grain/gallery/getGalleryThread.ts'
+import * as SocialGrainGalleryGetActorGalleries from './types/social/grain/gallery/getActorGalleries.ts'
+import * as SocialGrainGalleryGetGallery from './types/social/grain/gallery/getGallery.ts'
+import * as SocialGrainFeedGetTimeline from './types/social/grain/feed/getTimeline.ts'
+import * as SocialGrainActorGetProfile from './types/social/grain/actor/getProfile.ts'
 
 export const APP_BSKY_GRAPH = {
   DefsModlist: 'app.bsky.graph.defs#modlist',
@@ -182,6 +187,7 @@ export class SocialGrainNS {
   gallery: SocialGrainGalleryNS
   graph: SocialGrainGraphNS
   labeler: SocialGrainLabelerNS
+  feed: SocialGrainFeedNS
   actor: SocialGrainActorNS
   photo: SocialGrainPhotoNS
 
@@ -190,6 +196,7 @@ export class SocialGrainNS {
     this.gallery = new SocialGrainGalleryNS(server)
     this.graph = new SocialGrainGraphNS(server)
     this.labeler = new SocialGrainLabelerNS(server)
+    this.feed = new SocialGrainFeedNS(server)
     this.actor = new SocialGrainActorNS(server)
     this.photo = new SocialGrainPhotoNS(server)
   }
@@ -200,6 +207,39 @@ export class SocialGrainGalleryNS {
 
   constructor(server: Server) {
     this._server = server
+  }
+
+  getGalleryThread<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryGetGalleryThread.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryGetGalleryThread.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.getGalleryThread' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getActorGalleries<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryGetActorGalleries.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryGetActorGalleries.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.getActorGalleries' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getGallery<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryGetGallery.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryGetGallery.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.getGallery' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 }
 
@@ -219,11 +259,41 @@ export class SocialGrainLabelerNS {
   }
 }
 
+export class SocialGrainFeedNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  getTimeline<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainFeedGetTimeline.Handler<ExtractAuth<AV>>,
+      SocialGrainFeedGetTimeline.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.feed.getTimeline' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+}
+
 export class SocialGrainActorNS {
   _server: Server
 
   constructor(server: Server) {
     this._server = server
+  }
+
+  getProfile<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainActorGetProfile.Handler<ExtractAuth<AV>>,
+      SocialGrainActorGetProfile.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.actor.getProfile' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 }
 

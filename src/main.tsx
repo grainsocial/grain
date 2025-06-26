@@ -1,5 +1,6 @@
 import { lexicons } from "$lexicon/lexicons.ts";
 import { bff, oauth, route } from "@bigmoves/bff";
+import { middlewares as xrpcApi } from "./api/mod.ts";
 import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
 import { PDS_HOST_URL } from "./env.ts";
@@ -55,6 +56,7 @@ bff({
   rootElement: Root,
   onError,
   middlewares: [
+    ...xrpcApi,
     appStateMiddleware,
     oauth({
       onSignedIn,

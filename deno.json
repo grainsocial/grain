@@ -3,7 +3,7 @@
     "$lexicon/": "./__generated__/",
     "@atproto/api": "npm:@atproto/api@^0.15.16",
     "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
-    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.41",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.42",
     "@std/http": "jsr:@std/http@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
     "@tailwindcss/cli": "npm:@tailwindcss/cli@^4.1.4",

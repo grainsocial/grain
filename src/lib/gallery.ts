@@ -429,3 +429,12 @@ export function getGalleriesBulk(
     })
     .filter((g): g is ReturnType<typeof galleryToView> => g !== null);
 }
+
+export function getGalleryCount(
+  userDid: string,
+  ctx: BffContext,
+): number {
+  return ctx.indexService.countRecords("social.grain.gallery", {
+    where: [{ field: "did", equals: userDid }],
+  });
+}

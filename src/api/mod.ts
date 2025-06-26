@@ -1,0 +1,142 @@
+import {
+  OutputSchema as GetProfileOutputSchema,
+  QueryParams as GetProfileQueryParams,
+} from "$lexicon/types/social/grain/actor/getProfile.ts";
+import {
+  OutputSchema as GetTimelineOutputSchema,
+} from "$lexicon/types/social/grain/feed/getTimeline.ts";
+import {
+  OutputSchema as GetActorGalleriesOutputSchema,
+  QueryParams as GetActorGalleriesQueryParams,
+} from "$lexicon/types/social/grain/gallery/getActorGalleries.ts";
+import {
+  OutputSchema as GetGalleryOutputSchema,
+  QueryParams as GetGalleryQueryParams,
+} from "$lexicon/types/social/grain/gallery/getGallery.ts";
+import {
+  OutputSchema as GetGalleryThreadOutputSchema,
+  QueryParams as GetGalleryThreadQueryParams,
+} from "$lexicon/types/social/grain/gallery/getGalleryThread.ts";
+import { AtUri } from "@atproto/syntax";
+import { BffMiddleware, OAUTH_ROUTES, route } from "@bigmoves/bff";
+import { getActorGalleries, getActorProfileDetailed } from "../lib/actor.ts";
+import { BadRequestError } from "../lib/errors.ts";
+import { getGallery } from "../lib/gallery.ts";
+import { getTimeline } from "../lib/timeline.ts";
+import { getGalleryComments } from "../modules/comments.tsx";
+
+export const middlewares: BffMiddleware[] = [
+  async (req, ctx) => {
+    const url = new URL(req.url);
+    const { pathname } = url;
+
+    if (pathname === OAUTH_ROUTES.tokenCallback) {
+      const token = url.searchParams.get("token") ?? undefined;
+      if (!token) {
+        throw new BadRequestError("Missing token parameter");
+      }
+      return ctx.redirect(`grainflutter://auth/callback?token=${token}`);
+    }
+
+    return ctx.next();
+  },
+  route("/oauth/session", (_req, _params, ctx) => {
+    if (!ctx.currentUser) {
+      return ctx.json("Unauthorized", 401);
+    }
+    const did = ctx.currentUser.did;
+    const profile = getActorProfileDetailed(did, ctx);
+    if (!profile) {
+      return ctx.json("Profile not found", 404);
+    }
+    return ctx.json(profile);
+  }),
+  route("/xrpc/social.grain.actor.getProfile", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { actor } = getProfileQueryParams(url);
+    const profile = getActorProfileDetailed(actor, ctx);
+    return ctx.json(profile as GetProfileOutputSchema);
+  }),
+  route("/xrpc/social.grain.gallery.getActorGalleries", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { actor } = getActorGalleriesQueryParams(url);
+    const galleries = getActorGalleries(actor, ctx);
+    return ctx.json({ items: galleries } as GetActorGalleriesOutputSchema);
+  }),
+  route("/xrpc/social.grain.gallery.getGallery", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { uri } = getGalleryQueryParams(url);
+    const atUri = new AtUri(uri);
+    const did = atUri.hostname;
+    const rkey = atUri.rkey;
+    const gallery = getGallery(did, rkey, ctx);
+    if (!gallery) {
+      return ctx.json("Gallery not found", 404);
+    }
+    return ctx.json(gallery as GetGalleryOutputSchema);
+  }),
+  route("/xrpc/social.grain.gallery.getGalleryThread", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { uri } = getGalleryThreadQueryParams(url);
+    const atUri = new AtUri(uri);
+    const did = atUri.hostname;
+    const rkey = atUri.rkey;
+    const gallery = getGallery(did, rkey, ctx);
+    if (!gallery) {
+      return ctx.json("Gallery not found", 404);
+    }
+    const comments = getGalleryComments(uri, ctx);
+    return ctx.json({ gallery, comments } as GetGalleryThreadOutputSchema);
+  }),
+  route("/xrpc/social.grain.feed.getTimeline", async (_req, _params, ctx) => {
+    // const url = new URL(req.url);
+    // const { algorithm, limit, cursor } = getTimelineQueryParams(url);
+    const items = await getTimeline(
+      ctx,
+      "timeline",
+      "grain",
+    );
+    return ctx.json(
+      { feed: items.map((i) => i.gallery) } as GetTimelineOutputSchema,
+    );
+  }),
+];
+
+function getProfileQueryParams(url: URL): GetProfileQueryParams {
+  const actor = url.searchParams.get("actor");
+  if (!actor) throw new BadRequestError("Missing actor parameter");
+  return { actor };
+}
+
+function getActorGalleriesQueryParams(url: URL): GetActorGalleriesQueryParams {
+  const actor = url.searchParams.get("actor");
+  if (!actor) throw new BadRequestError("Missing actor parameter");
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { actor, limit, cursor };
+}
+
+function getGalleryQueryParams(url: URL): GetGalleryQueryParams {
+  const uri = url.searchParams.get("uri");
+  if (!uri) throw new BadRequestError("Missing uri parameter");
+  return { uri };
+}
+
+function getGalleryThreadQueryParams(url: URL): GetGalleryThreadQueryParams {
+  const uri = url.searchParams.get("uri");
+  if (!uri) throw new BadRequestError("Missing uri parameter");
+  return { uri };
+}
+
+// function getTimelineQueryParams(url: URL): GetTimelineQueryParams {
+//   const algorithm = url.searchParams.get("algorithm") ?? undefined;
+//   const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+//   if (isNaN(limit) || limit <= 0) {
+//     throw new BadRequestError("Invalid limit parameter");
+//   }
+//   const cursor = url.searchParams.get("cursor") ?? undefined;
+//   return { algorithm, limit, cursor };
+// }

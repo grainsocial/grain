@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.getGallery",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Gets a hydrated gallery view for a specified gallery AT-URI.",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "The AT-URI of the gallery to return a hydrated view for.",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "ref",
+          "ref": "social.grain.gallery.defs#galleryView"
+        }
+      }
+    }
+  }
+}

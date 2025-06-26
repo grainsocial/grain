@@ -90,3 +90,35 @@ export function getFollowingWithProfiles(
       profile != null
     );
 }
+
+export function getFollowersCount(
+  followeeDid: string,
+  ctx: BffContext,
+): number {
+  return ctx.indexService.countRecords(
+    "social.grain.graph.follow",
+    {
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+      where: [{
+        field: "subject",
+        equals: followeeDid,
+      }],
+    },
+  );
+}
+
+export function getFollowsCount(
+  followerDid: string,
+  ctx: BffContext,
+): number {
+  return ctx.indexService.countRecords(
+    "social.grain.graph.follow",
+    {
+      orderBy: [{ field: "createdAt", direction: "desc" }],
+      where: [{
+        field: "did",
+        equals: followerDid,
+      }],
+    },
+  );
+}

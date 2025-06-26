@@ -1,7 +1,10 @@
 import { Record as BskyProfile } from "$lexicon/types/app/bsky/actor/profile.ts";
 import { Label } from "$lexicon/types/com/atproto/label/defs.ts";
 import { Record as TangledProfile } from "$lexicon/types/sh/tangled/actor/profile.ts";
-import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
+import {
+  ProfileView,
+  ProfileViewDetailed,
+} from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as GrainProfile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
@@ -9,7 +12,12 @@ import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
-import { galleryToView, getGalleryItemsAndPhotos } from "./gallery.ts";
+import { getFollowersCount, getFollowsCount } from "./follow.ts";
+import {
+  galleryToView,
+  getGalleryCount,
+  getGalleryItemsAndPhotos,
+} from "./gallery.ts";
 import { photoToView, photoUrl } from "./photo.ts";
 import type { SocialNetwork } from "./timeline.ts";
 
@@ -20,6 +28,26 @@ export function getActorProfile(did: string, ctx: BffContext) {
     `at://${did}/social.grain.actor.profile/self`,
   );
   return profileRecord ? profileToView(profileRecord, actor.handle) : null;
+}
+
+export function getActorProfileDetailed(did: string, ctx: BffContext) {
+  const actor = ctx.indexService.getActor(did);
+  if (!actor) return null;
+  const profileRecord = ctx.indexService.getRecord<WithBffMeta<GrainProfile>>(
+    `at://${did}/social.grain.actor.profile/self`,
+  );
+  const followersCount = getFollowersCount(did, ctx);
+  const followsCount = getFollowsCount(did, ctx);
+  const galleryCount = getGalleryCount(did, ctx);
+  return profileRecord
+    ? profileDetailedToView(
+      profileRecord,
+      actor.handle,
+      followersCount,
+      followsCount,
+      galleryCount,
+    )
+    : null;
 }
 
 export function profileToView(
@@ -34,6 +62,27 @@ export function profileToView(
     avatar: record?.avatar
       ? photoUrl(record.did, record.avatar.ref.toString(), "thumbnail")
       : undefined,
+  };
+}
+
+export function profileDetailedToView(
+  record: WithBffMeta<GrainProfile>,
+  handle: string,
+  followersCount: number,
+  followsCount: number,
+  galleryCount: number,
+): Un$Typed<ProfileViewDetailed> {
+  return {
+    did: record.did,
+    handle,
+    displayName: record.displayName,
+    description: record.description,
+    avatar: record?.avatar
+      ? photoUrl(record.did, record.avatar.ref.toString(), "thumbnail")
+      : undefined,
+    followersCount,
+    followsCount,
+    galleryCount,
   };
 }
 

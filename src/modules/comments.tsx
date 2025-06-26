@@ -530,7 +530,10 @@ function hydrateComments(
   }, []);
 }
 
-function getGalleryComments(uri: string, ctx: BffContext): CommentView[] {
+export function getGalleryComments(
+  uri: string,
+  ctx: BffContext,
+): CommentView[] {
   const { items: comments } = ctx.indexService.getRecords<WithBffMeta<Comment>>(
     "social.grain.comment",
     {
