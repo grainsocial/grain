@@ -1,7 +1,12 @@
+import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import {
   OutputSchema as GetProfileOutputSchema,
   QueryParams as GetProfileQueryParams,
 } from "$lexicon/types/social/grain/actor/getProfile.ts";
+import {
+  OutputSchema as SearchActorsOutputSchema,
+  QueryParams as SearchActorsQueryParams,
+} from "$lexicon/types/social/grain/actor/searchActors.ts";
 import {
   OutputSchema as GetTimelineOutputSchema,
 } from "$lexicon/types/social/grain/feed/getTimeline.ts";
@@ -22,7 +27,11 @@ import {
 } from "$lexicon/types/social/grain/notification/getNotifications.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffMiddleware, OAUTH_ROUTES, route } from "@bigmoves/bff";
-import { getActorGalleries, getActorProfileDetailed } from "../lib/actor.ts";
+import {
+  getActorGalleries,
+  getActorProfileDetailed,
+  searchActors,
+} from "../lib/actor.ts";
 import { BadRequestError } from "../lib/errors.ts";
 import { getGallery } from "../lib/gallery.ts";
 import { getNotifications } from "../lib/notifications.ts";
@@ -117,6 +126,25 @@ export const middlewares: BffMiddleware[] = [
       );
     },
   ),
+  route(
+    "/xrpc/social.grain.actor.searchActors",
+    (req, _params, ctx) => {
+      const url = new URL(req.url);
+      const { q } = searchActorsQueryParams(url);
+      let results: ProfileView[] = [];
+      if (!q) {
+        results = [];
+      } else {
+        results = searchActors(
+          q,
+          ctx,
+        );
+      }
+      return ctx.json(
+        { actors: results } as SearchActorsOutputSchema,
+      );
+    },
+  ),
 ];
 
 function getProfileQueryParams(url: URL): GetProfileQueryParams {
@@ -146,6 +174,17 @@ function getGalleryThreadQueryParams(url: URL): GetGalleryThreadQueryParams {
   const uri = url.searchParams.get("uri");
   if (!uri) throw new BadRequestError("Missing uri parameter");
   return { uri };
+}
+
+function searchActorsQueryParams(url: URL): SearchActorsQueryParams {
+  const q = url.searchParams.get("q");
+  if (!q) throw new BadRequestError("Missing q parameter");
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { q, limit, cursor };
 }
 
 // function getNotificationsQueryParams(url: URL): GetNotificationsQueryParams {

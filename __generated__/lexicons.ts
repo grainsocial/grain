@@ -3337,6 +3337,55 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainActorSearchActors: {
+    lexicon: 1,
+    id: 'social.grain.actor.searchActors',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Find actors (profiles) matching search criteria. Does not require auth.',
+        parameters: {
+          type: 'params',
+          properties: {
+            q: {
+              type: 'string',
+              description:
+                'Search query string. Syntax, phrase, boolean, and faceting is unspecified, but Lucene query syntax is recommended.',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['actors'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              actors: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.actor.defs#profileView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainActorProfile: {
     lexicon: 1,
     id: 'social.grain.actor.profile',
@@ -3885,6 +3934,7 @@ export const ids = {
   SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorGetProfile: 'social.grain.actor.getProfile',
+  SocialGrainActorSearchActors: 'social.grain.actor.searchActors',
   SocialGrainActorProfile: 'social.grain.actor.profile',
   SocialGrainPhotoDefs: 'social.grain.photo.defs',
   SocialGrainPhotoExif: 'social.grain.photo.exif',

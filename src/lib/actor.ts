@@ -322,3 +322,60 @@ export function getActorProfilesBulk(
     return profileToView(profile, handle);
   });
 }
+
+export function searchActors(query: string, ctx: BffContext) {
+  const actors = ctx.indexService.searchActors(query);
+
+  const { items } = ctx.indexService.getRecords<WithBffMeta<GrainProfile>>(
+    "social.grain.actor.profile",
+    {
+      where: {
+        OR: [
+          ...(actors.length > 0
+            ? [{
+              field: "did",
+              in: actors.map((actor) => actor.did),
+            }]
+            : []),
+          {
+            field: "displayName",
+            contains: query,
+          },
+          {
+            field: "did",
+            contains: query,
+          },
+        ],
+      },
+    },
+  );
+
+  const profileMap = new Map<string, WithBffMeta<GrainProfile>>();
+  for (const item of items) {
+    profileMap.set(item.did, item);
+  }
+
+  const actorMap = new Map();
+  actors.forEach((actor) => {
+    actorMap.set(actor.did, actor);
+  });
+
+  const profileViews = [];
+
+  for (const actor of actors) {
+    if (profileMap.has(actor.did)) {
+      const profile = profileMap.get(actor.did)!;
+      profileViews.push(profileToView(profile, actor.handle));
+    }
+  }
+
+  for (const profile of items) {
+    if (!actorMap.has(profile.did)) {
+      const handle = ctx.indexService.getActor(profile.did)?.handle;
+      if (!handle) continue;
+      profileViews.push(profileToView(profile, handle));
+    }
+  }
+
+  return profileViews;
+}

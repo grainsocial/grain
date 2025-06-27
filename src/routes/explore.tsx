@@ -1,12 +1,11 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
-import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Un$Typed } from "$lexicon/util.ts";
-import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
+import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { ComponentChildren } from "preact";
 import { ActorAvatar } from "../components/ActorAvatar.tsx";
 import { Input } from "../components/Input.tsx";
 import { LabelerAvatar } from "../components/LabelerAvatar.tsx";
-import { profileToView } from "../lib/actor.ts";
+import { searchActors } from "../lib/actor.ts";
 import { getPageMeta } from "../meta.ts";
 import type { State } from "../state.ts";
 
@@ -20,7 +19,7 @@ export const handler: RouteHandler = (
   const query = url.searchParams.get("q") ?? "";
   ctx.state.meta = [{ title: "Explore — Grain" }, ...getPageMeta("/explore")];
   if (query) {
-    const profileViews = doSearch(query, ctx);
+    const profileViews = searchActors(query, ctx);
     if (req.headers.get("hx-request")) {
       if (profileViews.length === 0) {
         return ctx.html(<p>No results for "{query}"</p>);
@@ -103,61 +102,4 @@ function SearchResults(
       </ul>
     </>
   );
-}
-
-function doSearch(query: string, ctx: BffContext<State>) {
-  const actors = ctx.indexService.searchActors(query);
-
-  const { items } = ctx.indexService.getRecords<WithBffMeta<Profile>>(
-    "social.grain.actor.profile",
-    {
-      where: {
-        OR: [
-          ...(actors.length > 0
-            ? [{
-              field: "did",
-              in: actors.map((actor) => actor.did),
-            }]
-            : []),
-          {
-            field: "displayName",
-            contains: query,
-          },
-          {
-            field: "did",
-            contains: query,
-          },
-        ],
-      },
-    },
-  );
-
-  const profileMap = new Map<string, WithBffMeta<Profile>>();
-  for (const item of items) {
-    profileMap.set(item.did, item);
-  }
-
-  const actorMap = new Map();
-  actors.forEach((actor) => {
-    actorMap.set(actor.did, actor);
-  });
-
-  const profileViews = [];
-
-  for (const actor of actors) {
-    if (profileMap.has(actor.did)) {
-      const profile = profileMap.get(actor.did)!;
-      profileViews.push(profileToView(profile, actor.handle));
-    }
-  }
-
-  for (const profile of items) {
-    if (!actorMap.has(profile.did)) {
-      const handle = ctx.indexService.getActor(profile.did)?.handle;
-      if (!handle) continue;
-      profileViews.push(profileToView(profile, handle));
-    }
-  }
-
-  return profileViews;
 }
