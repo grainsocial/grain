@@ -52,6 +52,8 @@ bff({
     "social.grain.photo.exif": ["photo"],
     "social.grain.comment": ["subject"],
   },
+  // Used to exchange jwt token with mobile app
+  tokenCallbackUrl: "grainflutter://auth/callback",
   lexicons,
   rootElement: Root,
   onError,

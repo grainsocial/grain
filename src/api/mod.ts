@@ -26,7 +26,7 @@ import {
   OutputSchema as GetNotificationsOutputSchema,
 } from "$lexicon/types/social/grain/notification/getNotifications.ts";
 import { AtUri } from "@atproto/syntax";
-import { BffMiddleware, OAUTH_ROUTES, route } from "@bigmoves/bff";
+import { BffMiddleware, route } from "@bigmoves/bff";
 import {
   getActorGalleries,
   getActorProfileDetailed,
@@ -39,20 +39,6 @@ import { getTimeline } from "../lib/timeline.ts";
 import { getGalleryComments } from "../modules/comments.tsx";
 
 export const middlewares: BffMiddleware[] = [
-  async (req, ctx) => {
-    const url = new URL(req.url);
-    const { pathname } = url;
-
-    if (pathname === OAUTH_ROUTES.tokenCallback) {
-      const token = url.searchParams.get("token") ?? undefined;
-      if (!token) {
-        throw new BadRequestError("Missing token parameter");
-      }
-      return ctx.redirect(`grainflutter://auth/callback?token=${token}`);
-    }
-
-    return ctx.next();
-  },
   route("/oauth/session", (_req, _params, ctx) => {
     if (!ctx.currentUser) {
       return ctx.json("Unauthorized", 401);
