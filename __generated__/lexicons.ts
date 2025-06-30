@@ -2855,14 +2855,6 @@ export const schemaDict = {
             },
           },
         },
-        errors: [
-          {
-            name: 'BlockedActor',
-          },
-          {
-            name: 'BlockedByActor',
-          },
-        ],
       },
     },
   },
@@ -3378,6 +3370,55 @@ export const schemaDict = {
                 items: {
                   type: 'ref',
                   ref: 'lex:social.grain.actor.defs#profileView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainActorGetActorFavs: {
+    lexicon: 1,
+    id: 'social.grain.actor.getActorFavs',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          "Get a view of an actor's favorite galleries. Does not require auth.",
+        parameters: {
+          type: 'params',
+          required: ['actor'],
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['items'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              items: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.gallery.defs#galleryView',
                 },
               },
             },
@@ -3935,6 +3976,7 @@ export const ids = {
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorGetProfile: 'social.grain.actor.getProfile',
   SocialGrainActorSearchActors: 'social.grain.actor.searchActors',
+  SocialGrainActorGetActorFavs: 'social.grain.actor.getActorFavs',
   SocialGrainActorProfile: 'social.grain.actor.profile',
   SocialGrainPhotoDefs: 'social.grain.photo.defs',
   SocialGrainPhotoExif: 'social.grain.photo.exif',

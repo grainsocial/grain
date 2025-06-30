@@ -1,5 +1,9 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import {
+  OutputSchema as GetActorFavsOutputSchema,
+  QueryParams as GetActorFavsQueryParams,
+} from "$lexicon/types/social/grain/actor/getActorFavs.ts";
+import {
   OutputSchema as GetProfileOutputSchema,
   QueryParams as GetProfileQueryParams,
 } from "$lexicon/types/social/grain/actor/getProfile.ts";
@@ -9,6 +13,7 @@ import {
 } from "$lexicon/types/social/grain/actor/searchActors.ts";
 import {
   OutputSchema as GetTimelineOutputSchema,
+  QueryParams as GetTimelineQueryParams,
 } from "$lexicon/types/social/grain/feed/getTimeline.ts";
 import {
   OutputSchema as GetActorGalleriesOutputSchema,
@@ -29,6 +34,7 @@ import { AtUri } from "@atproto/syntax";
 import { BffMiddleware, route } from "@bigmoves/bff";
 import {
   getActorGalleries,
+  getActorGalleryFavs,
   getActorProfileDetailed,
   searchActors,
 } from "../lib/actor.ts";
@@ -39,7 +45,7 @@ import { getTimeline } from "../lib/timeline.ts";
 import { getGalleryComments } from "../modules/comments.tsx";
 
 export const middlewares: BffMiddleware[] = [
-  route("/oauth/session", (_req, _params, ctx) => {
+  route("/oauth/session", async (_req, _params, ctx) => {
     if (!ctx.currentUser) {
       return ctx.json("Unauthorized", 401);
     }
@@ -61,6 +67,12 @@ export const middlewares: BffMiddleware[] = [
     const { actor } = getActorGalleriesQueryParams(url);
     const galleries = getActorGalleries(actor, ctx);
     return ctx.json({ items: galleries } as GetActorGalleriesOutputSchema);
+  }),
+  route("/xrpc/social.grain.actor.getActorFavs", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { actor } = getActorFavsQueryParams(url);
+    const galleries = getActorGalleryFavs(actor, ctx);
+    return ctx.json({ items: galleries } as GetActorFavsOutputSchema);
   }),
   route("/xrpc/social.grain.gallery.getGallery", (req, _params, ctx) => {
     const url = new URL(req.url);
@@ -87,12 +99,12 @@ export const middlewares: BffMiddleware[] = [
     const comments = getGalleryComments(uri, ctx);
     return ctx.json({ gallery, comments } as GetGalleryThreadOutputSchema);
   }),
-  route("/xrpc/social.grain.feed.getTimeline", async (_req, _params, ctx) => {
-    // const url = new URL(req.url);
-    // const { algorithm, limit, cursor } = getTimelineQueryParams(url);
+  route("/xrpc/social.grain.feed.getTimeline", async (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { algorithm } = getTimelineQueryParams(url);
     const items = await getTimeline(
       ctx,
-      "timeline",
+      algorithm === "following" ? "following" : "timeline",
       "grain",
     );
     return ctx.json(
@@ -150,6 +162,17 @@ function getActorGalleriesQueryParams(url: URL): GetActorGalleriesQueryParams {
   return { actor, limit, cursor };
 }
 
+function getActorFavsQueryParams(url: URL): GetActorFavsQueryParams {
+  const actor = url.searchParams.get("actor");
+  if (!actor) throw new BadRequestError("Missing actor parameter");
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { actor, limit, cursor };
+}
+
 function getGalleryQueryParams(url: URL): GetGalleryQueryParams {
   const uri = url.searchParams.get("uri");
   if (!uri) throw new BadRequestError("Missing uri parameter");
@@ -182,12 +205,12 @@ function searchActorsQueryParams(url: URL): SearchActorsQueryParams {
 //   return { limit, cursor };
 // }
 
-// function getTimelineQueryParams(url: URL): GetTimelineQueryParams {
-//   const algorithm = url.searchParams.get("algorithm") ?? undefined;
-//   const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
-//   if (isNaN(limit) || limit <= 0) {
-//     throw new BadRequestError("Invalid limit parameter");
-//   }
-//   const cursor = url.searchParams.get("cursor") ?? undefined;
-//   return { algorithm, limit, cursor };
-// }
+function getTimelineQueryParams(url: URL): GetTimelineQueryParams {
+  const algorithm = url.searchParams.get("algorithm") ?? undefined;
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { algorithm, limit, cursor };
+}

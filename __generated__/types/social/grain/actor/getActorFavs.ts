@@ -5,11 +5,11 @@ import { HandlerAuth, HandlerPipeThrough } from "npm:@atproto/xrpc-server";
 import express from "npm:express";
 import { validate as _validate } from "../../../../lexicons.ts";
 import { is$typed as _is$typed } from "../../../../util.ts";
-import type * as SocialGrainGalleryDefs from "./defs.ts";
+import type * as SocialGrainGalleryDefs from "../gallery/defs.ts";
 
 const is$typed = _is$typed,
   validate = _validate;
-const id = "social.grain.gallery.getActorGalleries";
+const id = "social.grain.actor.getActorFavs";
 
 export interface QueryParams {
   actor: string;

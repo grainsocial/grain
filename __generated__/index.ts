@@ -16,6 +16,7 @@ import * as SocialGrainGalleryGetGallery from './types/social/grain/gallery/getG
 import * as SocialGrainFeedGetTimeline from './types/social/grain/feed/getTimeline.ts'
 import * as SocialGrainActorGetProfile from './types/social/grain/actor/getProfile.ts'
 import * as SocialGrainActorSearchActors from './types/social/grain/actor/searchActors.ts'
+import * as SocialGrainActorGetActorFavs from './types/social/grain/actor/getActorFavs.ts'
 
 export const APP_BSKY_GRAPH = {
   DefsModlist: 'app.bsky.graph.defs#modlist',
@@ -327,6 +328,17 @@ export class SocialGrainActorNS {
     >,
   ) {
     const nsid = 'social.grain.actor.searchActors' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getActorFavs<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainActorGetActorFavs.Handler<ExtractAuth<AV>>,
+      SocialGrainActorGetActorFavs.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.actor.getActorFavs' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 }

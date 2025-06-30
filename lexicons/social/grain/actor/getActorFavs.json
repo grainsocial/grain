@@ -1,10 +1,10 @@
 {
   "lexicon": 1,
-  "id": "social.grain.gallery.getActorGalleries",
+  "id": "social.grain.actor.getActorFavs",
   "defs": {
     "main": {
       "type": "query",
-      "description": "Get a view of an actor's galleries. Does not require auth.",
+      "description": "Get a view of an actor's favorite galleries. Does not require auth.",
       "parameters": {
         "type": "params",
         "required": ["actor"],
