@@ -38,6 +38,7 @@ bff({
     "social.grain.photo.exif",
     "social.grain.favorite",
     "social.grain.graph.follow",
+    "social.grain.comment",
   ],
   externalCollections: [
     "app.bsky.actor.profile",
