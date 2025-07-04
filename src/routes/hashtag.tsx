@@ -6,11 +6,7 @@ import { Breadcrumb } from "../components/Breadcrumb.tsx";
 import { GalleryPreviewLink } from "../components/GalleryPreviewLink.tsx";
 import { Header } from "../components/Header.tsx";
 import { RenderFacetedText } from "../components/RenderFacetedText.tsx";
-import {
-  getGalleriesBulk,
-  getGalleryUrisByCommentFacet,
-  getGalleryUrisByFacet,
-} from "../lib/gallery.ts";
+import { getGalleriesByHashtag } from "../lib/gallery.ts";
 import { State } from "../state.ts";
 
 export const handler: RouteHandler = (
@@ -20,25 +16,7 @@ export const handler: RouteHandler = (
 ) => {
   const tag = params.tag;
 
-  const galleryUris = getGalleryUrisByFacet(
-    "tag",
-    tag,
-    ctx,
-  );
-
-  const galleriesUrisInComments = getGalleryUrisByCommentFacet(
-    "tag",
-    tag,
-    ctx,
-  );
-
-  const uniqueGalleryUris = Array.from(
-    new Set([...galleryUris, ...galleriesUrisInComments]),
-  );
-  const galleries = getGalleriesBulk(
-    uniqueGalleryUris,
-    ctx,
-  );
+  const galleries = getGalleriesByHashtag(tag, ctx);
 
   ctx.state.meta = [{ title: `Hashtag — Grain` }];
 

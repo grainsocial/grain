@@ -622,6 +622,7 @@ function commentToView(
     uri: record.uri,
     cid: record.cid,
     text: record.text,
+    facets: record.facets,
     subject: isGalleryView(subject) ? subject : undefined,
     focus: isPhotoView(focus) ? focus : undefined,
     replyTo: record.replyTo,

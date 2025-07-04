@@ -217,6 +217,9 @@ export function galleryToView({
     $type: "social.grain.gallery.defs#galleryView",
     uri: record.uri,
     cid: record.cid,
+    title: record.title,
+    description: record.description,
+    facets: record.facets,
     creator,
     record,
     items: items
@@ -437,4 +440,27 @@ export function getGalleryCount(
   return ctx.indexService.countRecords("social.grain.gallery", {
     where: [{ field: "did", equals: userDid }],
   });
+}
+
+export function getGalleriesByHashtag(
+  tag: string,
+  ctx: BffContext,
+): GalleryView[] {
+  const galleryUris = getGalleryUrisByFacet(
+    "tag",
+    tag,
+    ctx,
+  );
+  const galleriesUrisInComments = getGalleryUrisByCommentFacet(
+    "tag",
+    tag,
+    ctx,
+  );
+  const uniqueGalleryUris = Array.from(
+    new Set([...galleryUris, ...galleriesUrisInComments]),
+  );
+  return getGalleriesBulk(
+    uniqueGalleryUris,
+    ctx,
+  );
 }

@@ -10,6 +10,7 @@ import {
   type OmitKey,
 } from '../../../../util.ts'
 import type * as SocialGrainActorDefs from '../actor/defs.ts'
+import type * as AppBskyRichtextFacet from '../../../app/bsky/richtext/facet.ts'
 import type * as SocialGrainGalleryDefs from '../gallery/defs.ts'
 import type * as SocialGrainPhotoDefs from '../photo/defs.ts'
 
@@ -24,6 +25,8 @@ export interface CommentView {
   author: SocialGrainActorDefs.ProfileView
   record?: { [_ in string]: unknown }
   text: string
+  /** Annotations of description text (mentions and URLs, hashtags, etc) */
+  facets?: AppBskyRichtextFacet.Main[]
   subject?: $Typed<SocialGrainGalleryDefs.GalleryView> | { $type: string }
   focus?: $Typed<SocialGrainPhotoDefs.PhotoView> | { $type: string }
   /** The URI of the comment this comment is replying to, if applicable. */

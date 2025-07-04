@@ -39,22 +39,22 @@ import {
   searchActors,
 } from "../lib/actor.ts";
 import { BadRequestError } from "../lib/errors.ts";
-import { getGallery } from "../lib/gallery.ts";
+import { getGalleriesByHashtag, getGallery } from "../lib/gallery.ts";
 import { getNotifications } from "../lib/notifications.ts";
 import { getTimeline } from "../lib/timeline.ts";
 import { getGalleryComments } from "../modules/comments.tsx";
 
 export const middlewares: BffMiddleware[] = [
-  route("/oauth/session", async (_req, _params, ctx) => {
+  route("/oauth/session", (_req, _params, ctx) => {
     if (!ctx.currentUser) {
-      return ctx.json("Unauthorized", 401);
+      return ctx.json({ messgae: "Unauthorized" }, 401);
     }
     const did = ctx.currentUser.did;
-    const profile = getActorProfileDetailed(did, ctx);
-    if (!profile) {
-      return ctx.json("Profile not found", 404);
+    const session = ctx.indexService.getSession(did);
+    if (!session) {
+      return ctx.json({ message: "Session not found" }, 404);
     }
-    return ctx.json(profile);
+    return ctx.json(session);
   }),
   route("/xrpc/social.grain.actor.getProfile", (req, _params, ctx) => {
     const url = new URL(req.url);
@@ -82,7 +82,7 @@ export const middlewares: BffMiddleware[] = [
     const rkey = atUri.rkey;
     const gallery = getGallery(did, rkey, ctx);
     if (!gallery) {
-      return ctx.json("Gallery not found", 404);
+      return ctx.json({ message: "Gallery not found" }, 404);
     }
     return ctx.json(gallery as GetGalleryOutputSchema);
   }),
@@ -94,7 +94,7 @@ export const middlewares: BffMiddleware[] = [
     const rkey = atUri.rkey;
     const gallery = getGallery(did, rkey, ctx);
     if (!gallery) {
-      return ctx.json("Gallery not found", 404);
+      return ctx.json({ message: "Gallery not found" }, 404);
     }
     const comments = getGalleryComments(uri, ctx);
     return ctx.json({ gallery, comments } as GetGalleryThreadOutputSchema);
@@ -102,6 +102,17 @@ export const middlewares: BffMiddleware[] = [
   route("/xrpc/social.grain.feed.getTimeline", async (req, _params, ctx) => {
     const url = new URL(req.url);
     const { algorithm } = getTimelineQueryParams(url);
+
+    if (algorithm?.includes("hashtag")) {
+      const tag = algorithm.split("hashtag_")[1];
+
+      const galleries = getGalleriesByHashtag(tag, ctx);
+
+      return ctx.json(
+        { feed: galleries } as GetTimelineOutputSchema,
+      );
+    }
+
     const items = await getTimeline(
       ctx,
       algorithm === "following" ? "following" : "timeline",

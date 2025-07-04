@@ -4,6 +4,7 @@ import { Record as TangledProfile } from "$lexicon/types/sh/tangled/actor/profil
 import {
   ProfileView,
   ProfileViewDetailed,
+  ViewerState,
 } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as GrainProfile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
@@ -12,7 +13,7 @@ import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
-import { getFollowersCount, getFollowsCount } from "./follow.ts";
+import { getFollow, getFollowersCount, getFollowsCount } from "./follow.ts";
 import {
   galleryToView,
   getGalleryCount,
@@ -39,6 +40,14 @@ export function getActorProfileDetailed(did: string, ctx: BffContext) {
   const followersCount = getFollowersCount(did, ctx);
   const followsCount = getFollowsCount(did, ctx);
   const galleryCount = getGalleryCount(did, ctx);
+
+  let followedBy: string | undefined = "";
+  let following: string | undefined = "";
+  if (ctx.currentUser) {
+    followedBy = getFollow(ctx.currentUser.did, did, ctx)?.uri;
+    following = getFollow(did, ctx.currentUser.did, ctx)?.uri;
+  }
+
   return profileRecord
     ? profileDetailedToView(
       profileRecord,
@@ -46,6 +55,10 @@ export function getActorProfileDetailed(did: string, ctx: BffContext) {
       followersCount,
       followsCount,
       galleryCount,
+      {
+        followedBy,
+        following,
+      },
     )
     : null;
 }
@@ -71,6 +84,7 @@ export function profileDetailedToView(
   followersCount: number,
   followsCount: number,
   galleryCount: number,
+  viewer: ViewerState,
 ): Un$Typed<ProfileViewDetailed> {
   return {
     did: record.did,
@@ -83,6 +97,7 @@ export function profileDetailedToView(
     followersCount,
     followsCount,
     galleryCount,
+    viewer,
   };
 }
 

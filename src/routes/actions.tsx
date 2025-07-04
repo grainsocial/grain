@@ -22,7 +22,7 @@ import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
 import { getActorPhotos } from "../lib/actor.ts";
 import { getFollowers } from "../lib/follow.ts";
-import { deleteGallery, getGallery } from "../lib/gallery.ts";
+import { deleteGallery, getGallery, getGalleryFav } from "../lib/gallery.ts";
 import { getPhoto, photoToView } from "../lib/photo.ts";
 import { parseFacetedText } from "../lib/rich_text.ts";
 import type { State } from "../state.ts";
@@ -421,14 +421,19 @@ export const galleryFavorite: RouteHandler = async (
   const creatorDid = params.creatorDid;
   const galleryRkey = params.rkey;
   const galleryUri = `at://${creatorDid}/social.grain.gallery/${galleryRkey}`;
+  const did = ctx.currentUser?.did;
 
-  try {
-    await ctx.createRecord<WithBffMeta<Favorite>>("social.grain.favorite", {
-      subject: galleryUri,
-      createdAt: new Date().toISOString(),
-    });
-  } catch (e) {
-    console.error("Error creating favorite record:", e);
+  // Check if already favorited
+  const existingFav = did ? getGalleryFav(did, galleryUri, ctx) : undefined;
+  if (!existingFav) {
+    try {
+      await ctx.createRecord<WithBffMeta<Favorite>>("social.grain.favorite", {
+        subject: galleryUri,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.error("Error creating favorite record:", e);
+    }
   }
 
   const gallery = getGallery(creatorDid, galleryRkey, ctx);

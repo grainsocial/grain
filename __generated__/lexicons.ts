@@ -2549,6 +2549,15 @@ export const schemaDict = {
             maxLength: 3000,
             maxGraphemes: 300,
           },
+          facets: {
+            type: 'array',
+            description:
+              'Annotations of description text (mentions and URLs, hashtags, etc)',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.richtext.facet',
+            },
+          },
           subject: {
             type: 'union',
             refs: ['lex:social.grain.gallery.defs#galleryView'],
@@ -2668,6 +2677,21 @@ export const schemaDict = {
           cid: {
             type: 'string',
             format: 'cid',
+          },
+          title: {
+            type: 'string',
+          },
+          description: {
+            type: 'string',
+          },
+          facets: {
+            type: 'array',
+            description:
+              'Annotations of description text (mentions, URLs, hashtags, etc)',
+            items: {
+              type: 'ref',
+              ref: 'lex:app.bsky.richtext.facet',
+            },
           },
           creator: {
             type: 'ref',

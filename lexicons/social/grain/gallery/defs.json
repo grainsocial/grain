@@ -8,6 +8,13 @@
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "facets": {
+          "type": "array",
+          "description": "Annotations of description text (mentions, URLs, hashtags, etc)",
+          "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+        },
         "creator": {
           "type": "ref",
           "ref": "social.grain.actor.defs#profileView"

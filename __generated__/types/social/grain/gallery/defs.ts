@@ -9,6 +9,7 @@ import {
   is$typed as _is$typed,
   type OmitKey,
 } from '../../../../util.ts'
+import type * as AppBskyRichtextFacet from '../../../app/bsky/richtext/facet.ts'
 import type * as SocialGrainActorDefs from '../actor/defs.ts'
 import type * as SocialGrainPhotoDefs from '../photo/defs.ts'
 import type * as ComAtprotoLabelDefs from '../../../com/atproto/label/defs.ts'
@@ -21,6 +22,10 @@ export interface GalleryView {
   $type?: 'social.grain.gallery.defs#galleryView'
   uri: string
   cid: string
+  title?: string
+  description?: string
+  /** Annotations of description text (mentions, URLs, hashtags, etc) */
+  facets?: AppBskyRichtextFacet.Main[]
   creator: SocialGrainActorDefs.ProfileView
   record: { [_ in string]: unknown }
   items?: ($Typed<SocialGrainPhotoDefs.PhotoView> | { $type: string })[]
