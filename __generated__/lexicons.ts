@@ -2684,6 +2684,14 @@ export const schemaDict = {
           description: {
             type: 'string',
           },
+          cameras: {
+            type: 'array',
+            description:
+              'List of camera make and models used in this gallery derived from EXIF data.',
+            items: {
+              type: 'string',
+            },
+          },
           facets: {
             type: 'array',
             description:
@@ -2719,6 +2727,10 @@ export const schemaDict = {
               type: 'ref',
               ref: 'lex:com.atproto.label.defs#label',
             },
+          },
+          createdAt: {
+            type: 'string',
+            format: 'datetime',
           },
           indexedAt: {
             type: 'string',
@@ -3214,8 +3226,12 @@ export const schemaDict = {
     defs: {
       profileView: {
         type: 'object',
-        required: ['did', 'handle'],
+        required: ['cid', 'did', 'handle'],
         properties: {
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
           did: {
             type: 'string',
             format: 'did',
@@ -3253,8 +3269,12 @@ export const schemaDict = {
       },
       profileViewDetailed: {
         type: 'object',
-        required: ['did', 'handle'],
+        required: ['cid', 'did', 'handle'],
         properties: {
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
           did: {
             type: 'string',
             format: 'did',
@@ -3276,6 +3296,14 @@ export const schemaDict = {
           avatar: {
             type: 'string',
             format: 'uri',
+          },
+          cameras: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description:
+              'List of camera make and models used by this actor derived from EXIF data of photos linked to galleries.',
           },
           followersCount: {
             type: 'integer',

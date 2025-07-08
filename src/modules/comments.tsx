@@ -1,7 +1,6 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Record as Comment } from "$lexicon/types/social/grain/comment.ts";
 import { CommentView } from "$lexicon/types/social/grain/comment/defs.ts";
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import {
   GalleryView,
   isGalleryView,
@@ -64,7 +63,7 @@ export function ReplyDialog({ userProfile, gallery, photo, comment }: Readonly<{
                 />
               )}
               {!comment && !photo && gallery &&
-                (gallery.record as Gallery).title}
+                gallery.title}
               {!comment && !photo && gallery
                 ? (
                   <div class="w-[200px] pointer-events-none">
@@ -145,7 +144,7 @@ export function GalleryCommentsDialog(
               {gallery.creator
                 ? <div class="font-semibold">{gallery.creator.displayName}</div>
                 : null}
-              {(gallery.record as Gallery).title}
+              {gallery.title}
               <div class="w-[200px] pointer-events-none">
                 <GalleryPreviewLink
                   gallery={gallery}

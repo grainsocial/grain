@@ -17,6 +17,7 @@ const id = 'social.grain.actor.defs'
 
 export interface ProfileView {
   $type?: 'social.grain.actor.defs#profileView'
+  cid: string
   did: string
   handle: string
   displayName?: string
@@ -38,11 +39,14 @@ export function validateProfileView<V>(v: V) {
 
 export interface ProfileViewDetailed {
   $type?: 'social.grain.actor.defs#profileViewDetailed'
+  cid: string
   did: string
   handle: string
   displayName?: string
   description?: string
   avatar?: string
+  /** List of camera make and models used by this actor derived from EXIF data of photos linked to galleries. */
+  cameras?: string[]
   followersCount?: number
   followsCount?: number
   galleryCount?: number

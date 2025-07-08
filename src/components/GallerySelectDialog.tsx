@@ -1,4 +1,3 @@
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { Button } from "./Button.tsx";
@@ -72,9 +71,9 @@ export function GallerySelectDialogSearchResults(
                     hx-swap="none"
                     class="block text-left w-full px-2 py-4"
                   >
-                    {(gallery.record as Gallery).title}
+                    {gallery.title}
                     <div class="text-sm text-zinc-600 dark:text-zinc-500">
-                      {(gallery.record as Gallery).description}
+                      {gallery.description}
                     </div>
                   </button>
                 )
@@ -83,9 +82,9 @@ export function GallerySelectDialogSearchResults(
                     href={uploadPageLink(gallery.uri)}
                     class="block w-full px-2 py-4"
                   >
-                    {(gallery.record as Gallery).title}
+                    {gallery.title}
                     <div class="text-sm text-zinc-600 dark:text-zinc-500">
-                      {(gallery.record as Gallery).description}
+                      {gallery.description}
                     </div>
                   </a>
                 )}

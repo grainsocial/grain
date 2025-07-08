@@ -9,10 +9,9 @@ import { ProfilePage, ProfileTabs } from "../components/ProfilePage.tsx";
 import {
   getActorGalleries,
   getActorGalleryFavs,
-  getActorProfile,
+  getActorProfileDetailed,
   getActorProfiles,
 } from "../lib/actor.ts";
-import { getFollow, getFollowers, getFollowing } from "../lib/follow.ts";
 import {
   isLabeler as isLabelerFn,
   moderateGallery,
@@ -45,10 +44,8 @@ export const handler: RouteHandler = async (
   const isHxRequest = req.headers.get("hx-request") !== null;
   const render = isHxRequest ? ctx.html : ctx.render;
 
-  const profile = getActorProfile(actor.did, ctx);
+  const profile = getActorProfileDetailed(actor.did, ctx);
   const galleries = getActorGalleries(actor.did, ctx);
-  const followers = getFollowers(actor.did, ctx);
-  const following = getFollowing(actor.did, ctx);
 
   let descriptionFacets: RichText["facets"] = undefined;
   if (profile?.description) {
@@ -80,12 +77,10 @@ export const handler: RouteHandler = async (
 
   if (!profile) return ctx.next();
 
-  let followUri: string | undefined;
   let actorProfiles: SocialNetwork[] = [];
   let userProfiles: SocialNetwork[] = [];
 
   if (ctx.currentUser) {
-    followUri = getFollow(profile.did, ctx.currentUser.did, ctx)?.uri;
     actorProfiles = getActorProfiles(ctx.currentUser.did, ctx);
   }
 
@@ -104,11 +99,8 @@ export const handler: RouteHandler = async (
     const galleryFavs = getActorGalleryFavs(actor.did, ctx);
     return render(
       <ProfilePage
-        followersCount={followers.length}
-        followingCount={following.length}
         userProfiles={userProfiles}
         actorProfiles={actorProfiles}
-        followUri={followUri}
         loggedInUserDid={ctx.currentUser?.did}
         profile={profile}
         selectedTab="favs"
@@ -120,11 +112,8 @@ export const handler: RouteHandler = async (
   }
   return render(
     <ProfilePage
-      followersCount={followers.length}
-      followingCount={following.length}
       userProfiles={userProfiles}
       actorProfiles={actorProfiles}
-      followUri={followUri}
       loggedInUserDid={ctx.currentUser?.did}
       profile={profile}
       descriptionFacets={descriptionFacets}

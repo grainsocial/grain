@@ -4,8 +4,9 @@
   "defs": {
     "profileView": {
       "type": "object",
-      "required": ["did", "handle"],
+      "required": ["cid", "did", "handle"],
       "properties": {
+        "cid": { "type": "string", "format": "cid" },
         "did": { "type": "string", "format": "did" },
         "handle": { "type": "string", "format": "handle" },
         "displayName": {
@@ -31,8 +32,9 @@
     },
     "profileViewDetailed": {
       "type": "object",
-      "required": ["did", "handle"],
+      "required": ["cid", "did", "handle"],
       "properties": {
+        "cid": { "type": "string", "format": "cid" },
         "did": { "type": "string", "format": "did" },
         "handle": { "type": "string", "format": "handle" },
         "displayName": {
@@ -46,6 +48,11 @@
           "maxLength": 2560
         },
         "avatar": { "type": "string", "format": "uri" },
+        "cameras": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of camera make and models used by this actor derived from EXIF data of photos linked to galleries."
+        },
         "followersCount": { "type": "integer" },
         "followsCount": { "type": "integer" },
         "galleryCount": { "type": "integer" },

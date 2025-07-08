@@ -212,24 +212,29 @@ export function galleryToView({
   favCount?: number;
   commentCount?: number;
   viewerState?: ViewerState;
+  cameras?: string[];
 }): $Typed<GalleryView> {
+  const viewItems = items
+    ?.map((item) => itemToView(record.did, item))
+    .filter(isPhotoView);
+  const cameras = getGalleryCameras(viewItems);
   return {
     $type: "social.grain.gallery.defs#galleryView",
     uri: record.uri,
     cid: record.cid,
     title: record.title,
     description: record.description,
+    cameras,
     facets: record.facets,
     creator,
     record,
-    items: items
-      ?.map((item) => itemToView(record.did, item))
-      .filter(isPhotoView),
+    items: viewItems,
     labels,
-    indexedAt: record.indexedAt,
     favCount,
     commentCount,
     viewer: viewerState,
+    createdAt: record.createdAt,
+    indexedAt: record.indexedAt,
   };
 }
 
@@ -248,13 +253,14 @@ function itemToView(
 }
 
 export function getGalleryCameras(
-  gallery: GalleryView,
+  items: Array<PhotoWithExif | PhotoView>,
 ): string[] {
-  const photos = gallery.items?.filter(isPhotoView) ?? [];
   const cameras = new Set<string>();
-  for (const photo of photos) {
-    if (photo.exif?.make) {
-      cameras.add(`${photo.exif.make} ${photo.exif.model}`.trim());
+  if (!Array.isArray(items)) return [];
+  for (const item of items) {
+    const exif = "exif" in item ? item.exif : (item as PhotoView).exif;
+    if (exif?.make && exif?.model) {
+      cameras.add(`${exif.make} ${exif.model}`.trim());
     }
   }
   return Array.from(cameras);

@@ -1,13 +1,11 @@
 import { LabelValueDefinition } from "$lexicon/types/com/atproto/label/defs.ts";
-import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
+import { ProfileViewDetailed } from "$lexicon/types/social/grain/actor/defs.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { LabelerPolicies } from "@bigmoves/bff";
-import { getGalleryCameras } from "../lib/gallery.ts";
 import {
   atprotoLabelValueDefinitions,
   ModerationDecsion,
@@ -32,9 +30,6 @@ import { RenderFacetedText } from "./RenderFacetedText.tsx";
 export type ProfileTabs = "favs" | "galleries" | "labels";
 
 export function ProfilePage({
-  followUri,
-  followersCount,
-  followingCount,
   userProfiles,
   loggedInUserDid,
   profile,
@@ -46,13 +41,10 @@ export function ProfilePage({
   isLabeler,
   labelerDefinitions,
 }: Readonly<{
-  followUri?: string;
-  followersCount?: number;
-  followingCount?: number;
   userProfiles: SocialNetwork[];
   actorProfiles: SocialNetwork[];
   loggedInUserDid?: string;
-  profile: Un$Typed<ProfileView>;
+  profile: Un$Typed<ProfileViewDetailed>;
   descriptionFacets?: Facet[];
   selectedTab?: ProfileTabs;
   galleries?: GalleryView[];
@@ -63,9 +55,6 @@ export function ProfilePage({
 }>) {
   const isCreator = loggedInUserDid === profile.did;
   const displayName = profile.displayName || profile.handle;
-  const cameras = Array.from(
-    new Set(galleries?.flatMap(getGalleryCameras) ?? []),
-  );
   return (
     <div class="px-4 mb-4" id="profile-page">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between my-4">
@@ -80,7 +69,7 @@ export function ProfilePage({
               <p class="space-x-1">
                 <a href={followersLink(profile.handle)}>
                   <span class="font-semibold" id="followers-count">
-                    {followersCount ?? 0}
+                    {profile.followersCount ?? 0}
                   </span>{" "}
                   <span class="text-zinc-600 dark:text-zinc-500">
                     followers
@@ -88,7 +77,7 @@ export function ProfilePage({
                 </a>{" "}
                 <a href={followingLink(profile.handle)}>
                   <span class="font-semibold" id="following-count">
-                    {followingCount ?? 0}
+                    {profile.followsCount ?? 0}
                   </span>{" "}
                   <span class="text-zinc-600 dark:text-zinc-500">
                     following
@@ -97,7 +86,7 @@ export function ProfilePage({
                 <span class="font-semibold">{galleries?.length ?? 0}</span>
                 <span class="text-zinc-600 dark:text-zinc-500">galleries</span>
               </p>
-              <CameraBadges cameras={cameras} class="mt-2" />
+              <CameraBadges cameras={profile.cameras ?? []} class="mt-2" />
             </>
           )}
           {profile.description
@@ -135,7 +124,7 @@ export function ProfilePage({
             <div class="flex self-start gap-2 w-full sm:w-fit flex-col sm:flex-row">
               <FollowButton
                 followeeDid={profile.did}
-                followUri={followUri}
+                followUri={profile.viewer?.following}
               />
             </div>
           )
@@ -356,7 +345,7 @@ function GalleryItem({
         )
         : <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />}
       <div class="absolute sm:flex hidden bottom-0 left-0 bg-black/80 text-white p-2 items-center gap-2">
-        {(gallery.record as Gallery).title}
+        {gallery.title}
       </div>
     </a>
   );
@@ -387,8 +376,7 @@ function GalleryFavItem({
         )
         : <div class="w-full h-full bg-zinc-200 dark:bg-zinc-900" />}
       <div class="absolute bottom-0 left-0 bg-black/80 text-white p-2 hidden sm:flex items-center gap-2">
-        <ActorAvatar profile={gallery.creator} size={20} />{" "}
-        {(gallery.record as Gallery).title}
+        <ActorAvatar profile={gallery.creator} size={20} /> {gallery.title}
       </div>
     </a>
   );

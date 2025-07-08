@@ -1,4 +1,3 @@
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { ActorInfo } from "../components/ActorInfo.tsx";
@@ -48,9 +47,9 @@ function HashtagGalleryItem(
     gallery: GalleryView;
   }>,
 ) {
-  const title = (gallery.record as Gallery).title;
-  const description = (gallery.record as Gallery).description;
-  const facets = (gallery.record as Gallery).facets || [];
+  const title = gallery.title;
+  const description = gallery.description;
+  const facets = gallery.facets || [];
   return (
     <div class="flex flex-col gap-2" key={gallery.uri}>
       <ActorInfo profile={gallery.creator} />

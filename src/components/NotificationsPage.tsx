@@ -300,7 +300,7 @@ function GalleryMentionNotification(
   return (
     <div class="text-sm border-l-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-500 pl-2">
       <RenderFacetedText
-        text={(gallery.record as Gallery).description ?? ""}
+        text={gallery.description ?? ""}
         facets={galleryRecord.facets}
       />
       <div class="mt-2 max-w-[200px]">

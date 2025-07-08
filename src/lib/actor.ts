@@ -10,13 +10,14 @@ import { Record as GrainProfile } from "$lexicon/types/social/grain/actor/profil
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
+import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { Un$Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { getFollow, getFollowersCount, getFollowsCount } from "./follow.ts";
 import {
   galleryToView,
-  getGalleryCount,
+  getGalleryCameras,
   getGalleryItemsAndPhotos,
 } from "./gallery.ts";
 import { photoToView, photoUrl } from "./photo.ts";
@@ -39,7 +40,14 @@ export function getActorProfileDetailed(did: string, ctx: BffContext) {
   );
   const followersCount = getFollowersCount(did, ctx);
   const followsCount = getFollowsCount(did, ctx);
-  const galleryCount = getGalleryCount(did, ctx);
+  const galleries = getActorGalleries(did, ctx);
+  const cameras = Array.from(
+    new Set(
+      galleries.flatMap((g) =>
+        getGalleryCameras(g.items?.filter(isPhotoView) ?? [])
+      ),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
 
   let followedBy: string | undefined = "";
   let following: string | undefined = "";
@@ -49,17 +57,18 @@ export function getActorProfileDetailed(did: string, ctx: BffContext) {
   }
 
   return profileRecord
-    ? profileDetailedToView(
-      profileRecord,
-      actor.handle,
+    ? profileDetailedToView({
+      record: profileRecord,
+      handle: actor.handle,
+      cameras,
       followersCount,
       followsCount,
-      galleryCount,
-      {
+      galleryCount: galleries.length,
+      viewer: {
         followedBy,
         following,
       },
-    )
+    })
     : null;
 }
 
@@ -68,6 +77,7 @@ export function profileToView(
   handle: string,
 ): Un$Typed<ProfileView> {
   return {
+    cid: record.cid,
     did: record.did,
     handle,
     displayName: record.displayName,
@@ -78,15 +88,26 @@ export function profileToView(
   };
 }
 
-export function profileDetailedToView(
-  record: WithBffMeta<GrainProfile>,
-  handle: string,
-  followersCount: number,
-  followsCount: number,
-  galleryCount: number,
-  viewer: ViewerState,
-): Un$Typed<ProfileViewDetailed> {
+export function profileDetailedToView(params: {
+  record: WithBffMeta<GrainProfile>;
+  handle: string;
+  followersCount: number;
+  followsCount: number;
+  galleryCount: number;
+  viewer: ViewerState;
+  cameras?: string[];
+}): Un$Typed<ProfileViewDetailed> {
+  const {
+    record,
+    handle,
+    followersCount,
+    followsCount,
+    galleryCount,
+    viewer,
+    cameras,
+  } = params;
   return {
+    cid: record.cid,
     did: record.did,
     handle,
     displayName: record.displayName,
@@ -98,6 +119,7 @@ export function profileDetailedToView(
     followsCount,
     galleryCount,
     viewer,
+    cameras,
   };
 }
 

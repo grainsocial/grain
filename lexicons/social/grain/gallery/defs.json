@@ -10,6 +10,11 @@
         "cid": { "type": "string", "format": "cid" },
         "title": { "type": "string" },
         "description": { "type": "string" },
+        "cameras": {
+          "type": "array",
+          "description": "List of camera make and models used in this gallery derived from EXIF data.",
+          "items": { "type": "string" }
+        },
         "facets": {
           "type": "array",
           "description": "Annotations of description text (mentions, URLs, hashtags, etc)",
@@ -35,6 +40,7 @@
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
+        "createdAt": { "type": "string", "format": "datetime" },
         "indexedAt": { "type": "string", "format": "datetime" },
         "viewer": { "type": "ref", "ref": "#viewerState" }
       }

@@ -24,6 +24,8 @@ export interface GalleryView {
   cid: string
   title?: string
   description?: string
+  /** List of camera make and models used in this gallery derived from EXIF data. */
+  cameras?: string[]
   /** Annotations of description text (mentions, URLs, hashtags, etc) */
   facets?: AppBskyRichtextFacet.Main[]
   creator: SocialGrainActorDefs.ProfileView
@@ -32,6 +34,7 @@ export interface GalleryView {
   favCount?: number
   commentCount?: number
   labels?: ComAtprotoLabelDefs.Label[]
+  createdAt?: string
   indexedAt: string
   viewer?: ViewerState
 }

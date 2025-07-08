@@ -1,4 +1,3 @@
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { type TimelineItem } from "../lib/timeline.ts";
 import { CommentsButton } from "../modules/comments.tsx";
@@ -10,9 +9,9 @@ import { ModerationWrapper } from "./ModerationWrapper.tsx";
 import { RenderFacetedText } from "./RenderFacetedText.tsx";
 
 export function TimelineItem({ item }: Readonly<{ item: TimelineItem }>) {
-  const title = (item.gallery.record as Gallery).title;
-  const description = (item.gallery.record as Gallery).description;
-  const facets = (item.gallery.record as Gallery).facets;
+  const title = item.gallery.title;
+  const description = item.gallery.description;
+  const facets = item.gallery.facets;
   return (
     <li>
       <div class="flex flex-col pb-4 max-w-md">

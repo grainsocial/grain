@@ -1,4 +1,3 @@
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { BffContext, RouteHandler } from "@bigmoves/bff";
 import { GalleryPage } from "../components/GalleryPage.tsx";
 import { getGallery } from "../lib/gallery.ts";
@@ -20,7 +19,7 @@ export const handler: RouteHandler = async (
   if (!gallery) return ctx.next();
 
   ctx.state.meta = [
-    { title: `${(gallery.record as Gallery).title} — Grain` },
+    { title: `${gallery.title} — Grain` },
     ...getPageMeta(galleryLink(handle, rkey)),
     ...getGalleryMeta(gallery),
   ];

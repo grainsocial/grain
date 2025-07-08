@@ -1,4 +1,3 @@
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
@@ -29,10 +28,10 @@ export function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
         )
       }`,
     },
-    { property: "og:title", content: (gallery.record as Gallery).title },
+    { property: "og:title", content: gallery.title },
     {
       property: "og:description",
-      content: (gallery.record as Gallery).description,
+      content: gallery.description,
     },
     {
       property: "og:image",
