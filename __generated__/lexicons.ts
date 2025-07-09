@@ -2948,6 +2948,112 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainGraphGetFollowers: {
+    lexicon: 1,
+    id: 'social.grain.graph.getFollowers',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Enumerates accounts which follow a specified account (actor).',
+        parameters: {
+          type: 'params',
+          required: ['actor'],
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject', 'followers'],
+            properties: {
+              subject: {
+                type: 'ref',
+                ref: 'lex:social.grain.actor.defs#profileView',
+              },
+              cursor: {
+                type: 'string',
+              },
+              followers: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.actor.defs#profileView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGraphGetFollows: {
+    lexicon: 1,
+    id: 'social.grain.graph.getFollows',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Enumerates accounts which a specified account (actor) follows.',
+        parameters: {
+          type: 'params',
+          required: ['actor'],
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject', 'follows'],
+            properties: {
+              subject: {
+                type: 'ref',
+                ref: 'lex:social.grain.actor.defs#profileView',
+              },
+              cursor: {
+                type: 'string',
+              },
+              follows: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.actor.defs#profileView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainLabelerDefs: {
     lexicon: 1,
     id: 'social.grain.labeler.defs',
@@ -4021,6 +4127,8 @@ export const ids = {
   SocialGrainGalleryGetActorGalleries: 'social.grain.gallery.getActorGalleries',
   SocialGrainGalleryGetGallery: 'social.grain.gallery.getGallery',
   SocialGrainGraphFollow: 'social.grain.graph.follow',
+  SocialGrainGraphGetFollowers: 'social.grain.graph.getFollowers',
+  SocialGrainGraphGetFollows: 'social.grain.graph.getFollows',
   SocialGrainLabelerDefs: 'social.grain.labeler.defs',
   SocialGrainLabelerService: 'social.grain.labeler.service',
   SocialGrainFeedGetTimeline: 'social.grain.feed.getTimeline',

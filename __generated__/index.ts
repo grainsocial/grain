@@ -13,6 +13,8 @@ import * as SocialGrainNotificationGetNotifications from './types/social/grain/n
 import * as SocialGrainGalleryGetGalleryThread from './types/social/grain/gallery/getGalleryThread.ts'
 import * as SocialGrainGalleryGetActorGalleries from './types/social/grain/gallery/getActorGalleries.ts'
 import * as SocialGrainGalleryGetGallery from './types/social/grain/gallery/getGallery.ts'
+import * as SocialGrainGraphGetFollowers from './types/social/grain/graph/getFollowers.ts'
+import * as SocialGrainGraphGetFollows from './types/social/grain/graph/getFollows.ts'
 import * as SocialGrainFeedGetTimeline from './types/social/grain/feed/getTimeline.ts'
 import * as SocialGrainActorGetProfile from './types/social/grain/actor/getProfile.ts'
 import * as SocialGrainActorSearchActors from './types/social/grain/actor/searchActors.ts'
@@ -272,6 +274,28 @@ export class SocialGrainGraphNS {
 
   constructor(server: Server) {
     this._server = server
+  }
+
+  getFollowers<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGraphGetFollowers.Handler<ExtractAuth<AV>>,
+      SocialGrainGraphGetFollowers.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.graph.getFollowers' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  getFollows<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGraphGetFollows.Handler<ExtractAuth<AV>>,
+      SocialGrainGraphGetFollows.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.graph.getFollows' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 }
 

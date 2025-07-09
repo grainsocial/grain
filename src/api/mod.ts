@@ -28,17 +28,31 @@ import {
   QueryParams as GetGalleryThreadQueryParams,
 } from "$lexicon/types/social/grain/gallery/getGalleryThread.ts";
 import {
+  OutputSchema as GetFollowersOutputSchema,
+  QueryParams as GetFollowersQueryParams,
+} from "$lexicon/types/social/grain/graph/getFollowers.ts";
+import {
+  OutputSchema as GetFollowsOutputSchema,
+  QueryParams as GetFollowsQueryParams,
+} from "$lexicon/types/social/grain/graph/getFollows.ts";
+import {
   OutputSchema as GetNotificationsOutputSchema,
 } from "$lexicon/types/social/grain/notification/getNotifications.ts";
+
 import { AtUri } from "@atproto/syntax";
 import { BffMiddleware, route } from "@bigmoves/bff";
 import {
   getActorGalleries,
   getActorGalleryFavs,
+  getActorProfile,
   getActorProfileDetailed,
   searchActors,
 } from "../lib/actor.ts";
 import { BadRequestError } from "../lib/errors.ts";
+import {
+  getFollowersWithProfiles,
+  getFollowingWithProfiles,
+} from "../lib/follow.ts";
 import { getGalleriesByHashtag, getGallery } from "../lib/gallery.ts";
 import { getNotifications } from "../lib/notifications.ts";
 import { getTimeline } from "../lib/timeline.ts";
@@ -154,6 +168,26 @@ export const middlewares: BffMiddleware[] = [
       );
     },
   ),
+  route("/xrpc/social.grain.graph.getFollows", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { actor } = getFollowsQueryParams(url);
+    const subject = getActorProfile(actor, ctx);
+    const follows = getFollowingWithProfiles(actor, ctx);
+    return ctx.json({
+      subject,
+      follows,
+    } as GetFollowsOutputSchema);
+  }),
+  route("/xrpc/social.grain.graph.getFollowers", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { actor } = getFollowersQueryParams(url);
+    const subject = getActorProfile(actor, ctx);
+    const followers = getFollowersWithProfiles(actor, ctx);
+    return ctx.json({
+      subject,
+      followers,
+    } as GetFollowersOutputSchema);
+  }),
 ];
 
 function getProfileQueryParams(url: URL): GetProfileQueryParams {
@@ -207,14 +241,27 @@ function searchActorsQueryParams(url: URL): SearchActorsQueryParams {
   return { q, limit, cursor };
 }
 
-// function getNotificationsQueryParams(url: URL): GetNotificationsQueryParams {
-//   const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
-//   if (isNaN(limit) || limit <= 0) {
-//     throw new BadRequestError("Invalid limit parameter");
-//   }
-//   const cursor = url.searchParams.get("cursor") ?? undefined;
-//   return { limit, cursor };
-// }
+function getFollowsQueryParams(url: URL): GetFollowsQueryParams {
+  const actor = url.searchParams.get("actor");
+  if (!actor) throw new BadRequestError("Missing actor parameter");
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { actor, limit, cursor };
+}
+
+function getFollowersQueryParams(url: URL): GetFollowersQueryParams {
+  const actor = url.searchParams.get("actor");
+  if (!actor) throw new BadRequestError("Missing actor parameter");
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { actor, limit, cursor };
+}
 
 function getTimelineQueryParams(url: URL): GetTimelineQueryParams {
   const algorithm = url.searchParams.get("algorithm") ?? undefined;
