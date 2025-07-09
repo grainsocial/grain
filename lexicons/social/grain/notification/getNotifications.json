@@ -28,7 +28,7 @@
               "type": "array",
               "items": {
                 "type": "ref",
-                "ref": "social.grain.notification.defs#notificationView"
+                "ref": "social.grain.notification.defs#notificationViewDetailed"
               }
             },
             "seenAt": { "type": "string", "format": "datetime" }

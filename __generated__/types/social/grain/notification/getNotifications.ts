@@ -20,7 +20,7 @@ export type InputSchema = undefined;
 
 export interface OutputSchema {
   cursor?: string;
-  notifications: SocialGrainNotificationDefs.NotificationView[];
+  notifications: SocialGrainNotificationDefs.NotificationViewDetailed[];
   seenAt?: string;
 }
 

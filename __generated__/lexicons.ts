@@ -2441,6 +2441,60 @@ export const schemaDict = {
             type: 'ref',
             ref: 'lex:social.grain.actor.defs#profileView',
           },
+          reasonSubject: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          reason: {
+            type: 'string',
+            description:
+              'The reason why this notification was delivered - e.g. your gallery was favd, or you received a new follower.',
+            knownValues: [
+              'follow',
+              'gallery-favorite',
+              'gallery-comment',
+              'reply',
+              'gallery-mention',
+              'gallery-comment-mention',
+              'unknown',
+            ],
+          },
+          record: {
+            type: 'unknown',
+          },
+          isRead: {
+            type: 'boolean',
+          },
+          indexedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+        },
+      },
+      notificationViewDetailed: {
+        type: 'object',
+        required: [
+          'uri',
+          'cid',
+          'author',
+          'reason',
+          'record',
+          'isRead',
+          'indexedAt',
+        ],
+        properties: {
+          uri: {
+            type: 'string',
+            format: 'at-uri',
+          },
+          cid: {
+            type: 'string',
+            format: 'cid',
+          },
+          author: {
+            type: 'ref',
+            ref: 'lex:social.grain.actor.defs#profileView',
+          },
           reason: {
             type: 'string',
             description:
@@ -2456,8 +2510,12 @@ export const schemaDict = {
             ],
           },
           reasonSubject: {
-            type: 'string',
-            format: 'at-uri',
+            type: 'union',
+            refs: [
+              'lex:social.grain.actor.defs#profileView',
+              'lex:social.grain.comment.defs#commentView',
+              'lex:social.grain.gallery.defs#galleryView',
+            ],
           },
           record: {
             type: 'unknown',
@@ -2508,7 +2566,7 @@ export const schemaDict = {
                 type: 'array',
                 items: {
                   type: 'ref',
-                  ref: 'lex:social.grain.notification.defs#notificationView',
+                  ref: 'lex:social.grain.notification.defs#notificationViewDetailed',
                 },
               },
               seenAt: {

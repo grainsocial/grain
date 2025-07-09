@@ -12,7 +12,7 @@ import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
-import { Un$Typed } from "$lexicon/util.ts";
+import { $Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { getFollow, getFollowersCount, getFollowsCount } from "./follow.ts";
 import {
@@ -75,8 +75,9 @@ export function getActorProfileDetailed(did: string, ctx: BffContext) {
 export function profileToView(
   record: WithBffMeta<GrainProfile>,
   handle: string,
-): Un$Typed<ProfileView> {
+): $Typed<ProfileView> {
   return {
+    $type: "social.grain.actor.defs#profileView",
     cid: record.cid,
     did: record.did,
     handle,
@@ -96,7 +97,7 @@ export function profileDetailedToView(params: {
   galleryCount: number;
   viewer: ViewerState;
   cameras?: string[];
-}): Un$Typed<ProfileViewDetailed> {
+}): $Typed<ProfileViewDetailed> {
   const {
     record,
     handle,
@@ -107,6 +108,7 @@ export function profileDetailedToView(params: {
     cameras,
   } = params;
   return {
+    $type: "social.grain.actor.defs#profileViewDetailed",
     cid: record.cid,
     did: record.did,
     handle,

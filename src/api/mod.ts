@@ -54,7 +54,7 @@ import {
   getFollowingWithProfiles,
 } from "../lib/follow.ts";
 import { getGalleriesByHashtag, getGallery } from "../lib/gallery.ts";
-import { getNotifications } from "../lib/notifications.ts";
+import { getNotificationsDetailed } from "../lib/notifications.ts";
 import { getTimeline } from "../lib/timeline.ts";
 import { getGalleryComments } from "../modules/comments.tsx";
 
@@ -141,7 +141,7 @@ export const middlewares: BffMiddleware[] = [
     (_req, _params, ctx) => {
       // @TODO: this redirects, we should have a json response
       ctx.requireAuth();
-      const notifications = getNotifications(
+      const notifications = getNotificationsDetailed(
         ctx,
       );
       return ctx.json(

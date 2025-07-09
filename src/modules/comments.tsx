@@ -9,6 +9,7 @@ import {
   isPhotoView,
   PhotoView,
 } from "$lexicon/types/social/grain/photo/defs.ts";
+import { $Typed } from "$lexicon/util.ts";
 import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, BffMiddleware, route, WithBffMeta } from "@bigmoves/bff";
@@ -589,7 +590,10 @@ export function getGalleryCommentsCount(uri: string, ctx: BffContext): number {
   );
 }
 
-function getComment(uri: string, ctx: BffContext) {
+export function getComment(
+  uri: string,
+  ctx: BffContext,
+) {
   const { items: comments } = ctx.indexService.getRecords<WithBffMeta<Comment>>(
     "social.grain.comment",
     {
@@ -611,13 +615,14 @@ function getComment(uri: string, ctx: BffContext) {
   return commentToView(comment, author, subject, focus);
 }
 
-function commentToView(
+export function commentToView(
   record: WithBffMeta<Comment>,
   author: ProfileView,
   subject?: GalleryView,
   focus?: PhotoView,
-): CommentView {
+): $Typed<CommentView> {
   return {
+    $type: "social.grain.comment.defs#commentView",
     uri: record.uri,
     cid: record.cid,
     text: record.text,
