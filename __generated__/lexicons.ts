@@ -3723,6 +3723,10 @@ export const schemaDict = {
             ref: 'lex:social.grain.photo.defs#exifView',
             description: 'EXIF metadata for the photo, if available.',
           },
+          gallery: {
+            type: 'ref',
+            ref: 'lex:social.grain.photo.defs#galleryState',
+          },
         },
       },
       exifView: {
@@ -3774,6 +3778,17 @@ export const schemaDict = {
           },
           model: {
             type: 'string',
+          },
+        },
+      },
+      galleryState: {
+        type: 'object',
+        description:
+          "Metadata about the photo's relationship with the subject content. Only has meaningful content when photo is attached to a gallery.",
+        properties: {
+          item: {
+            type: 'string',
+            format: 'at-uri',
           },
         },
       },

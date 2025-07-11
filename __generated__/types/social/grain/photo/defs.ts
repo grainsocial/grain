@@ -27,6 +27,7 @@ export interface PhotoView {
   alt: string
   aspectRatio?: SocialGrainDefs.AspectRatio
   exif?: ExifView
+  gallery?: GalleryState
 }
 
 const hashPhotoView = 'photoView'
@@ -65,4 +66,20 @@ export function isExifView<V>(v: V) {
 
 export function validateExifView<V>(v: V) {
   return validate<ExifView & V>(v, id, hashExifView)
+}
+
+/** Metadata about the photo's relationship with the subject content. Only has meaningful content when photo is attached to a gallery. */
+export interface GalleryState {
+  $type?: 'social.grain.photo.defs#galleryState'
+  item?: string
+}
+
+const hashGalleryState = 'galleryState'
+
+export function isGalleryState<V>(v: V) {
+  return is$typed(v, id, hashGalleryState)
+}
+
+export function validateGalleryState<V>(v: V) {
+  return validate<GalleryState & V>(v, id, hashGalleryState)
 }
