@@ -25,7 +25,7 @@ import { getActorProfile, getActorProfilesBulk } from "./actor.ts";
 import { photoToView } from "./photo.ts";
 
 type PhotoWithMeta = WithBffMeta<Photo> & {
-  galleryItemUri?: string;
+  item?: WithBffMeta<GalleryItem>;
   exif?: WithBffMeta<PhotoExif>;
 };
 
@@ -90,7 +90,7 @@ export function getGalleryItemsAndPhotos(
       // Attach the galleryItem uri as itemUri
       galleryPhotosMap.get(galleryUri)?.push({
         ...photo,
-        galleryItemUri: item.uri,
+        item,
       });
     }
   }
@@ -252,7 +252,7 @@ function itemToView(
     },
 ): Un$Typed<PhotoView> | undefined {
   if (isPhoto(item)) {
-    return photoToView(did, item, item.exif, item.galleryItemUri);
+    return photoToView(did, item, item.exif, item.item);
   }
   return undefined;
 }

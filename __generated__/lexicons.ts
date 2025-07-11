@@ -3783,12 +3783,20 @@ export const schemaDict = {
       },
       galleryState: {
         type: 'object',
+        required: ['item', 'itemCreatedAt', 'itemPosition'],
         description:
           "Metadata about the photo's relationship with the subject content. Only has meaningful content when photo is attached to a gallery.",
         properties: {
           item: {
             type: 'string',
             format: 'at-uri',
+          },
+          itemCreatedAt: {
+            type: 'string',
+            format: 'datetime',
+          },
+          itemPosition: {
+            type: 'integer',
           },
         },
       },

@@ -71,7 +71,9 @@ export function validateExifView<V>(v: V) {
 /** Metadata about the photo's relationship with the subject content. Only has meaningful content when photo is attached to a gallery. */
 export interface GalleryState {
   $type?: 'social.grain.photo.defs#galleryState'
-  item?: string
+  item: string
+  itemCreatedAt: string
+  itemPosition: number
 }
 
 const hashGalleryState = 'galleryState'

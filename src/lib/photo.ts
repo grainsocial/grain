@@ -40,7 +40,7 @@ export function photoToView(
   did: string,
   photo: WithBffMeta<Photo>,
   exif?: WithBffMeta<PhotoExif>,
-  galleryItemUri?: string,
+  item?: WithBffMeta<GalleryItem>,
 ): $Typed<PhotoView> {
   return {
     $type: "social.grain.photo.defs#photoView",
@@ -51,7 +51,13 @@ export function photoToView(
     alt: photo.alt,
     aspectRatio: photo.aspectRatio,
     exif: exif ? exifToView(exif) : undefined,
-    gallery: galleryItemUri ? { item: galleryItemUri } : undefined,
+    gallery: item
+      ? {
+        item: item.uri,
+        itemPosition: item.position,
+        itemCreatedAt: item.createdAt,
+      }
+      : undefined,
   };
 }
 
