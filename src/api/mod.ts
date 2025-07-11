@@ -38,12 +38,17 @@ import {
 import {
   OutputSchema as GetNotificationsOutputSchema,
 } from "$lexicon/types/social/grain/notification/getNotifications.ts";
+import {
+  OutputSchema as GetActorPhotosOutputSchema,
+  QueryParams as GetActorPhotosQueryParams,
+} from "$lexicon/types/social/grain/photo/getActorPhotos.ts";
 
 import { AtUri } from "@atproto/syntax";
 import { BffMiddleware, route } from "@bigmoves/bff";
 import {
   getActorGalleries,
   getActorGalleryFavs,
+  getActorPhotos,
   getActorProfile,
   getActorProfileDetailed,
   searchActors,
@@ -87,6 +92,12 @@ export const middlewares: BffMiddleware[] = [
     const { actor } = getActorFavsQueryParams(url);
     const galleries = getActorGalleryFavs(actor, ctx);
     return ctx.json({ items: galleries } as GetActorFavsOutputSchema);
+  }),
+  route("/xrpc/social.grain.photo.getActorPhotos", (req, _params, ctx) => {
+    const url = new URL(req.url);
+    const { actor } = getActorPhotosQueryParams(url);
+    const photos = getActorPhotos(actor, ctx);
+    return ctx.json({ items: photos } as GetActorPhotosOutputSchema);
   }),
   route("/xrpc/social.grain.gallery.getGallery", (req, _params, ctx) => {
     const url = new URL(req.url);
@@ -208,6 +219,17 @@ function getActorGalleriesQueryParams(url: URL): GetActorGalleriesQueryParams {
 }
 
 function getActorFavsQueryParams(url: URL): GetActorFavsQueryParams {
+  const actor = url.searchParams.get("actor");
+  if (!actor) throw new BadRequestError("Missing actor parameter");
+  const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);
+  if (isNaN(limit) || limit <= 0) {
+    throw new BadRequestError("Invalid limit parameter");
+  }
+  const cursor = url.searchParams.get("cursor") ?? undefined;
+  return { actor, limit, cursor };
+}
+
+function getActorPhotosQueryParams(url: URL): GetActorPhotosQueryParams {
   const actor = url.searchParams.get("actor");
   if (!actor) throw new BadRequestError("Missing actor parameter");
   const limit = parseInt(url.searchParams.get("limit") ?? "50", 10);

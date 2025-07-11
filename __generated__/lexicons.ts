@@ -3859,6 +3859,54 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainPhotoGetActorPhotos: {
+    lexicon: 1,
+    id: 'social.grain.photo.getActorPhotos',
+    defs: {
+      main: {
+        type: 'query',
+        description: "Get a view of an actor's photos. Does not require auth.",
+        parameters: {
+          type: 'params',
+          required: ['actor'],
+          properties: {
+            actor: {
+              type: 'string',
+              format: 'at-identifier',
+            },
+            limit: {
+              type: 'integer',
+              minimum: 1,
+              maximum: 100,
+              default: 50,
+            },
+            cursor: {
+              type: 'string',
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['items'],
+            properties: {
+              cursor: {
+                type: 'string',
+              },
+              items: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.photo.defs#photoView',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainPhoto: {
     lexicon: 1,
     id: 'social.grain.photo',
@@ -4221,6 +4269,7 @@ export const ids = {
   SocialGrainActorProfile: 'social.grain.actor.profile',
   SocialGrainPhotoDefs: 'social.grain.photo.defs',
   SocialGrainPhotoExif: 'social.grain.photo.exif',
+  SocialGrainPhotoGetActorPhotos: 'social.grain.photo.getActorPhotos',
   SocialGrainPhoto: 'social.grain.photo',
   ComAtprotoLabelDefs: 'com.atproto.label.defs',
   ComAtprotoRepoStrongRef: 'com.atproto.repo.strongRef',
