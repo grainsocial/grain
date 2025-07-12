@@ -178,7 +178,7 @@ export function getNotificationsDetailed(
         }
       } else if (notification.$type === "social.grain.graph.follow") {
         reasonSubject = getActorProfile(
-          notification.subject,
+          notification.did,
           ctx,
         ) ?? undefined;
       } else if (notification.$type === "social.grain.comment") {
