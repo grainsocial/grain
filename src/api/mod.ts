@@ -199,6 +199,20 @@ export const middlewares: BffMiddleware[] = [
       followers,
     } as GetFollowersOutputSchema);
   }),
+  route(
+    "/xrpc/social.grain.notification.updateSeen",
+    ["POST"],
+    async (req, _params, ctx) => {
+      ctx.requireAuth();
+      const json = await req.json();
+      const seenAt = json.seenAt as string ?? undefined;
+      if (!seenAt) {
+        throw new BadRequestError("Missing seenAt input");
+      }
+      ctx.updateSeen(seenAt);
+      return ctx.json(null);
+    },
+  ),
 ];
 
 function getProfileQueryParams(url: URL): GetProfileQueryParams {

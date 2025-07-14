@@ -9,6 +9,7 @@ import {
   type StreamAuthVerifier,
 } from "npm:@atproto/xrpc-server"
 import { schemas } from './lexicons.ts'
+import * as SocialGrainNotificationUpdateSeen from './types/social/grain/notification/updateSeen.ts'
 import * as SocialGrainNotificationGetNotifications from './types/social/grain/notification/getNotifications.ts'
 import * as SocialGrainGalleryGetGalleryThread from './types/social/grain/gallery/getGalleryThread.ts'
 import * as SocialGrainGalleryGetActorGalleries from './types/social/grain/gallery/getActorGalleries.ts'
@@ -215,6 +216,17 @@ export class SocialGrainNotificationNS {
 
   constructor(server: Server) {
     this._server = server
+  }
+
+  updateSeen<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainNotificationUpdateSeen.Handler<ExtractAuth<AV>>,
+      SocialGrainNotificationUpdateSeen.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.notification.updateSeen' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 
   getNotifications<AV extends AuthVerifier>(

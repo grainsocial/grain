@@ -2531,6 +2531,30 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainNotificationUpdateSeen: {
+    lexicon: 1,
+    id: 'social.grain.notification.updateSeen',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Notify server that the requesting account has seen notifications. Requires auth.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['seenAt'],
+            properties: {
+              seenAt: {
+                type: 'string',
+                format: 'datetime',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainNotificationGetNotifications: {
     lexicon: 1,
     id: 'social.grain.notification.getNotifications',
@@ -4245,6 +4269,7 @@ export const ids = {
   ShTangledActorProfile: 'sh.tangled.actor.profile',
   SocialGrainDefs: 'social.grain.defs',
   SocialGrainNotificationDefs: 'social.grain.notification.defs',
+  SocialGrainNotificationUpdateSeen: 'social.grain.notification.updateSeen',
   SocialGrainNotificationGetNotifications:
     'social.grain.notification.getNotifications',
   SocialGrainCommentDefs: 'social.grain.comment.defs',

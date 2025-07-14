@@ -34,7 +34,7 @@ export const updateSeen: RouteHandler = (
   ctx: BffContext<State>,
 ) => {
   ctx.requireAuth();
-  ctx.updateSeen();
+  ctx.updateSeen(new Date().toISOString());
   return new Response(null, { status: 200 });
 };
 
