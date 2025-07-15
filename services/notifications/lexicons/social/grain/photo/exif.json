@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo.exif",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Basic EXIF metadata for a photo. Integers are scaled by 1000000 to accommodate decimal values and potentially other tags in the future.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "photo",
+          "createdAt"
+        ],
+        "properties": {
+          "photo": { "type": "string", "format": "at-uri" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "dateTimeOriginal": { "type": "string", "format": "datetime" },
+          "exposureTime": { "type": "integer" },
+          "fNumber": { "type": "integer" },
+          "flash": { "type": "string" },
+          "focalLengthIn35mmFormat": { "type": "integer" },
+          "iSO": { "type": "integer" },
+          "lensMake": { "type": "string" },
+          "lensModel": { "type": "string" },
+          "make": { "type": "string" },
+          "model": { "type": "string" }
+        }
+      }
+    }
+  }
+}

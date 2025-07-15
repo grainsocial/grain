@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.getGalleryThread",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Gets a hydrated gallery view and its comments for a specified gallery AT-URI.",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "The AT-URI of the gallery to return a hydrated view and comments for.",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["gallery", "comments"],
+          "properties": {
+            "gallery": {
+              "type": "ref",
+              "ref": "social.grain.gallery.defs#galleryView"
+            },
+            "comments": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.comment.defs#commentView"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

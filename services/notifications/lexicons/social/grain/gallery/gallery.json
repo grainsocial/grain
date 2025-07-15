@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["title", "createdAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 100 },
+          "description": { "type": "string", "maxLength": 1000 },
+          "facets": {
+            "type": "array",
+            "description": "Annotations of description text (mentions, URLs, hashtags, etc)",
+            "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+          },
+          "labels": {
+            "type": "union",
+            "description": "Self-label values for this post. Effectively content warnings.",
+            "refs": ["com.atproto.label.defs#selfLabels"]
+          },
+          "updatedAt": { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

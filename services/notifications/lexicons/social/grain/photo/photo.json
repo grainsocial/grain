@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["photo", "alt"],
+        "properties": {
+          "photo": {
+            "type": "blob",
+            "accept": ["image/*"],
+            "maxSize": 1000000
+          },
+          "alt": {
+            "type": "string",
+            "description": "Alt text description of the image, for accessibility."
+          },
+          "aspectRatio": {
+            "type": "ref",
+            "ref": "social.grain.defs#aspectRatio"
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

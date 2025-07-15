@@ -1,0 +1,56 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.defs",
+  "defs": {
+    "galleryView": {
+      "type": "object",
+      "required": ["uri", "cid", "creator", "record", "indexedAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "cameras": {
+          "type": "array",
+          "description": "List of camera make and models used in this gallery derived from EXIF data.",
+          "items": { "type": "string" }
+        },
+        "facets": {
+          "type": "array",
+          "description": "Annotations of description text (mentions, URLs, hashtags, etc)",
+          "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+        },
+        "creator": {
+          "type": "ref",
+          "ref": "social.grain.actor.defs#profileView"
+        },
+        "record": { "type": "unknown" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "union",
+            "refs": [
+              "social.grain.photo.defs#photoView"
+            ]
+          }
+        },
+        "favCount": { "type": "integer" },
+        "commentCount": { "type": "integer" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
+        },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "viewer": { "type": "ref", "ref": "#viewerState" }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "description": "Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests.",
+      "properties": {
+        "fav": { "type": "string", "format": "at-uri" }
+      }
+    }
+  }
+}

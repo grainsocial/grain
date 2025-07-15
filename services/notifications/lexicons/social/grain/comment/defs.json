@@ -1,0 +1,52 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.comment.defs",
+  "defs": {
+    "commentView": {
+      "type": "object",
+      "required": ["uri", "cid", "author", "text", "createdAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "author": {
+          "type": "ref",
+          "ref": "social.grain.actor.defs#profileView"
+        },
+        "record": { "type": "unknown" },
+        "text": {
+          "type": "string",
+          "maxLength": 3000,
+          "maxGraphemes": 300
+        },
+        "facets": {
+          "type": "array",
+          "description": "Annotations of description text (mentions and URLs, hashtags, etc)",
+          "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+        },
+        "subject": {
+          "type": "union",
+          "refs": [
+            "social.grain.gallery.defs#galleryView"
+          ],
+          "description": "The subject of the comment, which can be a gallery or a photo."
+        },
+        "focus": {
+          "type": "union",
+          "refs": [
+            "social.grain.photo.defs#photoView"
+          ],
+          "description": "The photo that the comment is focused on, if applicable."
+        },
+        "replyTo": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The URI of the comment this comment is replying to, if applicable."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

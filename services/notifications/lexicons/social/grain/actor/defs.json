@@ -1,0 +1,77 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.actor.defs",
+  "defs": {
+    "profileView": {
+      "type": "object",
+      "required": ["cid", "did", "handle"],
+      "properties": {
+        "cid": { "type": "string", "format": "cid" },
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2560,
+          "maxGraphemes": 256
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "ref": "com.atproto.label.defs#label",
+            "type": "ref"
+          }
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "profileViewDetailed": {
+      "type": "object",
+      "required": ["cid", "did", "handle"],
+      "properties": {
+        "cid": { "type": "string", "format": "cid" },
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "description": {
+          "type": "string",
+          "maxGraphemes": 256,
+          "maxLength": 2560
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "cameras": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of camera make and models used by this actor derived from EXIF data of photos linked to galleries."
+        },
+        "followersCount": { "type": "integer" },
+        "followsCount": { "type": "integer" },
+        "galleryCount": { "type": "integer" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "viewer": { "type": "ref", "ref": "#viewerState" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
+        }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "description": "Metadata about the requesting account's relationship with the subject account. Only has meaningful content for authed requests.",
+      "properties": {
+        "following": { "type": "string", "format": "at-uri" },
+        "followedBy": { "type": "string", "format": "at-uri" }
+      }
+    }
+  }
+}

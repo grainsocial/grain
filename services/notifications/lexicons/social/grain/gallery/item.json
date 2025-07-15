@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.item",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["createdAt", "gallery", "item"],
+        "properties": {
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "gallery": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "item": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "position": {
+            "type": "integer",
+            "default": 0
+          }
+        }
+      }
+    }
+  }
+}

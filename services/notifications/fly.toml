@@ -1,0 +1,24 @@
+# fly.toml app configuration file generated for grain-notifications on 2025-07-14T21:08:33-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'grain-notifications'
+primary_region = 'sea'
+
+[build]
+  dockerfile = './Dockerfile'
+
+[env]
+  BFF_JETSTREAM_URL = 'wss://jetstream1.us-west.bsky.network'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  size = 'shared-cpu-1x'
