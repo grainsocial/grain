@@ -64,17 +64,6 @@ import { getTimeline } from "../lib/timeline.ts";
 import { getGalleryComments } from "../modules/comments.tsx";
 
 export const middlewares: BffMiddleware[] = [
-  route("/oauth/session", (_req, _params, ctx) => {
-    if (!ctx.currentUser) {
-      return ctx.json({ messgae: "Unauthorized" }, 401);
-    }
-    const did = ctx.currentUser.did;
-    const session = ctx.indexService.getSession(did);
-    if (!session) {
-      return ctx.json({ message: "Session not found" }, 404);
-    }
-    return ctx.json(session);
-  }),
   route("/xrpc/social.grain.actor.getProfile", (req, _params, ctx) => {
     const url = new URL(req.url);
     const { actor } = getProfileQueryParams(url);
