@@ -2,7 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
-    "jsr:@bigmoves/bff@0.3.0-beta.49": "0.3.0-beta.49",
+    "jsr:@bigmoves/bff@0.3.0-beta.50": "0.3.0-beta.50",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
@@ -100,8 +100,8 @@
         "npm:jose"
       ]
     },
-    "@bigmoves/bff@0.3.0-beta.49": {
-      "integrity": "39d13ea1b72ae47c099ad59fd8d0d04ead4234c550e98b7bdbb51737de7b3666",
+    "@bigmoves/bff@0.3.0-beta.50": {
+      "integrity": "ff816044b655649a22c96fc1ce7f6c1e2a4999d87b44edbec9f13f66b8504924",
       "dependencies": [
         "jsr:@bigmoves/atproto-oauth-client",
         "jsr:@std/assert@^1.0.13",
@@ -2129,7 +2129,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.49",
+      "jsr:@bigmoves/bff@0.3.0-beta.50",
       "jsr:@std/http@^1.0.17",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/api@~0.15.16",
