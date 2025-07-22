@@ -1,0 +1,49 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.comment.createComment",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create a comment. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["text", "subject"],
+          "properties": {
+            "text": {
+              "type": "string",
+              "maxLength": 3000,
+              "maxGraphemes": 300
+            },
+            "subject": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "focus": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "replyTo": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "commentUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the created comment"
+            }
+          }
+        }
+      }
+    }
+  }
+}

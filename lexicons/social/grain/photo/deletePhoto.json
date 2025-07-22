@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo.deletePhoto",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete a favorite photo by its unique at-uri.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the photo to delete."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["success"],
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "Indicates if the photo was successfully deleted."
+            }
+          }
+        }
+      }
+    }
+  }
+}

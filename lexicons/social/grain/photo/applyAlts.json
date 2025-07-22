@@ -1,0 +1,54 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo.applyAlts",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Apply alt texts to photos in a gallery. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["writes"],
+          "properties": {
+            "writes": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#update"
+              }
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "True if the writes were successfully applied"
+            }
+          }
+        }
+      }
+    },
+    "update": {
+      "type": "object",
+      "required": ["photoUri", "alt"],
+      "properties": {
+        "photoUri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "AT URI of the item to update"
+        },
+        "alt": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "The alt text to apply to the photo"
+        }
+      }
+    }
+  }
+}

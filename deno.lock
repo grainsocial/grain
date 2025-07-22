@@ -1,6 +1,8 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
+    "jsr:@bigmoves/bff@0.3.0-beta.54": "0.3.0-beta.54",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
@@ -8,6 +10,7 @@
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/async@^1.0.12": "1.0.12",
     "jsr:@std/bytes@^1.0.2": "1.0.6",
+    "jsr:@std/cache@0.2": "0.2.0",
     "jsr:@std/cli@^1.0.16": "1.0.20",
     "jsr:@std/cli@^1.0.20": "1.0.20",
     "jsr:@std/data-structures@^1.0.6": "1.0.7",
@@ -64,6 +67,7 @@
     "npm:he@^1.2.0": "1.2.0",
     "npm:htmx.org@^1.9.12": "1.9.12",
     "npm:hyperscript.org@~0.9.14": "0.9.14",
+    "npm:image-size@^2.0.2": "2.0.2",
     "npm:jose@5.9.6": "5.9.6",
     "npm:jsonwebtoken@^9.0.2": "9.0.2",
     "npm:katex@0.16": "0.16.22",
@@ -86,6 +90,42 @@
     "npm:typed-htmx@~0.3.1": "0.3.1"
   },
   "jsr": {
+    "@bigmoves/atproto-oauth-client@0.2.0": {
+      "integrity": "5c3ca124dd52eff51dace83790779ebe48c4b41559b799e16c8750bd415f2124",
+      "dependencies": [
+        "npm:@atproto-labs/handle-resolver-node",
+        "npm:@atproto-labs/simple-store",
+        "npm:@atproto/jwk",
+        "npm:@atproto/oauth-client",
+        "npm:@atproto/oauth-types",
+        "npm:jose"
+      ]
+    },
+    "@bigmoves/bff@0.3.0-beta.54": {
+      "integrity": "b3f04813eb9039c142dfc22c7d9bba6a897a2149fd430a45405c9f2df776843a",
+      "dependencies": [
+        "jsr:@bigmoves/atproto-oauth-client",
+        "jsr:@std/assert@^1.0.13",
+        "jsr:@std/cache",
+        "jsr:@std/fmt",
+        "jsr:@std/http@^1.0.13",
+        "jsr:@std/path@^1.0.8",
+        "npm:@atproto/api@~0.15.7",
+        "npm:@atproto/common",
+        "npm:@atproto/identity",
+        "npm:@atproto/lexicon@0.4.11",
+        "npm:@atproto/lexicon@~0.4.11",
+        "npm:@atproto/oauth-client",
+        "npm:@atproto/syntax",
+        "npm:@atproto/xrpc-server@0.7.19",
+        "npm:clsx",
+        "npm:jsonwebtoken",
+        "npm:multiformats@^13.3.2",
+        "npm:preact",
+        "npm:preact-render-to-string",
+        "npm:tailwind-merge"
+      ]
+    },
     "@deno/gfm@0.10.0": {
       "integrity": "51708205e3559a4aeb6afb29d07c5bfafe7941f91bb360351ef6621de9a39527",
       "dependencies": [
@@ -123,6 +163,9 @@
     },
     "@std/bytes@1.0.6": {
       "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
+    },
+    "@std/cache@0.2.0": {
+      "integrity": "63a2ccd5a9e7c03e430f7d34dfcfd0d0cfc90731a1eaf8208f4c66e418fc3035"
     },
     "@std/cli@1.0.20": {
       "integrity": "a8c384a2c98cec6ec6a2055c273a916e2772485eb784af0db004c5ab8ba52333"
@@ -1408,6 +1451,10 @@
     "ieee754@1.2.1": {
       "integrity": "sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA=="
     },
+    "image-size@2.0.2": {
+      "integrity": "sha512-IRqXKlaXwgSMAMtpNzZa1ZAe8m+Sa1770Dhk8VkSsP9LS+iHD62Zd8FQKs8fbPiagBE7BzoFX23cxFnwshpV6w==",
+      "bin": true
+    },
     "inherits@2.0.4": {
       "integrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ=="
     },
@@ -2087,7 +2134,7 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@bigmoves/bff@0.3.0-beta.52",
+      "jsr:@bigmoves/bff@0.3.0-beta.54",
       "jsr:@std/http@^1.0.17",
       "jsr:@std/path@^1.0.9",
       "npm:@atproto/api@~0.15.16",
@@ -2097,6 +2144,7 @@
       "npm:exifr@^7.1.3",
       "npm:htmx.org@^1.9.12",
       "npm:hyperscript.org@~0.9.14",
+      "npm:image-size@^2.0.2",
       "npm:popmotion@^11.0.5",
       "npm:preact@^10.26.5",
       "npm:sortablejs@^1.15.6",

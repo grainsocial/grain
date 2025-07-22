@@ -1,0 +1,36 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.deleteItem",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete a gallery item",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the gallery to create the item in"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "True if the gallery item was deleted"
+            }
+          }
+        }
+      }
+    }
+  }
+}

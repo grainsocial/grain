@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.createItem",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create a new gallery item",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["galleryUri", "photoUri", "position"],
+          "properties": {
+            "galleryUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the gallery to create the item in"
+            },
+            "photoUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the photo to be added as an item"
+            },
+            "position": {
+              "type": "integer",
+              "description": "Position of the item in the gallery, used for ordering"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "itemUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the created gallery item"
+            }
+          }
+        }
+      }
+    }
+  }
+}

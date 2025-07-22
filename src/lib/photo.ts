@@ -5,6 +5,7 @@ import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { ExifView, PhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { $Typed } from "$lexicon/util.ts";
+import { AtUri } from "@atproto/syntax";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { format, parseISO } from "date-fns";
 import { PUBLIC_URL, USE_CDN } from "../env.ts";
@@ -279,4 +280,73 @@ export function getPhotosBulk(
   return photos.map((photo) =>
     photoToView(photo.did, photo, exifMap.get(photo.uri))
   );
+}
+
+export async function createPhoto(
+  data: Partial<Photo>,
+  ctx: BffContext,
+): Promise<string> {
+  const photoUri = await ctx.createRecord<Photo>(
+    "social.grain.photo",
+    {
+      photo: data.photo,
+      alt: data.alt || "",
+      aspectRatio: data.aspectRatio || undefined,
+      createdAt: new Date().toISOString(),
+    },
+  );
+  return photoUri;
+}
+
+export async function createExif(
+  data: Partial<PhotoExif>,
+  ctx: BffContext,
+): Promise<string> {
+  const exifUri = await ctx.createRecord<PhotoExif>(
+    "social.grain.photo.exif",
+    {
+      ...data,
+      createdAt: new Date().toISOString(),
+    },
+  );
+  return exifUri;
+}
+
+export async function applyAlts(
+  writes: Array<{
+    photoUri: string;
+    alt: string;
+  }>,
+  ctx: BffContext,
+): Promise<boolean> {
+  const altMap = new Map<string, string>();
+  for (const update of writes) {
+    altMap.set(update.photoUri, update.alt);
+  }
+
+  const urisToUpdate = writes.map((update) => update.photoUri);
+
+  const { items: photoRecords } = ctx.indexService.getRecords<
+    WithBffMeta<Photo>
+  >(
+    "social.grain.photo",
+    {
+      where: [{ field: "uri", in: urisToUpdate }],
+    },
+  );
+
+  const updates = photoRecords.map((record) => ({
+    collection: "social.grain.photo",
+    rkey: new AtUri(record.uri).rkey,
+    data: { ...record, alt: altMap.get(record.uri) ?? record.alt ?? undefined },
+  }));
+
+  try {
+    await ctx.updateRecords(updates);
+  } catch (error) {
+    console.error("Failed to update photo alts:", error);
+    return false;
+  }
+
+  return true;
 }

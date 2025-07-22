@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.graph.createFollow",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create a follow relationship between actors.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["subject"],
+          "properties": {
+            "subject": {
+              "type": "string",
+              "format": "at-identifier",
+              "description": "DID of the actor to follow."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "followUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the created follow record."
+            }
+          }
+        }
+      }
+    }
+  }
+}

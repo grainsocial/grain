@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.applySort",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Apply sorting to photos in a gallery. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["writes"],
+          "properties": {
+            "writes": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#update"
+              }
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "True if the writes were successfully applied"
+            }
+          }
+        }
+      }
+    },
+    "update": {
+      "type": "object",
+      "required": ["itemUri", "position"],
+      "properties": {
+        "itemUri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "AT URI of the item to update"
+        },
+        "position": {
+          "type": "integer",
+          "description": "The position of the item in the gallery, used for ordering"
+        }
+      }
+    }
+  }
+}

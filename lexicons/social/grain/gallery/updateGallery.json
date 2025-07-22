@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.updateGallery",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create a new gallery",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["galleryUri", "title"],
+          "properties": {
+            "galleryUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "The AT-URI of the gallery to update"
+            },
+            "title": { "type": "string" },
+            "description": { "type": "string" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "True if the gallery was updated"
+            }
+          }
+        }
+      }
+    }
+  }
+}

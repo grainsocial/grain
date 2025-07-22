@@ -14,12 +14,12 @@ import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { $Typed } from "$lexicon/util.ts";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
-import { getFollow, getFollowersCount, getFollowsCount } from "./follow.ts";
 import {
   galleryToView,
   getGalleryCameras,
   getGalleryItemsAndPhotos,
 } from "./gallery.ts";
+import { getFollow, getFollowersCount, getFollowsCount } from "./graph.ts";
 import { photoToView, photoUrl } from "./photo.ts";
 import type { SocialNetwork } from "./timeline.ts";
 
@@ -417,4 +417,30 @@ export function searchActors(query: string, ctx: BffContext) {
   }
 
   return profileViews;
+}
+
+export async function updateActorProfile(
+  did: string,
+  ctx: BffContext,
+  params: {
+    displayName?: string;
+    description?: string;
+    avatar?: GrainProfile["avatar"];
+  },
+) {
+  const record = ctx.indexService.getRecord<WithBffMeta<GrainProfile>>(
+    `at://${did}/social.grain.actor.profile/self`,
+  );
+  if (!record) return null;
+
+  const updated = await ctx.updateRecord<GrainProfile>(
+    "social.grain.actor.profile",
+    "self",
+    {
+      displayName: params.displayName ?? record.displayName,
+      description: params.description ?? record.description,
+      avatar: params.avatar ?? record.avatar,
+    },
+  );
+  return updated;
 }

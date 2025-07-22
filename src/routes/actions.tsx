@@ -1,13 +1,11 @@
 import { Record as BskyFollow } from "$lexicon/types/app/bsky/graph/follow.ts";
 import { Record as Profile } from "$lexicon/types/social/grain/actor/profile.ts";
 import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
-import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
-import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import {
@@ -21,10 +19,16 @@ import { GalleryLayout } from "../components/GalleryLayout.tsx";
 import { PhotoPreview } from "../components/PhotoPreview.tsx";
 import { PhotoSelectButton } from "../components/PhotoSelectButton.tsx";
 import { getActorPhotos } from "../lib/actor.ts";
-import { getFollowers } from "../lib/follow.ts";
-import { deleteGallery, getGallery, getGalleryFav } from "../lib/gallery.ts";
-import { getPhoto, photoToView } from "../lib/photo.ts";
-import { parseFacetedText } from "../lib/rich_text.ts";
+import {
+  createGallery,
+  createGalleryItem,
+  deleteGallery,
+  getGallery,
+  getGalleryFav,
+  updateGallery,
+} from "../lib/gallery.ts";
+import { getFollowers } from "../lib/graph.ts";
+import { createExif, createPhoto, getPhoto } from "../lib/photo.ts";
 import type { State } from "../state.ts";
 import { galleryLink, profileLink, uploadPageLink } from "../utils.ts";
 
@@ -99,49 +103,24 @@ export const galleryCreateEdit: RouteHandler = async (
   const searchParams = new URLSearchParams(url.search);
   const uri = searchParams.get("uri");
 
-  let facets: Facet[] | undefined = undefined;
-  if (description) {
-    try {
-      const resp = parseFacetedText(description, ctx);
-      facets = resp.facets;
-    } catch (e) {
-      console.error("Failed to parse facets:", e);
-    }
-  }
-
   if (uri) {
-    const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(uri);
-    if (!gallery) return ctx.next();
-    const rkey = new AtUri(uri).rkey;
-    try {
-      await ctx.updateRecord<Gallery>("social.grain.gallery", rkey, {
-        title,
-        description,
-        facets,
-        updatedAt: new Date().toISOString(),
-        createdAt: gallery.createdAt,
-      });
-    } catch (e) {
-      console.error("Error updating record:", e);
-      const errorMessage = e instanceof Error
-        ? e.message
-        : "Unknown error occurred";
-      return new Response(errorMessage, { status: 400 });
+    const success = await updateGallery(ctx, uri, {
+      title,
+      description,
+    });
+    if (!success) {
+      return new Response("Failed to update gallery", { status: 500 });
     }
+    const rkey = new AtUri(uri).rkey;
     return ctx.redirect(galleryLink(handle, rkey));
   }
 
-  const createdUri = await ctx.createRecord<Gallery>(
-    "social.grain.gallery",
-    {
-      title,
-      description,
-      facets,
-      updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    },
-  );
-  return ctx.redirect(galleryLink(handle, new AtUri(createdUri).rkey));
+  const galleryUri = await createGallery(ctx, { title, description });
+  if (!galleryUri) {
+    return new Response("Failed to create gallery", { status: 500 });
+  }
+  const rkey = new AtUri(galleryUri).rkey;
+  return ctx.redirect(galleryLink(handle, rkey));
 };
 
 export const galleryDelete: RouteHandler = async (
@@ -658,7 +637,7 @@ export const uploadPhoto: RouteHandler = async (
 
     const blobResponse = await ctx.agent.uploadBlob(file);
 
-    const photoUri = await ctx.createRecord<Photo>("social.grain.photo", {
+    const photoUri = await createPhoto({
       photo: blobResponse.data.blob,
       aspectRatio: width && height
         ? {
@@ -668,44 +647,27 @@ export const uploadPhoto: RouteHandler = async (
         : undefined,
       alt: "",
       createdAt: new Date().toISOString(),
-    });
+    }, ctx);
 
-    let exifUri: string | undefined = undefined;
     if (exif) {
-      exifUri = await ctx.createRecord<PhotoExif>(
-        "social.grain.photo.exif",
+      await createExif(
         {
           photo: photoUri,
-          createdAt: new Date().toISOString(),
           ...exif,
+          createdAt: new Date().toISOString(),
         },
+        ctx,
       );
-    }
-
-    const photo = ctx.indexService.getRecord<WithBffMeta<Photo>>(photoUri);
-    if (!photo) {
-      return new Response("Photo not found after creation", { status: 404 });
     }
 
     let gallery: GalleryView | undefined = undefined;
     if (galleryUri) {
       gallery = getGallery(did, new AtUri(galleryUri).rkey, ctx) ?? undefined;
-      if (gallery) {
-        await ctx.createRecord<GalleryItem>("social.grain.gallery.item", {
-          gallery: galleryUri,
-          item: photoUri,
-          position: gallery.items?.length ?? 0,
-          createdAt: new Date().toISOString(),
-        });
-      }
+      await createGalleryItem(ctx, galleryUri, photoUri);
     }
 
-    let exifRecord: WithBffMeta<PhotoExif> | undefined = undefined;
-    if (exifUri) {
-      exifRecord = ctx.indexService.getRecord<WithBffMeta<PhotoExif>>(
-        exifUri,
-      );
-    }
+    const photo = getPhoto(photoUri, ctx);
+    if (!photo) return ctx.next();
 
     if (page === "gallery" && gallery && galleryUri) {
       const rkey = new AtUri(gallery.uri).rkey;
@@ -714,17 +676,16 @@ export const uploadPhoto: RouteHandler = async (
       if (!updatedGallery) {
         return ctx.next();
       }
-      const p = photoToView(did, photo, exifRecord);
       return ctx.html(
         <>
           <PhotoSelectButton
             galleryUri={gallery.uri}
-            photo={p}
+            photo={photo}
           />
           <div hx-swap-oob="beforeend:#gallery-container">
             <GalleryLayout.Item
               key={photo.cid}
-              photo={p}
+              photo={photo}
               gallery={updatedGallery}
             />
           </div>
@@ -749,14 +710,14 @@ export const uploadPhoto: RouteHandler = async (
     return ctx.html(
       <>
         <PhotoPreview
-          photo={photoToView(did, photo, exifRecord)}
+          photo={photo}
           selectedGallery={gallery}
         />
         <div hx-swap-oob="photos-count">{photosCount}</div>
       </>,
     );
   } catch (e) {
-    console.error("Error in uploadStart:", e);
+    console.error("Error in uploadPhoto:", e);
     return new Response("Internal Server Error", { status: 500 });
   }
 };

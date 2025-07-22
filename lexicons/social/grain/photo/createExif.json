@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo.createExif",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Create a new Exif record for a photo",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["photo"],
+          "properties": {
+            "photo": { "type": "string", "format": "at-uri" },
+            "dateTimeOriginal": { "type": "string", "format": "datetime" },
+            "exposureTime": { "type": "integer" },
+            "fNumber": { "type": "integer" },
+            "flash": { "type": "string" },
+            "focalLengthIn35mmFormat": { "type": "integer" },
+            "iSO": { "type": "integer" },
+            "lensMake": { "type": "string" },
+            "lensModel": { "type": "string" },
+            "make": { "type": "string" },
+            "model": { "type": "string" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "exifUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the created gallery"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -8,7 +8,19 @@ function errorResponse(message: string, status: number): Response {
   });
 }
 
+function jsonErrorResponse(err: XRPCError): Response {
+  return new Response(JSON.stringify(err.toJSON()), {
+    status: err.status,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+}
+
 export function onError(err: unknown): Response {
+  if (err instanceof XRPCError) {
+    return jsonErrorResponse(err);
+  }
   if (err instanceof BadRequestError) {
     return errorResponse(err.message, 400);
   }
@@ -62,5 +74,41 @@ export class BadRequestError extends Error {
   constructor(message: string = "Bad Request") {
     super(message);
     this.name = "BadRequestError";
+  }
+}
+
+const XRPCErrorCodes = {
+  InvalidRequest: 400,
+  NotFound: 404,
+  InternalServerError: 500,
+  AuthenticationRequired: 401,
+  PayloadTooLarge: 413,
+} as const;
+
+type XRPCErrorCode = keyof typeof XRPCErrorCodes;
+
+export class XRPCError extends Error {
+  code: XRPCErrorCode;
+  error?: unknown;
+
+  constructor(code: XRPCErrorCode, error?: unknown) {
+    super(typeof error === "string" ? error : code);
+    this.name = "XRPCError";
+    this.code = code;
+    this.error = error;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, XRPCError);
+    }
+  }
+
+  get status(): number {
+    return XRPCErrorCodes[this.code];
+  }
+
+  toJSON() {
+    return {
+      error: this.code,
+      message: this.message,
+    };
   }
 }

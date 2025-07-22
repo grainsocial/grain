@@ -18,11 +18,13 @@ import {
 } from "$lexicon/types/social/grain/photo/defs.ts";
 import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { $Typed, Un$Typed } from "$lexicon/util.ts";
+import { Facet } from "@atproto/api";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, WithBffMeta } from "@bigmoves/bff";
 import { getGalleryCommentsCount } from "../modules/comments.tsx";
 import { getActorProfile, getActorProfilesBulk } from "./actor.ts";
 import { photoToView } from "./photo.ts";
+import { parseFacetedText } from "./rich_text.ts";
 
 type PhotoWithMeta = WithBffMeta<Photo> & {
   item?: WithBffMeta<GalleryItem>;
@@ -144,24 +146,30 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
 }
 
 export async function deleteGallery(uri: string, ctx: BffContext) {
-  await ctx.deleteRecord(uri);
-  const { items: galleryItems } = ctx.indexService.getRecords<
-    WithBffMeta<GalleryItem>
-  >("social.grain.gallery.item", {
-    where: [{ field: "gallery", equals: uri }],
-  });
-  for (const item of galleryItems) {
-    await ctx.deleteRecord(item.uri);
+  try {
+    await ctx.deleteRecord(uri);
+    const { items: galleryItems } = ctx.indexService.getRecords<
+      WithBffMeta<GalleryItem>
+    >("social.grain.gallery.item", {
+      where: [{ field: "gallery", equals: uri }],
+    });
+    for (const item of galleryItems) {
+      await ctx.deleteRecord(item.uri);
+    }
+    const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
+      "social.grain.favorite",
+      {
+        where: [{ field: "subject", equals: uri }],
+      },
+    );
+    for (const fav of favs) {
+      await ctx.deleteRecord(fav.uri);
+    }
+  } catch (error) {
+    console.error("Failed to delete gallery:", error);
+    return false;
   }
-  const { items: favs } = ctx.indexService.getRecords<WithBffMeta<Favorite>>(
-    "social.grain.favorite",
-    {
-      where: [{ field: "subject", equals: uri }],
-    },
-  );
-  for (const fav of favs) {
-    await ctx.deleteRecord(fav.uri);
-  }
+  return true;
 }
 
 export function getGalleryFavs(galleryUri: string, ctx: BffContext) {
@@ -469,4 +477,171 @@ export function getGalleriesByHashtag(
     uniqueGalleryUris,
     ctx,
   );
+}
+
+export function createGallery(
+  ctx: BffContext,
+  {
+    title,
+    description,
+  }: {
+    title: string;
+    description?: string;
+  },
+): Promise<string> {
+  let facets: Facet[] | undefined = undefined;
+  if (description) {
+    try {
+      const resp = parseFacetedText(description, ctx);
+      facets = resp.facets;
+    } catch (e) {
+      console.error("Failed to parse facets:", e);
+    }
+  }
+
+  return ctx.createRecord<Gallery>(
+    "social.grain.gallery",
+    {
+      title,
+      description,
+      facets,
+      updatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    },
+  );
+}
+
+export async function updateGallery(
+  ctx: BffContext,
+  uri: string,
+  {
+    title,
+    description,
+  }: {
+    title: string;
+    description?: string;
+  },
+): Promise<boolean> {
+  let facets: Facet[] | undefined = undefined;
+  if (description) {
+    try {
+      const resp = parseFacetedText(description, ctx);
+      facets = resp.facets;
+    } catch (e) {
+      console.error("Failed to parse facets:", e);
+    }
+  }
+
+  const gallery = ctx.indexService.getRecord<WithBffMeta<Gallery>>(uri);
+  if (!gallery) return false;
+  const rkey = new AtUri(uri).rkey;
+  await ctx.updateRecord<Gallery>(
+    "social.grain.gallery",
+    rkey,
+    {
+      title,
+      description,
+      facets,
+      updatedAt: new Date().toISOString(),
+      createdAt: gallery.createdAt,
+    },
+  );
+  return true;
+}
+
+export async function createGalleryItem(
+  ctx: BffContext,
+  galleryUri: string,
+  itemUri: string,
+): Promise<string | null> {
+  const count = ctx.indexService.countRecords(
+    "social.grain.gallery.item",
+    {
+      where: [
+        { field: "gallery", equals: galleryUri },
+      ],
+    },
+  );
+  const position = count ?? 0;
+  const createdItemUri = await ctx.createRecord<GalleryItem>(
+    "social.grain.gallery.item",
+    {
+      gallery: galleryUri,
+      item: itemUri,
+      position,
+      createdAt: new Date().toISOString(),
+    },
+  );
+  return createdItemUri;
+}
+
+export async function removeGalleryItem(
+  ctx: BffContext,
+  galleryUri: string,
+  photoUri: string,
+): Promise<boolean> {
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >(
+    "social.grain.gallery.item",
+    {
+      where: [
+        { field: "gallery", equals: galleryUri },
+        { field: "item", equals: photoUri },
+      ],
+    },
+  );
+  if (!galleryItems.length) return false;
+  for (const item of galleryItems) {
+    await ctx.deleteRecord(item.uri);
+  }
+  return true;
+}
+
+export async function applySort(
+  writes: Array<{
+    itemUri: string;
+    position: number;
+  }>,
+  ctx: BffContext,
+): Promise<boolean> {
+  const urisToUpdate = writes.map((update) => update.itemUri);
+
+  const { items: galleryItems } = ctx.indexService.getRecords<
+    WithBffMeta<GalleryItem>
+  >(
+    "social.grain.gallery.item",
+    {
+      where: [
+        { field: "uri", in: urisToUpdate },
+      ],
+    },
+  );
+
+  const positionMap = new Map<string, number>();
+  for (const update of writes) {
+    positionMap.set(update.itemUri, update.position);
+  }
+
+  const updates = galleryItems.map((item) => {
+    // Use position from positionMap if it exists (including 0)
+    const hasPosition = positionMap.has(item.uri);
+    return {
+      collection: "social.grain.gallery.item",
+      rkey: new AtUri(item.uri).rkey,
+      data: {
+        ...item,
+        position: hasPosition ? positionMap.get(item.uri) : item.position,
+      },
+    };
+  });
+
+  try {
+    await ctx.updateRecords(updates);
+  } catch (error) {
+    console.error("Failed to update gallery item positions:", error);
+    return false;
+  }
+
+  return true;
 }

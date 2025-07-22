@@ -3,7 +3,7 @@ import { Breadcrumb } from "../components/Breadcrumb.tsx";
 import { FollowsList } from "../components/FollowsList.tsx";
 import { Header } from "../components/Header.tsx";
 import { getActorProfile } from "../lib/actor.ts";
-import { getFollowersWithProfiles } from "../lib/follow.ts";
+import { getFollowersWithProfiles } from "../lib/graph.ts";
 import { State } from "../state.ts";
 import { profileLink } from "../utils.ts";
 

@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.actor.updateAvatar",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Update an actor's avatar. Requires auth.",
+      "input": {
+        "encoding": "*/*"
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "Indicates whether the avatar update was successful."
+            }
+          }
+        }
+      }
+    }
+  }
+}

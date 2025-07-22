@@ -1,0 +1,36 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.comment.deleteComment",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete a comment. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the comment to delete"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "True if the comment was deleted"
+            }
+          }
+        }
+      }
+    }
+  }
+}

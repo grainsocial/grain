@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.photo.uploadPhoto",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Upload a photo. Requires auth.",
+      "input": {
+        "encoding": "*/*"
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "photoUri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "AT URI of the created photo"
+            }
+          }
+        }
+      }
+    }
+  }
+}

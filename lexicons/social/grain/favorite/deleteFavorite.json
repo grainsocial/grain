@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.favorite.deleteFavorite",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete a favorite item by its ID.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "at-uri",
+              "description": "The AT URI of the favorite to delete."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["success"],
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "Indicates if the favorite was successfully deleted."
+            }
+          }
+        }
+      }
+    }
+  }
+}

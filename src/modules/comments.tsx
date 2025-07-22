@@ -326,6 +326,23 @@ export function ReplyButton(
   );
 }
 
+export function createComment(
+  data: Partial<Comment>,
+  ctx: BffContext,
+): Promise<string> {
+  let facets: Facet[] | undefined = undefined;
+  const resp = parseFacetedText(data.text ?? "", ctx);
+  facets = resp.facets;
+  return ctx.createRecord<WithBffMeta<Comment>>(
+    "social.grain.comment",
+    {
+      ...data,
+      facets,
+      createdAt: new Date().toISOString(),
+    },
+  );
+}
+
 export const middlewares: BffMiddleware[] = [
   // Actions
   route(
@@ -344,42 +361,24 @@ export const middlewares: BffMiddleware[] = [
 
       const form = await req.formData();
       const text = form.get("text") as string;
-      const focus = form.get("focus") as string;
-      const replyTo = form.get("replyTo") as string;
+      const focus = form.get("focus") as string ?? undefined;
+      const replyTo = form.get("replyTo") as string ?? undefined;
 
       if (typeof text !== "string" || text.length === 0) {
         return new Response("Text is required", { status: 400 });
       }
-
-      let facets: Facet[] | undefined = undefined;
-      if (text) {
-        try {
-          const resp = parseFacetedText(text, ctx);
-          facets = resp.facets;
-        } catch (e) {
-          console.error("Failed to parse facets:", e);
-        }
-      }
-
       try {
-        await ctx.createRecord<WithBffMeta<Comment>>(
-          "social.grain.comment",
-          {
-            text,
-            facets,
-            subject: gallery.uri,
-            focus: focus ?? undefined,
-            replyTo: replyTo ?? undefined,
-            createdAt: new Date().toISOString(),
-          },
-        );
+        await createComment({
+          subject: gallery.uri,
+          text,
+          focus,
+          replyTo,
+        }, ctx);
       } catch (error) {
-        console.error("Error creating comment:", error);
-        if (error instanceof Error) {
-          throw new BadRequestError(error.message);
-        } else {
-          throw new BadRequestError("Unknown error");
+        if (error instanceof BadRequestError) {
+          return new Response(error.message, { status: 400 });
         }
+        throw error;
       }
 
       const comments = getGalleryComments(gallery.uri, ctx);
