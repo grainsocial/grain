@@ -1,6 +1,8 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@bigmoves/atproto-oauth-client@0.2": "0.2.0",
+    "jsr:@bigmoves/bff@0.3.0-beta.56": "0.3.0-beta.56",
     "jsr:@deno/gfm@0.10": "0.10.0",
     "jsr:@denosaurs/emoji@0.3": "0.3.1",
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
@@ -8,8 +10,10 @@
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/async@^1.0.12": "1.0.12",
     "jsr:@std/bytes@^1.0.2": "1.0.6",
+    "jsr:@std/cache@0.2": "0.2.0",
     "jsr:@std/cli@^1.0.16": "1.0.20",
     "jsr:@std/cli@^1.0.20": "1.0.20",
+    "jsr:@std/cli@^1.0.21": "1.0.21",
     "jsr:@std/data-structures@^1.0.6": "1.0.7",
     "jsr:@std/dotenv@*": "0.225.5",
     "jsr:@std/encoding@^1.0.10": "1.0.10",
@@ -19,10 +23,10 @@
     "jsr:@std/fs@^1.0.18": "1.0.18",
     "jsr:@std/fs@^1.0.19": "1.0.19",
     "jsr:@std/html@^1.0.4": "1.0.4",
-    "jsr:@std/http@^1.0.13": "1.0.19",
+    "jsr:@std/http@^1.0.13": "1.0.20",
     "jsr:@std/http@^1.0.17": "1.0.19",
-    "jsr:@std/internal@^1.0.6": "1.0.9",
-    "jsr:@std/internal@^1.0.9": "1.0.9",
+    "jsr:@std/internal@^1.0.6": "1.0.10",
+    "jsr:@std/internal@^1.0.9": "1.0.10",
     "jsr:@std/media-types@^1.1.0": "1.1.0",
     "jsr:@std/net@^1.0.4": "1.0.4",
     "jsr:@std/path@^1.0.6": "1.1.0",
@@ -87,6 +91,42 @@
     "npm:typed-htmx@~0.3.1": "0.3.1"
   },
   "jsr": {
+    "@bigmoves/atproto-oauth-client@0.2.0": {
+      "integrity": "5c3ca124dd52eff51dace83790779ebe48c4b41559b799e16c8750bd415f2124",
+      "dependencies": [
+        "npm:@atproto-labs/handle-resolver-node",
+        "npm:@atproto-labs/simple-store",
+        "npm:@atproto/jwk",
+        "npm:@atproto/oauth-client",
+        "npm:@atproto/oauth-types",
+        "npm:jose"
+      ]
+    },
+    "@bigmoves/bff@0.3.0-beta.56": {
+      "integrity": "3dd2256c79aafe0fa48e0e2790c2f85a0466e868944d596b5630e63fbdfc5ff4",
+      "dependencies": [
+        "jsr:@bigmoves/atproto-oauth-client",
+        "jsr:@std/assert@^1.0.13",
+        "jsr:@std/cache",
+        "jsr:@std/fmt",
+        "jsr:@std/http@^1.0.13",
+        "jsr:@std/path@^1.0.8",
+        "npm:@atproto/api@~0.15.7",
+        "npm:@atproto/common",
+        "npm:@atproto/identity",
+        "npm:@atproto/lexicon@0.4.11",
+        "npm:@atproto/lexicon@~0.4.11",
+        "npm:@atproto/oauth-client",
+        "npm:@atproto/syntax",
+        "npm:@atproto/xrpc-server@0.7.19",
+        "npm:clsx",
+        "npm:jsonwebtoken",
+        "npm:multiformats@^13.3.2",
+        "npm:preact",
+        "npm:preact-render-to-string",
+        "npm:tailwind-merge"
+      ]
+    },
     "@deno/gfm@0.10.0": {
       "integrity": "51708205e3559a4aeb6afb29d07c5bfafe7941f91bb360351ef6621de9a39527",
       "dependencies": [
@@ -125,8 +165,14 @@
     "@std/bytes@1.0.6": {
       "integrity": "f6ac6adbd8ccd99314045f5703e23af0a68d7f7e58364b47d2c7f408aeb5820a"
     },
+    "@std/cache@0.2.0": {
+      "integrity": "63a2ccd5a9e7c03e430f7d34dfcfd0d0cfc90731a1eaf8208f4c66e418fc3035"
+    },
     "@std/cli@1.0.20": {
       "integrity": "a8c384a2c98cec6ec6a2055c273a916e2772485eb784af0db004c5ab8ba52333"
+    },
+    "@std/cli@1.0.21": {
+      "integrity": "cd25b050bdf6282e321854e3822bee624f07aca7636a3a76d95f77a3a919ca2a"
     },
     "@std/data-structures@1.0.7": {
       "integrity": "16932d2c8d281f65eaaa2209af2473209881e33b1ced54cd1b015e7b4cdbb0d2"
@@ -180,11 +226,28 @@
         "jsr:@std/streams"
       ]
     },
+    "@std/http@1.0.20": {
+      "integrity": "b5cc33fc001bccce65ed4c51815668c9891c69ccd908295997e983d8f56070a1",
+      "dependencies": [
+        "jsr:@std/cli@^1.0.21",
+        "jsr:@std/encoding@^1.0.10",
+        "jsr:@std/fmt",
+        "jsr:@std/fs@^1.0.19",
+        "jsr:@std/html",
+        "jsr:@std/media-types",
+        "jsr:@std/net",
+        "jsr:@std/path@^1.1.1",
+        "jsr:@std/streams"
+      ]
+    },
     "@std/internal@1.0.8": {
       "integrity": "fc66e846d8d38a47cffd274d80d2ca3f0de71040f855783724bb6b87f60891f5"
     },
     "@std/internal@1.0.9": {
       "integrity": "bdfb97f83e4db7a13e8faab26fb1958d1b80cc64366501af78a0aee151696eb8"
+    },
+    "@std/internal@1.0.10": {
+      "integrity": "e3be62ce42cab0e177c27698e5d9800122f67b766a0bea6ca4867886cbde8cf7"
     },
     "@std/media-types@1.1.0": {
       "integrity": "c9d093f0c05c3512932b330e3cc1fe1d627b301db33a4c2c2185c02471d6eaa4"
