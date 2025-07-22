@@ -902,9 +902,6 @@ async function parseUpdateProfileInputs(
   const displayName = typeof body.displayName === "string"
     ? body.displayName
     : undefined;
-  if (!displayName) {
-    throw new XRPCError("InvalidRequest", "Missing displayName input");
-  }
   const description = typeof body.description === "string"
     ? body.description
     : undefined;
