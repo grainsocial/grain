@@ -4390,7 +4390,7 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'procedure',
-        description: 'Delete a favorite photo by its unique at-uri.',
+        description: 'Delete a photo by its unique at-uri.',
         input: {
           encoding: 'application/json',
           schema: {
@@ -4577,7 +4577,7 @@ export const schemaDict = {
     defs: {
       main: {
         type: 'procedure',
-        description: 'Apply alt texts to photos in a gallery. Requires auth.',
+        description: 'Apply alt texts to photos. Requires auth.',
         input: {
           encoding: 'application/json',
           schema: {

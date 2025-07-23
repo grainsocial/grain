@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Delete a favorite photo by its unique at-uri.",
+      "description": "Delete a photo by its unique at-uri.",
       "input": {
         "encoding": "application/json",
         "schema": {

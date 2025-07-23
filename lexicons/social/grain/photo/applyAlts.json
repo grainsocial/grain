@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Apply alt texts to photos in a gallery. Requires auth.",
+      "description": "Apply alt texts to photos. Requires auth.",
       "input": {
         "encoding": "application/json",
         "schema": {
