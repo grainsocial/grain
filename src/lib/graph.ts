@@ -124,14 +124,12 @@ export function getFollowsCount(
 }
 
 export async function createFollow(
-  followerDid: string,
   followeeDid: string,
   ctx: BffContext,
 ): Promise<string> {
   const followUri = await ctx.createRecord<GrainFollow>(
     "social.grain.graph.follow",
     {
-      did: followerDid,
       subject: followeeDid,
       createdAt: new Date().toISOString(),
     },

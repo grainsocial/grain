@@ -313,13 +313,13 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.graph.createFollow",
     ["POST"],
     async (req, _params, ctx) => {
-      const { did } = ctx.requireAuth();
+      ctx.requireAuth();
       const { subject } = await parseCreateFollowInputs(req);
       if (!subject) {
         throw new XRPCError("InvalidRequest", "Missing subject input");
       }
       try {
-        const followUri = await createFollow(did, subject, ctx);
+        const followUri = await createFollow(subject, ctx);
         return ctx.json({ followUri } satisfies CreateFollowOutputSchema);
       } catch (error) {
         console.error("Error creating follow:", error);
