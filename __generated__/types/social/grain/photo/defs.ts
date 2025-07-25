@@ -24,8 +24,8 @@ export interface PhotoView {
   /** Fully-qualified URL where a large version of the image can be fetched. May or may not be the exact original blob. For example, CDN location provided by the App View. */
   fullsize: string
   /** Alt text description of the image, for accessibility. */
-  alt: string
-  aspectRatio?: SocialGrainDefs.AspectRatio
+  alt?: string
+  aspectRatio: SocialGrainDefs.AspectRatio
   exif?: ExifView
   gallery?: GalleryState
 }

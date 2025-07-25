@@ -4,7 +4,7 @@
   "defs": {
     "photoView": {
       "type": "object",
-      "required": ["uri", "cid", "thumb", "fullsize", "alt"],
+      "required": ["uri", "cid", "thumb", "fullsize", "aspectRatio"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },

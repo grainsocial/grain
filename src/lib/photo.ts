@@ -290,7 +290,7 @@ export async function createPhoto(
     "social.grain.photo",
     {
       photo: data.photo,
-      alt: data.alt || "",
+      alt: data.alt,
       aspectRatio: data.aspectRatio || undefined,
       createdAt: new Date().toISOString(),
     },

@@ -264,7 +264,6 @@ export const middlewares: BffMiddleware[] = [
       const photoUri = await createPhoto(
         {
           photo: blobRef,
-          alt: "", // @TODO: make this optional
           aspectRatio: {
             width,
             height,

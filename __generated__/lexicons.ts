@@ -4269,7 +4269,7 @@ export const schemaDict = {
     defs: {
       photoView: {
         type: 'object',
-        required: ['uri', 'cid', 'thumb', 'fullsize', 'alt'],
+        required: ['uri', 'cid', 'thumb', 'fullsize', 'aspectRatio'],
         properties: {
           uri: {
             type: 'string',
@@ -4682,7 +4682,7 @@ export const schemaDict = {
         key: 'tid',
         record: {
           type: 'object',
-          required: ['photo', 'alt'],
+          required: ['photo', 'aspectRatio', 'createdAt'],
           properties: {
             photo: {
               type: 'blob',

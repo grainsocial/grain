@@ -645,7 +645,6 @@ export const uploadPhoto: RouteHandler = async (
           height,
         }
         : undefined,
-      alt: "",
       createdAt: new Date().toISOString(),
     }, ctx);
 
