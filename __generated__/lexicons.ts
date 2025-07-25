@@ -4313,7 +4313,7 @@ export const schemaDict = {
       },
       exifView: {
         type: 'object',
-        required: ['photo', 'createdAt'],
+        required: ['uri', 'cid', 'photo', 'record', 'createdAt'],
         properties: {
           uri: {
             type: 'string',
@@ -4326,6 +4326,9 @@ export const schemaDict = {
           photo: {
             type: 'string',
             format: 'at-uri',
+          },
+          record: {
+            type: 'unknown',
           },
           createdAt: {
             type: 'string',

@@ -42,9 +42,10 @@ export function validatePhotoView<V>(v: V) {
 
 export interface ExifView {
   $type?: 'social.grain.photo.defs#exifView'
-  uri?: string
-  cid?: string
+  uri: string
+  cid: string
   photo: string
+  record: { [_ in string]: unknown }
   createdAt: string
   dateTimeOriginal?: string
   exposureTime?: string

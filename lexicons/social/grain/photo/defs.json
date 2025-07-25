@@ -36,11 +36,12 @@
     },
     "exifView": {
       "type": "object",
-      "required": ["photo", "createdAt"],
+      "required": ["uri", "cid", "photo", "record", "createdAt"],
       "properties": {
         "uri": { "type": "string", "format": "at-uri" },
         "cid": { "type": "string", "format": "cid" },
         "photo": { "type": "string", "format": "at-uri" },
+        "record": { "type": "unknown" },
         "createdAt": { "type": "string", "format": "datetime" },
         "dateTimeOriginal": { "type": "string" },
         "exposureTime": { "type": "string" },

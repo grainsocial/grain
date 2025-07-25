@@ -96,6 +96,7 @@ export function exifToView(
       ? formatExposureTime(deserializedExif.exposureTime)
       : undefined,
     $type: "social.grain.photo.defs#exifView",
+    record: exif,
   };
 }
 
