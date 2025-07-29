@@ -15,6 +15,8 @@ export interface QueryParams {}
 export interface InputSchema {
   /** Unique identifier of the gallery to delete */
   uri: string;
+  /** If true, will also delete any associated items in the gallery. */
+  cascade: boolean;
 }
 
 export interface OutputSchema {

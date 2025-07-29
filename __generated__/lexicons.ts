@@ -2816,6 +2816,12 @@ export const schemaDict = {
                 format: 'at-uri',
                 description: 'Unique identifier of the gallery to delete',
               },
+              cascade: {
+                type: 'boolean',
+                default: true,
+                description:
+                  'If true, will also delete any associated items in the gallery.',
+              },
             },
           },
         },
@@ -4404,6 +4410,12 @@ export const schemaDict = {
                 type: 'string',
                 format: 'at-uri',
                 description: 'AT URI of the photo to delete.',
+              },
+              cascade: {
+                type: 'boolean',
+                default: true,
+                description:
+                  'If true, will also delete any associated EXIF data and gallery items.',
               },
             },
           },

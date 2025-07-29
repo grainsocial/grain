@@ -1,3 +1,4 @@
+import { Record as Favorite } from "$lexicon/types/social/grain/favorite.ts";
 import { Record as Gallery } from "$lexicon/types/social/grain/gallery.ts";
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
@@ -349,5 +350,74 @@ export async function applyAlts(
     return false;
   }
 
+  return true;
+}
+
+export async function deletePhoto(
+  uri: string,
+  cascade: boolean,
+  ctx: BffContext,
+): Promise<boolean> {
+  const deleteUris: string[] = [];
+  try {
+    await ctx.deleteRecord(
+      uri,
+    );
+    if (!cascade) return true;
+    const { items: galleryItems } = ctx.indexService.getRecords<
+      WithBffMeta<GalleryItem>
+    >(
+      "social.grain.gallery.item",
+      {
+        where: [
+          {
+            field: "item",
+            equals: uri,
+          },
+        ],
+      },
+    );
+    for (const item of galleryItems) {
+      deleteUris.push(item.uri);
+    }
+    const { items: favorites } = ctx.indexService.getRecords<
+      WithBffMeta<Favorite>
+    >(
+      "social.grain.favorite",
+      {
+        where: [
+          {
+            field: "subject",
+            equals: uri,
+          },
+        ],
+      },
+    );
+    for (const favorite of favorites) {
+      deleteUris.push(favorite.uri);
+    }
+    const { items: exifItems } = ctx.indexService.getRecords<
+      WithBffMeta<PhotoExif>
+    >(
+      "social.grain.photo.exif",
+      {
+        where: [
+          {
+            field: "photo",
+            equals: uri,
+          },
+        ],
+      },
+    );
+    for (const item of exifItems) {
+      deleteUris.push(item.uri);
+    }
+    for (const uri of deleteUris) {
+      await ctx.deleteRecord(uri);
+    }
+  } catch (error) {
+    console.error("Failed to delete photo:", error);
+    return false;
+  }
   return true;
 }

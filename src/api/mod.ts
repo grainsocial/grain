@@ -138,7 +138,12 @@ import {
   getFollowingWithProfiles,
 } from "../lib/graph.ts";
 import { getNotificationsDetailed } from "../lib/notifications.ts";
-import { applyAlts, createExif, createPhoto } from "../lib/photo.ts";
+import {
+  applyAlts,
+  createExif,
+  createPhoto,
+  deletePhoto,
+} from "../lib/photo.ts";
 import { getTimeline } from "../lib/timeline.ts";
 import { createComment, getGalleryComments } from "../modules/comments.tsx";
 
@@ -181,10 +186,10 @@ export const middlewares: BffMiddleware[] = [
     ["POST"],
     async (req, _params, ctx) => {
       ctx.requireAuth();
-      const { uri } = await parseDeleteGalleryInputs(
+      const { uri, cascade = true } = await parseDeleteGalleryInputs(
         req,
       );
-      const success = await deleteGallery(uri, ctx);
+      const success = await deleteGallery(uri, cascade, ctx);
       return ctx.json({ success } satisfies DeleteGalleryOutputSchema);
     },
   ),
@@ -298,14 +303,9 @@ export const middlewares: BffMiddleware[] = [
     ["POST"],
     async (req, _params, ctx) => {
       ctx.requireAuth();
-      const { uri } = await parseDeletePhotoInputs(req);
-      try {
-        await ctx.deleteRecord(uri);
-        return ctx.json({ success: true } satisfies DeletePhotoOutputSchema);
-      } catch (error) {
-        console.error("Error deleting photo:", error);
-        return ctx.json({ success: false } satisfies DeletePhotoOutputSchema);
-      }
+      const { uri, cascade = true } = await parseDeletePhotoInputs(req);
+      const success = await deletePhoto(uri, cascade, ctx);
+      return ctx.json({ success } satisfies DeletePhotoOutputSchema);
     },
   ),
   route(
@@ -772,7 +772,8 @@ async function parseDeleteGalleryInputs(
   if (!uri) {
     throw new XRPCError("InvalidRequest", "Missing uri input");
   }
-  return { uri };
+  const cascade = typeof body.cascade === "boolean" ? body.cascade : undefined;
+  return { uri, cascade };
 }
 
 async function parseCreateGalleryItemInputs(
@@ -819,7 +820,8 @@ async function parseDeletePhotoInputs(
   if (!uri) {
     throw new XRPCError("InvalidRequest", "Missing uri input");
   }
-  return { uri };
+  const cascade = typeof body.cascade === "boolean" ? body.cascade : undefined;
+  return { uri, cascade };
 }
 
 async function parseCreateFollowInputs(

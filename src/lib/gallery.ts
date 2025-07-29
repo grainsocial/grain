@@ -145,9 +145,14 @@ export function getGallery(handleOrDid: string, rkey: string, ctx: BffContext) {
   });
 }
 
-export async function deleteGallery(uri: string, ctx: BffContext) {
+export async function deleteGallery(
+  uri: string,
+  cascade: boolean,
+  ctx: BffContext,
+) {
   try {
     await ctx.deleteRecord(uri);
+    if (!cascade) return true;
     const { items: galleryItems } = ctx.indexService.getRecords<
       WithBffMeta<GalleryItem>
     >("social.grain.gallery.item", {

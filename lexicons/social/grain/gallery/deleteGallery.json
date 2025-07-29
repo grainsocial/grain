@@ -15,6 +15,11 @@
               "type": "string",
               "format": "at-uri",
               "description": "Unique identifier of the gallery to delete"
+            },
+            "cascade": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, will also delete any associated items in the gallery."
             }
           }
         }

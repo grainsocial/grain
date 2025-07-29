@@ -15,6 +15,11 @@
               "type": "string",
               "format": "at-uri",
               "description": "AT URI of the photo to delete."
+            },
+            "cascade": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, will also delete any associated EXIF data and gallery items."
             }
           }
         }

@@ -15,6 +15,8 @@ export interface QueryParams {}
 export interface InputSchema {
   /** AT URI of the photo to delete. */
   uri: string;
+  /** If true, will also delete any associated EXIF data and gallery items. */
+  cascade: boolean;
 }
 
 export interface OutputSchema {

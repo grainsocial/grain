@@ -5,7 +5,6 @@ import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
 import { Record as GalleryItem } from "$lexicon/types/social/grain/gallery/item.ts";
 import { Record as Photo } from "$lexicon/types/social/grain/photo.ts";
 import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
-import { Record as PhotoExif } from "$lexicon/types/social/grain/photo/exif.ts";
 import { AtUri } from "@atproto/syntax";
 import { BffContext, RouteHandler, WithBffMeta } from "@bigmoves/bff";
 import {
@@ -28,7 +27,12 @@ import {
   updateGallery,
 } from "../lib/gallery.ts";
 import { getFollowers } from "../lib/graph.ts";
-import { createExif, createPhoto, getPhoto } from "../lib/photo.ts";
+import {
+  createExif,
+  createPhoto,
+  deletePhoto,
+  getPhoto,
+} from "../lib/photo.ts";
 import type { State } from "../state.ts";
 import { galleryLink, profileLink, uploadPageLink } from "../utils.ts";
 
@@ -131,7 +135,7 @@ export const galleryDelete: RouteHandler = async (
   const { handle } = ctx.requireAuth();
   const formData = await req.formData();
   const uri = formData.get("uri") as string;
-  await deleteGallery(uri, ctx);
+  await deleteGallery(uri, true, ctx);
   return ctx.redirect(profileLink(handle));
 };
 
@@ -331,61 +335,8 @@ export const photoDelete: RouteHandler = async (
   const selectedGalleryRkey = selectedGallery
     ? new AtUri(selectedGallery).rkey
     : undefined;
-  const deleteUris: string[] = [];
-  await ctx.deleteRecord(
-    `at://${did}/social.grain.photo/${params.rkey}`,
-  );
-  const { items: galleryItems } = ctx.indexService.getRecords<
-    WithBffMeta<GalleryItem>
-  >(
-    "social.grain.gallery.item",
-    {
-      where: [
-        {
-          field: "item",
-          equals: `at://${did}/social.grain.photo/${params.rkey}`,
-        },
-      ],
-    },
-  );
-  for (const item of galleryItems) {
-    deleteUris.push(item.uri);
-  }
-  const { items: favorites } = ctx.indexService.getRecords<
-    WithBffMeta<Favorite>
-  >(
-    "social.grain.favorite",
-    {
-      where: [
-        {
-          field: "subject",
-          equals: `at://${did}/social.grain.photo/${params.rkey}`,
-        },
-      ],
-    },
-  );
-  for (const favorite of favorites) {
-    deleteUris.push(favorite.uri);
-  }
-  const { items: exifItems } = ctx.indexService.getRecords<
-    WithBffMeta<PhotoExif>
-  >(
-    "social.grain.photo.exif",
-    {
-      where: [
-        {
-          field: "photo",
-          equals: `at://${did}/social.grain.photo/${params.rkey}`,
-        },
-      ],
-    },
-  );
-  for (const item of exifItems) {
-    deleteUris.push(item.uri);
-  }
-  for (const uri of deleteUris) {
-    await ctx.deleteRecord(uri);
-  }
+  const photoUri = `at://${did}/social.grain.photo/${params.rkey}`;
+  await deletePhoto(photoUri, true, ctx);
   return ctx.redirect(uploadPageLink(selectedGalleryRkey));
 };
 
