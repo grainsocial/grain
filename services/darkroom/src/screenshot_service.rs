@@ -2,7 +2,6 @@ use anyhow::{anyhow, Result};
 use headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption;
 use headless_chrome::{Browser, LaunchOptions};
 use std::ffi::OsStr;
-use std::path::Path;
 use tracing::{info};
 
 pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
@@ -31,6 +30,7 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
                 OsStr::new("--disable-background-timer-throttling"),
                 OsStr::new("--disable-backgrounding-occluded-windows"),
                 OsStr::new("--disable-renderer-backgrounding"),
+                OsStr::new("--single-process")
             ])
             .build()
             .map_err(|e| anyhow!("Failed to create launch options: {}", e))?;
