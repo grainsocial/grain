@@ -74,8 +74,6 @@
               Cmd = [ "/bin/darkroom" ];
               Env = [
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
-                "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true"
-                "RUST_LOG=info"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
