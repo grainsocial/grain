@@ -1,0 +1,79 @@
+name: Build and Deploy Darkroom
+
+on:
+  push:
+    branches: [ main, darkroom ]
+    paths: [ 'services/darkroom/**' ]
+  pull_request:
+    branches: [ main ]
+    paths: [ 'services/darkroom/**' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/darkroom
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          logger: pretty
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check flake
+        run: nix flake check
+
+      - name: Build Rust binary
+        run: nix build .#darkroom
+
+      - name: Build Docker image
+        run: nix build .#darkroomImg
+
+      - name: Load Docker image
+        run: docker load < result
+
+      - name: Test Docker image
+        run: |
+          # Start the container in the background
+          docker run -d --name darkroom-test -p 8080:8080 darkroom:latest
+
+          # Wait for the service to start
+          sleep 10
+
+          # Test the health endpoint
+          curl -f http://localhost:8080/health || exit 1
+
+          # Stop the test container
+          docker stop darkroom-test
+          docker rm darkroom-test
+
+      - name: Tag for Fly.io
+        if: github.ref == 'refs/heads/main'
+        run: docker tag darkroom:latest registry.fly.io/grain-darkroom:latest
+
+      - name: Setup Fly CLI
+        if: github.ref == 'refs/heads/main'
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Login to Fly.io registry
+        if: github.ref == 'refs/heads/main'
+        run: flyctl auth docker
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Push to Fly.io registry
+        if: github.ref == 'refs/heads/main'
+        run: docker push registry.fly.io/grain-darkroom:latest
+
+      - name: Deploy to Fly.io
+        if: github.ref == 'refs/heads/main'
+        run: flyctl deploy --image registry.fly.io/grain-darkroom:latest
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
