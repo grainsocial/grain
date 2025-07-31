@@ -26,7 +26,7 @@ pub async fn handle_composite_api(params: HashMap<String, String>) -> Result<Res
 
     // Build preview URL for screenshot
     let preview_url = build_preview_url(
-        "http://127.0.0.1:8080",
+        "http://grain-darkroom.internal:8080",
         &thumb_urls,
         gallery_data.title.as_deref().unwrap_or(""),
         gallery_data
