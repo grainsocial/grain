@@ -25,8 +25,11 @@ pub async fn handle_composite_api(params: HashMap<String, String>) -> Result<Res
     );
 
     // Build preview URL for screenshot
+    let base_url = std::env::var("BASE_URL")
+        .unwrap_or_else(|_| "http://[::]:8080".to_string());
+
     let preview_url = build_preview_url(
-        "http://grain-darkroom.internal:8080",
+        &base_url,
         &thumb_urls,
         gallery_data.title.as_deref().unwrap_or(""),
         gallery_data

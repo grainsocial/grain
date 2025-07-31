@@ -9,6 +9,9 @@ primary_region = 'sea'
 [build]
   image = 'registry.fly.io/grain-darkroom:latest'
 
+[env]
+  BASE_URL = 'http://grain-darkroom.internal:8080'
+
 [[services]]
   protocol = 'tcp'
   internal_port = 8080
