@@ -13,8 +13,7 @@
 
   outputs = { self, nixpkgs, crane, fenix }:
     let
-      # Support multiple systems
-      systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
+      systems = [ "x86_64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
 
       mkPackagesForSystem = system:
@@ -60,8 +59,8 @@
             CARGO_PROFILE = "release";
           });
 
-          # Docker image for deployment (only build for Linux)
-          darkroomImg = if pkgs.stdenv.isLinux then pkgs.dockerTools.buildImage {
+          # Docker image for deployment
+          darkroomImg = pkgs.dockerTools.buildImage {
             name = "darkroom";
             tag = "latest";
             contents = [
@@ -80,19 +79,18 @@
             config = {
               Cmd = [ "/bin/darkroom" ];
               Env = [
+                "RUST_BACKTRACE=1"
+                "RUST_LOG=headless_chrome=trace"
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
               };
             };
-          } else null;
+          };
         in
-        if system == "x86_64-linux" || system == "aarch64-linux" then {
+        {
           inherit darkroom darkroomImg;
-          default = darkroom;
-        } else {
-          inherit darkroom;
           default = darkroom;
         };
     in
@@ -112,13 +110,13 @@
               nil
               dive
               flyctl
-            ] ++ (if pkgs.stdenv.isLinux then [ chromium ] else []);
+              chromium
+            ];
 
             # Set up environment for development
             RUST_LOG = "debug";
-          } // (if pkgs.stdenv.isLinux then {
             CHROME_PATH = "${pkgs.chromium}/bin/chromium";
-          } else {});
+          };
         });
     };
 }

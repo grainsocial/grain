@@ -1,8 +1,8 @@
 use anyhow::{anyhow, Result};
 use headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption;
 use headless_chrome::{Browser, LaunchOptions};
-use std::ffi::OsStr;
 use tracing::{info};
+use std::time::{Duration};
 
 pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     info!("Starting screenshot capture for: {}", preview_url);
@@ -15,45 +15,15 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     // Run browser operations in a blocking task since headless_chrome is sync
     let preview_url = preview_url.to_string();
     let screenshot = tokio::task::spawn_blocking(move || -> Result<Vec<u8>> {
-        let options = LaunchOptions::default_builder()
-            .path(Some(std::path::PathBuf::from(&chrome_path)))
-            .window_size(Some((1500, 2350)))
-            .headless(true)
-            .sandbox(false) // Disable sandbox for Docker compatibility
-            .args(vec![
-                OsStr::new("--no-sandbox"),
-                OsStr::new("--disable-dev-shm-usage"),
-                // OsStr::new("--user-data-dir=/app/chrome-profile"),
-                // OsStr::new("--enable-logging"),
-                // OsStr::new("--log-level=0"),
-                // OsStr::new("--v=1"),
-                // OsStr::new("--disable-setuid-sandbox"),
-                // OsStr::new("--disable-gpu"),
-                // OsStr::new("--no-first-run"),
-                // OsStr::new("--no-default-browser-check"),
-                // OsStr::new("--disable-background-timer-throttling"),
-                // OsStr::new("--disable-backgrounding-occluded-windows"),
-                // OsStr::new("--disable-renderer-backgrounding"),
-                // OsStr::new("--disable-features=VizDisplayCompositor"),
-                // OsStr::new("--disable-extensions"),
-                // OsStr::new("--disable-plugins"),
-                // OsStr::new("--disable-web-security"),
-                // OsStr::new("--disable-features=TranslateUI"),
-                // OsStr::new("--disable-ipc-flooding-protection"),
-                // OsStr::new("--remote-debugging-port=9222"),
-                // OsStr::new("--user-data-dir=/app/chrome-profile"),
-                // OsStr::new("--disable-software-rasterizer"),
-                // OsStr::new("--disable-background-networking"),
-                // OsStr::new("--disable-default-apps"),
-                // OsStr::new("--disable-sync"),
-                // OsStr::new("--metrics-recording-only"),
-                // OsStr::new("--no-pings"),
-            ])
-            .build()
-            .map_err(|e| anyhow!("Failed to create launch options: {}", e))?;
-
         info!("Launching browser...");
-        let browser = Browser::new(options)
+            let browser = Browser::new(LaunchOptions {
+                window_size: Some((1500, 2350)),
+                path: Some(std::path::PathBuf::from(&chrome_path)),
+                headless: true,
+                sandbox: false,
+                idle_browser_timeout: Duration::MAX,
+                ..Default::default()
+            })
             .map_err(|e| anyhow!("Failed to launch browser: {}", e))?;
 
         info!("Creating new tab...");
