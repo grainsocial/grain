@@ -1,9 +1,6 @@
 name: Build and Deploy Darkroom
 
 on:
-  push:
-    branches: [ main, darkroom ]
-    paths: [ 'services/darkroom/**' ]
   pull_request:
     branches: [ main ]
     paths: [ 'services/darkroom/**' ]
