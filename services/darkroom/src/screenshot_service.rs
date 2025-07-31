@@ -30,7 +30,20 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
                 OsStr::new("--disable-background-timer-throttling"),
                 OsStr::new("--disable-backgrounding-occluded-windows"),
                 OsStr::new("--disable-renderer-backgrounding"),
-                OsStr::new("--single-process")
+                OsStr::new("--disable-features=VizDisplayCompositor"),
+                OsStr::new("--disable-extensions"),
+                OsStr::new("--disable-plugins"),
+                OsStr::new("--disable-web-security"),
+                OsStr::new("--disable-features=TranslateUI"),
+                OsStr::new("--disable-ipc-flooding-protection"),
+                OsStr::new("--remote-debugging-port=9222"),
+                OsStr::new("--user-data-dir=/app/chrome-profile"),
+                OsStr::new("--disable-software-rasterizer"),
+                OsStr::new("--disable-background-networking"),
+                OsStr::new("--disable-default-apps"),
+                OsStr::new("--disable-sync"),
+                OsStr::new("--metrics-recording-only"),
+                OsStr::new("--no-pings"),
             ])
             .build()
             .map_err(|e| anyhow!("Failed to create launch options: {}", e))?;
