@@ -2,15 +2,22 @@ use anyhow::{anyhow, Result};
 use headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption;
 use headless_chrome::{Browser, LaunchOptions};
 use std::ffi::OsStr;
+use std::path::Path;
 use tracing::{info};
 
 pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     info!("Starting screenshot capture for: {}", preview_url);
 
+    let chrome_path = std::env::var("CHROME_PATH")
+        .unwrap_or_else(|_| "/usr/bin/google-chrome".to_string());
+
+    info!("Using Chrome path: {}", chrome_path);
+
     // Run browser operations in a blocking task since headless_chrome is sync
     let preview_url = preview_url.to_string();
     let screenshot = tokio::task::spawn_blocking(move || -> Result<Vec<u8>> {
         let options = LaunchOptions::default_builder()
+            .path(Some(std::path::PathBuf::from(&chrome_path)))
             .window_size(Some((1500, 2350)))
             .headless(true)
             .sandbox(false) // Disable sandbox for Docker compatibility
