@@ -70,6 +70,13 @@
               pkgs.cacert
             ];
 
+            runAsRoot = ''
+              #!${pkgs.runtimeShell}
+              mkdir -p /tmp /app/chrome-profile
+              chmod 1777 /tmp
+              chmod 755 /app/chrome-profile
+            '';
+
             config = {
               Cmd = [ "/bin/darkroom" ];
               Env = [
