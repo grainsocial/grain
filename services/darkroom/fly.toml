@@ -1,0 +1,27 @@
+# fly.toml app configuration file generated for grain-darkroom on 2025-07-29T07:55:42-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'grain-darkroom'
+primary_region = 'sea'
+
+[build]
+  image = 'registry.fly.io/grain-darkroom:latest'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 8080
+  auto_stop_machines = 'off'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
