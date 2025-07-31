@@ -61,7 +61,7 @@
           });
 
           # Docker image for deployment (only build for Linux)
-          darkroomImg = if pkgs.stdenv.isLinux then pkgs.dockerTools.buildLayeredImage {
+          darkroomImg = if pkgs.stdenv.isLinux then pkgs.dockerTools.buildImage {
             name = "darkroom";
             tag = "latest";
             contents = [
