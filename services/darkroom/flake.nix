@@ -63,6 +63,11 @@
           startScript = pkgs.writeShellScript "start-darkroom" ''
             set -e
 
+            # Create necessary directories
+            mkdir -p /tmp /app/chrome-profile
+            chmod 1777 /tmp 2>/dev/null || true
+            chmod 755 /app/chrome-profile 2>/dev/null || true
+
             echo "Starting ChromeDriver on port 9515..."
             ${pkgs.chromedriver}/bin/chromedriver --port=9515 &
             CHROMEDRIVER_PID=$!
@@ -95,7 +100,7 @@
           '';
 
           # Docker image for deployment
-          darkroomImg = pkgs.dockerTools.buildImage {
+          darkroomImg = pkgs.dockerTools.streamLayeredImage {
             name = "darkroom";
             tag = "latest";
             contents = [
@@ -104,15 +109,9 @@
               pkgs.chromedriver
               pkgs.cacert
               pkgs.bash
+              pkgs.coreutils
               startScript
             ];
-
-            runAsRoot = ''
-              #!${pkgs.runtimeShell}
-              mkdir -p /tmp /app/chrome-profile
-              chmod 1777 /tmp
-              chmod 755 /app/chrome-profile
-            '';
 
             config = {
               Cmd = [ "${startScript}" ];
@@ -122,10 +121,12 @@
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
                 "CHROMEDRIVER_PATH=${pkgs.chromedriver}/bin/chromedriver"
                 "BASE_URL=http://grain-darkroom.internal:8080"
+                "PATH=/bin:/usr/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
               };
+              WorkingDir = "/tmp";
             };
           };
         in
