@@ -110,11 +110,15 @@
               pkgs.cacert
               pkgs.bash
               pkgs.coreutils
-              startScript
             ];
 
+            extraCommands = ''
+              cp ${startScript} $out/start.sh
+              chmod +x $out/start.sh
+            '';
+
             config = {
-              Cmd = [ "${startScript}" ];
+              Cmd = [ "/start.sh" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=debug"
