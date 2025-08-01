@@ -59,6 +59,41 @@
             CARGO_PROFILE = "release";
           });
 
+          # Startup script as a proper Nix derivation
+          startScript = pkgs.writeShellScript "start-darkroom" ''
+            set -e
+
+            echo "Starting ChromeDriver on port 9515..."
+            ${pkgs.chromedriver}/bin/chromedriver --port=9515 &
+            CHROMEDRIVER_PID=$!
+
+            # Give ChromeDriver time to start
+            sleep 2
+
+            echo "Starting Darkroom service..."
+            ${darkroom}/bin/darkroom &
+            DARKROOM_PID=$!
+
+            # Function to cleanup both processes
+            cleanup() {
+                echo "Shutting down services..."
+                kill $DARKROOM_PID 2>/dev/null || true
+                kill $CHROMEDRIVER_PID 2>/dev/null || true
+                wait
+            }
+
+            # Set up signal handlers
+            trap cleanup SIGTERM SIGINT
+
+            # Wait for darkroom to exit
+            wait $DARKROOM_PID
+            DARKROOM_EXIT_CODE=$?
+
+            # Cleanup and exit with darkroom's exit code
+            cleanup
+            exit $DARKROOM_EXIT_CODE
+          '';
+
           # Docker image for deployment
           darkroomImg = pkgs.dockerTools.buildImage {
             name = "darkroom";
@@ -69,6 +104,7 @@
               pkgs.chromedriver
               pkgs.cacert
               pkgs.bash
+              startScript
             ];
 
             runAsRoot = ''
@@ -76,28 +112,10 @@
               mkdir -p /tmp /app/chrome-profile
               chmod 1777 /tmp
               chmod 755 /app/chrome-profile
-
-              # Create startup script
-              cat > /start.sh << EOF
-#!/bin/bash
-set -e
-
-echo "Starting ChromeDriver on port 9515..."
-${pkgs.chromedriver}/bin/chromedriver --port=9515 --whitelisted-ips= &
-CHROMEDRIVER_PID=\$!
-
-# Give ChromeDriver time to start
-sleep 2
-
-echo "Starting Darkroom service..."
-exec /bin/darkroom
-EOF
-
-              chmod +x /start.sh
             '';
 
             config = {
-              Cmd = [ "/start.sh" ];
+              Cmd = [ "${startScript}" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=debug"
