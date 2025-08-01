@@ -1,9 +1,41 @@
 use anyhow::{Result, anyhow};
 use fantoccini::ClientBuilder;
+use std::net::TcpStream;
+use std::process::{Child, Command};
+use std::{thread, time};
 use tracing::info;
 
 pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     info!("Starting screenshot capture for: {}", preview_url);
+
+    // Check if ChromeDriver is running on port 9515
+    let chromedriver_addr = "127.0.0.1:9515";
+    let mut chromedriver_child: Option<Child> = None;
+    let chromedriver_running = TcpStream::connect(chromedriver_addr).is_ok();
+    if !chromedriver_running {
+        let chromedriver_path = std::env::var("CHROMEDRIVER_PATH")
+            .unwrap_or_else(|_| "/usr/bin/chromedriver".to_string());
+        info!("Starting ChromeDriver at {}...", chromedriver_path);
+        let child = Command::new(chromedriver_path)
+            .arg("--port=9515")
+            .spawn()
+            .map_err(|e| anyhow!("Failed to start ChromeDriver: {}", e))?;
+        chromedriver_child = Some(child);
+        // Wait for ChromeDriver to become available
+        let max_tries = 10;
+        let delay = time::Duration::from_millis(300);
+        let mut started = false;
+        for _ in 0..max_tries {
+            if TcpStream::connect(chromedriver_addr).is_ok() {
+                started = true;
+                break;
+            }
+            thread::sleep(delay);
+        }
+        if !started {
+            return Err(anyhow!("ChromeDriver did not start on port 9515"));
+        }
+    }
 
     let mut caps = serde_json::map::Map::new();
     let opts = serde_json::json!({
@@ -49,6 +81,11 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
 
     // Clean up
     client.close().await.ok();
+
+    // If we started ChromeDriver, kill it
+    if let Some(mut child) = chromedriver_child {
+        let _ = child.kill();
+    }
 
     result
 }

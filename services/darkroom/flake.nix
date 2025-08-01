@@ -59,48 +59,8 @@
             CARGO_PROFILE = "release";
           });
 
-          # Startup script as a proper Nix derivation
-          startScript = pkgs.writeShellScript "start-darkroom" ''
-            set -e
-
-            # Create necessary directories
-            mkdir -p /tmp /app/chrome-profile
-            chmod 1777 /tmp 2>/dev/null || true
-            chmod 755 /app/chrome-profile 2>/dev/null || true
-
-            echo "Starting ChromeDriver on port 9515..."
-            ${pkgs.chromedriver}/bin/chromedriver --port=9515 &
-            CHROMEDRIVER_PID=$!
-
-            # Give ChromeDriver time to start
-            sleep 2
-
-            echo "Starting Darkroom service..."
-            ${darkroom}/bin/darkroom &
-            DARKROOM_PID=$!
-
-            # Function to cleanup both processes
-            cleanup() {
-                echo "Shutting down services..."
-                kill $DARKROOM_PID 2>/dev/null || true
-                kill $CHROMEDRIVER_PID 2>/dev/null || true
-                wait
-            }
-
-            # Set up signal handlers
-            trap cleanup SIGTERM SIGINT
-
-            # Wait for darkroom to exit
-            wait $DARKROOM_PID
-            DARKROOM_EXIT_CODE=$?
-
-            # Cleanup and exit with darkroom's exit code
-            cleanup
-            exit $DARKROOM_EXIT_CODE
-          '';
-
           # Docker image for deployment
-          darkroomImg = pkgs.dockerTools.streamLayeredImage {
+          darkroomImg = pkgs.dockerTools.buildImage {
             name = "darkroom";
             tag = "latest";
             contents = [
@@ -108,29 +68,27 @@
               pkgs.chromium
               pkgs.chromedriver
               pkgs.cacert
-              pkgs.bash
-              pkgs.coreutils
             ];
 
-            extraCommands = ''
-              cp ${startScript} start.sh
-              chmod +x start.sh
+            runAsRoot = ''
+              #!${pkgs.runtimeShell}
+              mkdir -p /tmp /app/chrome-profile
+              chmod 1777 /tmp
+              chmod 755 /app/chrome-profile
             '';
 
             config = {
-              Cmd = [ "/bin/start.sh" ];
+              Cmd = [ "/bin/darkroom" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=debug"
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
                 "CHROMEDRIVER_PATH=${pkgs.chromedriver}/bin/chromedriver"
                 "BASE_URL=http://grain-darkroom.internal:8080"
-                "PATH=/bin:/usr/bin:${pkgs.coreutils}/bin:${pkgs.bash}/bin"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
               };
-              WorkingDir = "/tmp";
             };
           };
         in
