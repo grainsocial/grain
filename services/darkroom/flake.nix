@@ -113,12 +113,13 @@
             ];
 
             extraCommands = ''
-              cp ${startScript} $out/start.sh
-              chmod +x $out/start.sh
+              mkdir -p $out/bin
+              cp ${startScript} $out/bin/start.sh
+              chmod +x $out/bin/start.sh
             '';
 
             config = {
-              Cmd = [ "/start.sh" ];
+              Cmd = [ "/bin/start.sh" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=debug"
