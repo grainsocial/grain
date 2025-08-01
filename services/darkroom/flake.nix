@@ -68,6 +68,7 @@
               pkgs.chromium
               pkgs.chromedriver
               pkgs.cacert
+              pkgs.corefonts
             ];
 
             runAsRoot = ''
