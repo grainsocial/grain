@@ -113,9 +113,8 @@
             ];
 
             extraCommands = ''
-              mkdir -p $out/bin
-              cp ${startScript} $out/bin/start.sh
-              chmod +x $out/bin/start.sh
+              cp ${startScript} start.sh
+              chmod +x start.sh
             '';
 
             config = {
