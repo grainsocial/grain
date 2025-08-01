@@ -18,7 +18,10 @@
 
       mkPackagesForSystem = system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = import nixpkgs {
+            inherit system;
+            config = { allowUnfree = true; };
+          };
 
           # Configure crane with stable Rust toolchain
           craneLib = (crane.mkLib pkgs).overrideToolchain
