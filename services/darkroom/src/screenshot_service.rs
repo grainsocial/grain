@@ -11,6 +11,7 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
             .unwrap_or_else(|_| "/usr/bin/chromium".to_string()),
         "args": [
             "--headless",
+            "--no-sandbox",
             "--disable-gpu",
             "--disable-dev-shm-usage",
             "--window-size=1500,2350"

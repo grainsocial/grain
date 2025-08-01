@@ -68,6 +68,7 @@
               pkgs.chromium
               pkgs.chromedriver
               pkgs.cacert
+              pkgs.bash
             ];
 
             runAsRoot = ''
@@ -75,10 +76,28 @@
               mkdir -p /tmp /app/chrome-profile
               chmod 1777 /tmp
               chmod 755 /app/chrome-profile
+
+              # Create startup script
+              cat > /start.sh << 'EOF'
+              #!/bin/bash
+              set -e
+
+              echo "Starting ChromeDriver on port 9515..."
+              ${pkgs.chromedriver}/bin/chromedriver --port=9515 --whitelisted-ips= &
+              CHROMEDRIVER_PID=$!
+
+              # Give ChromeDriver time to start
+              sleep 2
+
+              echo "Starting Darkroom service..."
+              exec /bin/darkroom
+              EOF
+
+              chmod +x /start.sh
             '';
 
             config = {
-              Cmd = [ "/bin/darkroom" ];
+              Cmd = [ "/start.sh" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=debug"
