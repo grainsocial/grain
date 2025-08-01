@@ -65,6 +65,22 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
             .await
             .map_err(|e| anyhow!("Failed to navigate to {}: {}", preview_url, e))?;
 
+        // Wait for body to be present
+        use fantoccini::wd::Locator;
+        client.wait().for_element(Locator::Css("body")).await?;
+
+        // Wait for all web fonts to be loaded
+        client
+            .execute(
+                "return document.fonts.status === 'loaded' ? true : await document.fonts.ready.then(() => true);",
+                vec![],
+            )
+            .await
+            .map_err(|e| anyhow!("Failed to wait for fonts: {}", e))?;
+
+        // Add a small delay to ensure rendering
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+
         info!("Taking screenshot...");
         let screenshot_data = client
             .screenshot()
