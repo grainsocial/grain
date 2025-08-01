@@ -21,7 +21,7 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     // Create WebDriver client
     let client = ClientBuilder::native()
         .capabilities(caps)
-        .connect("http://localhost:51636")
+        .connect("http://localhost:9515")
         .await
         .map_err(|e| anyhow!("Failed to connect to ChromeDriver: {}", e))?;
 
