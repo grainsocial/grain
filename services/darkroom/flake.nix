@@ -78,20 +78,20 @@
               chmod 755 /app/chrome-profile
 
               # Create startup script
-              cat > /start.sh << 'EOF'
-              #!/bin/bash
-              set -e
+              cat > /start.sh << EOF
+#!/bin/bash
+set -e
 
-              echo "Starting ChromeDriver on port 9515..."
-              ${pkgs.chromedriver}/bin/chromedriver --port=9515 --whitelisted-ips= &
-              CHROMEDRIVER_PID=$!
+echo "Starting ChromeDriver on port 9515..."
+${pkgs.chromedriver}/bin/chromedriver --port=9515 --whitelisted-ips= &
+CHROMEDRIVER_PID=\$!
 
-              # Give ChromeDriver time to start
-              sleep 2
+# Give ChromeDriver time to start
+sleep 2
 
-              echo "Starting Darkroom service..."
-              exec /bin/darkroom
-              EOF
+echo "Starting Darkroom service..."
+exec /bin/darkroom
+EOF
 
               chmod +x /start.sh
             '';
