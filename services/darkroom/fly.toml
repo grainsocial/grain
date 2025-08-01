@@ -25,6 +25,6 @@ primary_region = 'sea'
     handlers = ['tls', 'http']
 
 [[vm]]
-  memory = '1gb'
+  memory = '2gb'
   cpu_kind = 'shared'
   cpus = 1

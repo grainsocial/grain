@@ -26,5 +26,6 @@
   },
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
-  }
+  },
+  "rust-analyzer.linkedProjects": ["services/darkroom/Cargo.toml"]
 }

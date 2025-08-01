@@ -1,56 +1,55 @@
-use anyhow::{anyhow, Result};
-use headless_chrome::protocol::cdp::Page::CaptureScreenshotFormatOption;
-use headless_chrome::{Browser, LaunchOptions};
-use tracing::{info};
-use std::time::{Duration};
+use anyhow::{Result, anyhow};
+use fantoccini::ClientBuilder;
+use tracing::info;
 
 pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     info!("Starting screenshot capture for: {}", preview_url);
 
-    let chrome_path = std::env::var("CHROME_PATH")
-        .unwrap_or_else(|_| "/usr/bin/google-chrome".to_string());
+    let mut caps = serde_json::map::Map::new();
+    let opts = serde_json::json!({
+        "binary": std::env::var("CHROME_PATH")
+            .unwrap_or_else(|_| "/usr/bin/chromium".to_string()),
+        "args": [
+            "--headless",
+            "--disable-gpu",
+            "--disable-dev-shm-usage",
+            "--window-size=1500,2350"
+        ],
+    });
+    caps.insert("goog:chromeOptions".to_string(), opts);
 
-    info!("Using Chrome path: {}", chrome_path);
+    // Create WebDriver client
+    let client = ClientBuilder::native()
+        .capabilities(caps)
+        .connect("http://localhost:51636")
+        .await
+        .map_err(|e| anyhow!("Failed to connect to ChromeDriver: {}", e))?;
 
-    // Run browser operations in a blocking task since headless_chrome is sync
-    let preview_url = preview_url.to_string();
-    let screenshot = tokio::task::spawn_blocking(move || -> Result<Vec<u8>> {
-        info!("Launching browser...");
-            let browser = Browser::new(LaunchOptions {
-                window_size: Some((1500, 2350)),
-                path: Some(std::path::PathBuf::from(&chrome_path)),
-                headless: true,
-                sandbox: false,
-                idle_browser_timeout: Duration::MAX,
-                ..Default::default()
-            })
-            .map_err(|e| anyhow!("Failed to launch browser: {}", e))?;
-
-        info!("Creating new tab...");
-        let tab = browser
-            .new_tab()
-            .map_err(|e| anyhow!("Failed to create new tab: {}", e))?;
-
+    let result = async {
         info!("Navigating to URL: {}", preview_url);
-        tab.navigate_to(&preview_url)
+        client
+            .goto(preview_url)
+            .await
             .map_err(|e| anyhow!("Failed to navigate to {}: {}", preview_url, e))?;
 
-        info!("Waiting for navigation to complete...");
-        tab.wait_until_navigated()
-            .map_err(|e| anyhow!("Failed to wait for navigation: {}", e))?;
-
         info!("Taking screenshot...");
-        let screenshot_data = tab
-            .capture_screenshot(CaptureScreenshotFormatOption::Jpeg, Some(90), None, true)
+        let screenshot_data = client
+            .screenshot()
+            .await
             .map_err(|e| anyhow!("Failed to capture screenshot: {}", e))?;
 
-        info!("Screenshot captured successfully, size: {} bytes", screenshot_data.len());
+        info!(
+            "Screenshot captured successfully, size: {} bytes",
+            screenshot_data.len()
+        );
         Ok(screenshot_data)
-    })
-    .await
-    .map_err(|e| anyhow!("Task join error: {}", e))??;
+    }
+    .await;
 
-    Ok(screenshot)
+    // Clean up
+    client.close().await.ok();
+
+    result
 }
 
 pub fn build_preview_url(

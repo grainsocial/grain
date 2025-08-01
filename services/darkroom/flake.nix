@@ -66,6 +66,7 @@
             contents = [
               darkroom
               pkgs.chromium
+              pkgs.chromedriver
               pkgs.cacert
             ];
 
@@ -80,8 +81,10 @@
               Cmd = [ "/bin/darkroom" ];
               Env = [
                 "RUST_BACKTRACE=1"
-                "RUST_LOG=headless_chrome=trace"
+                "RUST_LOG=debug"
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
+                "CHROMEDRIVER_PATH=${pkgs.chromedriver}/bin/chromedriver"
+                "BASE_URL=http://grain-darkroom.internal:8080"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
