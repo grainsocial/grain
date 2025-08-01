@@ -48,7 +48,8 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
             "--disable-dev-shm-usage",
             "--window-size=1500,2350",
             "--font-render-hinting=medium",
-            "--enable-font-antialiasing"
+            "--enable-font-antialiasing",
+            "--disable-web-security"
         ],
     });
     caps.insert("goog:chromeOptions".to_string(), opts);
