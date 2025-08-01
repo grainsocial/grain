@@ -72,6 +72,8 @@
               pkgs.chromedriver
               pkgs.cacert
               pkgs.corefonts
+              pkgs.dejavu_fonts
+              pkgs.liberation_ttf
             ];
 
             runAsRoot = ''

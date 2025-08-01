@@ -84,22 +84,14 @@ pub fn generate_grid_html(options: CompositeOptions) -> String {
     <head>
       <meta charset="UTF-8">
       <title>Composite Preview</title>
-      <link rel="preconnect" href="https://fonts.googleapis.com">
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Jersey+20&display=swap" rel="stylesheet">
       <style>
-        .jersey-20-regular {{
-          font-family: "Jersey 20", sans-serif;
-          font-weight: 400;
-          font-style: normal;
-        }}
-        body {{ background: #fff; margin: 0; padding: 0; width: {}px; height: {}px; }}
+        body {{ background: #fff; margin: 0; padding: 0; width: {}px; height: {}px; font-family: 'DejaVu Sans', 'Liberation Sans', Arial, sans-serif; }}
         .grid {{ {} }}
         .cell img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
         .footer {{ width: {}px; height: {}px; position: absolute; left: 0; top: {}px; display: flex; align-items: center; justify-content: space-between; padding: 40px 32px; box-sizing: border-box; }}
-        .title {{ font-size: 72px; font-weight: 400; color: #212529; font-family: "Jersey 20", sans-serif; line-height: 1.1; }}
-        .handle {{ font-size: 38px; font-weight: bold; color: #212529; font-family: Arial, sans-serif; line-height: 1.1; }}
-        .grain {{ font-size: 32px; font-weight: bold; color: #6c757d; font-family: Arial, sans-serif; line-height: 1.1; margin-top: 8px; }}
+        .title {{ font-size: 72px; font-weight: 400; color: #212529; line-height: 1.1; }}
+        .handle {{ font-size: 38px; font-weight: bold; color: #212529; line-height: 1.1; }}
+        .grain {{ font-size: 32px; font-weight: bold; color: #6c757d; line-height: 1.1; margin-top: 8px; }}
       </style>
     </head>
     <body>
