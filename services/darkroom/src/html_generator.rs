@@ -6,11 +6,7 @@ pub fn calculate_grid_dimensions(
     padding: i32,
     gap: i32,
 ) -> GridDimensions {
-    let (cols, rows) = if thumb_count <= 4 {
-        (2, 2)
-    } else {
-        (3, 3)
-    };
+    let (cols, rows) = if thumb_count <= 4 { (2, 2) } else { (3, 3) };
 
     let cell_width = (width - (2 * padding) - (gap * (cols - 1))) / cols;
     let cell_height = (cell_width * 4) / 3;
@@ -34,8 +30,13 @@ pub fn generate_grid_html(options: CompositeOptions) -> String {
     } = options;
 
     let dims = calculate_grid_dimensions(thumbs.len(), width, padding, gap);
-    let text_space = if !title.is_empty() || !handle.is_empty() { 200 } else { 0 };
-    let height = (2 * padding) + (dims.rows * dims.cell_height) + ((dims.rows - 1) * gap) + text_space;
+    let text_space = if !title.is_empty() || !handle.is_empty() {
+        200
+    } else {
+        0
+    };
+    let height =
+        (2 * padding) + (dims.rows * dims.cell_height) + ((dims.rows - 1) * gap) + text_space;
 
     let grid_style = format!(
         "display: grid; grid-template-columns: repeat({}, {}px); grid-template-rows: repeat({}, {}px); gap: {}px; width: {}px; height: {}px; margin: {}px auto 0 auto; background: #fff;",

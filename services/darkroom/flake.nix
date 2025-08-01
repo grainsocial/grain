@@ -63,7 +63,14 @@
           });
 
           # Docker image for deployment
-          darkroomImg = pkgs.dockerTools.buildImage {
+          darkroomImg = let
+            fontDirs = [
+              "${pkgs.corefonts}/share/fonts"
+              "${pkgs.dejavu_fonts}/share/fonts"
+              "${pkgs.liberation_ttf}/share/fonts"
+            ];
+            fontsConf = pkgs.makeFontsConf { fontDirectories = fontDirs; };
+          in pkgs.dockerTools.buildImage {
             name = "darkroom";
             tag = "latest";
             contents = [
@@ -91,6 +98,7 @@
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
                 "CHROMEDRIVER_PATH=${pkgs.chromedriver}/bin/chromedriver"
                 "BASE_URL=http://grain-darkroom.internal:8080"
+                "FONTCONFIG_FILE=${fontsConf}"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
