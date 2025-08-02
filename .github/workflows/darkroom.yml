@@ -1,6 +1,7 @@
 name: Build and Deploy Darkroom
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [ main ]
     paths: [ 'services/darkroom/**' ]
