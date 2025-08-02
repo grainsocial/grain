@@ -1,0 +1,29 @@
+[package]
+name = "darkroom"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+axum = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.12", features = ["json"] }
+anyhow = "1.0"
+minijinja = "2.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+urlencoding = "2.1"
+fantoccini = "0.22"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+thiserror = "1.0"
+base64 = "0.22"
+futures = "0.3"
+chrono = "0.4.41"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

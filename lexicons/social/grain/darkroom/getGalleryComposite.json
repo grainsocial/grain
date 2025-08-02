@@ -1,0 +1,24 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.darkroom.getGalleryComposite",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Returns a composite image for a specified gallery AT-URI.",
+      "parameters": {
+        "type": "params",
+        "required": ["uri"],
+        "properties": {
+          "uri": {
+            "type": "string",
+            "description": "The AT-URI of the gallery to return a composite for.",
+            "format": "at-uri"
+          }
+        }
+      },
+      "output": {
+        "encoding": "*/*"
+      }
+    }
+  }
+}
