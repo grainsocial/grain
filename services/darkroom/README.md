@@ -28,7 +28,6 @@ Creates a composite image from a gallery URI.
 
 - Rust 1.88+
 - Chrome/Chromium for screenshot capture
-- Alpine Linux (for container deployment)
 
 ### Development
 
@@ -38,20 +37,6 @@ cargo run
 
 # Build release version
 cargo build --release
-
-# Run with Docker
-docker build -t darkroom .
-docker run -p 8080:8080 darkroom
 ```
 
 The service will start on port 8080.
-
-### Architecture
-
-The service is built using:
-
-- **Axum** - Web framework
-- **Tokio** - Async runtime
-- **headless_chrome** - Browser automation for screenshots
-- **Reqwest** - HTTP client for API calls
-- **Serde** - JSON serialization/deserialization
