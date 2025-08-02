@@ -31,7 +31,12 @@
           src = pkgs.lib.cleanSourceWith {
             src = ./.;
             filter = path: type:
-              (craneLib.filterCargoSources path type);
+              (craneLib.filterCargoSources path type) ||
+              # Include templates and static directories for include_str! macros
+              (pkgs.lib.hasInfix "/templates/" path) ||
+              (pkgs.lib.hasInfix "/static/" path) ||
+              (pkgs.lib.hasSuffix "/templates" path) ||
+              (pkgs.lib.hasSuffix "/static" path);
           };
 
           commonArgs = {
