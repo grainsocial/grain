@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ main ]
     paths: [ 'services/darkroom/**' ]
+  push:
+    branches: [ main ]
+    paths: [ 'services/darkroom/**' ]
 
 jobs:
   build:
@@ -51,26 +54,54 @@ jobs:
           docker stop darkroom-test
           docker rm darkroom-test
 
-      - name: Tag for Fly.io
+      - name: Save Docker image as artifact
         if: github.ref == 'refs/heads/main'
+        run: docker save darkroom:latest | gzip > darkroom-image.tar.gz
+
+      - name: Upload Docker image artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: darkroom-docker-image
+          path: services/darkroom/darkroom-image.tar.gz
+          retention-days: 1
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/darkroom
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: darkroom-docker-image
+          path: services/darkroom/
+
+      - name: Load Docker image
+        run: docker load < darkroom-image.tar.gz
+
+      - name: Tag for Fly.io
         run: docker tag darkroom:latest registry.fly.io/grain-darkroom:latest
 
       - name: Setup Fly CLI
-        if: github.ref == 'refs/heads/main'
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Login to Fly.io registry
-        if: github.ref == 'refs/heads/main'
         run: flyctl auth docker
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Push to Fly.io registry
-        if: github.ref == 'refs/heads/main'
         run: docker push registry.fly.io/grain-darkroom:latest
 
       - name: Deploy to Fly.io
-        if: github.ref == 'refs/heads/main'
         run: flyctl deploy --image registry.fly.io/grain-darkroom:latest
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
