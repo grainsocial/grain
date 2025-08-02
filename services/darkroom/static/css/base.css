@@ -1,0 +1,365 @@
+body {
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  width: 1500px;
+  height: 2000px;
+  font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+  position: relative;
+}
+
+/* Content area - absolute positioned */
+.content {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 1460px; /* 1500px - 40px padding */
+  height: 1760px; /* 2000px - 40px padding - 200px footer */
+}
+
+/* Footer fixed at bottom */
+.footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 1500px;
+  height: 220px; /* 200px + 20px to center between grid end and bottom */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.title {
+  font-weight: 400;
+  color: #212529;
+  line-height: 1.1;
+  max-width: 800px; /* Reserve space for handle/grain on right */
+  font-size: clamp(32px, 6vw, 72px); /* Scales from 32px to 72px based on container width */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.handle {
+  font-size: 38px;
+  font-weight: bold;
+  color: #212529;
+  line-height: 1.1;
+}
+
+.grain {
+  font-size: 32px;
+  font-weight: bold;
+  color: #6c757d;
+  line-height: 1.1;
+  margin-top: 8px;
+}
+
+/* Single image - centered */
+.single-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.single-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Multi-image layouts using absolute positioning */
+.multi-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.multi-grid img {
+  position: absolute;
+  object-fit: cover;
+}
+
+/* Two images: stacked vertically */
+.grid-2 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 1460px;
+  height: 877px;
+}
+.grid-2 img:nth-child(2) {
+  top: 882px;
+  left: 0;
+  width: 1460px;
+  height: 878px;
+}
+
+/* Three images: 2 top, 1 bottom spanning full width */
+.grid-3 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 727px;
+  height: 877px;
+}
+.grid-3 img:nth-child(2) {
+  top: 0;
+  left: 732px;
+  width: 728px;
+  height: 877px;
+}
+.grid-3 img:nth-child(3) {
+  top: 882px;
+  left: 0;
+  width: 1460px;
+  height: 878px;
+}
+
+/* Four images: 2x2 grid */
+.grid-4 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 727px;
+  height: 877px;
+}
+.grid-4 img:nth-child(2) {
+  top: 0;
+  left: 732px;
+  width: 728px;
+  height: 877px;
+}
+.grid-4 img:nth-child(3) {
+  top: 882px;
+  left: 0;
+  width: 727px;
+  height: 878px;
+}
+.grid-4 img:nth-child(4) {
+  top: 882px;
+  left: 732px;
+  width: 728px;
+  height: 878px;
+}
+
+/* Five images: 2x2 + 1 bottom spanning full */
+.grid-5 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 727px;
+  height: 583px;
+}
+.grid-5 img:nth-child(2) {
+  top: 0;
+  left: 732px;
+  width: 728px;
+  height: 583px;
+}
+.grid-5 img:nth-child(3) {
+  top: 588px;
+  left: 0;
+  width: 727px;
+  height: 583px;
+}
+.grid-5 img:nth-child(4) {
+  top: 588px;
+  left: 732px;
+  width: 728px;
+  height: 583px;
+}
+.grid-5 img:nth-child(5) {
+  top: 1176px;
+  left: 0;
+  width: 1460px;
+  height: 584px;
+}
+
+/* Six images: 2x3 grid */
+.grid-6 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 727px;
+  height: 583px;
+}
+.grid-6 img:nth-child(2) {
+  top: 0;
+  left: 732px;
+  width: 728px;
+  height: 583px;
+}
+.grid-6 img:nth-child(3) {
+  top: 588px;
+  left: 0;
+  width: 727px;
+  height: 583px;
+}
+.grid-6 img:nth-child(4) {
+  top: 588px;
+  left: 732px;
+  width: 728px;
+  height: 583px;
+}
+.grid-6 img:nth-child(5) {
+  top: 1176px;
+  left: 0;
+  width: 727px;
+  height: 584px;
+}
+.grid-6 img:nth-child(6) {
+  top: 1176px;
+  left: 732px;
+  width: 728px;
+  height: 584px;
+}
+
+/* Seven images: 3x3 with last row having 1 image */
+.grid-7 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 483px;
+  height: 583px;
+}
+.grid-7 img:nth-child(2) {
+  top: 0;
+  left: 488px;
+  width: 484px;
+  height: 583px;
+}
+.grid-7 img:nth-child(3) {
+  top: 0;
+  left: 977px;
+  width: 483px;
+  height: 583px;
+}
+.grid-7 img:nth-child(4) {
+  top: 588px;
+  left: 0;
+  width: 483px;
+  height: 583px;
+}
+.grid-7 img:nth-child(5) {
+  top: 588px;
+  left: 488px;
+  width: 484px;
+  height: 583px;
+}
+.grid-7 img:nth-child(6) {
+  top: 588px;
+  left: 977px;
+  width: 483px;
+  height: 583px;
+}
+.grid-7 img:nth-child(7) {
+  top: 1176px;
+  left: 0;
+  width: 1460px;
+  height: 584px;
+}
+
+/* Eight images: 3x3 with last row having 2 images */
+.grid-8 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 483px;
+  height: 583px;
+}
+.grid-8 img:nth-child(2) {
+  top: 0;
+  left: 488px;
+  width: 484px;
+  height: 583px;
+}
+.grid-8 img:nth-child(3) {
+  top: 0;
+  left: 977px;
+  width: 483px;
+  height: 583px;
+}
+.grid-8 img:nth-child(4) {
+  top: 588px;
+  left: 0;
+  width: 483px;
+  height: 583px;
+}
+.grid-8 img:nth-child(5) {
+  top: 588px;
+  left: 488px;
+  width: 484px;
+  height: 583px;
+}
+.grid-8 img:nth-child(6) {
+  top: 588px;
+  left: 977px;
+  width: 483px;
+  height: 583px;
+}
+.grid-8 img:nth-child(7) {
+  top: 1176px;
+  left: 0;
+  width: 727px;
+  height: 584px;
+}
+.grid-8 img:nth-child(8) {
+  top: 1176px;
+  left: 732px;
+  width: 728px;
+  height: 584px;
+}
+
+/* Nine images: 3x3 grid */
+.grid-9 img:nth-child(1) {
+  top: 0;
+  left: 0;
+  width: 483px;
+  height: 583px;
+}
+.grid-9 img:nth-child(2) {
+  top: 0;
+  left: 488px;
+  width: 484px;
+  height: 583px;
+}
+.grid-9 img:nth-child(3) {
+  top: 0;
+  left: 977px;
+  width: 483px;
+  height: 583px;
+}
+.grid-9 img:nth-child(4) {
+  top: 588px;
+  left: 0;
+  width: 483px;
+  height: 583px;
+}
+.grid-9 img:nth-child(5) {
+  top: 588px;
+  left: 488px;
+  width: 484px;
+  height: 583px;
+}
+.grid-9 img:nth-child(6) {
+  top: 588px;
+  left: 977px;
+  width: 483px;
+  height: 583px;
+}
+.grid-9 img:nth-child(7) {
+  top: 1176px;
+  left: 0;
+  width: 483px;
+  height: 584px;
+}
+.grid-9 img:nth-child(8) {
+  top: 1176px;
+  left: 488px;
+  width: 484px;
+  height: 584px;
+}
+.grid-9 img:nth-child(9) {
+  top: 1176px;
+  left: 977px;
+  width: 483px;
+  height: 584px;
+}

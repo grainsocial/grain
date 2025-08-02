@@ -52,25 +52,25 @@ jobs:
           docker rm darkroom-test
 
       - name: Tag for Fly.io
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: docker tag darkroom:latest registry.fly.io/grain-darkroom:latest
 
       - name: Setup Fly CLI
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Login to Fly.io registry
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: flyctl auth docker
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Push to Fly.io registry
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: docker push registry.fly.io/grain-darkroom:latest
 
       - name: Deploy to Fly.io
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         run: flyctl deploy --image registry.fly.io/grain-darkroom:latest
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

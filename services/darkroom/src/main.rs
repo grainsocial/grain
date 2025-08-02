@@ -1,7 +1,7 @@
 use axum::{
     body::Body,
     extract::Query,
-    http::StatusCode,
+    http::{StatusCode, header},
     response::{Html, Response},
     routing::get,
     Json, Router,
@@ -31,6 +31,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/health", get(health_check))
         .route("/composite-preview", get(preview_route))
         .route("/xrpc/social.grain.darkroom.getGalleryComposite", get(api_route))
+        .route("/static/css/base.css", get(serve_css))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(not_found);
@@ -67,6 +68,15 @@ async fn not_found() -> (StatusCode, Html<&'static str>) {
         StatusCode::NOT_FOUND,
         Html("<h1>404 - Page Not Found</h1>"),
     )
+}
+
+async fn serve_css() -> Response<Body> {
+    let css_content = include_str!("../static/css/base.css");
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "text/css")
+        .body(Body::from(css_content))
+        .unwrap()
 }
 
 async fn health_check() -> Json<serde_json::Value> {

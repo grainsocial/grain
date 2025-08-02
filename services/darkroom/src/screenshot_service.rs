@@ -46,7 +46,7 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
             "--no-sandbox",
             "--disable-gpu",
             "--disable-dev-shm-usage",
-            "--window-size=1500,2350",
+            "--window-size=1500,2139",
             "--font-render-hinting=medium",
             "--enable-font-antialiasing",
         ],

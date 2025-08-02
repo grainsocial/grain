@@ -1,8 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct AspectRatio {
+    pub width: f32,
+    pub height: f32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GalleryItem {
     pub thumb: String,
+    #[serde(rename = "aspectRatio")]
+    pub aspect_ratio: AspectRatio,
     #[serde(flatten)]
     pub extra: serde_json::Value,
 }
@@ -23,18 +31,7 @@ pub struct GalleryResponse {
 
 #[derive(Debug, Clone)]
 pub struct CompositeOptions {
-    pub thumbs: Vec<String>,
+    pub items: Vec<GalleryItem>,
     pub title: String,
     pub handle: String,
-    pub width: i32,
-    pub padding: i32,
-    pub gap: i32,
-}
-
-#[derive(Debug, Clone)]
-pub struct GridDimensions {
-    pub cols: i32,
-    pub rows: i32,
-    pub cell_width: i32,
-    pub cell_height: i32,
 }
