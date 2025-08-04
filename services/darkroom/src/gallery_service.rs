@@ -4,8 +4,10 @@ use reqwest;
 use tracing::info;
 
 pub async fn fetch_gallery_data(gallery_uri: &str) -> Result<GalleryResponse> {
+    let base_url = std::env::var("GRAIN_BASE_URL").unwrap_or_else(|_| "https://grain.social".to_string());
     let gallery_url = format!(
-        "https://grain.social/xrpc/social.grain.gallery.getGallery?uri={}",
+        "{}/xrpc/social.grain.gallery.getGallery?uri={}",
+        base_url,
         urlencoding::encode(gallery_uri)
     );
 
@@ -26,23 +28,3 @@ pub async fn fetch_gallery_data(gallery_uri: &str) -> Result<GalleryResponse> {
     Ok(data)
 }
 
-pub fn extract_thumbnails(gallery_data: &GalleryResponse, max_count: usize) -> Result<Vec<String>> {
-    let thumb_urls: Vec<String> = gallery_data
-        .items
-        .iter()
-        .filter_map(|item| {
-            if !item.thumb.is_empty() {
-                Some(item.thumb.clone())
-            } else {
-                None
-            }
-        })
-        .take(max_count)
-        .collect();
-
-    if thumb_urls.is_empty() {
-        return Err(anyhow!("No thumbnail images found"));
-    }
-
-    Ok(thumb_urls)
-}

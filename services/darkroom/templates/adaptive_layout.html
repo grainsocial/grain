@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Adaptive Gallery Preview</title>
+    <link rel="stylesheet" href="/static/css/adaptive_layout.css">
+    <script src="/static/js/adaptive_layout.js"></script>
+  </head>
+  <body>
+    <div class="content">
+      <div class="adaptive-grid" data-gallery-uri="{{ gallery_uri }}"></div>
+    </div>
+
+    {% if title or handle %}
+    <div class="footer">
+      <span class="title">{{ title }}</span>
+      <div style="text-align: right">
+        {% if handle %}
+        <div class="handle">@{{ handle }}</div>
+        {% endif %}
+        <div class="grain">grain.social</div>
+      </div>
+    </div>
+    {% endif %}
+  </body>
+</html>

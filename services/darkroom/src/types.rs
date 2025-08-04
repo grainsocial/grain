@@ -29,9 +29,3 @@ pub struct GalleryResponse {
     pub extra: serde_json::Value,
 }
 
-#[derive(Debug, Clone)]
-pub struct CompositeOptions {
-    pub items: Vec<GalleryItem>,
-    pub title: String,
-    pub handle: String,
-}

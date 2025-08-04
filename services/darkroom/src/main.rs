@@ -1,7 +1,7 @@
 use axum::{
     body::Body,
     extract::Query,
-    http::{StatusCode, header},
+    http::StatusCode,
     response::{Html, Response},
     routing::get,
     Json, Router,
@@ -9,7 +9,7 @@ use axum::{
 use serde_json::json;
 use std::collections::HashMap;
 use tokio::net::TcpListener;
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tower_http::{cors::CorsLayer, trace::TraceLayer, services::ServeDir};
 use tracing::{info, warn};
 
 mod composite_handler;
@@ -19,8 +19,9 @@ mod preview_handler;
 mod screenshot_service;
 mod types;
 
-use composite_handler::handle_composite_api;
-use preview_handler::handle_composite_preview;
+use composite_handler::handle_adaptive_composite_api;
+use preview_handler::handle_adaptive_preview;
+use gallery_service::fetch_gallery_data;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -29,22 +30,25 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .route("/health", get(health_check))
-        .route("/composite-preview", get(preview_route))
-        .route("/xrpc/social.grain.darkroom.getGalleryComposite", get(api_route))
-        .route("/static/css/base.css", get(serve_css))
+        .route("/gallery-preview", get(adaptive_preview_route))
+        .route("/api/gallery", get(gallery_proxy_route))
+        .route("/xrpc/social.grain.darkroom.getGalleryComposite", get(adaptive_api_route))
+        .nest_service("/static", ServeDir::new("static"))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(not_found);
 
-    let listener = TcpListener::bind("[::]:8080").await?;
-    info!("Darkroom service listening on http://localhost:8080");
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let bind_address = format!("[::]:{}", port);
+    let listener = TcpListener::bind(&bind_address).await?;
+    info!("Darkroom service listening on http://localhost:{}", port);
 
     axum::serve(listener, app).await?;
     Ok(())
 }
 
-async fn preview_route(Query(params): Query<HashMap<String, String>>) -> Result<Html<String>, StatusCode> {
-    match handle_composite_preview(params) {
+async fn adaptive_preview_route(Query(params): Query<HashMap<String, String>>) -> Result<Html<String>, StatusCode> {
+    match handle_adaptive_preview(params) {
         Ok(html) => Ok(Html(html)),
         Err(e) => {
             warn!("Preview error: {}", e);
@@ -53,8 +57,8 @@ async fn preview_route(Query(params): Query<HashMap<String, String>>) -> Result<
     }
 }
 
-async fn api_route(Query(params): Query<HashMap<String, String>>) -> Result<Response<Body>, StatusCode> {
-    match handle_composite_api(params).await {
+async fn adaptive_api_route(Query(params): Query<HashMap<String, String>>) -> Result<Response<Body>, StatusCode> {
+    match handle_adaptive_composite_api(params).await {
         Ok(response) => Ok(response),
         Err(e) => {
             warn!("API error: {}", e);
@@ -70,13 +74,24 @@ async fn not_found() -> (StatusCode, Html<&'static str>) {
     )
 }
 
-async fn serve_css() -> Response<Body> {
-    let css_content = include_str!("../static/css/base.css");
-    Response::builder()
-        .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, "text/css")
-        .body(Body::from(css_content))
-        .unwrap()
+
+
+async fn gallery_proxy_route(Query(params): Query<HashMap<String, String>>) -> Result<axum::Json<serde_json::Value>, StatusCode> {
+    let gallery_uri = params
+        .get("uri")
+        .ok_or(StatusCode::BAD_REQUEST)?;
+
+    match fetch_gallery_data(gallery_uri).await {
+        Ok(gallery_data) => {
+            let json_value = serde_json::to_value(gallery_data)
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            Ok(axum::Json(json_value))
+        },
+        Err(e) => {
+            warn!("Gallery proxy error: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
 }
 
 async fn health_check() -> Json<serde_json::Value> {

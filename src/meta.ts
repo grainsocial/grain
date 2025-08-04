@@ -1,5 +1,4 @@
 import { GalleryView } from "$lexicon/types/social/grain/gallery/defs.ts";
-import { isPhotoView } from "$lexicon/types/social/grain/photo/defs.ts";
 import { AtUri } from "@atproto/syntax";
 import { MetaDescriptor } from "@bigmoves/bff/components";
 import { PUBLIC_URL } from "./env.ts";
@@ -35,7 +34,11 @@ export function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
     },
     {
       property: "og:image",
-      content: gallery?.items?.filter(isPhotoView)?.[0]?.fullsize,
+      content: `${
+        Deno.env.get("DARKROOM_HOST_URL") || ""
+      }/xrpc/social.grain.darkroom.getGalleryComposite?uri=${
+        encodeURIComponent(gallery.uri)
+      }&social=true`,
     },
   ];
 }

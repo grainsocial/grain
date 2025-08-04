@@ -73,6 +73,8 @@
               "${pkgs.corefonts}/share/fonts"
               "${pkgs.dejavu_fonts}/share/fonts"
               "${pkgs.liberation_ttf}/share/fonts"
+              "${pkgs.noto-fonts}/share/fonts"
+              "${pkgs.noto-fonts-color-emoji}/share/fonts"
             ];
             fontsConf = pkgs.makeFontsConf { fontDirectories = fontDirs; };
           in pkgs.dockerTools.buildImage {
@@ -86,6 +88,8 @@
               pkgs.corefonts
               pkgs.dejavu_fonts
               pkgs.liberation_ttf
+              pkgs.noto-fonts
+              pkgs.noto-fonts-color-emoji
             ];
 
             runAsRoot = ''
@@ -103,6 +107,8 @@
                 "CHROME_PATH=${pkgs.chromium}/bin/chromium"
                 "CHROMEDRIVER_PATH=${pkgs.chromedriver}/bin/chromedriver"
                 "BASE_URL=http://grain-darkroom.internal:8080"
+                "GRAIN_BASE_URL=https://grain.social"
+                "PORT=8080"
                 "FONTCONFIG_FILE=${fontsConf}"
               ];
               ExposedPorts = {

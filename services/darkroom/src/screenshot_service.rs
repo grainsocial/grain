@@ -6,6 +6,10 @@ use std::{thread, time};
 use tracing::info;
 
 pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
+    capture_screenshot_with_size(preview_url, "1200,769").await
+}
+
+async fn capture_screenshot_with_size(preview_url: &str, window_size: &str) -> Result<Vec<u8>> {
     info!("Starting screenshot capture for: {}", preview_url);
 
     // Check if ChromeDriver is running on port 9515
@@ -46,7 +50,7 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
             "--no-sandbox",
             "--disable-gpu",
             "--disable-dev-shm-usage",
-            "--window-size=1500,2139",
+            &format!("--window-size={}", window_size),
             "--font-render-hinting=medium",
             "--enable-font-antialiasing",
         ],
@@ -80,8 +84,41 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
             .await
             .map_err(|e| anyhow!("Failed to wait for fonts: {}", e))?;
 
-        // Add a small delay to ensure rendering
-        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        // Wait for screenshot ready signal (for dynamic content) or fallback to delay
+        info!("Waiting for screenshot ready signal...");
+        let ready = client
+            .execute(
+                r#"
+                return new Promise((resolve) => {
+                    // Check if already ready
+                    if (document.body.dataset.screenshotReady === 'true') {
+                        resolve(true);
+                        return;
+                    }
+
+                    // Wait for the ready signal with timeout
+                    const timeout = setTimeout(() => {
+                        console.log('Screenshot ready timeout - proceeding anyway');
+                        resolve(false);
+                    }, 15000); // 15 second timeout
+
+                    document.addEventListener('screenshotReady', () => {
+                        clearTimeout(timeout);
+                        resolve(true);
+                    });
+                });
+                "#,
+                vec![],
+            )
+            .await
+            .map_err(|e| anyhow!("Failed to wait for screenshot ready: {}", e))?;
+
+        if ready.as_bool().unwrap_or(false) {
+            info!("Screenshot ready signal received");
+        } else {
+            info!("Screenshot ready timeout - using fallback delay");
+            tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+        }
 
         info!("Taking screenshot...");
         let screenshot_data = client
@@ -106,20 +143,4 @@ pub async fn capture_screenshot(preview_url: &str) -> Result<Vec<u8>> {
     }
 
     result
-}
-
-pub fn build_preview_url(
-    base_url: &str,
-    thumb_urls: &[String],
-    title: &str,
-    handle: &str,
-) -> String {
-    let thumbs_param = thumb_urls.join(",");
-    format!(
-        "{}/composite-preview?thumbs={}&title={}&handle={}",
-        base_url,
-        urlencoding::encode(&thumbs_param),
-        urlencoding::encode(title),
-        urlencoding::encode(handle)
-    )
 }
