@@ -9,7 +9,8 @@ use axum::{
 use serde_json::json;
 use std::collections::HashMap;
 use tokio::net::TcpListener;
-use tower_http::{cors::CorsLayer, trace::TraceLayer, services::ServeDir};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use axum::http::header;
 use tracing::{info, warn};
 
 mod composite_handler;
@@ -33,7 +34,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/gallery-preview", get(adaptive_preview_route))
         .route("/api/gallery", get(gallery_proxy_route))
         .route("/xrpc/social.grain.darkroom.getGalleryComposite", get(adaptive_api_route))
-        .nest_service("/static", ServeDir::new("static"))
+        .route("/static/css/adaptive_layout.css", get(serve_css))
+        .route("/static/js/adaptive_layout.js", get(serve_js))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(not_found);
@@ -100,4 +102,22 @@ async fn health_check() -> Json<serde_json::Value> {
         "service": "darkroom",
         "timestamp": chrono::Utc::now().to_rfc3339()
     }))
+}
+
+async fn serve_css() -> Result<Response<Body>, StatusCode> {
+    let css_content = include_str!("../static/css/adaptive_layout.css");
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "text/css; charset=utf-8")
+        .body(Body::from(css_content))
+        .unwrap())
+}
+
+async fn serve_js() -> Result<Response<Body>, StatusCode> {
+    let js_content = include_str!("../static/js/adaptive_layout.js");
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/javascript; charset=utf-8")
+        .body(Body::from(js_content))
+        .unwrap())
 }

@@ -2,3 +2,5 @@
 **/*.db
 *.toml
 .env
+**/services
+**/local-infra
