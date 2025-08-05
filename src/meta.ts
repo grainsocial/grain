@@ -38,7 +38,7 @@ export function getGalleryMeta(gallery: GalleryView): MetaDescriptor[] {
         Deno.env.get("DARKROOM_HOST_URL") || ""
       }/xrpc/social.grain.darkroom.getGalleryComposite?uri=${
         encodeURIComponent(gallery.uri)
-      }&social=true`,
+      }&variant=collage`,
     },
   ];
 }

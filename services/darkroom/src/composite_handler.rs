@@ -22,11 +22,12 @@ pub async fn handle_adaptive_composite_api(
         gallery_data.items.len()
     );
 
-    // Build preview URL with just the gallery URI (client-side fetching)
+    // Build preview URL with variant parameter support
     let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://[::]:8080".to_string());
+    let variant = params.get("variant").map(|s| s.as_str()).unwrap_or("adaptive");
 
     let preview_url = format!(
-        "{}/gallery-preview?uri={}&title={}&handle={}",
+        "{}/gallery-preview?uri={}&title={}&handle={}&variant={}",
         base_url,
         urlencoding::encode(gallery_uri),
         urlencoding::encode(gallery_data.title.as_deref().unwrap_or("")),
@@ -36,7 +37,8 @@ pub async fn handle_adaptive_composite_api(
                 .as_ref()
                 .and_then(|c| c.handle.as_deref())
                 .unwrap_or("")
-        )
+        ),
+        urlencoding::encode(variant)
     );
 
     info!(

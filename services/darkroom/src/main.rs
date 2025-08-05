@@ -34,8 +34,10 @@ async fn main() -> anyhow::Result<()> {
         .route("/gallery-preview", get(adaptive_preview_route))
         .route("/api/gallery", get(gallery_proxy_route))
         .route("/xrpc/social.grain.darkroom.getGalleryComposite", get(adaptive_api_route))
-        .route("/static/css/adaptive_layout.css", get(serve_css))
-        .route("/static/js/adaptive_layout.js", get(serve_js))
+        .route("/static/css/adaptive_layout.css", get(serve_adaptive_css))
+        .route("/static/js/adaptive_layout.js", get(serve_adaptive_js))
+        .route("/static/css/collage_layout.css", get(serve_collage_css))
+        .route("/static/js/collage_layout.js", get(serve_collage_js))
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
         .fallback(not_found);
@@ -104,20 +106,42 @@ async fn health_check() -> Json<serde_json::Value> {
     }))
 }
 
-async fn serve_css() -> Result<Response<Body>, StatusCode> {
+async fn serve_adaptive_css() -> Result<Response<Body>, StatusCode> {
     let css_content = include_str!("../static/css/adaptive_layout.css");
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, "text/css; charset=utf-8")
+        .header(header::CACHE_CONTROL, "no-cache")
         .body(Body::from(css_content))
         .unwrap())
 }
 
-async fn serve_js() -> Result<Response<Body>, StatusCode> {
+async fn serve_adaptive_js() -> Result<Response<Body>, StatusCode> {
     let js_content = include_str!("../static/js/adaptive_layout.js");
     Ok(Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, "application/javascript; charset=utf-8")
+        .header(header::CACHE_CONTROL, "no-cache")
+        .body(Body::from(js_content))
+        .unwrap())
+}
+
+async fn serve_collage_css() -> Result<Response<Body>, StatusCode> {
+    let css_content = include_str!("../static/css/collage_layout.css");
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "text/css; charset=utf-8")
+        .header(header::CACHE_CONTROL, "no-cache")
+        .body(Body::from(css_content))
+        .unwrap())
+}
+
+async fn serve_collage_js() -> Result<Response<Body>, StatusCode> {
+    let js_content = include_str!("../static/js/collage_layout.js");
+    Ok(Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/javascript; charset=utf-8")
+        .header(header::CACHE_CONTROL, "no-cache")
         .body(Body::from(js_content))
         .unwrap())
 }

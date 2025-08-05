@@ -1,0 +1,33 @@
+body {
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  font-family: "DejaVu Sans", "Liberation Sans", Arial, sans-serif;
+  position: relative;
+  width: 1200px;
+  height: 630px;
+}
+
+.content {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 1170px;
+  height: 600px;
+}
+
+.collage-grid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.collage-grid img {
+  position: absolute;
+  object-fit: cover;
+  border-radius: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}

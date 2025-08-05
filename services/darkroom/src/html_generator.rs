@@ -1,6 +1,6 @@
+use anyhow::Result;
 use minijinja::{Environment, context};
 use std::include_str;
-use anyhow::Result;
 
 fn create_template_env() -> Environment<'static> {
     let mut env = Environment::new();
@@ -12,13 +12,36 @@ fn create_template_env() -> Environment<'static> {
     )
     .unwrap();
 
+    // Add collage layout template
+    env.add_template(
+        "collage_layout.html",
+        include_str!("../templates/collage_layout.html"),
+    )
+    .unwrap();
+
     env
 }
 
-
-pub fn generate_adaptive_grid_html_with_uri(gallery_uri: &str, title: String, handle: String) -> Result<String> {
+pub fn generate_grid_html_with_uri(
+    gallery_uri: &str,
+    title: String,
+    handle: String,
+    variant: &str,
+) -> Result<String> {
     let env = create_template_env();
-    let template = env.get_template("adaptive_layout.html")?;
+    println!(
+        "Using template: {}",
+        match variant {
+            "collage" => "collage_layout.html",
+            _ => "adaptive_layout.html",
+        }
+    );
+    let template_name = match variant {
+        "collage" => "collage_layout.html",
+        _ => "adaptive_layout.html", // Default to adaptive
+    };
+
+    let template = env.get_template(template_name)?;
 
     let html = template.render(context! {
         gallery_uri => gallery_uri,
@@ -28,4 +51,3 @@ pub fn generate_adaptive_grid_html_with_uri(gallery_uri: &str, title: String, ha
 
     Ok(html)
 }
-
