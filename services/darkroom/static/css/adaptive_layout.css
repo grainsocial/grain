@@ -41,16 +41,6 @@ body {
   box-sizing: border-box;
 }
 
-.footer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15px;
-  right: 15px;
-  height: 1px;
-  background-color: #e4e4e7;
-}
-
 .title {
   font-weight: 400;
   color: #212529;

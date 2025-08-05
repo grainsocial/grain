@@ -53,7 +53,7 @@ pub async fn handle_adaptive_composite_api(
     headers.insert("Content-Type", HeaderValue::from_static("image/jpeg"));
     headers.insert(
         "Cache-Control",
-        HeaderValue::from_static("public, max-age=3600"),
+        HeaderValue::from_static("no-cache, must-revalidate"),
     );
 
     let mut response = Response::new(Body::from(screenshot));
