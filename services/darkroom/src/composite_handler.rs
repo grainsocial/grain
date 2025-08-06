@@ -24,7 +24,10 @@ pub async fn handle_adaptive_composite_api(
 
     // Build preview URL with variant parameter support
     let base_url = std::env::var("BASE_URL").unwrap_or_else(|_| "http://[::]:8080".to_string());
-    let variant = params.get("variant").map(|s| s.as_str()).unwrap_or("adaptive");
+    let variant = params
+        .get("variant")
+        .map(|s| s.as_str())
+        .unwrap_or("adaptive");
 
     let preview_url = format!(
         "{}/gallery-preview?uri={}&title={}&handle={}&variant={}",

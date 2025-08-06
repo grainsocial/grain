@@ -3556,6 +3556,32 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainDarkroomGetGalleryComposite: {
+    lexicon: 1,
+    id: 'social.grain.darkroom.getGalleryComposite',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Returns a composite image for a specified gallery AT-URI.',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              description:
+                'The AT-URI of the gallery to return a composite for.',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: '*/*',
+        },
+      },
+    },
+  },
   SocialGrainFavoriteDeleteFavorite: {
     lexicon: 1,
     id: 'social.grain.favorite.deleteFavorite',
@@ -5050,6 +5076,8 @@ export const ids = {
   SocialGrainGraphCreateFollow: 'social.grain.graph.createFollow',
   SocialGrainGraphGetFollowers: 'social.grain.graph.getFollowers',
   SocialGrainGraphGetFollows: 'social.grain.graph.getFollows',
+  SocialGrainDarkroomGetGalleryComposite:
+    'social.grain.darkroom.getGalleryComposite',
   SocialGrainFavoriteDeleteFavorite: 'social.grain.favorite.deleteFavorite',
   SocialGrainFavoriteCreateFavorite: 'social.grain.favorite.createFavorite',
   SocialGrainFavorite: 'social.grain.favorite',

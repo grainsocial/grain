@@ -26,6 +26,7 @@ import * as SocialGrainGraphDeleteFollow from './types/social/grain/graph/delete
 import * as SocialGrainGraphCreateFollow from './types/social/grain/graph/createFollow.ts'
 import * as SocialGrainGraphGetFollowers from './types/social/grain/graph/getFollowers.ts'
 import * as SocialGrainGraphGetFollows from './types/social/grain/graph/getFollows.ts'
+import * as SocialGrainDarkroomGetGalleryComposite from './types/social/grain/darkroom/getGalleryComposite.ts'
 import * as SocialGrainFavoriteDeleteFavorite from './types/social/grain/favorite/deleteFavorite.ts'
 import * as SocialGrainFavoriteCreateFavorite from './types/social/grain/favorite/createFavorite.ts'
 import * as SocialGrainFeedGetTimeline from './types/social/grain/feed/getTimeline.ts'
@@ -213,6 +214,7 @@ export class SocialGrainNS {
   comment: SocialGrainCommentNS
   gallery: SocialGrainGalleryNS
   graph: SocialGrainGraphNS
+  darkroom: SocialGrainDarkroomNS
   favorite: SocialGrainFavoriteNS
   labeler: SocialGrainLabelerNS
   feed: SocialGrainFeedNS
@@ -225,6 +227,7 @@ export class SocialGrainNS {
     this.comment = new SocialGrainCommentNS(server)
     this.gallery = new SocialGrainGalleryNS(server)
     this.graph = new SocialGrainGraphNS(server)
+    this.darkroom = new SocialGrainDarkroomNS(server)
     this.favorite = new SocialGrainFavoriteNS(server)
     this.labeler = new SocialGrainLabelerNS(server)
     this.feed = new SocialGrainFeedNS(server)
@@ -448,6 +451,25 @@ export class SocialGrainGraphNS {
     >,
   ) {
     const nsid = 'social.grain.graph.getFollows' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+}
+
+export class SocialGrainDarkroomNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  getGalleryComposite<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainDarkroomGetGalleryComposite.Handler<ExtractAuth<AV>>,
+      SocialGrainDarkroomGetGalleryComposite.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.darkroom.getGalleryComposite' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 }
