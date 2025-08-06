@@ -15,9 +15,9 @@ export interface Record {
   $type: 'social.grain.photo'
   photo: BlobRef
   /** Alt text description of the image, for accessibility. */
-  alt: string
-  aspectRatio?: SocialGrainDefs.AspectRatio
-  createdAt?: string
+  alt?: string
+  aspectRatio: SocialGrainDefs.AspectRatio
+  createdAt: string
   [k: string]: unknown
 }
 

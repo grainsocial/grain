@@ -11,15 +11,34 @@ import {
 import { schemas } from './lexicons.ts'
 import * as SocialGrainNotificationUpdateSeen from './types/social/grain/notification/updateSeen.ts'
 import * as SocialGrainNotificationGetNotifications from './types/social/grain/notification/getNotifications.ts'
+import * as SocialGrainCommentDeleteComment from './types/social/grain/comment/deleteComment.ts'
+import * as SocialGrainCommentCreateComment from './types/social/grain/comment/createComment.ts'
+import * as SocialGrainGalleryDeleteGallery from './types/social/grain/gallery/deleteGallery.ts'
+import * as SocialGrainGalleryCreateItem from './types/social/grain/gallery/createItem.ts'
+import * as SocialGrainGalleryCreateGallery from './types/social/grain/gallery/createGallery.ts'
+import * as SocialGrainGalleryDeleteItem from './types/social/grain/gallery/deleteItem.ts'
+import * as SocialGrainGalleryUpdateGallery from './types/social/grain/gallery/updateGallery.ts'
+import * as SocialGrainGalleryApplySort from './types/social/grain/gallery/applySort.ts'
 import * as SocialGrainGalleryGetGalleryThread from './types/social/grain/gallery/getGalleryThread.ts'
 import * as SocialGrainGalleryGetActorGalleries from './types/social/grain/gallery/getActorGalleries.ts'
 import * as SocialGrainGalleryGetGallery from './types/social/grain/gallery/getGallery.ts'
+import * as SocialGrainGraphDeleteFollow from './types/social/grain/graph/deleteFollow.ts'
+import * as SocialGrainGraphCreateFollow from './types/social/grain/graph/createFollow.ts'
 import * as SocialGrainGraphGetFollowers from './types/social/grain/graph/getFollowers.ts'
 import * as SocialGrainGraphGetFollows from './types/social/grain/graph/getFollows.ts'
+import * as SocialGrainDarkroomGetGalleryComposite from './types/social/grain/darkroom/getGalleryComposite.ts'
+import * as SocialGrainFavoriteDeleteFavorite from './types/social/grain/favorite/deleteFavorite.ts'
+import * as SocialGrainFavoriteCreateFavorite from './types/social/grain/favorite/createFavorite.ts'
 import * as SocialGrainFeedGetTimeline from './types/social/grain/feed/getTimeline.ts'
 import * as SocialGrainActorGetProfile from './types/social/grain/actor/getProfile.ts'
 import * as SocialGrainActorSearchActors from './types/social/grain/actor/searchActors.ts'
+import * as SocialGrainActorUpdateAvatar from './types/social/grain/actor/updateAvatar.ts'
 import * as SocialGrainActorGetActorFavs from './types/social/grain/actor/getActorFavs.ts'
+import * as SocialGrainActorUpdateProfile from './types/social/grain/actor/updateProfile.ts'
+import * as SocialGrainPhotoDeletePhoto from './types/social/grain/photo/deletePhoto.ts'
+import * as SocialGrainPhotoUploadPhoto from './types/social/grain/photo/uploadPhoto.ts'
+import * as SocialGrainPhotoCreateExif from './types/social/grain/photo/createExif.ts'
+import * as SocialGrainPhotoApplyAlts from './types/social/grain/photo/applyAlts.ts'
 import * as SocialGrainPhotoGetActorPhotos from './types/social/grain/photo/getActorPhotos.ts'
 
 export const APP_BSKY_GRAPH = {
@@ -192,8 +211,11 @@ export class SocialNS {
 export class SocialGrainNS {
   _server: Server
   notification: SocialGrainNotificationNS
+  comment: SocialGrainCommentNS
   gallery: SocialGrainGalleryNS
   graph: SocialGrainGraphNS
+  darkroom: SocialGrainDarkroomNS
+  favorite: SocialGrainFavoriteNS
   labeler: SocialGrainLabelerNS
   feed: SocialGrainFeedNS
   actor: SocialGrainActorNS
@@ -202,8 +224,11 @@ export class SocialGrainNS {
   constructor(server: Server) {
     this._server = server
     this.notification = new SocialGrainNotificationNS(server)
+    this.comment = new SocialGrainCommentNS(server)
     this.gallery = new SocialGrainGalleryNS(server)
     this.graph = new SocialGrainGraphNS(server)
+    this.darkroom = new SocialGrainDarkroomNS(server)
+    this.favorite = new SocialGrainFavoriteNS(server)
     this.labeler = new SocialGrainLabelerNS(server)
     this.feed = new SocialGrainFeedNS(server)
     this.actor = new SocialGrainActorNS(server)
@@ -241,11 +266,107 @@ export class SocialGrainNotificationNS {
   }
 }
 
+export class SocialGrainCommentNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  deleteComment<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainCommentDeleteComment.Handler<ExtractAuth<AV>>,
+      SocialGrainCommentDeleteComment.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.comment.deleteComment' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  createComment<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainCommentCreateComment.Handler<ExtractAuth<AV>>,
+      SocialGrainCommentCreateComment.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.comment.createComment' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+}
+
 export class SocialGrainGalleryNS {
   _server: Server
 
   constructor(server: Server) {
     this._server = server
+  }
+
+  deleteGallery<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryDeleteGallery.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryDeleteGallery.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.deleteGallery' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  createItem<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryCreateItem.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryCreateItem.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.createItem' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  createGallery<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryCreateGallery.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryCreateGallery.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.createGallery' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  deleteItem<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryDeleteItem.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryDeleteItem.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.deleteItem' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  updateGallery<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryUpdateGallery.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryUpdateGallery.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.updateGallery' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  applySort<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGalleryApplySort.Handler<ExtractAuth<AV>>,
+      SocialGrainGalleryApplySort.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.gallery.applySort' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 
   getGalleryThread<AV extends AuthVerifier>(
@@ -289,6 +410,28 @@ export class SocialGrainGraphNS {
     this._server = server
   }
 
+  deleteFollow<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGraphDeleteFollow.Handler<ExtractAuth<AV>>,
+      SocialGrainGraphDeleteFollow.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.graph.deleteFollow' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  createFollow<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainGraphCreateFollow.Handler<ExtractAuth<AV>>,
+      SocialGrainGraphCreateFollow.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.graph.createFollow' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   getFollowers<AV extends AuthVerifier>(
     cfg: ConfigOf<
       AV,
@@ -308,6 +451,55 @@ export class SocialGrainGraphNS {
     >,
   ) {
     const nsid = 'social.grain.graph.getFollows' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+}
+
+export class SocialGrainDarkroomNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  getGalleryComposite<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainDarkroomGetGalleryComposite.Handler<ExtractAuth<AV>>,
+      SocialGrainDarkroomGetGalleryComposite.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.darkroom.getGalleryComposite' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+}
+
+export class SocialGrainFavoriteNS {
+  _server: Server
+
+  constructor(server: Server) {
+    this._server = server
+  }
+
+  deleteFavorite<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainFavoriteDeleteFavorite.Handler<ExtractAuth<AV>>,
+      SocialGrainFavoriteDeleteFavorite.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.favorite.deleteFavorite' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  createFavorite<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainFavoriteCreateFavorite.Handler<ExtractAuth<AV>>,
+      SocialGrainFavoriteCreateFavorite.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.favorite.createFavorite' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
 }
@@ -368,6 +560,17 @@ export class SocialGrainActorNS {
     return this._server.xrpc.method(nsid, cfg)
   }
 
+  updateAvatar<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainActorUpdateAvatar.Handler<ExtractAuth<AV>>,
+      SocialGrainActorUpdateAvatar.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.actor.updateAvatar' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
   getActorFavs<AV extends AuthVerifier>(
     cfg: ConfigOf<
       AV,
@@ -378,6 +581,17 @@ export class SocialGrainActorNS {
     const nsid = 'social.grain.actor.getActorFavs' // @ts-ignore
     return this._server.xrpc.method(nsid, cfg)
   }
+
+  updateProfile<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainActorUpdateProfile.Handler<ExtractAuth<AV>>,
+      SocialGrainActorUpdateProfile.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.actor.updateProfile' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
 }
 
 export class SocialGrainPhotoNS {
@@ -385,6 +599,50 @@ export class SocialGrainPhotoNS {
 
   constructor(server: Server) {
     this._server = server
+  }
+
+  deletePhoto<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainPhotoDeletePhoto.Handler<ExtractAuth<AV>>,
+      SocialGrainPhotoDeletePhoto.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.photo.deletePhoto' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  uploadPhoto<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainPhotoUploadPhoto.Handler<ExtractAuth<AV>>,
+      SocialGrainPhotoUploadPhoto.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.photo.uploadPhoto' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  createExif<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainPhotoCreateExif.Handler<ExtractAuth<AV>>,
+      SocialGrainPhotoCreateExif.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.photo.createExif' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
+  }
+
+  applyAlts<AV extends AuthVerifier>(
+    cfg: ConfigOf<
+      AV,
+      SocialGrainPhotoApplyAlts.Handler<ExtractAuth<AV>>,
+      SocialGrainPhotoApplyAlts.HandlerReqCtx<ExtractAuth<AV>>
+    >,
+  ) {
+    const nsid = 'social.grain.photo.applyAlts' // @ts-ignore
+    return this._server.xrpc.method(nsid, cfg)
   }
 
   getActorPhotos<AV extends AuthVerifier>(

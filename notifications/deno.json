@@ -7,7 +7,7 @@
     "start": "deno run -A ./main.ts",
     "dev": "deno run \"dev:*\"",
     "dev:server": "deno run -A --env-file --watch ./main.ts",
-    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.42 lexgen"
+    "codegen": "deno run -A jsr:@bigmoves/bff-cli@0.3.0-beta.57 lexgen --lexicon-dir=../lexicons"
   },
   "nodeModulesDir": "auto"
 }

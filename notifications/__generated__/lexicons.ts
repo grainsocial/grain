@@ -2666,6 +2666,91 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainCommentDeleteComment: {
+    lexicon: 1,
+    id: 'social.grain.comment.deleteComment',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Delete a comment. Requires auth.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the comment to delete',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the comment was deleted',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainCommentCreateComment: {
+    lexicon: 1,
+    id: 'social.grain.comment.createComment',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Create a comment. Requires auth.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['text', 'subject'],
+            properties: {
+              text: {
+                type: 'string',
+                maxLength: 3000,
+                maxGraphemes: 300,
+              },
+              subject: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              focus: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              replyTo: {
+                type: 'string',
+                format: 'at-uri',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              commentUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the created comment',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainComment: {
     lexicon: 1,
     id: 'social.grain.comment',
@@ -2712,6 +2797,49 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainGalleryDeleteGallery: {
+    lexicon: 1,
+    id: 'social.grain.gallery.deleteGallery',
+    defs: {
+      main: {
+        type: 'procedure',
+        description:
+          'Delete a gallery. Does not delete the items in the gallery, just the gallery itself.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'Unique identifier of the gallery to delete',
+              },
+              cascade: {
+                type: 'boolean',
+                default: true,
+                description:
+                  'If true, will also delete any associated items in the gallery.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the gallery was deleted',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainGalleryItem: {
     lexicon: 1,
     id: 'social.grain.gallery.item',
@@ -2738,6 +2866,93 @@ export const schemaDict = {
             position: {
               type: 'integer',
               default: 0,
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGalleryCreateItem: {
+    lexicon: 1,
+    id: 'social.grain.gallery.createItem',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Create a new gallery item',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['galleryUri', 'photoUri', 'position'],
+            properties: {
+              galleryUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the gallery to create the item in',
+              },
+              photoUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the photo to be added as an item',
+              },
+              position: {
+                type: 'integer',
+                description:
+                  'Position of the item in the gallery, used for ordering',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              itemUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the created gallery item',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGalleryCreateGallery: {
+    lexicon: 1,
+    id: 'social.grain.gallery.createGallery',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Create a new gallery',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['title'],
+            properties: {
+              title: {
+                type: 'string',
+                maxLength: 100,
+              },
+              description: {
+                type: 'string',
+                maxLength: 1000,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              galleryUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the created gallery',
+              },
             },
           },
         },
@@ -2837,6 +3052,42 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainGalleryDeleteItem: {
+    lexicon: 1,
+    id: 'social.grain.gallery.deleteItem',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Delete a gallery item',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the gallery to create the item in',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the gallery item was deleted',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainGallery: {
     lexicon: 1,
     id: 'social.grain.gallery',
@@ -2879,6 +3130,102 @@ export const schemaDict = {
               type: 'string',
               format: 'datetime',
             },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGalleryUpdateGallery: {
+    lexicon: 1,
+    id: 'social.grain.gallery.updateGallery',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Create a new gallery',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['galleryUri', 'title'],
+            properties: {
+              galleryUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'The AT-URI of the gallery to update',
+              },
+              title: {
+                type: 'string',
+              },
+              description: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the gallery was updated',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGalleryApplySort: {
+    lexicon: 1,
+    id: 'social.grain.gallery.applySort',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Apply sorting to photos in a gallery. Requires auth.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['writes'],
+            properties: {
+              writes: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.gallery.applySort#update',
+                },
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the writes were successfully applied',
+              },
+            },
+          },
+        },
+      },
+      update: {
+        type: 'object',
+        required: ['itemUri', 'position'],
+        properties: {
+          itemUri: {
+            type: 'string',
+            format: 'at-uri',
+            description: 'AT URI of the item to update',
+          },
+          position: {
+            type: 'integer',
+            description:
+              'The position of the item in the gallery, used for ordering',
           },
         },
       },
@@ -3006,6 +3353,42 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainGraphDeleteFollow: {
+    lexicon: 1,
+    id: 'social.grain.graph.deleteFollow',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Delete a follow relationship. Requires auth.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the follow record to delete',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the follow was deleted',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainGraphFollow: {
     lexicon: 1,
     id: 'social.grain.graph.follow',
@@ -3024,6 +3407,43 @@ export const schemaDict = {
             createdAt: {
               type: 'string',
               format: 'datetime',
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainGraphCreateFollow: {
+    lexicon: 1,
+    id: 'social.grain.graph.createFollow',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Create a follow relationship between actors.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject'],
+            properties: {
+              subject: {
+                type: 'string',
+                format: 'at-identifier',
+                description: 'DID of the actor to follow.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              followUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the created follow record.',
+              },
             },
           },
         },
@@ -3130,6 +3550,132 @@ export const schemaDict = {
                   ref: 'lex:social.grain.actor.defs#profileView',
                 },
               },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainDarkroomGetGalleryComposite: {
+    lexicon: 1,
+    id: 'social.grain.darkroom.getGalleryComposite',
+    defs: {
+      main: {
+        type: 'query',
+        description:
+          'Returns a composite image for a specified gallery AT-URI.',
+        parameters: {
+          type: 'params',
+          required: ['uri'],
+          properties: {
+            uri: {
+              type: 'string',
+              description:
+                'The AT-URI of the gallery to return a composite for.',
+              format: 'at-uri',
+            },
+          },
+        },
+        output: {
+          encoding: '*/*',
+        },
+      },
+    },
+  },
+  SocialGrainFavoriteDeleteFavorite: {
+    lexicon: 1,
+    id: 'social.grain.favorite.deleteFavorite',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Delete a favorite item by its ID.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'The AT URI of the favorite to delete.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['success'],
+            properties: {
+              success: {
+                type: 'boolean',
+                description:
+                  'Indicates if the favorite was successfully deleted.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainFavoriteCreateFavorite: {
+    lexicon: 1,
+    id: 'social.grain.favorite.createFavorite',
+    defs: {
+      main: {
+        description: 'Create a favorite for a given subject.',
+        type: 'procedure',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['subject'],
+            properties: {
+              subject: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'URI of the subject to favorite.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['favoriteUri'],
+            properties: {
+              favoriteUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI for the created favorite.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainFavorite: {
+    lexicon: 1,
+    id: 'social.grain.favorite',
+    defs: {
+      main: {
+        type: 'record',
+        key: 'tid',
+        record: {
+          type: 'object',
+          required: ['createdAt', 'subject'],
+          properties: {
+            createdAt: {
+              type: 'string',
+              format: 'datetime',
+            },
+            subject: {
+              type: 'string',
+              format: 'at-uri',
             },
           },
         },
@@ -3384,30 +3930,6 @@ export const schemaDict = {
       },
     },
   },
-  SocialGrainFavorite: {
-    lexicon: 1,
-    id: 'social.grain.favorite',
-    defs: {
-      main: {
-        type: 'record',
-        key: 'tid',
-        record: {
-          type: 'object',
-          required: ['createdAt', 'subject'],
-          properties: {
-            createdAt: {
-              type: 'string',
-              format: 'datetime',
-            },
-            subject: {
-              type: 'string',
-              format: 'at-uri',
-            },
-          },
-        },
-      },
-    },
-  },
   SocialGrainActorDefs: {
     lexicon: 1,
     id: 'social.grain.actor.defs',
@@ -3618,6 +4140,32 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainActorUpdateAvatar: {
+    lexicon: 1,
+    id: 'social.grain.actor.updateAvatar',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: "Update an actor's avatar. Requires auth.",
+        input: {
+          encoding: '*/*',
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description:
+                  'Indicates whether the avatar update was successful.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainActorGetActorFavs: {
     lexicon: 1,
     id: 'social.grain.actor.getActorFavs',
@@ -3705,13 +4253,55 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainActorUpdateProfile: {
+    lexicon: 1,
+    id: 'social.grain.actor.updateProfile',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: "Update an actor's profile info. Requires auth.",
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              displayName: {
+                type: 'string',
+                maxGraphemes: 64,
+                maxLength: 640,
+              },
+              description: {
+                type: 'string',
+                description: 'Free-form profile description text.',
+                maxGraphemes: 256,
+                maxLength: 2560,
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description:
+                  'Indicates whether the profile update was successful.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   SocialGrainPhotoDefs: {
     lexicon: 1,
     id: 'social.grain.photo.defs',
     defs: {
       photoView: {
         type: 'object',
-        required: ['uri', 'cid', 'thumb', 'fullsize', 'alt'],
+        required: ['uri', 'cid', 'thumb', 'fullsize', 'aspectRatio'],
         properties: {
           uri: {
             type: 'string',
@@ -3755,7 +4345,7 @@ export const schemaDict = {
       },
       exifView: {
         type: 'object',
-        required: ['photo', 'createdAt'],
+        required: ['uri', 'cid', 'photo', 'record', 'createdAt'],
         properties: {
           uri: {
             type: 'string',
@@ -3768,6 +4358,9 @@ export const schemaDict = {
           photo: {
             type: 'string',
             format: 'at-uri',
+          },
+          record: {
+            type: 'unknown',
           },
           createdAt: {
             type: 'string',
@@ -3821,6 +4414,142 @@ export const schemaDict = {
           },
           itemPosition: {
             type: 'integer',
+          },
+        },
+      },
+    },
+  },
+  SocialGrainPhotoDeletePhoto: {
+    lexicon: 1,
+    id: 'social.grain.photo.deletePhoto',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Delete a photo by its unique at-uri.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['uri'],
+            properties: {
+              uri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the photo to delete.',
+              },
+              cascade: {
+                type: 'boolean',
+                default: true,
+                description:
+                  'If true, will also delete any associated EXIF data and gallery items.',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['success'],
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'Indicates if the photo was successfully deleted.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainPhotoUploadPhoto: {
+    lexicon: 1,
+    id: 'social.grain.photo.uploadPhoto',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Upload a photo. Requires auth.',
+        input: {
+          encoding: '*/*',
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              photoUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the created photo',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  SocialGrainPhotoCreateExif: {
+    lexicon: 1,
+    id: 'social.grain.photo.createExif',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Create a new Exif record for a photo',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['photo'],
+            properties: {
+              photo: {
+                type: 'string',
+                format: 'at-uri',
+              },
+              dateTimeOriginal: {
+                type: 'string',
+                format: 'datetime',
+              },
+              exposureTime: {
+                type: 'integer',
+              },
+              fNumber: {
+                type: 'integer',
+              },
+              flash: {
+                type: 'string',
+              },
+              focalLengthIn35mmFormat: {
+                type: 'integer',
+              },
+              iSO: {
+                type: 'integer',
+              },
+              lensMake: {
+                type: 'string',
+              },
+              lensModel: {
+                type: 'string',
+              },
+              make: {
+                type: 'string',
+              },
+              model: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              exifUri: {
+                type: 'string',
+                format: 'at-uri',
+                description: 'AT URI of the created gallery',
+              },
+            },
           },
         },
       },
@@ -3883,6 +4612,60 @@ export const schemaDict = {
       },
     },
   },
+  SocialGrainPhotoApplyAlts: {
+    lexicon: 1,
+    id: 'social.grain.photo.applyAlts',
+    defs: {
+      main: {
+        type: 'procedure',
+        description: 'Apply alt texts to photos. Requires auth.',
+        input: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            required: ['writes'],
+            properties: {
+              writes: {
+                type: 'array',
+                items: {
+                  type: 'ref',
+                  ref: 'lex:social.grain.photo.applyAlts#update',
+                },
+              },
+            },
+          },
+        },
+        output: {
+          encoding: 'application/json',
+          schema: {
+            type: 'object',
+            properties: {
+              success: {
+                type: 'boolean',
+                description: 'True if the writes were successfully applied',
+              },
+            },
+          },
+        },
+      },
+      update: {
+        type: 'object',
+        required: ['photoUri', 'alt'],
+        properties: {
+          photoUri: {
+            type: 'string',
+            format: 'at-uri',
+            description: 'AT URI of the item to update',
+          },
+          alt: {
+            type: 'string',
+            maxLength: 1000,
+            description: 'The alt text to apply to the photo',
+          },
+        },
+      },
+    },
+  },
   SocialGrainPhotoGetActorPhotos: {
     lexicon: 1,
     id: 'social.grain.photo.getActorPhotos',
@@ -3940,7 +4723,7 @@ export const schemaDict = {
         key: 'tid',
         record: {
           type: 'object',
-          required: ['photo', 'alt'],
+          required: ['photo', 'aspectRatio', 'createdAt'],
           properties: {
             photo: {
               type: 'blob',
@@ -4273,27 +5056,47 @@ export const ids = {
   SocialGrainNotificationGetNotifications:
     'social.grain.notification.getNotifications',
   SocialGrainCommentDefs: 'social.grain.comment.defs',
+  SocialGrainCommentDeleteComment: 'social.grain.comment.deleteComment',
+  SocialGrainCommentCreateComment: 'social.grain.comment.createComment',
   SocialGrainComment: 'social.grain.comment',
+  SocialGrainGalleryDeleteGallery: 'social.grain.gallery.deleteGallery',
   SocialGrainGalleryItem: 'social.grain.gallery.item',
+  SocialGrainGalleryCreateItem: 'social.grain.gallery.createItem',
+  SocialGrainGalleryCreateGallery: 'social.grain.gallery.createGallery',
   SocialGrainGalleryDefs: 'social.grain.gallery.defs',
+  SocialGrainGalleryDeleteItem: 'social.grain.gallery.deleteItem',
   SocialGrainGallery: 'social.grain.gallery',
+  SocialGrainGalleryUpdateGallery: 'social.grain.gallery.updateGallery',
+  SocialGrainGalleryApplySort: 'social.grain.gallery.applySort',
   SocialGrainGalleryGetGalleryThread: 'social.grain.gallery.getGalleryThread',
   SocialGrainGalleryGetActorGalleries: 'social.grain.gallery.getActorGalleries',
   SocialGrainGalleryGetGallery: 'social.grain.gallery.getGallery',
+  SocialGrainGraphDeleteFollow: 'social.grain.graph.deleteFollow',
   SocialGrainGraphFollow: 'social.grain.graph.follow',
+  SocialGrainGraphCreateFollow: 'social.grain.graph.createFollow',
   SocialGrainGraphGetFollowers: 'social.grain.graph.getFollowers',
   SocialGrainGraphGetFollows: 'social.grain.graph.getFollows',
+  SocialGrainDarkroomGetGalleryComposite:
+    'social.grain.darkroom.getGalleryComposite',
+  SocialGrainFavoriteDeleteFavorite: 'social.grain.favorite.deleteFavorite',
+  SocialGrainFavoriteCreateFavorite: 'social.grain.favorite.createFavorite',
+  SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainLabelerDefs: 'social.grain.labeler.defs',
   SocialGrainLabelerService: 'social.grain.labeler.service',
   SocialGrainFeedGetTimeline: 'social.grain.feed.getTimeline',
-  SocialGrainFavorite: 'social.grain.favorite',
   SocialGrainActorDefs: 'social.grain.actor.defs',
   SocialGrainActorGetProfile: 'social.grain.actor.getProfile',
   SocialGrainActorSearchActors: 'social.grain.actor.searchActors',
+  SocialGrainActorUpdateAvatar: 'social.grain.actor.updateAvatar',
   SocialGrainActorGetActorFavs: 'social.grain.actor.getActorFavs',
   SocialGrainActorProfile: 'social.grain.actor.profile',
+  SocialGrainActorUpdateProfile: 'social.grain.actor.updateProfile',
   SocialGrainPhotoDefs: 'social.grain.photo.defs',
+  SocialGrainPhotoDeletePhoto: 'social.grain.photo.deletePhoto',
+  SocialGrainPhotoUploadPhoto: 'social.grain.photo.uploadPhoto',
+  SocialGrainPhotoCreateExif: 'social.grain.photo.createExif',
   SocialGrainPhotoExif: 'social.grain.photo.exif',
+  SocialGrainPhotoApplyAlts: 'social.grain.photo.applyAlts',
   SocialGrainPhotoGetActorPhotos: 'social.grain.photo.getActorPhotos',
   SocialGrainPhoto: 'social.grain.photo',
   ComAtprotoLabelDefs: 'com.atproto.label.defs',
