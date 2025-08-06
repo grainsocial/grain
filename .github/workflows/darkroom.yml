@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
   pull_request:
     branches: [ main ]
-    paths: [ 'services/darkroom/**' ]
+    paths: [ 'darkroom/**' ]
   push:
     branches: [ main ]
-    paths: [ 'services/darkroom/**' ]
+    paths: [ 'darkroom/**' ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/darkroom
+        working-directory: darkroom
 
     steps:
       - name: Checkout code
@@ -64,7 +64,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: darkroom-docker-image
-          path: services/darkroom/darkroom-image.tar.gz
+          path: darkroom/darkroom-image.tar.gz
           retention-days: 1
 
   deploy:
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: services/darkroom
+        working-directory: darkroom
 
     steps:
       - name: Checkout code
@@ -83,7 +83,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: darkroom-docker-image
-          path: services/darkroom/
+          path: darkroom/
 
       - name: Load Docker image
         run: docker load < darkroom-image.tar.gz
