@@ -14,10 +14,35 @@ on:
 jobs:
   build:
     name: Build CLI Binaries
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            package: grain-linux-x86_64
+            artifact: grain-linux-x86_64
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-latest
+            package: grain-linux-aarch64
+            artifact: grain-linux-aarch64
+          - target: x86_64-apple-darwin
+            os: macos-13  # Intel Mac
+            package: grain-macos-x86_64
+            artifact: grain-darwin-x86_64
+          - target: aarch64-apple-darwin
+            os: macos-latest  # Apple Silicon Mac
+            package: grain-macos-aarch64
+            artifact: grain-darwin-aarch64
+          - target: x86_64-pc-windows-gnu
+            os: ubuntu-latest
+            package: grain-windows-x86_64
+            artifact: grain-windows-x86_64.exe
+    
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: cli
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,22 +58,57 @@ jobs:
       - name: Check flake
         run: nix flake check
 
-      - name: Build Darwin aarch64 only (for testing)
+      - name: Build ${{ matrix.target }}
+        run: nix build .#${{ matrix.package }}
+
+      - name: Copy binary
         run: |
-          echo "Building for macOS aarch64 only..."
           mkdir -p releases
-          nix build .#grain-macos-aarch64 -o result-macos-aarch64
-          cp result-macos-aarch64/bin/grain releases/grain-darwin-aarch64
+          if [ "${{ matrix.target }}" == "x86_64-pc-windows-gnu" ]; then
+            cp result/bin/grain.exe releases/${{ matrix.artifact }}
+          else
+            cp result/bin/grain releases/${{ matrix.artifact }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: cli/releases/${{ matrix.artifact }}
+          retention-days: 7
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          cp releases/grain-darwin-aarch64 release-assets/
-          cp install.sh release-assets/
+          
+          # Copy all binaries
+          for dir in artifacts/*/; do
+            for file in "$dir"*; do
+              if [ -f "$file" ]; then
+                cp "$file" release-assets/
+              fi
+            done
+          done
+          
+          # Copy install script
+          cp cli/install.sh release-assets/
 
           # Create checksums
           cd release-assets
-          sha256sum grain-darwin-aarch64 > checksums.txt
+          sha256sum * > checksums.txt
 
           # List files for verification
           ls -la
@@ -72,9 +132,7 @@ jobs:
           files: |
             cli/release-assets/*
           body: |
-            ## Grain CLI ${{ steps.tag.outputs.tag }} (Test Build)
-
-            **Note: This is a test build with only macOS Apple Silicon support.**
+            ## Grain CLI ${{ steps.tag.outputs.tag }}
 
             ### Installation
 
@@ -85,7 +143,11 @@ jobs:
 
             Or download manually:
 
+            - **Linux x86_64**: `grain-linux-x86_64`
+            - **Linux aarch64**: `grain-linux-aarch64`
+            - **macOS Intel**: `grain-darwin-x86_64`
             - **macOS Apple Silicon**: `grain-darwin-aarch64`
+            - **Windows x86_64**: `grain-windows-x86_64.exe`
 
             ### Usage
 

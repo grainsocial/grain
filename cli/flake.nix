@@ -55,15 +55,27 @@
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
         # Build function for different targets
-        buildGrainCLI = target: craneLib.buildPackage (commonArgs // {
-          inherit cargoArtifacts;
-          CARGO_BUILD_TARGET = target;
-        } // pkgs.lib.optionalAttrs (target == "x86_64-pc-windows-gnu") {
-          depsBuildBuild = with pkgs; [
-            pkgsCross.mingwW64.stdenv.cc
-          ];
-          CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc";
-        });
+        buildGrainCLI = target: 
+          let
+            # Only cross-compile if target is different from current system
+            isCrossCompiling = target != system;
+          in
+          if isCrossCompiling then
+            # For cross-compilation, use the native build but with target specified
+            craneLib.buildPackage (commonArgs // {
+              inherit cargoArtifacts;
+              CARGO_BUILD_TARGET = target;
+            } // pkgs.lib.optionalAttrs (target == "x86_64-pc-windows-gnu") {
+              depsBuildBuild = with pkgs; [
+                pkgsCross.mingwW64.stdenv.cc
+              ];
+              CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER = "${pkgs.pkgsCross.mingwW64.stdenv.cc}/bin/x86_64-w64-mingw32-gcc";
+            })
+          else
+            # For native builds, don't specify target
+            craneLib.buildPackage (commonArgs // {
+              inherit cargoArtifacts;
+            });
 
       in {
         packages = {
