@@ -11,6 +11,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build CLI Binaries
@@ -130,7 +133,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            cli/release-assets/*
+            release-assets/*
           body: |
             ## Grain CLI ${{ steps.tag.outputs.tag }}
 
