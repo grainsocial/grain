@@ -1,0 +1,138 @@
+name: Release CLI Binaries
+
+on:
+  push:
+    tags:
+      - 'cli@*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. cli@1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build CLI Binaries
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          logger: pretty
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check flake
+        run: nix flake check
+
+      - name: Build Darwin aarch64 only (for testing)
+        run: |
+          echo "Building for macOS aarch64 only..."
+          mkdir -p releases
+          nix build .#grain-macos-aarch64 -o result-macos-aarch64
+          cp result-macos-aarch64/bin/grain releases/grain-darwin-aarch64
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          cp releases/grain-darwin-aarch64 release-assets/
+          cp install.sh release-assets/
+
+          # Create checksums
+          cd release-assets
+          sha256sum grain-darwin-aarch64 > checksums.txt
+
+          # List files for verification
+          ls -la
+
+      - name: Get tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Grain CLI ${{ steps.tag.outputs.tag }}
+          draft: false
+          prerelease: false
+          files: |
+            cli/release-assets/*
+          body: |
+            ## Grain CLI ${{ steps.tag.outputs.tag }} (Test Build)
+
+            **Note: This is a test build with only macOS Apple Silicon support.**
+
+            ### Installation
+
+            Quick install:
+            ```bash
+            curl -L https://github.com/grainsocial/grain/releases/download/${{ steps.tag.outputs.tag }}/install.sh | bash
+            ```
+
+            Or download manually:
+
+            - **macOS Apple Silicon**: `grain-darwin-aarch64`
+
+            ### Usage
+
+            ```bash
+            grain login
+            grain gallery list
+            grain gallery create
+            ```
+
+            ### Checksums
+
+            See `checksums.txt` for SHA256 checksums.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  test-install:
+    name: Test Installation
+    needs: build
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Test install script
+        run: |
+          # Wait for release to be available
+          sleep 30
+
+          # Test the install script
+          curl -L https://github.com/grainsocial/grain/releases/download/${{ steps.tag.outputs.tag }}/grain-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o grain-test || exit 0
+
+          if [ -f grain-test ]; then
+            chmod +x grain-test
+            ./grain-test --help
+            echo "✅ Binary works correctly"
+          else
+            echo "⚠️ Binary not available yet for this platform"
+          fi

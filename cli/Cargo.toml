@@ -1,0 +1,29 @@
+[package]
+name = "grain-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "grain"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+dialoguer = "0.11"
+image = "0.25"
+anyhow = "1.0"
+open = "5.0"
+hyper = { version = "1.0", features = ["full"] }
+hyper-util = { version = "0.1", features = ["full"] }
+http-body-util = "0.1"
+tokio-util = "0.7"
+futures-util = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
+urlencoding = "2.1"
+url = "2.5"
+indicatif = "0.18"
+dirs = "6.0"

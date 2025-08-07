@@ -50,6 +50,15 @@ standards for content moderation.
 - **Tech Stack**: Deno, TypeScript
 - **Features**: Content labeling, moderation tools
 
+### 💻 [CLI](/cli)
+
+Command-line interface for interacting with Grain Social from the terminal.
+Provides tools for gallery management, photo uploads, and platform interaction.
+
+- **Tech Stack**: Rust
+- **Features**: Gallery creation/management, photo uploads, authentication
+- **Installation**: Download from [releases](https://github.com/grainsocial/grain/releases)
+
 ### 🌐 [Infrastructure](/nginx)
 
 Nginx reverse proxy configuration for routing requests between services.
