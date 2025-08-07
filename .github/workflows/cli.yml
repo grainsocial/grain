@@ -192,12 +192,4 @@ jobs:
           sleep 30
 
           # Test the install script
-          curl -L https://github.com/grainsocial/grain/releases/download/${{ steps.tag.outputs.tag }}/grain-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m) -o grain-test || exit 0
-
-          if [ -f grain-test ]; then
-            chmod +x grain-test
-            ./grain-test --help
-            echo "✅ Binary works correctly"
-          else
-            echo "⚠️ Binary not available yet for this platform"
-          fi
+          curl -L https://github.com/grainsocial/grain/releases/download/${{ steps.tag.outputs.tag }}/install.sh | bash
