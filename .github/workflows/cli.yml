@@ -17,26 +17,26 @@ jobs:
     strategy:
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            package: grain-linux-x86_64
-            artifact: grain-linux-x86_64
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            package: grain-linux-aarch64
-            artifact: grain-linux-aarch64
-          - target: x86_64-apple-darwin
-            os: macos-13  # Intel Mac
-            package: grain-macos-x86_64
-            artifact: grain-darwin-x86_64
+          # - target: x86_64-unknown-linux-gnu
+          #   os: ubuntu-latest
+          #   package: grain-linux-x86_64
+          #   artifact: grain-linux-x86_64
+          # - target: aarch64-unknown-linux-gnu
+          #   os: ubuntu-latest
+          #   package: grain-linux-aarch64
+          #   artifact: grain-linux-aarch64
+          # - target: x86_64-apple-darwin
+          #   os: macos-13  # Intel Mac
+          #   package: grain-macos-x86_64
+          #   artifact: grain-darwin-x86_64
           - target: aarch64-apple-darwin
             os: macos-latest  # Apple Silicon Mac
             package: grain-macos-aarch64
             artifact: grain-darwin-aarch64
-          - target: x86_64-pc-windows-gnu
-            os: ubuntu-latest
-            package: grain-windows-x86_64
-            artifact: grain-windows-x86_64.exe
+          # - target: x86_64-pc-windows-gnu
+          #   os: ubuntu-latest
+          #   package: grain-windows-x86_64
+          #   artifact: grain-windows-x86_64.exe
     
     runs-on: ${{ matrix.os }}
     defaults:
