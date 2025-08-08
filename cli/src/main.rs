@@ -30,6 +30,7 @@ const OAUTH_TIMEOUT: Duration = Duration::from_secs(300); // 5 minutes
 #[derive(Parser)]
 #[command(name = "grain")]
 #[command(about = "A CLI for grain.social")]
+#[command(version)]
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
