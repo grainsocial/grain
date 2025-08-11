@@ -138,6 +138,10 @@ export type EnvConfig = {
   plcDirectoryUrl?: string;
   /** The URL of the Jetstream server */
   jetstreamUrl?: string;
+  /** The AIP client ID for OAuth */
+  aipClientId: string;
+  /** The AIP client secret for OAuth */
+  aipClientSecret: string;
 };
 
 export type BffConfig = BffOptions & EnvConfig & {

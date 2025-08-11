@@ -24,5 +24,9 @@ export function configureBff(cfg: BffOptions): BffConfig {
     middlewares: cfg.middlewares ?? [],
     rootElement: cfg.rootElement ?? Root,
     buildDir: cfg.buildDir ?? "build",
+
+    // OAuth configuration
+    aipClientId: Deno.env.get("BFF_AIP_CLIENT_ID") ?? "",
+    aipClientSecret: Deno.env.get("BFF_AIP_CLIENT_SECRET") ?? "",
   };
 }
