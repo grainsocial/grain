@@ -40,20 +40,23 @@ jobs:
       - name: Load Docker image
         run: docker load < result
 
-      # - name: Test Docker image
-      #   run: |
-      #     # Start the container in the background
-      #     docker run -d --name aip-test -p 8080:8080 aip:latest
+      - name: Test Docker image
+        run: |
+          # Start the container in the background
+          docker run -d --name aip-test -p 8080:8080 \
+            -e EXTERNAL_BASE=http://localhost:8080 \
+            -e DPOP_NONCE_SEED=test-seed-for-ci \
+            aip:latest
 
-      #     # Wait for the service to start
-      #     sleep 10
+          # Wait for the service to start
+          sleep 10
 
-      #     # Test the health endpoint
-      #     curl -f http://localhost:8080 || exit 1
+          # Test the root endpoint
+          curl -f http://localhost:8080 || exit 1
 
-      #     # Stop the test container
-      #     docker stop aip-test
-      #     docker rm aip-test
+          # Stop the test container
+          docker stop aip-test
+          docker rm aip-test
 
       - name: Save Docker image as artifact
         # if: github.ref == 'refs/heads/main'
