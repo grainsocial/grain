@@ -12,6 +12,7 @@ primary_region = 'sea'
 [env]
   EXTERNAL_BASE="https://grain-aip.fly.dev"
   HTTP_PORT="8080"
+  DATABASE_URL="sqlite:///tmp/aip.db"
   HTTP_CLIENT_TIMEOUT="30"
   STORAGE_BACKEND="sqlite"
   OAUTH_SUPPORTED_SCOPES="atproto:atproto atproto:transition:generic atproto:transition:email"

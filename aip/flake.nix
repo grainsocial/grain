@@ -62,7 +62,7 @@
             PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
 
             # Pass arguments to cargo build
-            cargoExtraArgs = "--features embed,sqlite --bin aip";
+            cargoExtraArgs = "--no-default-features --features embed,sqlite --bin aip";
           };
 
           cargoArtifacts = craneLib.buildDepsOnly commonArgs;
@@ -75,7 +75,7 @@
             # Add migration step
             preBuild = ''
               # Create a temporary SQLite database for sqlx compile-time verification
-              export DATABASE_URL="sqlite:///tmp/aip-build.db"
+              export DATABASE_URL="sqlite:///tmp/aip.db"
               sqlx database create
               sqlx migrate run --source migrations/sqlite
             '';
@@ -96,9 +96,8 @@
 
             runAsRoot = ''
               #!${pkgs.runtimeShell}
-              mkdir -p /tmp /app
+              mkdir -p /tmp
               chmod 1777 /tmp
-              chmod 755 /app
             '';
 
             config = {
