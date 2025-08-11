@@ -552,10 +552,6 @@ export const uploadPhoto: RouteHandler = async (
     window: 24 * 60 * 60 * 1000, // 24 hours
   });
 
-  if (!ctx.agent) {
-    return new Response("Agent has not been initialized", { status: 401 });
-  }
-
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
@@ -586,10 +582,10 @@ export const uploadPhoto: RouteHandler = async (
       });
     }
 
-    const blobResponse = await ctx.agent.uploadBlob(file);
+    const blobRef = await ctx.uploadBlob(file);
 
     const photoUri = await createPhoto({
-      photo: blobResponse.data.blob,
+      photo: blobRef,
       aspectRatio: width && height
         ? {
           width,

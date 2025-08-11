@@ -6,3 +6,7 @@ node_modules
 grain-root.crt
 *.log
 build
+
+# /scripts
+access_token.txt
+oauth_client.conf
