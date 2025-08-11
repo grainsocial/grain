@@ -1,0 +1,15 @@
+export const snapshot = {};
+
+snapshot[`meta with charSet 1`] = `'<meta  charset="utf-8">'`;
+
+snapshot[`meta with title 1`] = `"<title >Test Title</title>"`;
+
+snapshot[`meta with name and content 1`] = `'<meta name="description" content="Test description"/>'`;
+
+snapshot[`meta with property and content 1`] = `'<meta property="og:title" content="Test Open Graph Title"/>'`;
+
+snapshot[`meta with tagName 1`] = `'<link rel="stylesheet" href="/styles.css"/>'`;
+
+snapshot[`meta with invalid tagName 1`] = `""`;
+
+snapshot[`meta with multiple descriptors 1`] = `'<meta  charset="utf-8"><title >Test Title</title><meta name="description" content="Test description"/><meta property="og:title" content="Test Open Graph Title"/><link rel="stylesheet" href="/styles.css"/>'`;

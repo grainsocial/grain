@@ -1,0 +1,7 @@
+{
+  "lexicons": [
+    "app.bsky.feed.like",
+    "app.bsky.feed.post",
+    "app.bsky.actor.profile"
+  ]
+}

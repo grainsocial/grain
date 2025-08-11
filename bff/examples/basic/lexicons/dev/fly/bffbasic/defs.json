@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "dev.fly.bffbasic.defs",
+  "defs": {
+    "profileView": {
+      "type": "object",
+      "required": ["did", "handle"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "displayName": {
+          "type": "string",
+          "maxGraphemes": 64,
+          "maxLength": 640
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2560,
+          "maxGraphemes": 256
+        },
+        "avatar": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

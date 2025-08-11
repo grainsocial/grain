@@ -1,0 +1,24 @@
+{
+  "imports": {
+    "$lexicon/": "./__generated__/",
+    "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
+    "@tailwindcss/cli": "npm:@tailwindcss/cli@^4.1.4",
+    "preact": "npm:preact@^10.26.5",
+    "tailwindcss": "npm:tailwindcss@^4.1.4",
+    "typed-htmx": "npm:typed-htmx@^0.3.1"
+  },
+  "tasks": {
+    "start": "deno run -A ./main.tsx",
+    "dev": "deno run \"dev:*\"",
+    "build": "deno task build:tailwind",
+    "build:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./input.css -o ./build/styles.css --minify",
+    "dev:server": "deno run -A --watch ./main.tsx",
+    "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./input.css -o ./build/styles.css --watch",
+    "codegen": "deno run -A ../../packages/bff-cli/mod.ts lexgen"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "preact",
+    "jsxPrecompileSkipElements": ["a"]
+  }
+}

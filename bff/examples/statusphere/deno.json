@@ -1,0 +1,18 @@
+{
+  "imports": {
+    "$lexicon/": "./__generated__/",
+    "preact": "npm:preact@^10.26.5",
+    "typed-htmx": "npm:typed-htmx@^0.3.1"
+  },
+  "tasks": {
+    "start": "deno run -A ./main.tsx",
+    "dev": "deno run \"dev:*\"",
+    "dev:static": "rm -rf build && cp -r static/. build",
+    "dev:server": "deno run -A --watch ./main.tsx",
+    "codegen": "deno run -A ../../packages/bff-cli/mod.ts lexgen"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  }
+}
