@@ -62,7 +62,7 @@
             PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
 
             # Pass arguments to cargo build
-            cargoExtraArgs = "--features sqlite --bin aip";
+            cargoExtraArgs = "--features embed,sqlite --bin aip";
           };
 
           cargoArtifacts = craneLib.buildDepsOnly commonArgs;
