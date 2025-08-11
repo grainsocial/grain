@@ -1,0 +1,108 @@
+name: Build and Deploy AIP
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths: [ 'aip/**' ]
+  push:
+    branches: [ main ]
+    paths: [ 'aip/**' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          logger: pretty
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check flake
+        run: nix flake check
+
+      - name: Build Rust binary
+        run: nix build .#aip
+
+      - name: Build Docker image
+        run: nix build .#aipImg
+
+      - name: Load Docker image
+        run: docker load < result
+
+      - name: Test Docker image
+        run: |
+          # Start the container in the background
+          docker run -d --name aip-test -p 8080:8080 aip:latest
+
+          # Wait for the service to start
+          sleep 10
+
+          # Test the health endpoint
+          curl -f http://localhost:8080/health || exit 1
+
+          # Stop the test container
+          docker stop aip-test
+          docker rm aip-test
+
+      - name: Save Docker image as artifact
+        if: github.ref == 'refs/heads/main'
+        run: docker save aip:latest | gzip > aip-image.tar.gz
+
+      - name: Upload Docker image artifact
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aip-docker-image
+          path: aip/aip-image.tar.gz
+          retention-days: 1
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aip-docker-image
+          path: aip/
+
+      - name: Load Docker image
+        run: docker load < aip-image.tar.gz
+
+      - name: Tag for Fly.io
+        run: docker tag aip:latest registry.fly.io/grain-aip:latest
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Login to Fly.io registry
+        run: flyctl auth docker
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Push to Fly.io registry
+        run: docker push registry.fly.io/grain-aip:latest
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --image registry.fly.io/grain-aip:latest
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

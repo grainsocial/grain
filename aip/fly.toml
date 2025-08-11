@@ -1,0 +1,33 @@
+# fly.toml app configuration file generated for grain-aip on 2025-08-11T12:21:22-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'grain-aip'
+primary_region = 'sea'
+
+[build]
+  image = 'registry.fly.io/grain-aip:latest'
+
+[env]
+  EXTERNAL_BASE="https://grain-aip.fly.dev"
+  HTTP_PORT="8080"
+  HTTP_CLIENT_TIMEOUT="30"
+  STORAGE_BACKEND="sqlite"
+  OAUTH_SUPPORTED_SCOPES="atproto:atproto atproto:transition:generic atproto:transition:email"
+  ENABLE_CLIENT_API="true"
+  ADMIN_DIDS="did:plc:bcgltzqazw5tb6k2g3ttenbj"
+  RUST_LOG="aip=trace,sqlx=debug,tower_http=debug,atproto_identity=debug,atproto_oauth=debug"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
