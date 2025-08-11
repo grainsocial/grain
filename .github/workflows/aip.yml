@@ -71,7 +71,7 @@ jobs:
           retention-days: 1
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    # if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     defaults:
