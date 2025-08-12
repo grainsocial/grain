@@ -94,6 +94,11 @@
           # Migration runner script
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
+            
+            # Ensure /data directory exists and is writable
+            mkdir -p /data
+            chmod 755 /data
+            
             if [ -z "$DATABASE_URL" ]; then
               echo "DATABASE_URL environment variable is required"
               exit 1
