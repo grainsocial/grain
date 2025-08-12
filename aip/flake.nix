@@ -110,6 +110,10 @@
             fi
 
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
+            
+            # Ensure /data directory is writable
+            ${pkgs.coreutils}/bin/chmod 777 /data
+            
             ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
             
