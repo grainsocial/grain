@@ -42,14 +42,16 @@ jobs:
 
       - name: Test Docker image
         run: |
-          # Start the container in the background
+          # Start the container in the background with temp volume
           docker run -d --name aip-test -p 8080:8080 \
             -e EXTERNAL_BASE=http://localhost:8080 \
             -e DPOP_NONCE_SEED=test-seed-for-ci \
+            -e DATABASE_URL=sqlite:///data/aip.db \
+            -v /tmp/aip-test:/data \
             aip:latest
 
           # Wait for the service to start
-          sleep 10
+          sleep 15
 
           # Test the root endpoint
           curl -f http://localhost:8080 || exit 1
