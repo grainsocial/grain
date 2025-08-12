@@ -91,6 +91,16 @@
             '';
           };
 
+          # Copy static files
+          staticFiles = pkgs.stdenv.mkDerivation {
+            name = "aip-static";
+            src = ./static;
+            installPhase = ''
+              mkdir -p $out/static
+              cp -r * $out/static/
+            '';
+          };
+
           # Migration runner script
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
@@ -141,10 +151,11 @@
               paths = [
                 aip
                 migrationRunner
+                staticFiles
                 pkgs.cacert
                 pkgs.sqlx-cli
               ];
-              pathsToLink = [ "/bin" "/etc" ];
+              pathsToLink = [ "/bin" "/etc" "/static" ];
             };
 
             config = {
@@ -153,6 +164,7 @@
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=info"
                 "PORT=8080"
+                "HTTP_STATIC_PATH=/static"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};
