@@ -73,6 +73,13 @@
             CARGO_PROFILE = "release";
           });
 
+          aip-client-management = craneLib.buildPackage (commonArgs // {
+            inherit cargoArtifacts;
+            doCheck = false;
+            CARGO_PROFILE = "release";
+            cargoExtraArgs = "--no-default-features --features embed,sqlite --bin aip-client-management";
+          });
+
           # Copy migration files
           migrationFiles = pkgs.stdenv.mkDerivation {
             name = "aip-migrations";
@@ -142,6 +149,7 @@
               name = "image-root";
               paths = [
                 aip
+                aip-client-management
                 migrationRunner
                 staticFiles
                 pkgs.cacert
@@ -165,7 +173,7 @@
           };
         in
         {
-          inherit aip aipImg migrationRunner;
+          inherit aip aip-client-management aipImg migrationRunner;
           default = aip;
         };
     in
