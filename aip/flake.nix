@@ -71,14 +71,6 @@
             inherit cargoArtifacts;
             doCheck = false;
             CARGO_PROFILE = "release";
-
-            # Add migration step
-            preBuild = ''
-              # Create a temporary SQLite database for sqlx compile-time verification
-              export DATABASE_URL="sqlite:///tmp/aip.db"
-              sqlx database create
-              sqlx migrate run --source migrations/sqlite
-            '';
           });
 
           # Copy migration files
