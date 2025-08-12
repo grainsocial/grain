@@ -95,9 +95,9 @@
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
             
-            # Ensure /data directory exists and is writable
+            # Ensure /data directory exists and is writable by all
             mkdir -p /data
-            chmod 755 /data
+            chmod 777 /data
             
             if [ -z "$DATABASE_URL" ]; then
               echo "DATABASE_URL environment variable is required"
@@ -117,6 +117,15 @@
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
             ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
+            
+            # Ensure the database file is writable by all users
+            if [[ "$DATABASE_URL" == sqlite* ]]; then
+              DB_FILE=$(echo "$DATABASE_URL" | sed 's/sqlite:\/\///')
+              if [ -f "$DB_FILE" ]; then
+                chmod 666 "$DB_FILE"
+                echo "Set database file permissions: $DB_FILE"
+              fi
+            fi
           '';
 
           # Docker image for deployment
