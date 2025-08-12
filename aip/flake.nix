@@ -112,6 +112,9 @@
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
             ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
+            
+            # Ensure database file is writable
+            chmod 666 /data/aip.db
           '';
 
           # Docker image for deployment
