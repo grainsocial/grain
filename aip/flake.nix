@@ -141,7 +141,11 @@
             runAsRoot = ''
               #!${pkgs.runtimeShell}
               mkdir -p /data
-              chmod 755 /data
+              chmod 777 /data
+              
+              # Create empty database file with proper permissions
+              touch /data/aip.db
+              chmod 666 /data/aip.db
             '';
 
             config = {
