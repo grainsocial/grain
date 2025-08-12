@@ -95,16 +95,9 @@
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
             
-            echo "=== Migration Debug Info ==="
-            echo "Running as user: $(whoami)"
-            echo "User ID: $(id)"
-            echo "DATABASE_URL: $DATABASE_URL"
-            
-            # Ensure /data directory exists and is writable by all
+            # Ensure /data directory exists and is writable
             mkdir -p /data
-            chmod 777 /data
-            echo "Created /data directory with permissions:"
-            ls -la /data/
+            chmod 755 /data
             
             if [ -z "$DATABASE_URL" ]; then
               echo "DATABASE_URL environment variable is required"
@@ -125,22 +118,13 @@
             ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
             
-            # Ensure the database file is writable by all users
+            # Ensure the database file is writable by all users (SQLite only)
             if [[ "$DATABASE_URL" == sqlite* ]]; then
               DB_FILE=$(echo "$DATABASE_URL" | sed 's/sqlite:\/\///')
               if [ -f "$DB_FILE" ]; then
-                echo "Database file before permission change:"
-                ls -la "$DB_FILE"
                 chmod 666 "$DB_FILE"
-                echo "Database file after permission change:"
-                ls -la "$DB_FILE"
-                echo "Set database file permissions: $DB_FILE"
-              else
-                echo "WARNING: Database file not found at $DB_FILE"
               fi
             fi
-            
-            echo "=== End Migration Debug ==="
           '';
 
           # Docker image for deployment
@@ -164,7 +148,7 @@
             };
 
             config = {
-              Cmd = [ "/bin/sh" "-c" "echo 'App starting as user:' $(whoami) $(id) && if [ ! -f /data/aip.db ]; then echo 'Database not found, running migrations...'; /bin/run-migrations; fi && echo 'Database file permissions:' && ls -la /data/aip.db && /bin/aip" ];
+              Cmd = [ "/bin/sh" "-c" "if [ ! -f /data/aip.db ]; then /bin/run-migrations; fi && /bin/aip" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=info"
