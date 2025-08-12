@@ -115,7 +115,7 @@
           '';
 
           # Docker image for deployment
-          aipImg = pkgs.dockerTools.buildLayeredImage {
+          aipImg = pkgs.dockerTools.streamLayeredImage {
             name = "aip";
             tag = "latest";
             fromImage = pkgs.dockerTools.pullImage {
@@ -123,21 +123,12 @@
               imageDigest = "sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d";
               sha256 = "sha256-8+Fg6j7FZjl1Lqrs2FNVFOiW0oQIkCY/AhYOaVS5Z1k=";
             };
-            contents = pkgs.buildEnv {
-              name = "image-root";
-              paths = [
-                aip
-                migrationRunner
-                pkgs.cacert
-                pkgs.sqlx-cli
-              ];
-              pathsToLink = [ "/bin" "/etc" ];
-            };
-
-            runAsRoot = ''
-              #!${pkgs.runtimeShell}
-              mkdir -p /data
-            '';
+            contents = [
+              aip
+              migrationRunner
+              pkgs.cacert
+              pkgs.sqlx-cli
+            ];
 
             config = {
               Cmd = [ "/bin/aip" ];
