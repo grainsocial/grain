@@ -81,6 +81,16 @@
             '';
           });
 
+          # Copy migration files
+          migrationFiles = pkgs.stdenv.mkDerivation {
+            name = "aip-migrations";
+            src = ./migrations;
+            installPhase = ''
+              mkdir -p $out/migrations
+              cp -r * $out/migrations/
+            '';
+          };
+
           # Migration runner script
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
@@ -88,17 +98,17 @@
               echo "DATABASE_URL environment variable is required"
               exit 1
             fi
-            
+
             # Determine migration source based on database type
             if [[ "$DATABASE_URL" == sqlite* ]]; then
-              MIGRATION_SOURCE="migrations/sqlite"
+              MIGRATION_SOURCE="${migrationFiles}/migrations/sqlite"
             elif [[ "$DATABASE_URL" == postgres* ]]; then
-              MIGRATION_SOURCE="migrations/postgres"
+              MIGRATION_SOURCE="${migrationFiles}/migrations/postgres"
             else
               echo "Unsupported database type in DATABASE_URL: $DATABASE_URL"
               exit 1
             fi
-            
+
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
           '';
