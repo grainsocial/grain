@@ -132,8 +132,8 @@
 
             runAsRoot = ''
               #!${pkgs.runtimeShell}
-              mkdir -p /tmp
-              chmod 1777 /tmp
+              mkdir -p /data
+              chmod 755 /data
             '';
 
             config = {
