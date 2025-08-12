@@ -110,6 +110,7 @@
             fi
 
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
+            ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
           '';
 
