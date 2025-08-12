@@ -141,6 +141,10 @@
             fi
             
             echo "=== End Migration Debug ==="
+            
+            # Temporary: exit with error to see debug output
+            echo "TEMPORARY: Exiting with error to show debug info"
+            exit 1
           '';
 
           # Docker image for deployment
