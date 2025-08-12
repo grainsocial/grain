@@ -141,10 +141,6 @@
             fi
             
             echo "=== End Migration Debug ==="
-            
-            # Temporary: exit with error to see debug output
-            echo "TEMPORARY: Exiting with error to show debug info"
-            exit 1
           '';
 
           # Docker image for deployment
@@ -168,7 +164,7 @@
             };
 
             config = {
-              Cmd = [ "/bin/aip" ];
+              Cmd = [ "/bin/sh" "-c" "echo 'App starting as user:' $(whoami) $(id) && echo 'Database file permissions:' && ls -la /data/aip.db && /bin/aip" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=info"
