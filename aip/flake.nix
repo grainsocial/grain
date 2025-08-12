@@ -121,7 +121,7 @@
             fromImage = pkgs.dockerTools.pullImage {
               imageName = "alpine";
               imageDigest = "sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d";
-              sha256 = "sha256-8+Fg6j7FZjl1Lqrs2FNVFOiW0oQIkCY/AhYOaVS5Z1k=";
+              sha256 = "sha256-Sfb0quuaHgzxA7paz5P51WhdA35to39HtOufceXixz0=";
             };
             contents = [
               aip
