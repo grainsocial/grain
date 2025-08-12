@@ -9,8 +9,8 @@ primary_region = 'sea'
 [build]
   image = 'registry.fly.io/grain-aip:latest'
 
-[deploy]
-  release_command = "bin/run-migrations"
+# [deploy]
+  # release_command = "bin/run-migrations"
 
 [env]
   EXTERNAL_BASE="https://grain-aip.fly.dev"

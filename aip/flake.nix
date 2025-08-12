@@ -164,7 +164,7 @@
             };
 
             config = {
-              Cmd = [ "/bin/sh" "-c" "echo 'App starting as user:' $(whoami) $(id) && echo 'Database file permissions:' && ls -la /data/aip.db && /bin/aip" ];
+              Cmd = [ "/bin/sh" "-c" "echo 'App starting as user:' $(whoami) $(id) && if [ ! -f /data/aip.db ]; then echo 'Database not found, running migrations...'; /bin/run-migrations; fi && echo 'Database file permissions:' && ls -la /data/aip.db && /bin/aip" ];
               Env = [
                 "RUST_BACKTRACE=1"
                 "RUST_LOG=info"
