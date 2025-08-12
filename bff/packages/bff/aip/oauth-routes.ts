@@ -4,17 +4,9 @@ import type {
   BffContext,
   RouteHandler,
 } from "../types.d.ts";
+import { AipOAuthStateStore } from "../services/aip-oauth-state.ts";
 import { createUserSession, setSessionCookie } from "./auth.ts";
 import { getAipOAuthClient } from "./oauth-client.ts";
-
-interface AipOAuthState {
-  codeVerifier: string;
-  state: string;
-  returnUrl: string;
-}
-
-// Store OAuth state (in production, use Redis or database)
-const aipOauthStates = new Map<string, AipOAuthState>();
 
 export const aipOauthLoginHandler: RouteHandler = async (
   req,
@@ -36,12 +28,9 @@ export const aipOauthLoginHandler: RouteHandler = async (
     const { codeVerifier, codeChallenge } = await aipOauthClient.generatePKCE();
     const state = aipOauthClient.generateState();
 
-    // Store OAuth state
-    aipOauthStates.set(state, {
-      codeVerifier,
-      state,
-      returnUrl,
-    });
+    // Store OAuth state in database
+    const oauthStateStore = new AipOAuthStateStore(ctx.db);
+    oauthStateStore.create(state, codeVerifier, returnUrl);
 
     // Make PAR (Pushed Authorization Request) if supported
     let authorizationUrl: string;
@@ -143,14 +132,18 @@ export const aipOauthCallbackHandler =
         return new Response("Missing code or state parameter", { status: 400 });
       }
 
-      // Retrieve OAuth state
-      const aipOauthState = aipOauthStates.get(state);
+      // Retrieve OAuth state from database
+      const oauthStateStore = new AipOAuthStateStore(ctx.db);
+      const aipOauthState = oauthStateStore.get(state);
       if (!aipOauthState) {
-        return new Response("Invalid state parameter", { status: 400 });
+        return new Response("Invalid or expired state parameter", { status: 400 });
       }
 
       // Clean up state
-      aipOauthStates.delete(state);
+      oauthStateStore.delete(state);
+      
+      // Clean up any expired states
+      oauthStateStore.cleanupExpired();
 
       const aipOauthClient = getAipOAuthClient();
       // Client should already be initialized at startup

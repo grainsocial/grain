@@ -10,29 +10,13 @@ export interface AipSessionTable {
 }
 
 export class AipSessionStore {
-  private db: Database;
   private getStmt;
   private setStmt;
   private deleteStmt;
   private cleanupStmt;
 
   constructor(db: Database) {
-    this.db = db;
     
-    // Create table if it doesn't exist
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS "aip_session" (
-        "session_id" TEXT PRIMARY KEY NOT NULL,
-        "did" TEXT NOT NULL,
-        "handle" TEXT NOT NULL,
-        "access_token" TEXT NOT NULL,
-        "refresh_token" TEXT NOT NULL,
-        "expires_at" INTEGER NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS "idx_aip_session_expires_at" ON "aip_session" ("expires_at");
-    `);
-
     // Prepare statements for better performance
     this.getStmt = db.prepare(
       `SELECT did, handle, access_token, refresh_token, expires_at 
@@ -92,8 +76,6 @@ export class AipSessionStore {
   }
 
   cleanupExpired(): number {
-    // Clean up sessions that are expired beyond refresh token validity
-    // Assuming refresh tokens are valid longer than access tokens
     const now = Date.now();
     const result = this.cleanupStmt.run(now);
     return Number(result.changes ?? 0);
@@ -122,7 +104,6 @@ export class AipSessionStore {
     return sessionId;
   }
 
-  // Update session with new tokens after refresh
   updateTokens(
     sessionId: string,
     accessToken: string,

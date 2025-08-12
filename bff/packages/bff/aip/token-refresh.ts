@@ -1,5 +1,5 @@
 import { getAipOAuthClient } from "./oauth-client.ts";
-import type { AipSessionTable, AipSessionStore } from "./session-store.ts";
+import type { AipSessionTable, AipSessionStore } from "../services/aip-session.ts";
 
 export interface RefreshTokenResponse {
   access_token: string;

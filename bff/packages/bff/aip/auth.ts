@@ -1,5 +1,5 @@
 import type { BffMiddleware, Database } from "../types.d.ts";
-import { AipSessionStore } from "./session-store.ts";
+import { AipSessionStore } from "../services/aip-session.ts";
 import { getValidAipSession } from "./token-refresh.ts";
 
 // Global session store - will be initialized when middleware is used

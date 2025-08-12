@@ -124,6 +124,27 @@ export function createDb(cfg: BffConfig) {
     );
 
     CREATE INDEX IF NOT EXISTS facet_index_type_value ON facet_index (type, value);
+
+    CREATE TABLE IF NOT EXISTS "aip_session" (
+      "session_id" TEXT PRIMARY KEY NOT NULL,
+      "did" TEXT NOT NULL,
+      "handle" TEXT NOT NULL,
+      "access_token" TEXT NOT NULL,
+      "refresh_token" TEXT NOT NULL,
+      "expires_at" INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS "idx_aip_session_expires_at" ON "aip_session" ("expires_at");
+
+    CREATE TABLE IF NOT EXISTS "aip_oauth_state" (
+      "state" TEXT PRIMARY KEY NOT NULL,
+      "code_verifier" TEXT NOT NULL,
+      "return_url" TEXT NOT NULL,
+      "created_at" INTEGER NOT NULL,
+      "expires_at" INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS "idx_aip_oauth_state_expires_at" ON "aip_oauth_state" ("expires_at");
   `);
 
   // @TODO: Move this to the actor create table statement once there's a built

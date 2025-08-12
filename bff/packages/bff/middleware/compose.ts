@@ -5,7 +5,7 @@ import {
   createGetATProtoSessionHelper,
   createRequireTokenHelper,
 } from "../aip/context-helpers.ts";
-import { AipSessionStore } from "../aip/session-store.ts";
+import { AipSessionStore } from "../services/aip-session.ts";
 import { backfillCollections, backfillUris } from "../services/backfill.ts";
 import type { IndexService } from "../services/indexing.ts";
 import { getLabelerDefinitions } from "../services/labeler.ts";
