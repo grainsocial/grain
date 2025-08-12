@@ -110,29 +110,25 @@
             fi
 
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
-            
-            # Ensure /data directory is writable
-            ${pkgs.coreutils}/bin/chmod 777 /data
-            
             ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
-            
-            # Ensure database file is writable
-            ${pkgs.coreutils}/bin/chmod 666 /data/aip.db
           '';
 
           # Docker image for deployment
-          aipImg = pkgs.dockerTools.buildImage {
+          aipImg = pkgs.dockerTools.buildLayeredImage {
             name = "aip";
             tag = "latest";
+            fromImage = pkgs.dockerTools.pullImage {
+              imageName = "alpine";
+              imageDigest = "sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d";
+              sha256 = "sha256-8+Fg6j7FZjl1Lqrs2FNVFOiW0oQIkCY/AhYOaVS5Z1k=";
+            };
             copyToRoot = pkgs.buildEnv {
               name = "image-root";
               paths = [
                 aip
                 migrationRunner
                 pkgs.cacert
-                pkgs.coreutils
-                pkgs.bash
                 pkgs.sqlx-cli
               ];
               pathsToLink = [ "/bin" "/etc" ];
@@ -141,11 +137,6 @@
             runAsRoot = ''
               #!${pkgs.runtimeShell}
               mkdir -p /data
-              chmod 777 /data
-              
-              # Create empty database file with proper permissions
-              touch /data/aip.db
-              chmod 666 /data/aip.db
             '';
 
             config = {
