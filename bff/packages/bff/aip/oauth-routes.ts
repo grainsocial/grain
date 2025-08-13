@@ -1,10 +1,10 @@
+import { AipOAuthStateStore } from "../services/aip-oauth-state.ts";
 import type {
   ActorTable,
   AipMiddlewareOptions,
   BffContext,
   RouteHandler,
 } from "../types.d.ts";
-import { AipOAuthStateStore } from "../services/aip-oauth-state.ts";
 import { createUserSession, setSessionCookie } from "./auth.ts";
 import { getAipOAuthClient } from "./oauth-client.ts";
 
@@ -136,12 +136,14 @@ export const aipOauthCallbackHandler =
       const oauthStateStore = new AipOAuthStateStore(ctx.db);
       const aipOauthState = oauthStateStore.get(state);
       if (!aipOauthState) {
-        return new Response("Invalid or expired state parameter", { status: 400 });
+        return new Response("Invalid or expired state parameter", {
+          status: 400,
+        });
       }
 
       // Clean up state
       oauthStateStore.delete(state);
-      
+
       // Clean up any expired states
       oauthStateStore.cleanupExpired();
 
@@ -182,7 +184,6 @@ export const aipOauthCallbackHandler =
       }
 
       const tokenData = await tokenResponse.json();
-      console.log("tokenData:", tokenData);
       console.log("✅ AIP access token obtained");
 
       // Get ATProtocol session information

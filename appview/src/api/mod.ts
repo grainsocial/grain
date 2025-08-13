@@ -435,16 +435,9 @@ export const middlewares: BffMiddleware[] = [
           "request entity too large",
         );
       }
-      if (!ctx.agent) {
-        throw new XRPCError("AuthenticationRequired");
-      }
-      const res = await ctx.agent.uploadBlob(new Uint8Array(bytes));
-      if (!res.success) {
-        throw new XRPCError("InternalServerError", "Failed to upload avatar");
-      }
-      const avatarBlob = res.data.blob;
+      const blobRef = await ctx.uploadBlob(new Uint8Array(bytes), "image/jpeg");
       try {
-        await updateActorProfile(did, ctx, { avatar: avatarBlob });
+        await updateActorProfile(did, ctx, { avatar: blobRef });
       } catch (error) {
         console.error("Error updating profile:", error);
         throw new XRPCError("InternalServerError", "Failed to update profile");

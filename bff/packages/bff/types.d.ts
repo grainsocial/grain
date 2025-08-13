@@ -252,7 +252,7 @@ export type BffContext<State = Record<string, unknown>> = {
     uris: string[],
   ) => Promise<void>;
   uploadBlob: (
-    data: File | Uint8Array,
+    data: Uint8Array,
     contentType?: string,
   ) => Promise<BlobRef>;
   indexService: IndexService;

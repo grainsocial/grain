@@ -22,8 +22,10 @@ export const handler: RouteHandler = async (
 
   if (file) {
     try {
-      const blobResponse = await ctx.agent?.uploadBlob(file);
-      record.avatar = blobResponse?.data?.blob;
+      const bytes = await file.arrayBuffer();
+      const uint8Bytes = new Uint8Array(bytes);
+      const blobRef = await ctx.uploadBlob(uint8Bytes, "image/jpeg");
+      record.avatar = blobRef;
     } catch (e) {
       console.error("Failed to upload avatar:", e);
     }

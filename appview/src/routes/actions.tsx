@@ -472,8 +472,10 @@ export const profileUpdate: RouteHandler = async (
 
   if (file) {
     try {
-      const blobResponse = await ctx.agent?.uploadBlob(file);
-      record.avatar = blobResponse?.data?.blob;
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const blobRef = await ctx.uploadBlob(uint8Array, "image/jpeg");
+      record.avatar = blobRef;
     } catch (e) {
       console.error("Failed to upload avatar:", e);
     }
@@ -582,7 +584,9 @@ export const uploadPhoto: RouteHandler = async (
       });
     }
 
-    const blobRef = await ctx.uploadBlob(file);
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const blobRef = await ctx.uploadBlob(uint8Array, "image/jpeg");
 
     const photoUri = await createPhoto({
       photo: blobRef,
