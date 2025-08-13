@@ -22,7 +22,7 @@ case $ARCH in
         ;;
 esac
 
-# Set GitHub repository (replace with your actual repo)
+# Set GitHub repository
 REPO="grainsocial/grain"
 BINARY_NAME="grain-${OS}-${ARCH}"
 

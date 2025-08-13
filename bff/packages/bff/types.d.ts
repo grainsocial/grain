@@ -251,7 +251,10 @@ export type BffContext<State = Record<string, unknown>> = {
   backfillUris: (
     uris: string[],
   ) => Promise<void>;
-  uploadBlob: (file: File) => Promise<BlobRef>;
+  uploadBlob: (
+    data: File | Uint8Array,
+    contentType?: string,
+  ) => Promise<BlobRef>;
   indexService: IndexService;
   currentUser?: ActorTable;
   cfg: BffConfig;

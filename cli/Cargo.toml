@@ -27,3 +27,7 @@ urlencoding = "2.1"
 url = "2.5"
 indicatif = "0.18"
 dirs = "6.0"
+uuid = { version = "1.0", features = ["v4"] }
+base64 = "0.22"
+sha2 = "0.10"
+rand = "0.8"

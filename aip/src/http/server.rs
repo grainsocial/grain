@@ -13,6 +13,7 @@ use super::{
     handler_atprotocol_oauth_authorize::handle_oauth_authorize,
     handler_atprotocol_oauth_callback::handle_atpoauth_callback,
     handler_atprotocol_session::get_atprotocol_session_handler,
+    handler_device_code::device_authorization_handler,
     handler_index::handle_index,
     handler_oauth::handle_oauth_token,
     handler_oauth_clients::{
@@ -47,6 +48,7 @@ pub fn build_router(ctx: AppState) -> Router {
     let mut oauth_routes = Router::new()
         .route("/authorize", get(handle_oauth_authorize))
         .route("/token", post(handle_oauth_token))
+        .route("/device", post(device_authorization_handler))
         .route("/userinfo", get(get_userinfo_handler))
         .route("/userinfo", post(get_userinfo_handler))
         .route("/par", post(pushed_authorization_request_handler))

@@ -112,7 +112,7 @@ export async function makeDPoPRequest(
   session: ATProtoSession,
   method: string,
   path: string,
-  body?: any | File,
+  body?: unknown,
   customHeaders?: Record<string, string>,
 ): Promise<Response> {
   const url = `${session.pds_endpoint}${path}`;
@@ -143,15 +143,15 @@ export async function makeDPoPRequest(
     ...customHeaders,
   };
 
-  // Set default Content-Type for JSON if not specified and body is not File
-  if (!customHeaders?.["Content-Type"] && !(body instanceof File)) {
+  // Set default Content-Type for JSON if not specified and body is not Uint8Array
+  if (!customHeaders?.["Content-Type"] && !(body instanceof Uint8Array)) {
     headers["Content-Type"] = "application/json";
   }
 
   let response = await fetch(url, {
     method,
     headers,
-    body: body instanceof File
+    body: body instanceof Uint8Array
       ? body
       : (body ? JSON.stringify(body) : undefined),
   });
@@ -178,7 +178,7 @@ export async function makeDPoPRequest(
           response = await fetch(url, {
             method,
             headers,
-            body: body instanceof File
+            body: body instanceof Uint8Array
               ? body
               : (body ? JSON.stringify(body) : undefined),
           });

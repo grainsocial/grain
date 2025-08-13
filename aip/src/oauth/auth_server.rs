@@ -171,6 +171,14 @@ impl AuthorizationServer {
                 self.handle_refresh_token_grant(request, headers, client_auth)
                     .await
             }
+            GrantType::DeviceCode => {
+                // TODO: Implement full device code grant flow with proper storage
+                // For now, return an error with instructions
+                Err(OAuthError::UnsupportedGrantType(
+                    "Device code flow requires additional implementation for user authorization and device code storage. \
+                    Please use authorization_code flow for now.".to_string()
+                ))
+            }
         }
     }
 
@@ -779,6 +787,9 @@ mod tests {
             scope: Some("read write".to_string()),
             token_endpoint_auth_method: ClientAuthMethod::ClientSecretBasic,
             client_type: ClientType::Confidential,
+            application_type: None,
+            software_id: None,
+            software_version: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
             metadata: serde_json::Value::Null,
