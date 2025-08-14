@@ -235,8 +235,6 @@ pub trait AtpOAuthSessionStorage: Send + Sync {
 
     /// Get session by ATProtocol OAuth state
     async fn get_session_by_atp_state(&self, atp_state: &str) -> Result<Option<AtpOAuthSession>>;
-    /// Get session by session ID (regardless of DID)
-    async fn get_session_by_id(&self, session_id: &str) -> Result<Option<AtpOAuthSession>>;
     /// Get all sessions for a given DID (most recent first)
     async fn get_sessions_by_did(&self, did: &str) -> Result<Vec<AtpOAuthSession>>;
 

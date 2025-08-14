@@ -331,11 +331,6 @@ impl AtpOAuthSessionStorage for PostgresOAuthStorage {
             .await
     }
 
-    async fn get_session_by_id(&self, session_id: &str) -> Result<Option<AtpOAuthSession>> {
-        self.atp_oauth_session_storage
-            .get_session_by_id(session_id)
-            .await
-    }
 
     async fn get_sessions_by_did(&self, did: &str) -> Result<Vec<AtpOAuthSession>> {
         self.atp_oauth_session_storage

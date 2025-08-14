@@ -578,17 +578,6 @@ impl AtpOAuthSessionStorage for MemoryOAuthStorage {
         }
     }
 
-    async fn get_session_by_id(&self, session_id: &str) -> Result<Option<AtpOAuthSession>> {
-        let sessions = self.atp_sessions.read().await;
-
-        // Search through all sessions to find one with matching session_id
-        for session in sessions.values() {
-            if session.session_id == session_id {
-                return Ok(Some(session.clone()));
-            }
-        }
-        Ok(None)
-    }
 
     async fn get_sessions_by_did(&self, did: &str) -> Result<Vec<AtpOAuthSession>> {
         let sessions = self.atp_sessions.read().await;

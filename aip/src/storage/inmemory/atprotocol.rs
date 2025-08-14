@@ -128,19 +128,6 @@ impl AtpOAuthSessionStorage for MemoryAtpOAuthSessionStorage {
         }
     }
 
-    async fn get_session_by_id(&self, session_id: &str) -> Result<Option<AtpOAuthSession>> {
-        let sessions = self.sessions.read().await;
-
-        // Find sessions with matching session_id
-        let mut matching_sessions: Vec<&AtpOAuthSession> = sessions
-            .values()
-            .filter(|s| s.session_id == session_id)
-            .collect();
-
-        matching_sessions.sort_by(|a, b| b.iteration.cmp(&a.iteration));
-
-        Ok(matching_sessions.first().map(|&s| s.clone()))
-    }
 
     async fn get_sessions_by_did(&self, did: &str) -> Result<Vec<AtpOAuthSession>> {
         let sessions = self.sessions.read().await;

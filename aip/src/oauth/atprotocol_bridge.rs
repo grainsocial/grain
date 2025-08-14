@@ -52,11 +52,6 @@ pub trait AtpOAuthSessionStorage: Send + Sync {
         atp_state: &str,
     ) -> Result<Option<AtpOAuthSession>, Box<dyn std::error::Error + Send + Sync>>;
 
-    /// Get session by session ID (regardless of DID)
-    async fn get_session_by_id(
-        &self,
-        session_id: &str,
-    ) -> Result<Option<AtpOAuthSession>, Box<dyn std::error::Error + Send + Sync>>;
 
     /// Get all sessions for a specific DID
     async fn get_sessions_by_did(
@@ -811,35 +806,6 @@ impl AtpOAuthSessionStorage for UnifiedAtpOAuthSessionStorageAdapter {
         Ok(oauth_session)
     }
 
-    async fn get_session_by_id(
-        &self,
-        session_id: &str,
-    ) -> Result<Option<AtpOAuthSession>, Box<dyn std::error::Error + Send + Sync>> {
-        let storage_session = self
-            .storage
-            .get_session_by_id(session_id)
-            .await
-            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
-
-        let oauth_session = storage_session.map(|s| AtpOAuthSession {
-            session_id: s.session_id,
-            did: s.did,
-            session_created_at: s.session_created_at,
-            atp_oauth_state: s.atp_oauth_state,
-            signing_key_jkt: s.signing_key_jkt,
-            dpop_key: s.dpop_key,
-            access_token: s.access_token,
-            refresh_token: s.refresh_token,
-            access_token_created_at: s.access_token_created_at,
-            access_token_expires_at: s.access_token_expires_at,
-            access_token_scopes: s.access_token_scopes,
-            session_exchanged_at: s.session_exchanged_at,
-            exchange_error: s.exchange_error,
-            iteration: s.iteration,
-        });
-
-        Ok(oauth_session)
-    }
 
     async fn get_sessions_by_did(
         &self,
