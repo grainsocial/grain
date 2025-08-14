@@ -1,51 +1,49 @@
 {
-  "db_name": "PostgreSQL",
-  "query": "\n            SELECT device_code, user_code, client_id, scope, authorized_user, expires_at, created_at\n            FROM device_codes \n            WHERE device_code = $1\n            ",
+  "db_name": "SQLite",
+  "query": "\n            SELECT device_code, user_code, client_id, scope, authorized_user, expires_at, created_at\n            FROM device_codes \n            WHERE user_code = ?\n            ",
   "describe": {
     "columns": [
       {
-        "ordinal": 0,
         "name": "device_code",
+        "ordinal": 0,
         "type_info": "Text"
       },
       {
-        "ordinal": 1,
         "name": "user_code",
+        "ordinal": 1,
         "type_info": "Text"
       },
       {
-        "ordinal": 2,
         "name": "client_id",
+        "ordinal": 2,
         "type_info": "Text"
       },
       {
-        "ordinal": 3,
         "name": "scope",
+        "ordinal": 3,
         "type_info": "Text"
       },
       {
-        "ordinal": 4,
         "name": "authorized_user",
+        "ordinal": 4,
         "type_info": "Text"
       },
       {
-        "ordinal": 5,
         "name": "expires_at",
-        "type_info": "Timestamptz"
+        "ordinal": 5,
+        "type_info": "Integer"
       },
       {
-        "ordinal": 6,
         "name": "created_at",
-        "type_info": "Timestamptz"
+        "ordinal": 6,
+        "type_info": "Integer"
       }
     ],
     "parameters": {
-      "Left": [
-        "Text"
-      ]
+      "Right": 1
     },
     "nullable": [
-      false,
+      true,
       false,
       false,
       true,
@@ -54,5 +52,5 @@
       false
     ]
   },
-  "hash": "32727c5a1b9fae80989e17f51fe117e575eb551fdb0d229c13aee21a7d0c9cf6"
+  "hash": "2a8d67f6657b45a766686f3c53198fb619a0b66642662eb2930f1f375727e0c8"
 }

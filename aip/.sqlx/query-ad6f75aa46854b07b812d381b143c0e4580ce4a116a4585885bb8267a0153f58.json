@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            UPDATE device_codes \n            SET authorized_user = ?\n            WHERE user_code = ? AND expires_at > ?\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "ad6f75aa46854b07b812d381b143c0e4580ce4a116a4585885bb8267a0153f58"
+}
