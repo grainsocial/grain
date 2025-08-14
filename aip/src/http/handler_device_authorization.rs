@@ -11,8 +11,11 @@ use axum::{
     Form,
 };
 use axum_template::RenderHtml;
+use base64::prelude::*;
 use minijinja::context;
+use rand::Rng;
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use url::Url;
 
 /// Query parameters for device authorization page
@@ -20,8 +23,8 @@ use url::Url;
 pub struct DeviceQuery {
     /// Pre-filled user code from verification_uri_complete
     pub user_code: Option<String>,
-    /// Session identifier for authenticated user
-    pub session: Option<String>,
+    /// User DID for authenticated user
+    pub user_id: Option<String>,
 }
 
 /// Form data for device authorization
@@ -29,8 +32,8 @@ pub struct DeviceQuery {
 pub struct DeviceAuthorizationForm {
     /// The user code entered by the user
     pub user_code: String,
-    /// Session identifier for authenticated user
-    pub session: Option<String>,
+    /// User DID for authenticated user
+    pub user_id: Option<String>,
 }
 
 /// GET /device - Show device authorization page or redirect to login
@@ -40,15 +43,15 @@ pub async fn device_authorization_page(
 ) -> impl IntoResponse {
     let user_code = query.user_code.as_deref().unwrap_or("");
 
-    // Check if user has an authenticated session
-    if let Some(session_id) = &query.session {
+    // Check if user has an authenticated user_id
+    if let Some(user_id) = &query.user_id {
         // User is authenticated, show the device authorization form
         RenderHtml(
             "device.html",
             state.template_env,
             context! {
                 user_code => user_code,
-                session => session_id,
+                user_id => user_id,
                 title => "Device Authorization",
             },
         ).into_response()
@@ -63,9 +66,6 @@ pub async fn device_authorization_page(
                 let scope = device_entry.scope.as_deref().unwrap_or("atproto");
 
                 // Generate PKCE parameters for public client
-                use base64::prelude::*;
-                use sha2::{Digest, Sha256};
-                use rand::Rng;
 
                 let mut rng = rand::thread_rng();
                 let code_verifier_bytes: [u8; 32] = rng.r#gen();
@@ -138,22 +138,9 @@ pub async fn device_authorize(
         ).into_response();
     }
 
-    // Check if user has an authenticated session
-    let user_id = if let Some(session_id) = &form.session {
-        match get_user_did_from_session(&state, session_id).await {
-            Ok(did) => did,
-            Err(e) => {
-                return RenderHtml(
-                    "device.html",
-                    state.template_env,
-                    context! {
-                        error => format!("Session error: {}", e),
-                        user_code => "",
-                        title => "Device Authorization - Error",
-                    },
-                ).into_response();
-            }
-        }
+    // Check if user has an authenticated user_id
+    let user_did = if let Some(user_id) = &form.user_id {
+        user_id.clone()
     } else {
         // No session provided - redirect to OAuth login first
         // Look up the device code to verify it exists before redirecting
@@ -166,9 +153,6 @@ pub async fn device_authorize(
                 let scope = device_entry.scope.as_deref().unwrap_or("atproto");
 
                 // Generate PKCE parameters for public client
-                use base64::prelude::*;
-                use sha2::{Digest, Sha256};
-                use rand::Rng;
 
                 let mut rng = rand::thread_rng();
                 let code_verifier_bytes: [u8; 32] = rng.r#gen();
@@ -211,7 +195,7 @@ pub async fn device_authorize(
     };
 
     // Try to authorize the device code
-    match state.oauth_storage.authorize_device_code(&user_code, &user_id).await {
+    match state.oauth_storage.authorize_device_code(&user_code, &user_did).await {
         Ok(()) => {
             // Success! Show confirmation page
             RenderHtml(
@@ -329,31 +313,10 @@ pub async fn device_oauth_callback(
         }
     };
 
-    // Now authorize the device code with the user's DID
-    match state.oauth_storage.authorize_device_code(&user_code, &user_did).await {
-        Ok(()) => {
-            // Success! Show confirmation page
-            RenderHtml(
-                "device_success.html",
-                state.template_env,
-                context! {
-                    success => true,
-                    user_code => user_code,
-                    title => "Device Authorized",
-                },
-            ).into_response()
-        }
-        Err(e) => {
-            RenderHtml(
-                "device.html",
-                state.template_env,
-                context! {
-                    error => format!("Failed to authorize device: {}", e),
-                    title => "Device Authorization - Error",
-                },
-            ).into_response()
-        }
-    }
+    // Instead of immediately authorizing, redirect to confirmation page 
+    // Pass the user DID as the user_id parameter so the confirmation page knows who is authenticated
+    let redirect_url = format!("/device?user_code={}&user_id={}", user_code, user_did);
+    Redirect::to(&redirect_url).into_response()
 }
 
 /// Exchange authorization code for access token
@@ -419,16 +382,3 @@ async fn get_user_did_from_token(
     Ok(user_did)
 }
 
-/// Get user's DID from session ID
-async fn get_user_did_from_session(
-    state: &AppState,
-    session_id: &str,
-) -> Result<String, Box<dyn std::error::Error>> {
-    // Look up the session by session_id
-    let session = state.atp_session_storage.get_session_by_id(session_id).await
-        .map_err(|e| format!("Session lookup failed: {}", e))?
-        .ok_or("Session not found")?;
-
-    let user_did = session.did.ok_or("No DID in session")?;
-    Ok(user_did)
-}

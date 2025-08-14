@@ -1,7 +1,7 @@
 {% extends "base.html" %} {% block title %}Device Authorization{% endblock %} {%
 block content %}
 <header>
-  <h1>📱 Device Authorization</h1>
+  <h1>Device Authorization</h1>
   <p>Authorize your device to access your account</p>
 </header>
 <main>
@@ -28,8 +28,8 @@ block content %}
 
       <form method="post" action="/device/authorize">
         <input type="hidden" name="user_code" value="{{ user_code }}">
-        {% if session %}
-        <input type="hidden" name="session" value="{{ session }}">
+        {% if user_id %}
+        <input type="hidden" name="user_id" value="{{ user_id }}">
         {% endif %}
         <p>
           <button type="submit">✅ Yes, authorize this device</button>

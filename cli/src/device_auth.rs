@@ -1,6 +1,4 @@
-//! OAuth 2.0 Device Authorization Grant (RFC 8628) implementation for grain-cli
-//!
-//! TODO: This will be implemented once device flow is supported in AIP
+/// OAuth 2.0 Device Authorization Grant (RFC 8628) implementation for grain-cli
 
 use anyhow::{Context, Result};
 use reqwest::Client;
@@ -43,10 +41,8 @@ pub struct DeviceTokenRequest {
 #[derive(Debug, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
-    pub token_type: String,
     pub expires_in: Option<u64>,
     pub refresh_token: Option<String>,
-    pub scope: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
