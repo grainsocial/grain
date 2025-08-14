@@ -227,6 +227,8 @@ pub struct TokenRequest {
     pub code_verifier: Option<String>,
     /// Refresh token (for refresh_token grant)
     pub refresh_token: Option<String>,
+    /// Device code (for device_code grant)
+    pub device_code: Option<String>,
     /// Client ID
     pub client_id: Option<String>,
     /// Client secret

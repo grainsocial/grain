@@ -14,6 +14,7 @@ use super::{
     handler_atprotocol_oauth_callback::handle_atpoauth_callback,
     handler_atprotocol_session::get_atprotocol_session_handler,
     handler_device_code::device_authorization_handler,
+    handler_device_authorization::{device_authorization_page, device_authorize, device_oauth_callback},
     handler_index::handle_index,
     handler_oauth::handle_oauth_token,
     handler_oauth_clients::{
@@ -114,6 +115,9 @@ pub fn build_router(ctx: AppState) -> Router {
     // Build the main router
     Router::new()
         .route("/", get(handle_index))
+        .route("/device", get(device_authorization_page))
+        .route("/device/authorize", post(device_authorize))
+        .route("/device/callback", get(device_oauth_callback))
         .nest("/api", protected_api_routes)
         .nest("/oauth", oauth_routes)
         .nest("/.well-known", well_known_routes)

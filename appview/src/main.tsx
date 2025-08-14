@@ -59,6 +59,11 @@ bff({
   rootElement: Root,
   onError,
   middlewares: [
+    (req, ctx) => {
+      console.log(`${req.method} ${req.url}`);
+      console.log("Headers:", Object.fromEntries(req.headers.entries()));
+      return ctx.next();
+    },
     aip({
       onSignedIn,
       LoginComponent: LoginPage,

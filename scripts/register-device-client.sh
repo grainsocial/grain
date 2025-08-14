@@ -46,12 +46,13 @@ register_device_client() {
     local request_json=$(cat <<EOF
 {
     "client_name": "${client_name}",
-    "grant_types": ["urn:ietf:params:oauth:grant-type:device_code"],
+    "grant_types": ["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
     "response_types": ["device_code"],
     "token_endpoint_auth_method": "none",
     "application_type": "native",
     "software_id": "${software_id}",
-    "software_version": "${software_version}"
+    "software_version": "${software_version}",
+    "scope": "atproto:atproto atproto:transition:generic"
 }
 EOF
 )
@@ -94,8 +95,10 @@ EOF
             echo -e "${GREEN}📋 CLI Configuration Summary:${NC}"
             echo "  Client ID: $client_id"
             echo "  Grant Types: device_code, refresh_token"
+            echo "  Response Types: device_code"
             echo "  Authentication: none (public client)"
             echo "  Application Type: native"
+            echo "  Scope: atproto:atproto atproto:transition:generic"
             echo "  Software ID: $software_id"
             echo "  Software Version: $software_version"
             
@@ -120,7 +123,7 @@ show_usage() {
     echo "Usage: $0 [CLIENT_NAME] [SOFTWARE_ID] [SOFTWARE_VERSION]"
     echo ""
     echo "Examples:"
-    echo "  $0 \"atproto-cli v1.2.0\" \"com.example.atproto-cli\" \"1.2.0\""
+    echo "  $0 \"Grain CLI\" \"social.grain.cli\" \"0.1.0\""
     echo "  $0 \"MyApp CLI\" \"com.mycompany.myapp-cli\" \"2.1.0\""
     echo ""
     echo "Environment Variables:"
@@ -145,9 +148,9 @@ main() {
     fi
     
     # Set default values or use provided arguments
-    local client_name="${1:-atproto-cli v1.2.0}"
-    local software_id="${2:-com.example.atproto-cli}"
-    local software_version="${3:-1.2.0}"
+    local client_name="${1:-Grain CLI}"
+    local software_id="${2:-social.grain.cli}"
+    local software_version="${3:-0.1.0}"
     
     echo -e "${BLUE}Configuration:${NC}"
     echo "  AIP Base URL: $AIP_BASE_URL"
@@ -165,10 +168,13 @@ main() {
         echo -e "${GREEN}🎉 Device client registration completed successfully!${NC}"
         echo ""
         echo -e "${BLUE}Next steps for CLI integration:${NC}"
-        echo "1. Use the client_id in your CLI application"
-        echo "2. Implement device code flow (RFC 8628)"
-        echo "3. Use 'none' authentication method (public client)"
-        echo "4. Request device_code and refresh_token grant types"
+        echo "1. Set CLIENT_ID environment variable: export CLIENT_ID=<client_id>"
+        echo "2. Your CLI can now use device code flow (RFC 8628):"
+        echo "   - POST /oauth/device to get device_code and user_code"
+        echo "   - Show user_code to user and open verification_uri"
+        echo "   - Poll POST /oauth/token with device_code until authorized"
+        echo "3. Use 'none' authentication (public client - no client secret)"
+        echo "4. Support both device_code and refresh_token grant types"
     else
         echo ""
         echo -e "${RED}❌ Device client registration failed${NC}"

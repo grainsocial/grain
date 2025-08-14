@@ -7,9 +7,15 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-// Shared client credentials for grain-cli (registered with AIP)
-const CLIENT_ID: &str = "";
 const AIP_BASE_URL: &str = "http://localhost:8081"; // AIP server, not grain app
+
+fn get_client_id() -> String {
+    std::env::var("CLIENT_ID").unwrap_or_else(|_| "".to_string())
+}
+
+fn get_aip_base_url() -> String {
+    std::env::var("AIP_BASE_URL").unwrap_or_else(|_| AIP_BASE_URL.to_string())
+}
 
 #[derive(Debug, Serialize)]
 pub struct DeviceAuthorizationRequest {
@@ -58,7 +64,7 @@ impl DeviceOAuthClient {
     pub fn new() -> Self {
         Self {
             client: Client::new(),
-            aip_base_url: AIP_BASE_URL.to_string(),
+            aip_base_url: get_aip_base_url(),
         }
     }
 
@@ -70,14 +76,15 @@ impl DeviceOAuthClient {
     ) -> Result<DeviceAuthorizationResponse> {
         let device_auth_url = format!("{}/oauth/device", self.aip_base_url);
 
+        let client_id = get_client_id();
         let request = DeviceAuthorizationRequest {
-            client_id: CLIENT_ID.to_string(),
+            client_id: client_id.clone(),
             scope: scope.map(|s| s.to_string()),
         };
 
         if verbose {
             println!("🚀 Starting device authorization flow...");
-            println!("📝 Device authorization request: client_id={}", CLIENT_ID);
+            println!("📝 Device authorization request: client_id={}", client_id);
         }
 
         let response = self.client
@@ -127,7 +134,7 @@ impl DeviceOAuthClient {
         let request = DeviceTokenRequest {
             grant_type: "urn:ietf:params:oauth:grant-type:device_code".to_string(),
             device_code: device_code.to_string(),
-            client_id: CLIENT_ID.to_string(),
+            client_id: get_client_id(),
         };
 
         if verbose {
@@ -184,6 +191,21 @@ impl DeviceOAuthClient {
                         "expired_token" => {
                             return Err(anyhow::anyhow!("Device code expired"));
                         }
+                        "server_error" => {
+                            // Check if this is actually an authorization pending error
+                            let description = error.error_description.unwrap_or_default();
+                            if description.contains("Authorization pending") {
+                                if verbose {
+                                    println!("⏳ Authorization pending, continuing to poll...");
+                                }
+                            } else {
+                                return Err(anyhow::anyhow!(
+                                    "Token request failed: {} - {}",
+                                    error.error,
+                                    description
+                                ));
+                            }
+                        }
                         _ => {
                             return Err(anyhow::anyhow!(
                                 "Token request failed: {} - {}",
@@ -232,13 +254,10 @@ impl DeviceOAuthClient {
         println!("\n⏰ This code expires in {} seconds", auth_response.expires_in);
         println!("⏳ Waiting for authorization...\n");
 
-        // Optionally open browser
+        // Re-enable browser opening but in a safe way
         if let Some(complete_uri) = &auth_response.verification_uri_complete {
-            if let Err(e) = open::that(complete_uri) {
-                if verbose {
-                    println!("⚠️  Could not open browser automatically: {}", e);
-                }
-            }
+            println!("🌐 Opening browser (you can also manually visit the URL above)...");
+            let _ = open::that(complete_uri);
         }
 
         // Step 3: Poll for token

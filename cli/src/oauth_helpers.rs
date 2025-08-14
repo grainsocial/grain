@@ -34,6 +34,14 @@ pub struct UserInfoResponse {
     pub sub: String,
 }
 
+/// ATProtocol session response from AIP (we only need the token fields)
+#[derive(Deserialize)]
+pub struct AtpSessionResponse {
+    pub did: String,
+    pub access_token: String,
+    pub expires_at: i64,
+}
+
 /// Exchange authorization code for access token
 pub async fn exchange_code_for_token(
     aip_base_url: &str,
@@ -97,6 +105,7 @@ pub async fn get_user_info(
     let userinfo_url = format!("{}/oauth/userinfo", aip_base_url);
 
     if verbose {
+        println!("🔑 Using access token: {}", access_token);
         println!("🔍 Fetching user info to get DID...");
     }
 

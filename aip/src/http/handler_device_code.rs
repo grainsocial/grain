@@ -86,8 +86,26 @@ pub async fn device_authorization_handler(
     let device_code = format!("device_{}", Uuid::new_v4().to_string().replace('-', ""));
     let user_code = generate_user_code();
     
-    // TODO: Store device code in storage with expiration
-    // For now, just return the response
+    // Store device code in storage
+    state
+        .oauth_storage
+        .store_device_code(
+            &device_code,
+            &user_code,
+            &request.client_id,
+            request.scope.as_deref(),
+            1800, // 30 minutes
+        )
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                ResponseJson(json!({
+                    "error": "server_error",
+                    "error_description": format!("Failed to store device code: {}", e)
+                })),
+            )
+        })?;
     
     let verification_uri = format!("{}/device", state.config.external_base);
     let verification_uri_complete = Some(format!("{}?user_code={}", verification_uri, user_code));

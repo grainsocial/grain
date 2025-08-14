@@ -4,32 +4,21 @@ use dialoguer::{Confirm, Input};
 use reqwest::{header::HeaderMap, Client, Method};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::fs;
 use std::path::Path;
 use std::process;
-use std::time::Duration;
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
-use hyper::{body::Incoming as IncomingBody, Request, Response, StatusCode};
-use hyper_util::rt::TokioIo;
-use http_body_util::Full;
-use tokio::net::TcpListener;
 use indicatif::{ProgressBar, ProgressStyle};
 use dirs;
 
 mod photo_manip;
 mod oauth_helpers;
-// mod device_auth;  // Temporarily disabled
+mod device_auth;
 
 use photo_manip::{do_resize, ResizeOptions};
-use oauth_helpers::{generate_code_verifier, generate_code_challenge, exchange_code_for_token, get_user_info, refresh_access_token};
+use oauth_helpers::{get_user_info, refresh_access_token};
+use device_auth::DeviceOAuthClient;
 
 const API_BASE: &str = "http://localhost:8080";
-const OAUTH_PORT: u16 = 8787;
-const OAUTH_PATH: &str = "/callback";
-const OAUTH_TIMEOUT: Duration = Duration::from_secs(300); // 5 minutes
 
 fn get_aip_base_url() -> String {
     std::env::var("AIP_BASE_URL").unwrap_or_else(|_| "http://localhost:8081".to_string())
@@ -231,183 +220,55 @@ async fn load_auth() -> Result<AuthData> {
 
 
 async fn handle_login(_client: &Client, verbose: bool) -> Result<()> {
-    // Use authorization code flow with registered device client
+    // Use device code flow for authentication
 
     // Check if client ID is configured
     let client_id = get_client_id();
     if client_id.is_empty() {
         eprintln!("❌ No client ID configured!");
-        eprintln!("Please set the GRAIN_CLIENT_ID environment variable or register a new client with:");
+        eprintln!("Please set the CLIENT_ID environment variable or register a new client with:");
         eprintln!("  ./scripts/register-cli-client.sh");
         std::process::exit(1);
     }
 
-    // Prompt for handle
-    let handle: String = Input::new()
-        .with_prompt("Enter your handle")
-        .interact()?;
-
-    // Generate PKCE challenge
-    let code_verifier = generate_code_verifier();
-    let code_challenge = generate_code_challenge(&code_verifier);
-
-    // Build authorization URL
-    let scope = "atproto:atproto atproto:transition:generic";
-    let redirect_uri = format!("http://localhost:{}{}", OAUTH_PORT, OAUTH_PATH);
-
-    let auth_url = format!(
-        "{}/oauth/authorize?client_id={}&response_type=code&redirect_uri={}&scope={}&code_challenge={}&code_challenge_method=S256&login_hint={}",
-        get_aip_base_url(),
-        urlencoding::encode(&get_client_id()),
-        urlencoding::encode(&redirect_uri),
-        urlencoding::encode(scope),
-        urlencoding::encode(&code_challenge),
-        urlencoding::encode(&handle)
-    );
-
     if verbose {
-        println!("🔗 Authorization URL: {}", auth_url);
         println!("🔑 Using registered client ID: {}", client_id);
     }
 
-    // Start OAuth callback server
-    let result = Arc::new(Mutex::new(None::<HashMap<String, String>>));
-    let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
-    let tx = Arc::new(Mutex::new(Some(tx)));
+    // Initialize device OAuth client
+    let device_client = DeviceOAuthClient::new();
 
-    if verbose {
-        println!("🌐 Starting callback server on http://localhost:{}{}...", OAUTH_PORT, OAUTH_PATH);
-    }
+    // Start device authorization flow
+    let scope = "atproto:atproto atproto:transition:generic";
+    let token_response = device_client
+        .authenticate_device_flow(Some(scope), verbose)
+        .await?;
 
-    // Open browser
-    open::that(&auth_url)?;
-    if verbose {
-        println!("🌍 Opened browser for authorization");
-    }
+    // Get user info to obtain the actual DID
+    let user_info = get_user_info(&get_aip_base_url(), &token_response.access_token, verbose).await?;
 
-    // Start OAuth server with timeout
-    let listener = TcpListener::bind((std::net::Ipv4Addr::new(127, 0, 0, 1), OAUTH_PORT)).await?;
-
-    let result_for_task = result.clone();
-    let tx_for_task = tx.clone();
-
-    let server_task = async move {
-        if let Ok((stream, _)) = listener.accept().await {
-            let io = TokioIo::new(stream);
-            let result_clone = result_for_task.clone();
-            let tx_clone = tx_for_task.clone();
-
-            let service = service_fn(move |req: Request<IncomingBody>| {
-                let result = result_clone.clone();
-                let tx = tx_clone.clone();
-                async move {
-                    let uri = req.uri();
-
-                    if uri.path() == OAUTH_PATH {
-                        if let Some(query) = uri.query() {
-                            let params: HashMap<String, String> = url::form_urlencoded::parse(query.as_bytes())
-                                .into_owned()
-                                .collect();
-
-                            if let Ok(mut r) = result.lock() {
-                                *r = Some(params);
-                                if let Ok(mut tx_guard) = tx.lock() {
-                                    if let Some(sender) = tx_guard.take() {
-                                        let _ = sender.send(());
-                                    }
-                                }
-                            }
-                        }
-
-                        let html = r#"
-                        <!DOCTYPE html>
-                        <html>
-                        <head><title>Authentication Complete</title></head>
-                        <body style="font-family: sans-serif; text-align: center; margin-top: 10vh;">
-                            <div style="display: inline-block; padding: 2em; border: 1px solid #ccc; border-radius: 8px;">
-                                <h1>✅ Authentication Complete</h1>
-                                <p>You may now return to your terminal.</p>
-                                <p>You can close this tab.</p>
-                            </div>
-                        </body>
-                        </html>
-                        "#;
-
-                        Ok::<_, anyhow::Error>(Response::builder()
-                            .status(StatusCode::OK)
-                            .header("content-type", "text/html; charset=utf-8")
-                            .body(Full::new(hyper::body::Bytes::from(html)))?)
-                    } else {
-                        Ok(Response::builder()
-                            .status(StatusCode::NOT_FOUND)
-                            .body(Full::new(hyper::body::Bytes::from("Not found")))?)
-                    }
-                }
-            });
-
-            let connection = http1::Builder::new().serve_connection(io, service);
-            let _ = tokio::time::timeout(Duration::from_secs(10), connection).await;
-        }
+    // Save token with real DID
+    let auth_data = AuthData {
+        did: user_info.sub,
+        token: token_response.access_token,
+        expires_at: token_response.expires_in.map(|exp| {
+            (chrono::Utc::now() + chrono::Duration::seconds(exp as i64))
+                .to_rfc3339()
+        }),
+        refresh_token: token_response.refresh_token,
     };
 
-    tokio::spawn(server_task);
+    let auth_file = get_auth_file_path()?;
+    let json = serde_json::to_string_pretty(&auth_data)?;
+    fs::write(&auth_file, json)?;
 
-    // Wait for callback
-    tokio::select! {
-        _ = &mut rx => {
-            if verbose {
-                println!("📨 OAuth callback received");
-            }
-        },
-        _ = tokio::time::sleep(OAUTH_TIMEOUT) => {
-            return Err(anyhow::anyhow!("Timed out waiting for OAuth redirect"));
-        }
+    if verbose {
+      println!("🔍 Auth data saved:");
+      println!("{}", serde_json::to_string_pretty(&auth_data)?);
     }
 
-    let params_result = {
-        result.lock().map(|guard| guard.clone()).unwrap_or(None)
-    };
-
-    if let Some(params) = params_result {
-        if let Some(error) = params.get("error") {
-            return Err(anyhow::anyhow!("OAuth error: {}", error));
-        }
-
-        if let Some(code) = params.get("code") {
-            // Exchange code for token
-            let token_response = exchange_code_for_token(
-                &get_aip_base_url(),
-                &get_client_id(),
-                code,
-                &redirect_uri,
-                &code_verifier,
-                verbose
-            ).await?;
-
-            // Get user info to obtain the actual DID
-            let user_info = get_user_info(&get_aip_base_url(), &token_response.access_token, verbose).await?;
-
-            // Save token with real DID
-            let auth_data = AuthData {
-                did: user_info.sub,
-                token: token_response.access_token,
-                expires_at: token_response.expires_in.map(|exp| {
-                    (chrono::Utc::now() + chrono::Duration::seconds(exp as i64))
-                        .to_rfc3339()
-                }),
-                refresh_token: token_response.refresh_token,
-            };
-
-            let auth_file = get_auth_file_path()?;
-            let json = serde_json::to_string_pretty(&auth_data)?;
-            fs::write(&auth_file, json)?;
-
-            println!("✅ Login successful! You can now use other commands.");
-            return Ok(());
-        }
-    }
-
-    Err(anyhow::anyhow!("No authorization code received"))
+    println!("✅ Login successful! You can now use other commands.");
+    Ok(())
 }
 
 
