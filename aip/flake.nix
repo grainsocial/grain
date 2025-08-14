@@ -61,6 +61,9 @@
             OPENSSL_NO_VENDOR = 1;
             PKG_CONFIG_PATH = "${pkgs.openssl.dev}/lib/pkgconfig";
 
+            # Environment variables for SQLx
+            SQLX_OFFLINE = "true";
+
             # Pass arguments to cargo build
             cargoExtraArgs = "--no-default-features --features embed,sqlite --bin aip";
           };
