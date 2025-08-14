@@ -103,11 +103,11 @@
           # Migration runner script
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
-            
+
             # Ensure /data directory exists and is writable
             mkdir -p /data
             chmod 755 /data
-            
+
             if [ -z "$DATABASE_URL" ]; then
               echo "DATABASE_URL environment variable is required"
               exit 1
@@ -126,7 +126,7 @@
             echo "Running migrations from $MIGRATION_SOURCE against $DATABASE_URL"
             ${pkgs.sqlx-cli}/bin/sqlx database create
             ${pkgs.sqlx-cli}/bin/sqlx migrate run --source "$MIGRATION_SOURCE"
-            
+
             # Ensure the database file is writable by all users (SQLite only)
             if [[ "$DATABASE_URL" == sqlite* ]]; then
               DB_FILE=$(echo "$DATABASE_URL" | sed 's/sqlite:\/\///')
@@ -165,6 +165,8 @@
                 "RUST_LOG=info"
                 "PORT=8080"
                 "HTTP_STATIC_PATH=/static"
+                "SQLX_OFFLINE=true"
+                "STORAGE_BACKEND=sqlite"
               ];
               ExposedPorts = {
                 "8080/tcp" = {};

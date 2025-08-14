@@ -17,7 +17,6 @@ primary_region = 'sea'
   HTTP_PORT="8080"
   DATABASE_URL="sqlite:///data/aip.db"
   HTTP_CLIENT_TIMEOUT="30"
-  STORAGE_BACKEND="sqlite"
   OAUTH_SUPPORTED_SCOPES="atproto:atproto atproto:transition:generic atproto:transition:email"
   ENABLE_CLIENT_API="true"
   ADMIN_DIDS="did:plc:bcgltzqazw5tb6k2g3ttenbj"
