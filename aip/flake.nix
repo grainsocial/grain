@@ -37,7 +37,9 @@
               (pkgs.lib.hasSuffix "/templates" path) ||
               (pkgs.lib.hasSuffix "/static" path) ||
               (pkgs.lib.hasInfix "/migrations/" path) ||
-              (pkgs.lib.hasSuffix "/migrations" path);
+              (pkgs.lib.hasSuffix "/migrations" path) ||
+              (pkgs.lib.hasInfix "/.sqlx/" path) ||
+              (pkgs.lib.hasSuffix "/.sqlx" path);
           };
 
           commonArgs = {
