@@ -46,7 +46,10 @@ REGISTRATION_REQUEST=$(cat <<EOF
     "scope": "atproto:atproto atproto:transition:generic",
     "grant_types": ["authorization_code", "refresh_token"],
     "response_types": ["code"],
-    "token_endpoint_auth_method": "client_secret_basic"
+    "token_endpoint_auth_method": "client_secret_basic",
+    "application_type": "web",
+    "software_id": "grain-bff-client",
+    "software_version": "0.1.0"
 }
 EOF
 )
