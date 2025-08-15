@@ -24,19 +24,45 @@ class ApiService {
   List<Gallery> galleries = [];
 
   String get _apiUrl => AppConfig.apiUrl;
+  String get _aipUrl => AppConfig.aipUrl;
 
   Future<Session?> refreshSession(Session session) async {
-    final url = Uri.parse('$_apiUrl/api/token/refresh');
-    final headers = {'Content-Type': 'application/json'};
+    final url = Uri.parse('$_aipUrl/oauth/token');
+    final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+    final body = {
+      'grant_type': 'refresh_token',
+      'refresh_token': session.refreshToken,
+      'client_id': 'grainflutter',
+    };
+    
     try {
       final response = await http.post(
         url,
         headers: headers,
-        body: jsonEncode({'refreshToken': session.refreshToken}),
+        body: body,
       );
       if (response.statusCode == 200) {
+        final tokenData = jsonDecode(response.body);
+        final accessToken = tokenData['access_token'];
+        final refreshToken = tokenData['refresh_token'];
+        final expiresIn = tokenData['expires_in'] ?? 3600;
+        
+        if (accessToken == null || refreshToken == null) {
+          appLogger.w('Invalid refresh token response: missing tokens');
+          return null;
+        }
+        
+        final expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
+        
+        final refreshedSession = Session(
+          token: accessToken,
+          refreshToken: refreshToken,
+          expiresAt: expiresAt,
+          did: session.did,
+        );
+        
         appLogger.i('Session refreshed successfully');
-        return Session.fromJson(jsonDecode(response.body));
+        return refreshedSession;
       } else {
         appLogger.w('Failed to refresh session: ${response.statusCode} ${response.body}');
         return null;
@@ -48,13 +74,19 @@ class ApiService {
   }
 
   Future<bool> revokeSession(Session session) async {
-    final url = Uri.parse('$_apiUrl/api/token/revoke');
-    final headers = {'Content-Type': 'application/json'};
+    final url = Uri.parse('$_aipUrl/oauth/revoke');
+    final headers = {'Content-Type': 'application/x-www-form-urlencoded'};
+    final body = {
+      'token': session.refreshToken,
+      'token_type_hint': 'refresh_token',
+      'client_id': 'grainflutter',
+    };
+    
     try {
       final response = await http.post(
         url,
         headers: headers,
-        body: jsonEncode({'refreshToken': session.refreshToken}),
+        body: body,
       );
       if (response.statusCode == 200) {
         appLogger.i('Session revoked successfully');

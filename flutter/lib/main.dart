@@ -17,6 +17,8 @@ import 'widgets/skeleton_timeline.dart';
 class AppConfig {
   static late final String apiUrl;
   static late final String wsUrl;
+  static late final String aipUrl;
+  static late final String clientId;
 
   static Future<void> init() async {
     if (!kReleaseMode) {
@@ -31,6 +33,12 @@ class AppConfig {
             defaultValue: 'wss://notifications.grainsocial.network/ws',
           )
         : dotenv.env['WS_URL'] ?? '';
+    aipUrl = kReleaseMode
+        ? const String.fromEnvironment('AIP_URL', defaultValue: 'http://localhost:8081')
+        : dotenv.env['AIP_URL'] ?? 'http://localhost:8081';
+    clientId = kReleaseMode
+        ? const String.fromEnvironment('AIP_CLIENT_ID', defaultValue: '0fb5b87e-4610-4cbd-9c45-711890997feb')
+        : dotenv.env['AIP_CLIENT_ID'] ?? '0fb5b87e-4610-4cbd-9c45-711890997feb';
   }
 }
 

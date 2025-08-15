@@ -87,8 +87,10 @@ impl ClientRegistrationService {
             None
         };
 
-        // Determine client type
-        let client_type = if client_secret.is_some() {
+        // Confidential clients are those with client secrets OR using private_key_jwt auth
+        let client_type = if client_secret.is_some()
+            || request.token_endpoint_auth_method.as_ref() == Some(&ClientAuthMethod::PrivateKeyJwt)
+        {
             ClientType::Confidential
         } else {
             ClientType::Public
@@ -96,17 +98,19 @@ impl ClientRegistrationService {
 
         // Set defaults based on application type
         let redirect_uris = request.redirect_uris.clone().unwrap_or_default();
-        
+
         // For native applications, default to device code flow
-        let grant_types = request.grant_types.clone().unwrap_or_else(|| {
-            match &request.application_type {
-                Some(crate::oauth::types::ApplicationType::Native) => {
-                    vec![GrantType::DeviceCode, GrantType::RefreshToken]
-                }
-                _ => vec![GrantType::AuthorizationCode]
-            }
-        });
-        
+        let grant_types =
+            request
+                .grant_types
+                .clone()
+                .unwrap_or_else(|| match &request.application_type {
+                    Some(crate::oauth::types::ApplicationType::Native) => {
+                        vec![GrantType::DeviceCode, GrantType::RefreshToken]
+                    }
+                    _ => vec![GrantType::AuthorizationCode],
+                });
+
         let response_types = request.response_types.clone().unwrap_or_else(|| {
             if grant_types.contains(&GrantType::DeviceCode) {
                 vec![ResponseType::DeviceCode]
@@ -114,15 +118,18 @@ impl ClientRegistrationService {
                 vec![ResponseType::Code]
             }
         });
-        
+
         // For device flow, default to no authentication
-        let auth_method = request.token_endpoint_auth_method.clone().unwrap_or_else(|| {
-            if grant_types.contains(&GrantType::DeviceCode) {
-                crate::oauth::types::ClientAuthMethod::None
-            } else {
-                self.default_auth_method.clone()
-            }
-        });
+        let auth_method = request
+            .token_endpoint_auth_method
+            .clone()
+            .unwrap_or_else(|| {
+                if grant_types.contains(&GrantType::DeviceCode) {
+                    crate::oauth::types::ClientAuthMethod::None
+                } else {
+                    self.default_auth_method.clone()
+                }
+            });
 
         let now = Utc::now();
 
@@ -407,7 +414,7 @@ impl ClientRegistrationService {
                     "authorization_code grant requires code response type".to_string(),
                 ));
             }
-            
+
             // Validate device code grant type requirements
             if grant_types.contains(&GrantType::DeviceCode) {
                 if !response_types.contains(&ResponseType::DeviceCode) {
@@ -415,21 +422,23 @@ impl ClientRegistrationService {
                         "device_code grant requires device_code response type".to_string(),
                     ));
                 }
-                
+
                 // Device flow clients should be native applications
                 if let Some(app_type) = &request.application_type {
                     if *app_type != crate::oauth::types::ApplicationType::Native {
                         return Err(ClientRegistrationError::InvalidClientMetadata(
-                            "device_code grant is typically used with native applications".to_string(),
+                            "device_code grant is typically used with native applications"
+                                .to_string(),
                         ));
                     }
                 }
-                
+
                 // Device flow clients should use no authentication by default
                 if let Some(auth_method) = &request.token_endpoint_auth_method {
                     if *auth_method != crate::oauth::types::ClientAuthMethod::None {
                         return Err(ClientRegistrationError::InvalidClientMetadata(
-                            "device_code grant typically uses 'none' authentication method".to_string(),
+                            "device_code grant typically uses 'none' authentication method"
+                                .to_string(),
                         ));
                     }
                 }
@@ -489,7 +498,11 @@ impl ClientRegistrationService {
             scheme => {
                 // Allow custom schemes for native applications (RFC 8252)
                 // Custom schemes should not be "http" or "https" and should be unique to the application
-                if scheme.len() < 3 || !scheme.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '+') {
+                if scheme.len() < 3
+                    || !scheme
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '+')
+                {
                     return Err(ClientRegistrationError::InvalidRedirectUri(
                         "Custom scheme must be at least 3 characters and contain only alphanumeric characters, hyphens, dots, or plus signs".to_string(),
                     ));
@@ -715,34 +728,30 @@ fn extract_client_jwks(
             // TODO: Implement JWK Set fetching from URI
             // For now, require inline JWKs
             Err(ClientRegistrationError::InvalidClientMetadata(
-                "jwks_uri not yet supported, please provide jwks inline".to_string()
+                "jwks_uri not yet supported, please provide jwks inline".to_string(),
             ))
         }
-        (Some(_), Some(_)) => {
-            Err(ClientRegistrationError::InvalidClientMetadata(
-                "Cannot specify both jwks and jwks_uri".to_string()
-            ))
-        }
-        (None, None) => {
-            Err(ClientRegistrationError::InvalidClientMetadata(
-                "private_key_jwt requires jwks or jwks_uri".to_string()
-            ))
-        }
+        (Some(_), Some(_)) => Err(ClientRegistrationError::InvalidClientMetadata(
+            "Cannot specify both jwks and jwks_uri".to_string(),
+        )),
+        (None, None) => Err(ClientRegistrationError::InvalidClientMetadata(
+            "private_key_jwt requires jwks or jwks_uri".to_string(),
+        )),
     }
 }
 
 /// Validate JWK Set format and keys
 fn validate_jwk_set(jwks: &serde_json::Value) -> Result<(), ClientRegistrationError> {
     // Check basic JWK Set structure
-    let keys = jwks.get("keys")
-        .and_then(|k| k.as_array())
-        .ok_or_else(|| ClientRegistrationError::InvalidClientMetadata(
-            "Invalid JWK Set: missing 'keys' array".to_string()
-        ))?;
+    let keys = jwks.get("keys").and_then(|k| k.as_array()).ok_or_else(|| {
+        ClientRegistrationError::InvalidClientMetadata(
+            "Invalid JWK Set: missing 'keys' array".to_string(),
+        )
+    })?;
 
     if keys.is_empty() {
         return Err(ClientRegistrationError::InvalidClientMetadata(
-            "JWK Set cannot be empty".to_string()
+            "JWK Set cannot be empty".to_string(),
         ));
     }
 
@@ -759,58 +768,66 @@ fn validate_jwk(jwk: &serde_json::Value, index: usize) -> Result<(), ClientRegis
     let error_prefix = format!("Invalid JWK at index {}", index);
 
     // Check required fields
-    let kty = jwk.get("kty")
-        .and_then(|v| v.as_str())
-        .ok_or_else(|| ClientRegistrationError::InvalidClientMetadata(
-            format!("{}: missing 'kty' field", error_prefix)
-        ))?;
+    let kty = jwk.get("kty").and_then(|v| v.as_str()).ok_or_else(|| {
+        ClientRegistrationError::InvalidClientMetadata(format!(
+            "{}: missing 'kty' field",
+            error_prefix
+        ))
+    })?;
 
-    let alg = jwk.get("alg")
-        .and_then(|v| v.as_str());
+    let alg = jwk.get("alg").and_then(|v| v.as_str());
 
     // Validate key type and algorithm
     match kty {
         "EC" => {
-            let crv = jwk.get("crv")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| ClientRegistrationError::InvalidClientMetadata(
-                    format!("{}: EC key missing 'crv' field", error_prefix)
-                ))?;
+            let crv = jwk.get("crv").and_then(|v| v.as_str()).ok_or_else(|| {
+                ClientRegistrationError::InvalidClientMetadata(format!(
+                    "{}: EC key missing 'crv' field",
+                    error_prefix
+                ))
+            })?;
 
             // Validate curve and algorithm compatibility
             match (crv, alg) {
                 ("P-256", Some("ES256")) | ("P-256", None) => {}
                 ("secp256k1", Some("ES256K")) | ("secp256k1", None) => {}
-                _ => return Err(ClientRegistrationError::InvalidClientMetadata(
-                    format!("{}: unsupported curve/algorithm combination", error_prefix)
-                ))
+                _ => {
+                    return Err(ClientRegistrationError::InvalidClientMetadata(format!(
+                        "{}: unsupported curve/algorithm combination",
+                        error_prefix
+                    )));
+                }
             }
 
             // Check required EC key components
             if jwk.get("x").is_none() || jwk.get("y").is_none() {
-                return Err(ClientRegistrationError::InvalidClientMetadata(
-                    format!("{}: EC key missing x/y coordinates", error_prefix)
-                ));
+                return Err(ClientRegistrationError::InvalidClientMetadata(format!(
+                    "{}: EC key missing x/y coordinates",
+                    error_prefix
+                )));
             }
         }
         "RSA" => {
-            return Err(ClientRegistrationError::InvalidClientMetadata(
-                format!("{}: RSA keys not supported for private_key_jwt", error_prefix)
-            ));
+            return Err(ClientRegistrationError::InvalidClientMetadata(format!(
+                "{}: RSA keys not supported for private_key_jwt",
+                error_prefix
+            )));
         }
         _ => {
-            return Err(ClientRegistrationError::InvalidClientMetadata(
-                format!("{}: unsupported key type '{}'", error_prefix, kty)
-            ));
+            return Err(ClientRegistrationError::InvalidClientMetadata(format!(
+                "{}: unsupported key type '{}'",
+                error_prefix, kty
+            )));
         }
     }
 
     // Key usage should be 'sig' for signing
     if let Some(use_val) = jwk.get("use").and_then(|v| v.as_str()) {
         if use_val != "sig" {
-            return Err(ClientRegistrationError::InvalidClientMetadata(
-                format!("{}: key use must be 'sig' for JWT signing", error_prefix)
-            ));
+            return Err(ClientRegistrationError::InvalidClientMetadata(format!(
+                "{}: key use must be 'sig' for JWT signing",
+                error_prefix
+            )));
         }
     }
 

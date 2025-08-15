@@ -522,6 +522,8 @@ export const middlewares: BffMiddleware[] = [
     );
   }),
   route("/xrpc/social.grain.feed.getTimeline", async (req, _params, ctx) => {
+    // TODO: Need a way to optinally require token, hydrate user if available
+    await ctx.requireToken(req);
     const url = new URL(req.url);
     const { algorithm } = getTimelineQueryParams(url);
 
