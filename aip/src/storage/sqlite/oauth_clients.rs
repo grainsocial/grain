@@ -299,6 +299,10 @@ impl SqliteOAuthClientStore {
             refresh_token_expiration,
             require_redirect_exact,
             registration_access_token,
+            jwks: row.try_get::<Option<String>, _>("jwks")
+                .ok()
+                .flatten()
+                .and_then(|s| serde_json::from_str(&s).ok()),
         })
     }
 }
@@ -329,8 +333,8 @@ impl OAuthClientStore for SqliteOAuthClientStore {
                 client_id, client_secret, client_name, redirect_uris, grant_types, 
                 response_types, scope, token_endpoint_auth_method, client_type,
                 created_at, updated_at, metadata, access_token_expiration, refresh_token_expiration,
-                require_redirect_exact, registration_access_token, application_type, software_id, software_version
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                require_redirect_exact, registration_access_token, application_type, software_id, software_version, jwks
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(&client.client_id)
@@ -356,6 +360,7 @@ impl OAuthClientStore for SqliteOAuthClientStore {
         .bind(application_type_str)
         .bind(&client.software_id)
         .bind(&client.software_version)
+        .bind(&client.jwks.as_ref().map(|j| serde_json::to_string(j).unwrap_or_default()))
         .execute(&self.pool)
         .await
         .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
@@ -395,6 +400,10 @@ impl OAuthClientStore for SqliteOAuthClientStore {
             Self::duration_to_seconds(&client.access_token_expiration);
         let refresh_token_expiration_seconds =
             Self::duration_to_seconds(&client.refresh_token_expiration);
+        let jwks_json = client.jwks.as_ref()
+            .map(|jwks| serde_json::to_string(jwks))
+            .transpose()
+            .map_err(|e| StorageError::SerializationError(e.to_string()))?;
 
         let result = sqlx::query(
             r#"
@@ -403,7 +412,7 @@ impl OAuthClientStore for SqliteOAuthClientStore {
                 response_types = ?, scope = ?, token_endpoint_auth_method = ?, 
                 client_type = ?, updated_at = ?, metadata = ?, access_token_expiration = ?, 
                 refresh_token_expiration = ?, require_redirect_exact = ?, registration_access_token = ?,
-                application_type = ?, software_id = ?, software_version = ?
+                application_type = ?, software_id = ?, software_version = ?, jwks = ?
             WHERE client_id = ?
             "#,
         )
@@ -424,6 +433,7 @@ impl OAuthClientStore for SqliteOAuthClientStore {
         .bind(application_type_str)
         .bind(&client.software_id)
         .bind(&client.software_version)
+        .bind(&jwks_json)
         .bind(&client.client_id)
         .execute(&self.pool)
         .await

@@ -342,6 +342,7 @@ impl PostgresOAuthClientStore {
             refresh_token_expiration,
             require_redirect_exact,
             registration_access_token,
+            jwks: row.try_get("jwks").ok(),
         })
     }
 }
@@ -373,8 +374,8 @@ impl OAuthClientStore for PostgresOAuthClientStore {
                 client_id, client_secret, client_name, redirect_uris, grant_types, 
                 response_types, scope, token_endpoint_auth_method, client_type,
                 created_at, updated_at, metadata, access_token_expiration, refresh_token_expiration,
-                require_redirect_exact, registration_access_token, application_type, software_id, software_version
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                require_redirect_exact, registration_access_token, application_type, software_id, software_version, jwks
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
             "#,
         )
         .bind(&client.client_id)
@@ -396,6 +397,7 @@ impl OAuthClientStore for PostgresOAuthClientStore {
         .bind(application_type_str)
         .bind(&client.software_id)
         .bind(&client.software_version)
+        .bind(&client.jwks)
         .execute(&self.pool)
         .await
         .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
@@ -437,6 +439,10 @@ impl OAuthClientStore for PostgresOAuthClientStore {
             Self::duration_to_seconds(&client.access_token_expiration);
         let refresh_token_expiration_seconds =
             Self::duration_to_seconds(&client.refresh_token_expiration);
+        let jwks_json = client.jwks.as_ref()
+            .map(|jwks| serde_json::to_string(jwks))
+            .transpose()
+            .map_err(|e| StorageError::DatabaseError(e.to_string()))?;
 
         let result = sqlx::query(
             r#"
@@ -444,7 +450,8 @@ impl OAuthClientStore for PostgresOAuthClientStore {
                 client_secret = $2, client_name = $3, redirect_uris = $4, grant_types = $5,
                 response_types = $6, scope = $7, token_endpoint_auth_method = $8, 
                 client_type = $9, updated_at = $10, metadata = $11, access_token_expiration = $12, 
-                refresh_token_expiration = $13, require_redirect_exact = $14, registration_access_token = $15
+                refresh_token_expiration = $13, require_redirect_exact = $14, registration_access_token = $15,
+                application_type = $16, software_id = $17, software_version = $18, jwks = $19
             WHERE client_id = $1
             "#,
         )
@@ -466,6 +473,7 @@ impl OAuthClientStore for PostgresOAuthClientStore {
         .bind(application_type_str)
         .bind(&client.software_id)
         .bind(&client.software_version)
+        .bind(&jwks_json)
         .execute(&self.pool)
         .await
         .map_err(|e| StorageError::DatabaseError(e.to_string()))?;

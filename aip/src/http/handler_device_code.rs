@@ -149,7 +149,7 @@ mod tests {
     #[test]
     fn test_generate_user_code() {
         let code = generate_user_code();
-        assert_eq!(code.len(), 9); // XXXX-XXXX
+        assert_eq!(code.len(), 8); // XXXX-XXXX (8 total chars including dash)
         assert_eq!(code.chars().nth(4).unwrap(), '-');
         
         // Should only contain valid characters

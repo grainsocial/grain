@@ -95,10 +95,10 @@ impl ClientRegistrationService {
         };
 
         // Set defaults based on application type
-        let redirect_uris = request.redirect_uris.unwrap_or_default();
+        let redirect_uris = request.redirect_uris.clone().unwrap_or_default();
         
         // For native applications, default to device code flow
-        let grant_types = request.grant_types.unwrap_or_else(|| {
+        let grant_types = request.grant_types.clone().unwrap_or_else(|| {
             match &request.application_type {
                 Some(crate::oauth::types::ApplicationType::Native) => {
                     vec![GrantType::DeviceCode, GrantType::RefreshToken]
@@ -107,7 +107,7 @@ impl ClientRegistrationService {
             }
         });
         
-        let response_types = request.response_types.unwrap_or_else(|| {
+        let response_types = request.response_types.clone().unwrap_or_else(|| {
             if grant_types.contains(&GrantType::DeviceCode) {
                 vec![ResponseType::DeviceCode]
             } else {
@@ -116,7 +116,7 @@ impl ClientRegistrationService {
         });
         
         // For device flow, default to no authentication
-        let auth_method = request.token_endpoint_auth_method.unwrap_or_else(|| {
+        let auth_method = request.token_endpoint_auth_method.clone().unwrap_or_else(|| {
             if grant_types.contains(&GrantType::DeviceCode) {
                 crate::oauth::types::ClientAuthMethod::None
             } else {
@@ -145,11 +145,12 @@ impl ClientRegistrationService {
             software_version: request.software_version.clone(),
             created_at: now,
             updated_at: now,
-            metadata: request.metadata,
+            metadata: request.metadata.clone(),
             access_token_expiration: self.default_access_token_expiration,
             refresh_token_expiration: self.default_refresh_token_expiration,
             require_redirect_exact: self.default_require_redirect_exact,
             registration_access_token: Some(registration_access_token.clone()),
+            jwks: extract_client_jwks(&request, &auth_method)?,
         };
 
         // Store the client
@@ -279,6 +280,11 @@ impl ClientRegistrationService {
 
         // Validate the update request
         self.validate_registration_request_with_supported_scopes(&request, supported_scopes)?;
+
+        // Extract and validate JWKS if provided (do this before moving other fields)
+        if request.jwks.is_some() || request.jwks_uri.is_some() {
+            client.jwks = extract_client_jwks(&request, &client.token_endpoint_auth_method)?;
+        }
 
         // Update fields if provided
         if request.client_name.is_some() {
@@ -539,6 +545,8 @@ mod tests {
             application_type: None,
             software_id: None,
             software_version: None,
+            jwks: None,
+            jwks_uri: None,
             metadata: serde_json::Value::Null,
         };
 
@@ -570,6 +578,8 @@ mod tests {
             application_type: None,
             software_id: None,
             software_version: None,
+            jwks: None,
+            jwks_uri: None,
             metadata: serde_json::Value::Null,
         };
 
@@ -604,6 +614,8 @@ mod tests {
             application_type: None,
             software_id: None,
             software_version: None,
+            jwks: None,
+            jwks_uri: None,
             metadata: serde_json::Value::Null,
         };
 
@@ -643,6 +655,8 @@ mod tests {
             application_type: None,
             software_id: None,
             software_version: None,
+            jwks: None,
+            jwks_uri: None,
             metadata: serde_json::Value::Null,
         };
 
@@ -662,6 +676,8 @@ mod tests {
             application_type: None,
             software_id: None,
             software_version: None,
+            jwks: None,
+            jwks_uri: None,
             metadata: serde_json::Value::Null,
         };
 
@@ -676,4 +692,127 @@ mod tests {
             ));
         }
     }
+}
+
+/// Extract and validate client JWKs from registration request
+fn extract_client_jwks(
+    request: &ClientRegistrationRequest,
+    auth_method: &ClientAuthMethod,
+) -> Result<Option<serde_json::Value>, ClientRegistrationError> {
+    // Only extract JWKs for private_key_jwt authentication
+    if *auth_method != ClientAuthMethod::PrivateKeyJwt {
+        return Ok(None);
+    }
+
+    // Client must provide either jwks or jwks_uri for private_key_jwt
+    match (&request.jwks, &request.jwks_uri) {
+        (Some(jwks), None) => {
+            // Validate JWK Set format
+            validate_jwk_set(jwks)?;
+            Ok(Some(jwks.clone()))
+        }
+        (None, Some(_jwks_uri)) => {
+            // TODO: Implement JWK Set fetching from URI
+            // For now, require inline JWKs
+            Err(ClientRegistrationError::InvalidClientMetadata(
+                "jwks_uri not yet supported, please provide jwks inline".to_string()
+            ))
+        }
+        (Some(_), Some(_)) => {
+            Err(ClientRegistrationError::InvalidClientMetadata(
+                "Cannot specify both jwks and jwks_uri".to_string()
+            ))
+        }
+        (None, None) => {
+            Err(ClientRegistrationError::InvalidClientMetadata(
+                "private_key_jwt requires jwks or jwks_uri".to_string()
+            ))
+        }
+    }
+}
+
+/// Validate JWK Set format and keys
+fn validate_jwk_set(jwks: &serde_json::Value) -> Result<(), ClientRegistrationError> {
+    // Check basic JWK Set structure
+    let keys = jwks.get("keys")
+        .and_then(|k| k.as_array())
+        .ok_or_else(|| ClientRegistrationError::InvalidClientMetadata(
+            "Invalid JWK Set: missing 'keys' array".to_string()
+        ))?;
+
+    if keys.is_empty() {
+        return Err(ClientRegistrationError::InvalidClientMetadata(
+            "JWK Set cannot be empty".to_string()
+        ));
+    }
+
+    // Validate each key
+    for (i, key) in keys.iter().enumerate() {
+        validate_jwk(key, i)?;
+    }
+
+    Ok(())
+}
+
+/// Validate individual JWK
+fn validate_jwk(jwk: &serde_json::Value, index: usize) -> Result<(), ClientRegistrationError> {
+    let error_prefix = format!("Invalid JWK at index {}", index);
+
+    // Check required fields
+    let kty = jwk.get("kty")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| ClientRegistrationError::InvalidClientMetadata(
+            format!("{}: missing 'kty' field", error_prefix)
+        ))?;
+
+    let alg = jwk.get("alg")
+        .and_then(|v| v.as_str());
+
+    // Validate key type and algorithm
+    match kty {
+        "EC" => {
+            let crv = jwk.get("crv")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| ClientRegistrationError::InvalidClientMetadata(
+                    format!("{}: EC key missing 'crv' field", error_prefix)
+                ))?;
+
+            // Validate curve and algorithm compatibility
+            match (crv, alg) {
+                ("P-256", Some("ES256")) | ("P-256", None) => {}
+                ("secp256k1", Some("ES256K")) | ("secp256k1", None) => {}
+                _ => return Err(ClientRegistrationError::InvalidClientMetadata(
+                    format!("{}: unsupported curve/algorithm combination", error_prefix)
+                ))
+            }
+
+            // Check required EC key components
+            if jwk.get("x").is_none() || jwk.get("y").is_none() {
+                return Err(ClientRegistrationError::InvalidClientMetadata(
+                    format!("{}: EC key missing x/y coordinates", error_prefix)
+                ));
+            }
+        }
+        "RSA" => {
+            return Err(ClientRegistrationError::InvalidClientMetadata(
+                format!("{}: RSA keys not supported for private_key_jwt", error_prefix)
+            ));
+        }
+        _ => {
+            return Err(ClientRegistrationError::InvalidClientMetadata(
+                format!("{}: unsupported key type '{}'", error_prefix, kty)
+            ));
+        }
+    }
+
+    // Key usage should be 'sig' for signing
+    if let Some(use_val) = jwk.get("use").and_then(|v| v.as_str()) {
+        if use_val != "sig" {
+            return Err(ClientRegistrationError::InvalidClientMetadata(
+                format!("{}: key use must be 'sig' for JWT signing", error_prefix)
+            ));
+        }
+    }
+
+    Ok(())
 }

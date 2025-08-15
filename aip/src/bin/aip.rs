@@ -390,6 +390,7 @@ async fn ensure_internal_device_auth_client(
         refresh_token_expiration: *config.client_default_refresh_token_expiration.as_ref(),
         require_redirect_exact: *config.client_default_redirect_exact.as_ref(),
         registration_access_token: None,
+        jwks: None,
     };
     
     oauth_storage.store_client(&client).await

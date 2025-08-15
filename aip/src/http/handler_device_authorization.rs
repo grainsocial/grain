@@ -344,6 +344,8 @@ async fn exchange_auth_code_for_token(
         client_id: Some(client.client_id.clone()),
         client_secret: client.client_secret.clone(),
         scope: None,
+        client_assertion: None,
+        client_assertion_type: None,
     };
 
     let request = TokenRequest::try_from(form)?;
@@ -358,6 +360,8 @@ async fn exchange_auth_code_for_token(
         client_id: Some(client.client_id),
         client_secret: client.client_secret,
         scope: None,
+        client_assertion: None,
+        client_assertion_type: None,
     });
 
     // Create authorization server and exchange token

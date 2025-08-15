@@ -89,6 +89,8 @@ pub async fn xrpc_clients_update_handler(
         application_type: request.application_type,
         software_id: request.software_id,
         software_version: request.software_version,
+        jwks: None, // XRPC updates don't support JWK changes yet
+        jwks_uri: None,
         metadata: request.metadata,
     };
 

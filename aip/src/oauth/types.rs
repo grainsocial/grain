@@ -90,6 +90,8 @@ pub struct OAuthClient {
     pub require_redirect_exact: bool,
     /// Registration access token for client management operations
     pub registration_access_token: Option<String>,
+    /// Public keys for private_key_jwt authentication (JWK Set)
+    pub jwks: Option<serde_json::Value>,
 }
 
 /// Client Type
@@ -238,7 +240,7 @@ pub struct TokenRequest {
 }
 
 /// Token Response
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct TokenResponse {
     /// Access token
     pub access_token: String,
@@ -315,6 +317,10 @@ pub struct ClientRegistrationRequest {
     pub software_id: Option<String>,
     /// Software version for device/native apps
     pub software_version: Option<String>,
+    /// Public keys for private_key_jwt authentication (JWK Set)
+    pub jwks: Option<serde_json::Value>,
+    /// URL pointing to client's JWK Set
+    pub jwks_uri: Option<String>,
     /// Additional metadata
     #[serde(flatten)]
     pub metadata: serde_json::Value,
