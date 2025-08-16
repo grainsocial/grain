@@ -75,6 +75,7 @@
           postgresArgs = commonArgs // {
             # Add PostgreSQL dependency for postgres builds
             buildInputs = commonArgs.buildInputs ++ [ pkgs.postgresql ];
+            nativeBuildInputs = commonArgs.nativeBuildInputs ++ [ pkgs.postgresql ];
             # Pass arguments to cargo build for PostgreSQL
             cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip";
           };
