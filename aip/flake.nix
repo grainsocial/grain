@@ -79,8 +79,9 @@
             cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip";
             # Generate PostgreSQL query cache at build time
             preBuild = ''
+              echo "Removing existing SQLite query cache..."
+              rm -rf .sqlx
               echo "Generating PostgreSQL query cache..."
-              export SQLX_OFFLINE=true
               cargo sqlx prepare -- --no-default-features --features postgres,embed
             '';
           };
