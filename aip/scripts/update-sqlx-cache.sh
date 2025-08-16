@@ -4,7 +4,20 @@ set -e
 echo "🔧 Updating SQLx query cache for both SQLite and PostgreSQL..."
 
 # Change to the aip directory if not already there
-cd "$(dirname "$0")/.."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ "$SCRIPT_DIR" == */scripts ]]; then
+    # Running from scripts directory, go up one level
+    cd "$(dirname "$0")/.."
+elif [[ -f "scripts/update-sqlx-cache.sh" ]]; then
+    # Already in root directory, stay here
+    :
+else
+    echo "❌ Error: Cannot find aip project root directory"
+    echo "   Please run this script from either:"
+    echo "   - The aip project root directory"
+    echo "   - The aip/scripts directory"
+    exit 1
+fi
 
 # Remove existing .sqlx folder
 if [ -d .sqlx ]; then
@@ -18,6 +31,9 @@ rm -rf .sqlx-sqlite .sqlx-postgres
 echo "🗄️  Generating SQLite query cache..."
 export SQLX_OFFLINE=false
 export DATABASE_URL="sqlite:///tmp/aip-sqlx-cache.db"
+
+# Remove any existing temp database
+rm -f /tmp/aip-sqlx-cache.db*
 
 # Create SQLite database and run migrations
 sqlx database create
@@ -68,8 +84,12 @@ echo "🔀 Merging SQLite and PostgreSQL caches..."
 mkdir -p .sqlx
 
 # Copy all files from both caches, PostgreSQL takes precedence for conflicts
-cp -r .sqlx-sqlite/* .sqlx/
-cp -r .sqlx-postgres/* .sqlx/
+if [ -d .sqlx-sqlite ] && [ "$(ls -A .sqlx-sqlite 2>/dev/null)" ]; then
+    cp -r .sqlx-sqlite/* .sqlx/
+fi
+if [ -d .sqlx-postgres ] && [ "$(ls -A .sqlx-postgres 2>/dev/null)" ]; then
+    cp -r .sqlx-postgres/* .sqlx/
+fi
 
 # Clean up temporary directories
 rm -rf .sqlx-sqlite .sqlx-postgres
@@ -77,7 +97,7 @@ rm -rf .sqlx-sqlite .sqlx-postgres
 echo "✅ SQLx cache updated successfully!"
 echo "📋 Summary:"
 echo "   - Generated SQLite query cache"
-echo "   - Generated PostgreSQL query cache" 
+echo "   - Generated PostgreSQL query cache"
 echo "   - Merged both caches into .sqlx/"
 
 echo ""
