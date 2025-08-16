@@ -29,13 +29,13 @@ jobs:
         uses: DeterminateSystems/magic-nix-cache-action@main
 
       - name: Check flake
-        run: nix flake check
+        run: nix flake check --refresh
 
       - name: Build Rust binary
-        run: nix build .#aip
+        run: nix build .#aip-sqlite
 
       - name: Build Docker image
-        run: nix build .#aipImg
+        run: nix build .#aipImg-sqlite
 
       - name: Load Docker image
         run: docker load < result
@@ -48,7 +48,7 @@ jobs:
             -e DPOP_NONCE_SEED=test-seed-for-ci \
             -e DATABASE_URL=sqlite:///data/aip.db \
             -v /tmp/aip-test:/data \
-            aip:latest
+            aip:sqlite
 
           # Wait for the service to start
           sleep 15
@@ -62,7 +62,7 @@ jobs:
 
       - name: Save Docker image as artifact
         # if: github.ref == 'refs/heads/main'
-        run: docker save aip:latest | gzip > aip-image.tar.gz
+        run: docker save aip:sqlite | gzip > aip-image.tar.gz
 
       - name: Upload Docker image artifact
         # if: github.ref == 'refs/heads/main'
@@ -94,7 +94,7 @@ jobs:
         run: docker load < aip-image.tar.gz
 
       - name: Tag for Fly.io
-        run: docker tag aip:latest registry.fly.io/grain-aip:latest
+        run: docker tag aip:sqlite registry.fly.io/grain-aip:latest
 
       - name: Setup Fly CLI
         uses: superfly/flyctl-actions/setup-flyctl@master
