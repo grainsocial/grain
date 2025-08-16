@@ -77,26 +77,6 @@
             buildInputs = commonArgs.buildInputs ++ [ pkgs.postgresql ];
             # Pass arguments to cargo build for PostgreSQL
             cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip";
-            # Generate PostgreSQL query cache at build time
-            preBuild = ''
-              echo "Removing existing SQLite query cache..."
-              rm -rf .sqlx
-              echo "Starting temporary PostgreSQL instance..."
-              export PGDATA=/tmp/pgdata
-              export DATABASE_URL="postgresql://test:test@localhost:5432/test"
-              
-              # Initialize and start PostgreSQL
-              initdb -D "$PGDATA" --auth-local=trust --auth-host=trust
-              pg_ctl -D "$PGDATA" -l /tmp/postgres.log start -w
-              createdb test
-              
-              echo "Running migrations and generating PostgreSQL query cache..."
-              ${pkgs.sqlx-cli}/bin/sqlx migrate run --source migrations/postgres --database-url "$DATABASE_URL"
-              cargo sqlx prepare --database-url="$DATABASE_URL" -- --no-default-features --features postgres,embed
-              
-              echo "Stopping PostgreSQL..."
-              pg_ctl -D "$PGDATA" stop
-            '';
           };
 
           # Separate cargo artifacts for different builds
@@ -122,6 +102,26 @@
             cargoArtifacts = postgresCargoArtifacts;
             doCheck = false;
             CARGO_PROFILE = "release";
+            # Also run the PostgreSQL setup for the main build
+            preBuild = ''
+              echo "Removing existing SQLite query cache..."
+              rm -rf .sqlx
+              echo "Starting temporary PostgreSQL instance..."
+              export PGDATA=/tmp/pgdata
+              export DATABASE_URL="postgresql://test:test@localhost:5432/test"
+              
+              # Initialize and start PostgreSQL
+              initdb -D "$PGDATA" --auth-local=trust --auth-host=trust
+              pg_ctl -D "$PGDATA" -l /tmp/postgres.log start -w
+              createdb test
+              
+              echo "Running migrations and generating PostgreSQL query cache..."
+              ${pkgs.sqlx-cli}/bin/sqlx migrate run --source migrations/postgres --database-url "$DATABASE_URL"
+              cargo sqlx prepare --database-url="$DATABASE_URL" -- --no-default-features --features postgres,embed
+              
+              echo "Stopping PostgreSQL..."
+              pg_ctl -D "$PGDATA" stop
+            '';
           });
 
           aip-client-management-postgres = craneLib.buildPackage (postgresArgs // {
@@ -129,6 +129,26 @@
             doCheck = false;
             CARGO_PROFILE = "release";
             cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip-client-management";
+            # Also run the PostgreSQL setup for the client management build
+            preBuild = ''
+              echo "Removing existing SQLite query cache..."
+              rm -rf .sqlx
+              echo "Starting temporary PostgreSQL instance..."
+              export PGDATA=/tmp/pgdata
+              export DATABASE_URL="postgresql://test:test@localhost:5432/test"
+              
+              # Initialize and start PostgreSQL
+              initdb -D "$PGDATA" --auth-local=trust --auth-host=trust
+              pg_ctl -D "$PGDATA" -l /tmp/postgres.log start -w
+              createdb test
+              
+              echo "Running migrations and generating PostgreSQL query cache..."
+              ${pkgs.sqlx-cli}/bin/sqlx migrate run --source migrations/postgres --database-url "$DATABASE_URL"
+              cargo sqlx prepare --database-url="$DATABASE_URL" -- --no-default-features --features postgres,embed
+              
+              echo "Stopping PostgreSQL..."
+              pg_ctl -D "$PGDATA" stop
+            '';
           });
 
 
