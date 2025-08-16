@@ -90,6 +90,9 @@ jobs:
       - name: Setup Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
 
+      - name: Check flake
+        run: nix flake check --refresh
+
       - name: Build PostgreSQL Rust binary
         run: nix build .#aip-postgres
 
