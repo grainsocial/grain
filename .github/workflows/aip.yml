@@ -10,7 +10,7 @@ on:
     paths: [ 'aip/**' ]
 
 jobs:
-  build:
+  build-sqlite:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -72,9 +72,68 @@ jobs:
           path: aip/aip-image.tar.gz
           retention-days: 1
 
+  build-postgres:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          logger: pretty
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build PostgreSQL Rust binary
+        run: nix build .#aip-postgres
+
+      - name: Build PostgreSQL Docker image
+        run: nix build .#aipImg-postgres
+
+      - name: Load PostgreSQL Docker image
+        run: docker load < result
+
+      - name: Start PostgreSQL for testing
+        run: |
+          docker run -d --name postgres-test \
+            -e POSTGRES_DB=aip_test \
+            -e POSTGRES_USER=aip \
+            -e POSTGRES_PASSWORD=aip_test_password \
+            -p 5432:5432 \
+            postgres:15
+
+          # Wait for PostgreSQL to start
+          sleep 10
+
+      - name: Test PostgreSQL Docker image
+        run: |
+          # Start the AIP container with PostgreSQL backend
+          docker run -d --name aip-postgres-test -p 8080:8080 \
+            -e EXTERNAL_BASE=http://localhost:8080 \
+            -e DPOP_NONCE_SEED=test-seed-for-ci \
+            -e DATABASE_URL=postgresql://aip:aip_test_password@host.docker.internal:5432/aip_test \
+            --add-host host.docker.internal:host-gateway \
+            aip:postgres
+
+          # Wait for the service to start
+          sleep 20
+
+          # Test the root endpoint
+          curl -f http://localhost:8080 || exit 1
+
+          # Stop test containers
+          docker stop aip-postgres-test postgres-test
+          docker rm aip-postgres-test postgres-test
+
   deploy:
     # if: github.ref == 'refs/heads/main'
-    needs: build
+    needs: build-sqlite
     runs-on: ubuntu-latest
     defaults:
       run:

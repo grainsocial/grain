@@ -167,6 +167,15 @@
             fi
           '';
 
+          # Common OCI labels
+          ociLabels = {
+            "org.opencontainers.image.title" = "aip";
+            "org.opencontainers.image.description" = "ATProtocol Identity Provider - OAuth 2.1 authorization server with ATProtocol integration";
+            "org.opencontainers.image.version" = "0.1.0";
+            "org.opencontainers.image.authors" = "Graze Social";
+            "org.opencontainers.image.licenses" = "MIT";
+          };
+
           # Docker images for deployment
           aipImg-sqlite = pkgs.dockerTools.buildImage {
             name = "aip";
@@ -202,6 +211,7 @@
               ExposedPorts = {
                 "8080/tcp" = {};
               };
+              Labels = ociLabels;
             };
           };
 
@@ -239,6 +249,7 @@
               ExposedPorts = {
                 "8080/tcp" = {};
               };
+              Labels = ociLabels;
             };
           };
 
