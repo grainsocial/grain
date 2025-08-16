@@ -77,6 +77,12 @@
             buildInputs = commonArgs.buildInputs ++ [ pkgs.postgresql ];
             # Pass arguments to cargo build for PostgreSQL
             cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip";
+            # Generate PostgreSQL query cache at build time
+            preBuild = ''
+              echo "Generating PostgreSQL query cache..."
+              export SQLX_OFFLINE=true
+              cargo sqlx prepare -- --no-default-features --features postgres,embed
+            '';
           };
 
           # Separate cargo artifacts for different builds
