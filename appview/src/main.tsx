@@ -1,5 +1,5 @@
 import { lexicons } from "$lexicon/lexicons.ts";
-import { bff, oauth, route } from "@bigmoves/bff";
+import { aip, bff, route } from "@bigmoves/bff";
 import { middlewares as xrpcApi } from "./api/mod.ts";
 import { Root } from "./app.tsx";
 import { LoginPage } from "./components/LoginPage.tsx";
@@ -59,12 +59,90 @@ bff({
   rootElement: Root,
   onError,
   middlewares: [
-    ...xrpcApi,
-    appStateMiddleware,
-    oauth({
+    (req, ctx) => {
+      console.log(`${req.method} ${req.url}`);
+      console.log("Headers:", Object.fromEntries(req.headers.entries()));
+      return ctx.next();
+    },
+    aip({
       onSignedIn,
       LoginComponent: LoginPage,
       createAccountPdsHost: PDS_HOST_URL,
+    }),
+    ...xrpcApi,
+    appStateMiddleware,
+
+    // API test endpoints
+    route("/api/test/whoami", ["GET"], async (req, _params, ctx) => {
+      try {
+        const user = await ctx.requireToken(req);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "API auth working!",
+            user,
+          }),
+          {
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Authentication failed",
+            message: error instanceof Error ? error.message : String(error),
+          }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    }),
+    route("/api/test/session", ["GET"], async (req, _params, ctx) => {
+      try {
+        const user = await ctx.requireToken(req);
+        const sessionData = await ctx.getATProtoSession(req);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            user: {
+              did: user.did,
+              handle: user.handle,
+              indexedAt: user.indexedAt,
+            },
+            session: sessionData,
+          }),
+          {
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Authentication failed",
+            message: error instanceof Error ? error.message : String(error),
+          }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    }),
+    route("/api/test/public", ["GET"], () => {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "This is a public endpoint - no auth required",
+          timestamp: new Date().toISOString(),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }),
     route("/", timelineHandler),
     route("/explore", exploreHandler),

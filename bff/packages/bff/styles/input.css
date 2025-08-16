@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme reference prefix(tw);
+
+@layer components {
+  .bff-input {
+    border: 1px solid var(--tw-color-gray-900);
+    padding-inline: --spacing(3);
+    padding-block: --spacing(2);
+    width: 100%;
+    background-color: var(--tw-color-white);
+    color: var(--tw-color-gray-900);
+    font-size: var(--tw-font-size-base);
+    line-height: var(--tw-line-height-normal);
+
+    &::placeholder {
+      color: var(--tw-color-gray-400);
+    }
+
+    &:disabled {
+      background-color: var(--tw-color-gray-100);
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    &.bff-input-error {
+      border-color: var(--tw-color-red-500);
+    }
+  }
+
+  .bff-btn {
+    display: inline-block;
+    padding-inline: --spacing(4);
+    padding-block: --spacing(2);
+    font-size: var(--tw-font-size-base);
+    font-weight: 500;
+    line-height: var(--tw-line-height-normal);
+    text-align: center;
+    cursor: pointer;
+
+    &.bff-btn-primary {
+      background-color: var(--tw-color-sky-500);
+      color: var(--tw-color-white);
+      border: 1px solid var(--tw-color-sky-500);
+    }
+
+    &.bff-btn-destructive {
+      background-color: var(--tw-color-red-500);
+      color: var(--tw-color-white);
+      border: 1px solid var(--tw-color-red-500);
+    }
+  }
+
+  body[data-scroll-locked] {
+    overflow: hidden !important;
+    overscroll-behavior: contain;
+    position: relative !important;
+    padding-left: 0px;
+    padding-top: 0px;
+    padding-right: 0px;
+    margin-left: 0;
+    margin-top: 0;
+    margin-right: 0px !important;
+  }
+}

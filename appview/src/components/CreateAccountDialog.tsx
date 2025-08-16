@@ -1,4 +1,4 @@
-import { OAUTH_ROUTES } from "@bigmoves/bff";
+import { AIP_ROUTES } from "@bigmoves/bff";
 import { PDS_HOST_URL } from "../env.ts";
 import { Button } from "./Button.tsx";
 import { Dialog } from "./Dialog.tsx";
@@ -10,7 +10,7 @@ export function CreateAccountDialog({}: Readonly<{}>) {
         <Dialog.X class="fill-zinc-950 dark:fill-zinc-50" />
         <Dialog.Title>Choose your handle</Dialog.Title>
         <div className="flex flex-col space-y-4 my-10">
-          <form hx-post={OAUTH_ROUTES.signup} hx-swap="none" class="w-full">
+          <form hx-post={AIP_ROUTES.signup} hx-swap="none" class="w-full">
             <input
               type="hidden"
               name="pdsHostUrl"
@@ -24,7 +24,7 @@ export function CreateAccountDialog({}: Readonly<{}>) {
               user.bsky.social
             </Button>
           </form>
-          <form hx-post={OAUTH_ROUTES.signup} hx-swap="none" class="w-full">
+          <form hx-post={AIP_ROUTES.signup} hx-swap="none" class="w-full">
             <input
               type="hidden"
               name="pdsHostUrl"

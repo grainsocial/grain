@@ -3,7 +3,7 @@
     "$lexicon/": "./__generated__/",
     "@atproto/api": "npm:@atproto/api@^0.15.16",
     "@atproto/syntax": "npm:@atproto/syntax@^0.4.0",
-    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.56",
+    "@bigmoves/bff": "jsr:@bigmoves/bff@0.3.0-beta.57",
     "@std/http": "jsr:@std/http@^1.0.17",
     "@std/path": "jsr:@std/path@^1.0.9",
     "@tailwindcss/cli": "npm:@tailwindcss/cli@^4.1.4",
@@ -18,6 +18,9 @@
     "tailwindcss": "npm:tailwindcss@^4.1.4",
     "typed-htmx": "npm:typed-htmx@^0.3.1"
   },
+  "patch": [
+    "../bff/packages/bff"
+  ],
   "tasks": {
     "start": "deno run -A ./src/main.tsx",
     "dev": "deno run \"dev:*\"",

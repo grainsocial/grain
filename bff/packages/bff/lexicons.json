@@ -1,0 +1,7 @@
+{
+  "lexicons": [
+    "com.atproto.label.defs",
+    "com.atproto.label.subscribeLabels",
+    "app.bsky.richtext.facet"
+  ]
+}

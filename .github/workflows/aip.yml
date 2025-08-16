@@ -1,0 +1,175 @@
+name: Build and Deploy AIP
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths: [ 'aip/**' ]
+  push:
+    branches: [ main ]
+    paths: [ 'aip/**' ]
+
+jobs:
+  build-sqlite:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          logger: pretty
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check flake
+        run: nix flake check --refresh
+
+      - name: Build Rust binary
+        run: nix build .#aip-sqlite
+
+      - name: Build Docker image
+        run: nix build .#aipImg-sqlite
+
+      - name: Load Docker image
+        run: docker load < result
+
+      - name: Test Docker image
+        run: |
+          # Start the container in the background with temp volume
+          docker run -d --name aip-test -p 8080:8080 \
+            -e EXTERNAL_BASE=http://localhost:8080 \
+            -e DPOP_NONCE_SEED=test-seed-for-ci \
+            -e DATABASE_URL=sqlite:///data/aip.db \
+            -v /tmp/aip-test:/data \
+            aip:sqlite
+
+          # Wait for the service to start
+          sleep 15
+
+          # Test the root endpoint
+          curl -f http://localhost:8080 || exit 1
+
+          # Stop the test container
+          docker stop aip-test
+          docker rm aip-test
+
+      - name: Save Docker image as artifact
+        # if: github.ref == 'refs/heads/main'
+        run: docker save aip:sqlite | gzip > aip-image.tar.gz
+
+      - name: Upload Docker image artifact
+        # if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aip-docker-image
+          path: aip/aip-image.tar.gz
+          retention-days: 1
+
+  build-postgres:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          logger: pretty
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Check flake
+        run: nix flake check --refresh
+
+      - name: Build PostgreSQL Rust binary
+        run: nix build .#aip-postgres
+
+      - name: Build PostgreSQL Docker image
+        run: nix build .#aipImg-postgres
+
+      - name: Load PostgreSQL Docker image
+        run: docker load < result
+
+      - name: Start PostgreSQL for testing
+        run: |
+          docker run -d --name postgres-test \
+            -e POSTGRES_DB=aip_test \
+            -e POSTGRES_USER=aip \
+            -e POSTGRES_PASSWORD=aip_test_password \
+            -p 5432:5432 \
+            postgres:15
+
+          # Wait for PostgreSQL to start
+          sleep 10
+
+      - name: Test PostgreSQL Docker image
+        run: |
+          # Start the AIP container with PostgreSQL backend
+          docker run -d --name aip-postgres-test -p 8080:8080 \
+            -e EXTERNAL_BASE=http://localhost:8080 \
+            -e DPOP_NONCE_SEED=test-seed-for-ci \
+            -e DATABASE_URL=postgresql://aip:aip_test_password@host.docker.internal:5432/aip_test \
+            --add-host host.docker.internal:host-gateway \
+            aip:postgres
+
+          # Wait for the service to start
+          sleep 20
+
+          # Test the root endpoint
+          curl -f http://localhost:8080 || exit 1
+
+          # Stop test containers
+          docker stop aip-postgres-test postgres-test
+          docker rm aip-postgres-test postgres-test
+
+  deploy:
+    # if: github.ref == 'refs/heads/main'
+    needs: build-sqlite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: aip-docker-image
+          path: aip/
+
+      - name: Load Docker image
+        run: docker load < aip-image.tar.gz
+
+      - name: Tag for Fly.io
+        run: docker tag aip:sqlite registry.fly.io/grain-aip:latest
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Login to Fly.io registry
+        run: flyctl auth docker
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Push to Fly.io registry
+        run: docker push registry.fly.io/grain-aip:latest
+
+      - name: Deploy to Fly.io
+        run: flyctl deploy --image registry.fly.io/grain-aip:latest
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

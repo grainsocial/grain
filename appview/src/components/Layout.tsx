@@ -1,5 +1,6 @@
 import { ProfileView } from "$lexicon/types/social/grain/actor/defs.ts";
 import { Un$Typed } from "$lexicon/util.ts";
+import { AIP_ROUTES } from "@bigmoves/bff";
 import { cn } from "@bigmoves/bff/components";
 import type { FunctionalComponent, JSX } from "preact";
 import { ActorAvatar } from "./ActorAvatar.tsx";
@@ -79,7 +80,7 @@ const LayoutNav: FunctionalComponent<LayoutNavProps> = (
           {profile
             ? (
               <div class="flex items-center space-x-1 sm:space-x-2">
-                <form hx-post="/logout" hx-swap="none" class="inline">
+                <form hx-post={AIP_ROUTES.logout} hx-swap="none" class="inline">
                   <Button type="submit" variant="secondary">Sign out</Button>
                 </form>
                 <Button

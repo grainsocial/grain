@@ -1,0 +1,4 @@
+# OAuth Client Configuration
+# Copy this file to oauth_client.conf and fill in your actual credentials
+CLIENT_ID="your-client-id-here"
+CLIENT_SECRET="your-client-secret-here"

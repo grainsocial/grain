@@ -1,4 +1,4 @@
-import { OAUTH_ROUTES, RateLimitError, UnauthorizedError } from "@bigmoves/bff";
+import { AIP_ROUTES, RateLimitError, UnauthorizedError } from "@bigmoves/bff";
 import { formatDuration, intervalToDuration } from "date-fns";
 
 function errorResponse(message: string, status: number): Response {
@@ -32,7 +32,7 @@ export function onError(err: unknown): Response {
   }
   if (err instanceof UnauthorizedError) {
     const ctx = err.ctx;
-    return ctx.redirect(OAUTH_ROUTES.loginPage);
+    return ctx.redirect(AIP_ROUTES.loginPage);
   }
   if (err instanceof RateLimitError) {
     const now = new Date();

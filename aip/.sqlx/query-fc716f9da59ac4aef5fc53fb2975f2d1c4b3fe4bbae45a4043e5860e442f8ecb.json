@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "DELETE FROM device_codes WHERE expires_at <= ?",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": []
+  },
+  "hash": "fc716f9da59ac4aef5fc53fb2975f2d1c4b3fe4bbae45a4043e5860e442f8ecb"
+}

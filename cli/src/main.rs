@@ -4,28 +4,29 @@ use dialoguer::{Confirm, Input};
 use reqwest::{header::HeaderMap, Client, Method};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 use std::fs;
 use std::path::Path;
 use std::process;
-use std::time::Duration;
-use hyper::server::conn::http1;
-use hyper::service::service_fn;
-use hyper::{body::Incoming as IncomingBody, Request, Response, StatusCode};
-use hyper_util::rt::TokioIo;
-use http_body_util::Full;
-use tokio::net::TcpListener;
 use indicatif::{ProgressBar, ProgressStyle};
 use dirs;
 
 mod photo_manip;
+mod oauth_helpers;
+mod device_auth;
+
 use photo_manip::{do_resize, ResizeOptions};
+use oauth_helpers::{get_user_info, refresh_access_token};
+use device_auth::DeviceOAuthClient;
 
 const API_BASE: &str = "http://localhost:8080";
-const OAUTH_PORT: u16 = 8787;
-const OAUTH_PATH: &str = "/callback";
-const OAUTH_TIMEOUT: Duration = Duration::from_secs(300); // 5 minutes
+
+fn get_aip_base_url() -> String {
+    std::env::var("AIP_BASE_URL").unwrap_or_else(|_| "http://localhost:8081".to_string())
+}
+
+fn get_client_id() -> String {
+    std::env::var("CLIENT_ID").unwrap_or_else(|_| "".to_string())
+}
 
 #[derive(Parser)]
 #[command(name = "grain")]
@@ -34,7 +35,7 @@ const OAUTH_TIMEOUT: Duration = Duration::from_secs(300); // 5 minutes
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
-    
+
     #[arg(short, long, global = true, help = "Enable verbose output")]
     verbose: bool,
 }
@@ -68,6 +69,7 @@ struct AuthData {
     token: String,
     #[serde(rename = "expiresAt")]
     expires_at: Option<String>,
+    refresh_token: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -77,10 +79,6 @@ struct GalleryItem {
     uri: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct LoginResponse {
-    url: Option<String>,
-}
 
 #[derive(Deserialize)]
 struct GalleriesResponse {
@@ -165,18 +163,54 @@ async fn load_auth() -> Result<AuthData> {
     let auth_file = get_auth_file_path()?;
     let auth_text = fs::read_to_string(&auth_file)
         .with_context(|| "Please run 'login' first")?;
-    
-    let auth: AuthData = serde_json::from_str(&auth_text)
+
+    let mut auth: AuthData = serde_json::from_str(&auth_text)
         .with_context(|| "Invalid auth file format")?;
 
     if auth.did.is_empty() || auth.token.is_empty() {
         exit_with_error("Please re-authenticate.", 1);
     }
 
+    // Check if token is expired and refresh if possible
     if let Some(expires_at) = &auth.expires_at {
         if let Ok(expires) = chrono::DateTime::parse_from_rfc3339(expires_at) {
-            if chrono::Utc::now() >= expires {
-                exit_with_error("Authentication expired. Please re-authenticate.", 1);
+            // If token is expired or will expire in the next 5 minutes, try to refresh
+            let buffer_time = chrono::Duration::minutes(5);
+            if chrono::Utc::now() + buffer_time >= expires {
+                if let Some(refresh_token) = &auth.refresh_token {
+                    let client_id = get_client_id();
+                    if client_id.is_empty() {
+                        exit_with_error("Token expired and no client ID configured. Please set GRAIN_CLIENT_ID or re-authenticate.", 1);
+                    }
+
+                    println!("🔄 Access token expired, attempting to refresh...");
+
+                    match refresh_access_token(&get_aip_base_url(), &client_id, refresh_token, true).await {
+                        Ok(token_response) => {
+                            // Update auth data with new tokens
+                            auth.token = token_response.access_token;
+                            auth.expires_at = token_response.expires_in.map(|exp| {
+                                (chrono::Utc::now() + chrono::Duration::seconds(exp as i64))
+                                    .to_rfc3339()
+                            });
+                            if let Some(new_refresh_token) = token_response.refresh_token {
+                                auth.refresh_token = Some(new_refresh_token);
+                            }
+
+                            // Save updated auth data
+                            let json = serde_json::to_string_pretty(&auth)?;
+                            fs::write(&auth_file, json)?;
+
+                            println!("✅ Token refreshed successfully!");
+                        }
+                        Err(e) => {
+                            eprintln!("⚠️  Failed to refresh token: {}", e);
+                            exit_with_error("Authentication expired and refresh failed. Please re-authenticate.", 1);
+                        }
+                    }
+                } else {
+                    exit_with_error("Authentication expired and no refresh token available. Please re-authenticate.", 1);
+                }
             }
         }
     }
@@ -185,231 +219,58 @@ async fn load_auth() -> Result<AuthData> {
 }
 
 
-async fn handle_login(client: &Client, verbose: bool) -> Result<()> {
-    let handle: String = Input::new()
-        .with_prompt("Enter your handle")
-        .default("ansel.grain.social".to_string())
-        .interact()?;
+async fn handle_login(_client: &Client, verbose: bool) -> Result<()> {
+    // Use device code flow for authentication
 
-    let login_url = format!("{}/oauth/login?handle={}&client=cli", API_BASE, urlencoding::encode(&handle));
-
-    let data: LoginResponse = make_request(
-        client,
-        &login_url,
-        Method::POST,
-        None,
-        None,
-        None,
-    ).await?;
+    // Check if client ID is configured
+    let client_id = get_client_id();
+    if client_id.is_empty() {
+        eprintln!("❌ No client ID configured!");
+        eprintln!("Please set the CLIENT_ID environment variable or register a new client with:");
+        eprintln!("  ./scripts/register-cli-client.sh");
+        std::process::exit(1);
+    }
 
     if verbose {
-        println!("Login response: {:?}", data);
+        println!("🔑 Using registered client ID: {}", client_id);
     }
 
-    if let Some(url) = data.url {
-        let result = Arc::new(Mutex::new(None::<HashMap<String, String>>));
-        let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
-        let tx = Arc::new(Mutex::new(Some(tx)));
-        
-        if verbose {
-            println!("Waiting for OAuth redirect on http://localhost:{}{}...", OAUTH_PORT, OAUTH_PATH);
-        }
-        
-        // Open browser
-        open::that(&url)?;
-        if verbose {
-            println!("Opened browser for: {}", url);
-        }
+    // Initialize device OAuth client
+    let device_client = DeviceOAuthClient::new();
 
-        // Start OAuth server with timeout
-        let listener = TcpListener::bind((std::net::Ipv4Addr::new(127, 0, 0, 1), OAUTH_PORT)).await?;
-        
-        let result_for_task = result.clone();
-        let tx_for_task = tx.clone();
-        
-        let server_task = async move {
-            if verbose {
-                println!("OAuth server listening on port {}...", OAUTH_PORT);
-            }
-            
-            match listener.accept().await {
-                Ok((stream, addr)) => {
-                    if verbose {
-                        println!("Received connection from: {}", addr);
-                    }
-                    
-                    let io = TokioIo::new(stream);
-                    let result_clone = result_for_task.clone();
-                    let tx_clone = tx_for_task.clone();
-                    
-                    let service = service_fn(move |req: Request<IncomingBody>| {
-                        let result = result_clone.clone();
-                        let tx = tx_clone.clone();
-                        async move {
-                            let uri = req.uri();
-                            if verbose {
-                                println!("Received request: {} {}", req.method(), uri);
-                            }
-                            
-                            if uri.path() == OAUTH_PATH {
-                                if verbose {
-                                    println!("Matched OAuth callback path: {}", OAUTH_PATH);
-                                }
-                                
-                                if let Some(query) = uri.query() {
-                                    if verbose {
-                                        println!("Query string: {}", query);
-                                    }
-                                    
-                                    let params: HashMap<String, String> = url::form_urlencoded::parse(query.as_bytes())
-                                        .into_owned()
-                                        .collect();
-                                    
-                                    if verbose {
-                                        println!("Parsed parameters: {:?}", params);
-                                    }
-                                    
-                                    if let Ok(mut r) = result.lock() {
-                                        *r = Some(params);
-                                        if verbose {
-                                            println!("Successfully stored OAuth parameters");
-                                        }
-                                        
-                                        // Signal that we have the parameters
-                                        if let Ok(mut tx_guard) = tx.lock() {
-                                            if let Some(sender) = tx_guard.take() {
-                                                let _ = sender.send(());
-                                                if verbose {
-                                                    println!("Sent completion signal");
-                                                }
-                                            }
-                                        }
-                                    } else if verbose {
-                                        println!("Failed to lock result mutex");
-                                    }
-                                } else if verbose {
-                                    println!("No query string found in OAuth callback");
-                                }
-                                
-                                let html = r#"
-                                <!DOCTYPE html>
-                                <html lang="en">
-                                <head>
-                                  <meta charset="UTF-8" />
-                                  <title>Authentication Complete</title>
-                                  <style>
-                                    body { font-family: sans-serif; text-align: center; margin-top: 10vh; }
-                                    .box { display: inline-block; padding: 2em; border: 1px solid #ccc; border-radius: 8px; background: #fafafa; }
-                                  </style>
-                                </head>
-                                <body>
-                                  <div class="box">
-                                    <h1>✅ Authentication Complete</h1>
-                                    <p>You may now return to your terminal.</p>
-                                    <p>You can close this tab.</p>
-                                  </div>
-                                </body>
-                                </html>
-                                "#;
-                                
-                                Ok::<_, anyhow::Error>(Response::builder()
-                                    .status(StatusCode::OK)
-                                    .header("content-type", "text/html; charset=utf-8")
-                                    .body(Full::new(hyper::body::Bytes::from(html)))?)
-                            } else {
-                                if verbose {
-                                    println!("Path '{}' does not match OAuth callback path '{}'", uri.path(), OAUTH_PATH);
-                                }
-                                
-                                Ok(Response::builder()
-                                    .status(StatusCode::NOT_FOUND)
-                                    .body(Full::new(hyper::body::Bytes::from("Not found")))?)
-                            }
-                        }
-                    });
-                    
-                    // Handle the connection with timeout
-                    if verbose {
-                        println!("Serving HTTP connection...");
-                    }
-                    
-                    let connection = http1::Builder::new()
-                        .serve_connection(io, service);
-                    
-                    match tokio::time::timeout(Duration::from_secs(10), connection).await {
-                        Ok(Ok(_)) => {
-                            if verbose {
-                                println!("Connection served successfully");
-                            }
-                        }
-                        Ok(Err(e)) => {
-                            if verbose {
-                                println!("Connection error: {}", e);
-                            }
-                        }
-                        Err(_) => {
-                            if verbose {
-                                println!("Connection handling timed out");
-                            }
-                        }
-                    }
-                }
-                Err(e) => {
-                    if verbose {
-                        println!("Failed to accept connection: {}", e);
-                    }
-                }
-            }
-            
-            if verbose {
-                println!("Server task ending");
-            }
-        };
+    // Start device authorization flow
+    let scope = "atproto:atproto atproto:transition:generic";
+    let token_response = device_client
+        .authenticate_device_flow(Some(scope), verbose)
+        .await?;
 
-        // Start the server task in the background
-        tokio::spawn(server_task);
-        
-        // Wait for either the OAuth callback or timeout
-        tokio::select! {
-            _ = &mut rx => {
-                if verbose {
-                    println!("OAuth callback received, proceeding...");
-                }
-            },
-            _ = tokio::time::sleep(OAUTH_TIMEOUT) => {
-                eprintln!("Timed out waiting for OAuth redirect.");
-            }
-        }
-        
-        let params_result = {
-            let guard = result.lock();
-            match guard {
-                Ok(p) => p.clone(),
-                Err(_) => None,
-            }
-        };
-        
-        if let Some(params) = params_result {
-            if verbose {
-                println!("Received redirect with params: {:?}", params);
-            }
-            save_auth_params(&params).await?;
-            println!("Login successful! You can now use other commands.");
-        } else {
-            eprintln!("No redirect received.");
-        }
-    }
+    // Get user info to obtain the actual DID
+    let user_info = get_user_info(&get_aip_base_url(), &token_response.access_token, verbose).await?;
 
-    Ok(())
-}
+    // Save token with real DID
+    let auth_data = AuthData {
+        did: user_info.sub,
+        token: token_response.access_token,
+        expires_at: token_response.expires_in.map(|exp| {
+            (chrono::Utc::now() + chrono::Duration::seconds(exp as i64))
+                .to_rfc3339()
+        }),
+        refresh_token: token_response.refresh_token,
+    };
 
-async fn save_auth_params(params: &HashMap<String, String>) -> Result<()> {
     let auth_file = get_auth_file_path()?;
-    let json = serde_json::to_string_pretty(params)?;
+    let json = serde_json::to_string_pretty(&auth_data)?;
     fs::write(&auth_file, json)?;
-    println!("Saved config data to {}", auth_file.display());
+
+    if verbose {
+      println!("🔍 Auth data saved:");
+      println!("{}", serde_json::to_string_pretty(&auth_data)?);
+    }
+
+    println!("✅ Login successful! You can now use other commands.");
     Ok(())
 }
+
 
 async fn fetch_galleries(client: &Client) -> Result<Vec<GalleryItem>> {
     let auth = load_auth().await?;
@@ -433,7 +294,7 @@ async fn fetch_galleries(client: &Client) -> Result<Vec<GalleryItem>> {
 
 async fn handle_galleries_list(client: &Client) -> Result<()> {
     let items = fetch_galleries(client).await?;
-    
+
     if items.is_empty() {
         println!("No galleries found.");
     } else {
@@ -450,7 +311,7 @@ async fn handle_galleries_list(client: &Client) -> Result<()> {
 async fn delete_gallery(client: &Client, gallery_uri: &str) -> Result<()> {
     let auth = load_auth().await?;
     let delete_url = format!("{}/xrpc/social.grain.gallery.deleteGallery", API_BASE);
-    
+
     let payload = serde_json::json!({
         "uri": gallery_uri
     });
@@ -469,7 +330,7 @@ async fn delete_gallery(client: &Client, gallery_uri: &str) -> Result<()> {
 
 async fn handle_gallery_delete(client: &Client) -> Result<()> {
     let galleries = fetch_galleries(client).await?;
-    
+
     if galleries.is_empty() {
         println!("No galleries found to delete.");
         return Ok(());
@@ -493,7 +354,7 @@ async fn handle_gallery_delete(client: &Client) -> Result<()> {
 
     let selected_gallery = &galleries[selection];
     let title = selected_gallery.title.as_deref().unwrap_or("Untitled");
-    
+
     let confirm = dialoguer::Confirm::new()
         .with_prompt(format!("Are you sure you want to delete gallery '{}'? This action cannot be undone.", title))
         .default(false)
@@ -511,7 +372,7 @@ async fn handle_gallery_delete(client: &Client) -> Result<()> {
 
 async fn handle_gallery_show(client: &Client) -> Result<()> {
     let galleries = fetch_galleries(client).await?;
-    
+
     if galleries.is_empty() {
         println!("No galleries found to show.");
         return Ok(());
@@ -536,7 +397,7 @@ async fn handle_gallery_show(client: &Client) -> Result<()> {
     let selected_gallery = &galleries[selection];
     let web_url = selected_gallery.uri.strip_prefix("at://").unwrap_or(&selected_gallery.uri);
     let formatted_url = format!("https://grain.social/{}", web_url);
-    
+
     println!("Opening gallery in browser: {}", formatted_url);
     open::that(&formatted_url)?;
 
@@ -546,7 +407,7 @@ async fn handle_gallery_show(client: &Client) -> Result<()> {
 async fn create_gallery(client: &Client, title: &str, description: &str) -> Result<String> {
     let auth = load_auth().await?;
     let create_url = format!("{}/xrpc/social.grain.gallery.createGallery", API_BASE);
-    
+
     let payload = serde_json::json!({
         "title": title,
         "description": description
@@ -589,7 +450,7 @@ async fn create_gallery_item(
 ) -> Result<()> {
     let auth = load_auth().await?;
     let create_url = format!("{}/xrpc/social.grain.gallery.createItem", API_BASE);
-    
+
     let payload = serde_json::json!({
         "galleryUri": gallery_uri,
         "photoUri": photo_uri,
@@ -635,7 +496,7 @@ async fn handle_gallery_create(client: &Client, verbose: bool) -> Result<()> {
     // List image files in the folder
     let image_extensions = [".jpg", ".jpeg"];
     let mut image_files = Vec::new();
-    
+
     let entries = fs::read_dir(&folder_path)?;
     for entry in entries {
         let entry = entry?;
@@ -681,10 +542,10 @@ async fn handle_gallery_create(client: &Client, verbose: bool) -> Result<()> {
 
     for file_name in image_files {
         pb.set_message(format!("Processing {}", file_name));
-        
+
         let file_path = format!("{}/{}", folder_path, file_name);
         let file_data = fs::read(&file_path)?;
-        
+
         let resized = do_resize(&file_data, ResizeOptions {
             width: 2000,
             height: 2000,
@@ -694,7 +555,7 @@ async fn handle_gallery_create(client: &Client, verbose: bool) -> Result<()> {
         })?;
 
         let photo_uri = upload_photo(client, &resized.buffer).await?;
-        
+
         create_gallery_item(client, &gallery_uri, &photo_uri, position).await?;
         position += 1;
         pb.inc(1);

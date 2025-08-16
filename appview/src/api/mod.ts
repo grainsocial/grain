@@ -152,7 +152,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.gallery.createGallery",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { title, description } = await parseCreateGalleryInputs(req);
 
       try {
@@ -168,7 +168,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.gallery.updateGallery",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { galleryUri, title, description } = await parseUpdateGalleryInputs(
         req,
       );
@@ -185,7 +185,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.gallery.deleteGallery",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { uri, cascade = true } = await parseDeleteGalleryInputs(
         req,
       );
@@ -197,7 +197,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.gallery.createItem",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { galleryUri, photoUri } = await parseCreateGalleryItemInputs(req);
       const createdItemUri = await createGalleryItem(
         ctx,
@@ -219,7 +219,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.gallery.deleteItem",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { uri } = await parseDeleteGalleryItemInputs(req);
       try {
         await ctx.deleteRecord(uri);
@@ -238,13 +238,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.photo.uploadPhoto",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
-      if (!ctx.agent) {
-        return ctx.json(
-          { message: "Unauthorized" },
-          401,
-        );
-      }
+      await ctx.requireToken(req);
 
       const bytes = await req.arrayBuffer();
       if (!bytes || bytes.byteLength === 0) {
@@ -258,14 +252,13 @@ export const middlewares: BffMiddleware[] = [
         );
       }
       const { width, height } = imageSize(Buffer.from(bytes));
-      const res = await ctx.agent.uploadBlob(new Uint8Array(bytes));
-      if (!res.success) {
+      const blobRef = await ctx.uploadBlob(new Uint8Array(bytes), "image/jpeg");
+      if (!blobRef) {
         return ctx.json(
           { message: "Failed to upload photo" },
           500,
         );
       }
-      const blobRef = res.data.blob;
       const photoUri = await createPhoto(
         {
           photo: blobRef,
@@ -283,7 +276,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.photo.createExif",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const exifData = await parseExifInputs(req);
       const exifUri = await createExif(
         exifData,
@@ -302,7 +295,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.photo.deletePhoto",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { uri, cascade = true } = await parseDeletePhotoInputs(req);
       const success = await deletePhoto(uri, cascade, ctx);
       return ctx.json({ success } satisfies DeletePhotoOutputSchema);
@@ -312,7 +305,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.graph.createFollow",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { subject } = await parseCreateFollowInputs(req);
       if (!subject) {
         throw new XRPCError("InvalidRequest", "Missing subject input");
@@ -330,7 +323,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.graph.deleteFollow",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { uri } = await parseDeleteFollowInputs(req);
       try {
         await ctx.deleteRecord(uri);
@@ -345,7 +338,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.favorite.createFavorite",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { subject } = await parseCreateFavoriteInputs(req);
       try {
         const favoriteUri = await createFavorite(subject, ctx);
@@ -360,7 +353,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.favorite.deleteFavorite",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { uri } = await parseDeleteFavoriteInputs(req);
       try {
         await ctx.deleteRecord(uri);
@@ -375,7 +368,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.comment.createComment",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { text, subject, focus, replyTo } = await parseCreateCommentInputs(
         req,
       );
@@ -400,7 +393,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.comment.deleteComment",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { uri } = await parseDeleteCommentInputs(req);
       try {
         await ctx.deleteRecord(uri);
@@ -415,7 +408,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.actor.updateProfile",
     ["POST"],
     async (req, _params, ctx) => {
-      const { did } = ctx.requireAuth();
+      const { did } = await ctx.requireToken(req);
       const { displayName, description } = await parseUpdateProfileInputs(req);
       try {
         await updateActorProfile(did, ctx, { displayName, description });
@@ -430,7 +423,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.actor.updateAvatar",
     ["POST"],
     async (req, _params, ctx) => {
-      const { did } = ctx.requireAuth();
+      const { did } = await ctx.requireToken(req);
       const bytes = await req.arrayBuffer();
       if (!bytes || bytes.byteLength === 0) {
         throw new XRPCError("InvalidRequest", "Missing avatar blob");
@@ -442,16 +435,9 @@ export const middlewares: BffMiddleware[] = [
           "request entity too large",
         );
       }
-      if (!ctx.agent) {
-        throw new XRPCError("AuthenticationRequired");
-      }
-      const res = await ctx.agent.uploadBlob(new Uint8Array(bytes));
-      if (!res.success) {
-        throw new XRPCError("InternalServerError", "Failed to upload avatar");
-      }
-      const avatarBlob = res.data.blob;
+      const blobRef = await ctx.uploadBlob(new Uint8Array(bytes), "image/jpeg");
       try {
-        await updateActorProfile(did, ctx, { avatar: avatarBlob });
+        await updateActorProfile(did, ctx, { avatar: blobRef });
       } catch (error) {
         console.error("Error updating profile:", error);
         throw new XRPCError("InternalServerError", "Failed to update profile");
@@ -463,7 +449,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.photo.applyAlts",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const { writes } = await parseApplyAltsInputs(req);
       const success = await applyAlts(writes, ctx);
       return ctx.json({ success } satisfies ApplyAltsOutputSchema);
@@ -536,6 +522,8 @@ export const middlewares: BffMiddleware[] = [
     );
   }),
   route("/xrpc/social.grain.feed.getTimeline", async (req, _params, ctx) => {
+    // TODO: Need a way to optinally require token, hydrate user if available
+    await ctx.requireToken(req);
     const url = new URL(req.url);
     const { algorithm } = getTimelineQueryParams(url);
 
@@ -560,9 +548,8 @@ export const middlewares: BffMiddleware[] = [
   }),
   route(
     "/xrpc/social.grain.notification.getNotifications",
-    (_req, _params, ctx) => {
-      // @TODO: this redirects, we should have a json response
-      ctx.requireAuth();
+    async (req, _params, ctx) => {
+      await ctx.requireToken(req);
       const notifications = getNotificationsDetailed(
         ctx,
       );
@@ -624,7 +611,7 @@ export const middlewares: BffMiddleware[] = [
     "/xrpc/social.grain.notification.updateSeen",
     ["POST"],
     async (req, _params, ctx) => {
-      ctx.requireAuth();
+      await ctx.requireToken(req);
       const json = await req.json();
       const seenAt = json.seenAt satisfies string ?? undefined;
       if (!seenAt) {

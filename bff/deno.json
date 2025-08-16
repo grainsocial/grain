@@ -1,0 +1,11 @@
+{
+  "workspace": [
+    "./packages/bff",
+    "./packages/bff-cli",
+    "./examples/basic",
+    "./examples/blog",
+    "./examples/statusphere",
+    "./examples/search_likes"
+  ],
+  "nodeModulesDir": "auto"
+}

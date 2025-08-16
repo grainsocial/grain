@@ -27,5 +27,7 @@
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
   },
-  "rust-analyzer.linkedProjects": ["services/darkroom/Cargo.toml"]
+  "rust-analyzer.linkedProjects": ["darkroom/Cargo.toml", "aip/Cargo.toml"],
+  "dart.lineLength": 100,
+  "dart.flutterHotReloadOnSave": "all"
 }

@@ -1,0 +1,26 @@
+{
+  "imports": {
+    "$lexicon/": "./__generated__/",
+    "@tailwindcss/cli": "npm:@tailwindcss/cli@^4.0.12",
+    "htmx.org": "npm:htmx.org@^1.9.12",
+    "hyperscript.org": "npm:hyperscript.org@^0.9.14",
+    "preact": "npm:preact@^10.26.5",
+    "tailwindcss": "npm:tailwindcss@^4.0.12",
+    "typed-htmx": "npm:typed-htmx@^0.3.1"
+  },
+  "tasks": {
+    "start": "deno run -A ./src/main.tsx",
+    "dev": "deno run \"dev:*\"",
+    "build": "deno task build:static && deno task build:tailwind",
+    "build:static": "deno run -A ../../packages/bff-cli/mod.ts build src/static/mod.ts",
+    "build:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./input.css -o ./build/styles.css --minify",
+    "dev:build": "DEV=true deno -A --watch=src/static/ ../../packages/bff-cli/mod.ts build src/static/mod.ts",
+    "dev:server": "deno run -A --watch ./src/main.tsx",
+    "dev:tailwind": "deno run -A --node-modules-dir npm:@tailwindcss/cli -i ./input.css -o ./build/styles.css --watch",
+    "codegen": "deno run -A ../../packages/bff-cli/mod.ts lexgen"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "preact"
+  }
+}

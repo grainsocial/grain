@@ -1,0 +1,21 @@
+{
+  "name": "@bigmoves/bff-cli",
+  "version": "0.3.0-beta.57",
+  "license": "MIT",
+  "imports": {
+    "@luca/esbuild-deno-loader": "jsr:@luca/esbuild-deno-loader@^0.11.1",
+    "@std/cli": "jsr:@std/cli@^1.0.16",
+    "@std/fs": "jsr:@std/fs@^1.0.16",
+    "@std/path": "jsr:@std/path@^1.0.8",
+    "esbuild": "npm:esbuild@^0.25.5"
+  },
+  "exports": {
+    ".": "./mod.ts",
+    "./unslopify.ts": "./unslopify.ts",
+    "./replace_imports.ts": "./replace_imports.ts"
+  },
+  "compilerOptions": {
+    "jsx": "precompile",
+    "jsxImportSource": "preact"
+  }
+}

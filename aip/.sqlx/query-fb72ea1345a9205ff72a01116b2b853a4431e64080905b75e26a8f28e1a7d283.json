@@ -1,0 +1,26 @@
+{
+  "db_name": "SQLite",
+  "query": "\n            SELECT authorized_user, expires_at\n            FROM device_codes \n            WHERE device_code = ?\n            ",
+  "describe": {
+    "columns": [
+      {
+        "name": "authorized_user",
+        "ordinal": 0,
+        "type_info": "Text"
+      },
+      {
+        "name": "expires_at",
+        "ordinal": 1,
+        "type_info": "Integer"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "fb72ea1345a9205ff72a01116b2b853a4431e64080905b75e26a8f28e1a7d283"
+}
