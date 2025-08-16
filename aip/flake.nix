@@ -81,8 +81,21 @@
             preBuild = ''
               echo "Removing existing SQLite query cache..."
               rm -rf .sqlx
-              echo "Generating PostgreSQL query cache..."
-              cargo sqlx prepare -- --no-default-features --features postgres,embed
+              echo "Starting temporary PostgreSQL instance..."
+              export PGDATA=/tmp/pgdata
+              export DATABASE_URL="postgresql://test:test@localhost:5432/test"
+              
+              # Initialize and start PostgreSQL
+              initdb -D "$PGDATA" --auth-local=trust --auth-host=trust
+              pg_ctl -D "$PGDATA" -l /tmp/postgres.log start -w
+              createdb test
+              
+              echo "Running migrations and generating PostgreSQL query cache..."
+              ${pkgs.sqlx-cli}/bin/sqlx migrate run --source migrations/postgres --database-url "$DATABASE_URL"
+              cargo sqlx prepare --database-url="$DATABASE_URL" -- --no-default-features --features postgres,embed
+              
+              echo "Stopping PostgreSQL..."
+              pg_ctl -D "$PGDATA" stop
             '';
           };
 
