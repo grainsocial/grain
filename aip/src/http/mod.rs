@@ -13,6 +13,7 @@ mod handler_index;
 mod handler_oauth;
 mod handler_oauth_clients;
 mod handler_par;
+mod handler_revoke;
 mod handler_userinfo;
 mod handler_well_known;
 mod handler_xrpc_clients;

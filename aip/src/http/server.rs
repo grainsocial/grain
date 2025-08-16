@@ -22,6 +22,7 @@ use super::{
         app_update_client_handler,
     },
     handler_par::pushed_authorization_request_handler,
+    handler_revoke::handle_revoke,
     handler_userinfo::get_userinfo_handler,
     handler_well_known::{
         jwks_handler, oauth_authorization_server_handler, oauth_protected_resource_handler,
@@ -53,6 +54,7 @@ pub fn build_router(ctx: AppState) -> Router {
         .route("/userinfo", get(get_userinfo_handler))
         .route("/userinfo", post(get_userinfo_handler))
         .route("/par", post(pushed_authorization_request_handler))
+        .route("/revoke", post(handle_revoke))
         .route("/atp/callback", get(handle_atpoauth_callback))
         .route("/atp/client-metadata", get(handle_atpoauth_client_metadata));
 

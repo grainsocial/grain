@@ -48,6 +48,8 @@ class Auth {
     await _storage.write(key: 'code_verifier', value: codeVerifier);
     await _storage.write(key: 'state', value: state);
 
+    appLogger.i('Starting OAuth flow with client ID: $_clientId');
+
     final authUrl = Uri.parse('$aipUrl/oauth/authorize').replace(
       queryParameters: {
         'response_type': 'code',

@@ -37,8 +37,8 @@ class AppConfig {
         ? const String.fromEnvironment('AIP_URL', defaultValue: 'http://localhost:8081')
         : dotenv.env['AIP_URL'] ?? 'http://localhost:8081';
     clientId = kReleaseMode
-        ? const String.fromEnvironment('AIP_CLIENT_ID', defaultValue: '0fb5b87e-4610-4cbd-9c45-711890997feb')
-        : dotenv.env['AIP_CLIENT_ID'] ?? '0fb5b87e-4610-4cbd-9c45-711890997feb';
+        ? const String.fromEnvironment('AIP_CLIENT_ID', defaultValue: '')
+        : dotenv.env['AIP_CLIENT_ID'] ?? '';
   }
 }
 

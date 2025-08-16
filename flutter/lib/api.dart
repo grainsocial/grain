@@ -25,6 +25,7 @@ class ApiService {
 
   String get _apiUrl => AppConfig.apiUrl;
   String get _aipUrl => AppConfig.aipUrl;
+  String get _clientId => AppConfig.clientId;
 
   Future<Session?> refreshSession(Session session) async {
     final url = Uri.parse('$_aipUrl/oauth/token');
@@ -34,33 +35,29 @@ class ApiService {
       'refresh_token': session.refreshToken,
       'client_id': 'grainflutter',
     };
-    
+
     try {
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
+      final response = await http.post(url, headers: headers, body: body);
       if (response.statusCode == 200) {
         final tokenData = jsonDecode(response.body);
         final accessToken = tokenData['access_token'];
         final refreshToken = tokenData['refresh_token'];
         final expiresIn = tokenData['expires_in'] ?? 3600;
-        
+
         if (accessToken == null || refreshToken == null) {
           appLogger.w('Invalid refresh token response: missing tokens');
           return null;
         }
-        
+
         final expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
-        
+
         final refreshedSession = Session(
           token: accessToken,
           refreshToken: refreshToken,
           expiresAt: expiresAt,
           did: session.did,
         );
-        
+
         appLogger.i('Session refreshed successfully');
         return refreshedSession;
       } else {
@@ -79,15 +76,11 @@ class ApiService {
     final body = {
       'token': session.refreshToken,
       'token_type_hint': 'refresh_token',
-      'client_id': 'grainflutter',
+      'client_id': _clientId,
     };
-    
+
     try {
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: body,
-      );
+      final response = await http.post(url, headers: headers, body: body);
       if (response.statusCode == 200) {
         appLogger.i('Session revoked successfully');
         return true;
