@@ -65,25 +65,52 @@
 
             # Environment variables for SQLx
             SQLX_OFFLINE = "true";
+          };
 
-            # Pass arguments to cargo build
+          sqliteArgs = commonArgs // {
+            # Pass arguments to cargo build for SQLite
             cargoExtraArgs = "--no-default-features --features embed,sqlite --bin aip";
           };
 
-          cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+          postgresArgs = commonArgs // {
+            # Add PostgreSQL dependency for postgres builds
+            buildInputs = commonArgs.buildInputs ++ [ pkgs.postgresql ];
+            # Pass arguments to cargo build for PostgreSQL
+            cargoExtraArgs = "--features embed,postgres --bin aip";
+          };
 
-          aip = craneLib.buildPackage (commonArgs // {
-            inherit cargoArtifacts;
+          # Separate cargo artifacts for different builds
+          sqliteCargoArtifacts = craneLib.buildDepsOnly sqliteArgs;
+          postgresCargoArtifacts = craneLib.buildDepsOnly postgresArgs;
+
+          # SQLite builds
+          aip-sqlite = craneLib.buildPackage (sqliteArgs // {
+            cargoArtifacts = sqliteCargoArtifacts;
             doCheck = false;
             CARGO_PROFILE = "release";
           });
 
-          aip-client-management = craneLib.buildPackage (commonArgs // {
-            inherit cargoArtifacts;
+          aip-client-management-sqlite = craneLib.buildPackage (sqliteArgs // {
+            cargoArtifacts = sqliteCargoArtifacts;
             doCheck = false;
             CARGO_PROFILE = "release";
             cargoExtraArgs = "--no-default-features --features embed,sqlite --bin aip-client-management";
           });
+
+          # PostgreSQL builds
+          aip-postgres = craneLib.buildPackage (postgresArgs // {
+            cargoArtifacts = postgresCargoArtifacts;
+            doCheck = false;
+            CARGO_PROFILE = "release";
+          });
+
+          aip-client-management-postgres = craneLib.buildPackage (postgresArgs // {
+            cargoArtifacts = postgresCargoArtifacts;
+            doCheck = false;
+            CARGO_PROFILE = "release";
+            cargoExtraArgs = "--features embed,postgres --bin aip-client-management";
+          });
+
 
           # Copy migration files
           migrationFiles = pkgs.stdenv.mkDerivation {
@@ -109,10 +136,6 @@
           migrationRunner = pkgs.writeShellScriptBin "run-migrations" ''
             set -e
 
-            # Ensure /data directory exists and is writable
-            mkdir -p /data
-            chmod 755 /data
-
             if [ -z "$DATABASE_URL" ]; then
               echo "DATABASE_URL environment variable is required"
               exit 1
@@ -120,6 +143,9 @@
 
             # Determine migration source based on database type
             if [[ "$DATABASE_URL" == sqlite* ]]; then
+              # Ensure /data directory exists and is writable for SQLite
+              mkdir -p /data
+              chmod 755 /data
               MIGRATION_SOURCE="${migrationFiles}/migrations/sqlite"
             elif [[ "$DATABASE_URL" == postgres* ]]; then
               MIGRATION_SOURCE="${migrationFiles}/migrations/postgres"
@@ -141,10 +167,10 @@
             fi
           '';
 
-          # Docker image for deployment
-          aipImg = pkgs.dockerTools.buildImage {
+          # Docker images for deployment
+          aipImg-sqlite = pkgs.dockerTools.buildImage {
             name = "aip";
-            tag = "latest";
+            tag = "sqlite";
             fromImage = pkgs.dockerTools.pullImage {
               imageName = "alpine";
               imageDigest = "sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d";
@@ -153,12 +179,13 @@
             copyToRoot = pkgs.buildEnv {
               name = "image-root";
               paths = [
-                aip
-                aip-client-management
+                aip-sqlite
+                aip-client-management-sqlite
                 migrationRunner
                 staticFiles
                 pkgs.cacert
                 pkgs.sqlx-cli
+                pkgs.sqlite
               ];
               pathsToLink = [ "/bin" "/etc" "/static" ];
             };
@@ -170,7 +197,6 @@
                 "RUST_LOG=info"
                 "PORT=8080"
                 "HTTP_STATIC_PATH=/static"
-                "SQLX_OFFLINE=true"
                 "STORAGE_BACKEND=sqlite"
               ];
               ExposedPorts = {
@@ -178,10 +204,50 @@
               };
             };
           };
+
+          aipImg-postgres = pkgs.dockerTools.buildImage {
+            name = "aip";
+            tag = "postgres";
+            fromImage = pkgs.dockerTools.pullImage {
+              imageName = "alpine";
+              imageDigest = "sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d";
+              sha256 = "sha256-Sfb0quuaHgzxA7paz5P51WhdA35to39HtOufceXixz0=";
+            };
+            copyToRoot = pkgs.buildEnv {
+              name = "image-root";
+              paths = [
+                aip-postgres
+                aip-client-management-postgres
+                migrationRunner
+                staticFiles
+                pkgs.cacert
+                pkgs.sqlx-cli
+                pkgs.postgresql  # Include PostgreSQL client tools
+              ];
+              pathsToLink = [ "/bin" "/etc" "/static" ];
+            };
+
+            config = {
+              Cmd = [ "/bin/sh" "-c" "/bin/run-migrations && /bin/aip" ];
+              Env = [
+                "RUST_BACKTRACE=1"
+                "RUST_LOG=info"
+                "PORT=8080"
+                "HTTP_STATIC_PATH=/static"
+                "STORAGE_BACKEND=postgres"
+              ];
+              ExposedPorts = {
+                "8080/tcp" = {};
+              };
+            };
+          };
+
         in
         {
-          inherit aip aip-client-management aipImg migrationRunner;
-          default = aip;
+          inherit migrationRunner;
+          inherit aip-sqlite aip-client-management-sqlite aipImg-sqlite;
+          inherit aip-postgres aip-client-management-postgres aipImg-postgres;
+          default = aip-sqlite;
         };
     in
     {
@@ -199,7 +265,6 @@
               nixpkgs-fmt
               nil
               dive
-              flyctl
               sqlite
               postgresql
               sqlx-cli
