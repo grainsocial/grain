@@ -76,7 +76,7 @@
             # Add PostgreSQL dependency for postgres builds
             buildInputs = commonArgs.buildInputs ++ [ pkgs.postgresql ];
             # Pass arguments to cargo build for PostgreSQL
-            cargoExtraArgs = "--features embed,postgres --bin aip";
+            cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip";
           };
 
           # Separate cargo artifacts for different builds
@@ -108,7 +108,7 @@
             cargoArtifacts = postgresCargoArtifacts;
             doCheck = false;
             CARGO_PROFILE = "release";
-            cargoExtraArgs = "--features embed,postgres --bin aip-client-management";
+            cargoExtraArgs = "--no-default-features --features embed,postgres --bin aip-client-management";
           });
 
 
