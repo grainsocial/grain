@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.story",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["media", "aspectRatio", "createdAt"],
+        "properties": {
+          "media": {
+            "type": "blob",
+            "accept": ["image/*", "video/*"],
+            "maxSize": 5000000
+          },
+          "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" },
+          "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
+          "address": { "type": "ref", "ref": "community.lexicon.location.address" },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

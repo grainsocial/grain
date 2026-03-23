@@ -1,0 +1,151 @@
+{
+  "$type": "com.atproto.lexicon.schema",
+  "defs": {
+    "activitySubscription": {
+      "properties": {
+        "post": {
+          "type": "boolean"
+        },
+        "reply": {
+          "type": "boolean"
+        }
+      },
+      "required": ["post", "reply"],
+      "type": "object"
+    },
+    "chatPreference": {
+      "properties": {
+        "include": {
+          "knownValues": ["all", "accepted"],
+          "type": "string"
+        },
+        "push": {
+          "type": "boolean"
+        }
+      },
+      "required": ["include", "push"],
+      "type": "object"
+    },
+    "filterablePreference": {
+      "properties": {
+        "include": {
+          "knownValues": ["all", "follows"],
+          "type": "string"
+        },
+        "list": {
+          "type": "boolean"
+        },
+        "push": {
+          "type": "boolean"
+        }
+      },
+      "required": ["include", "list", "push"],
+      "type": "object"
+    },
+    "preference": {
+      "properties": {
+        "list": {
+          "type": "boolean"
+        },
+        "push": {
+          "type": "boolean"
+        }
+      },
+      "required": ["list", "push"],
+      "type": "object"
+    },
+    "preferences": {
+      "properties": {
+        "chat": {
+          "ref": "#chatPreference",
+          "type": "ref"
+        },
+        "follow": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "like": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "likeViaRepost": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "mention": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "quote": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "reply": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "repost": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "repostViaRepost": {
+          "ref": "#filterablePreference",
+          "type": "ref"
+        },
+        "starterpackJoined": {
+          "ref": "#preference",
+          "type": "ref"
+        },
+        "subscribedPost": {
+          "ref": "#preference",
+          "type": "ref"
+        },
+        "unverified": {
+          "ref": "#preference",
+          "type": "ref"
+        },
+        "verified": {
+          "ref": "#preference",
+          "type": "ref"
+        }
+      },
+      "required": [
+        "chat",
+        "follow",
+        "like",
+        "likeViaRepost",
+        "mention",
+        "quote",
+        "reply",
+        "repost",
+        "repostViaRepost",
+        "starterpackJoined",
+        "subscribedPost",
+        "unverified",
+        "verified"
+      ],
+      "type": "object"
+    },
+    "recordDeleted": {
+      "properties": {},
+      "type": "object"
+    },
+    "subjectActivitySubscription": {
+      "description": "Object used to store activity subscription data in stash.",
+      "properties": {
+        "activitySubscription": {
+          "ref": "#activitySubscription",
+          "type": "ref"
+        },
+        "subject": {
+          "format": "did",
+          "type": "string"
+        }
+      },
+      "required": ["subject", "activitySubscription"],
+      "type": "object"
+    }
+  },
+  "id": "app.bsky.notification.defs",
+  "lexicon": 1
+}

@@ -1,0 +1,193 @@
+import { views } from "$hatk";
+import type { GrainActorProfile, Photo, Gallery, Label } from "$hatk";
+import type { PhotoView, GalleryView, ExifView } from "$hatk";
+import type { BaseContext, Row } from "$hatk";
+
+const SCALE = 1_000_000;
+
+interface ExifRow {
+  uri: string;
+  cid: string;
+  photo: string;
+  created_at: string;
+  date_time_original?: string;
+  exposure_time?: number;
+  f_number?: number;
+  flash?: string;
+  focal_length_in35mm_format?: number;
+  i_s_o?: number;
+  lens_make?: string;
+  lens_model?: string;
+  make?: string;
+  model?: string;
+}
+
+function formatExposureTime(scaled: number): string {
+  const val = scaled / SCALE;
+  if (val >= 1) return `${val}s`;
+  return `1/${Math.round(1 / val)}s`;
+}
+
+function formatFNumber(scaled: number): string {
+  return `f/${(scaled / SCALE).toFixed(1)}`;
+}
+
+function formatFocalLength(scaled: number): string {
+  return `${Math.round(scaled / SCALE)}mm`;
+}
+
+function buildExifView(row: ExifRow): ExifView {
+  return views.exifView({
+    uri: row.uri,
+    cid: row.cid,
+    photo: row.photo,
+    record: row,
+    createdAt: row.created_at,
+    ...(row.date_time_original ? { dateTimeOriginal: row.date_time_original } : {}),
+    ...(row.exposure_time ? { exposureTime: formatExposureTime(row.exposure_time) } : {}),
+    ...(row.f_number ? { fNumber: formatFNumber(row.f_number) } : {}),
+    ...(row.flash ? { flash: row.flash } : {}),
+    ...(row.focal_length_in35mm_format
+      ? { focalLengthIn35mmFormat: formatFocalLength(row.focal_length_in35mm_format) }
+      : {}),
+    ...(row.i_s_o ? { iSO: Math.round(row.i_s_o / SCALE) } : {}),
+    ...(row.lens_make ? { lensMake: row.lens_make } : {}),
+    ...(row.lens_model ? { lensModel: row.lens_model } : {}),
+    ...(row.make ? { make: row.make } : {}),
+    ...(row.model ? { model: row.model } : {}),
+  });
+}
+
+/** Shared hydration for gallery feeds — resolves photos, profiles, fav/comment counts. */
+export async function hydrateGalleries(
+  ctx: BaseContext,
+  items: Row<Gallery>[],
+): Promise<GalleryView[]> {
+  const dids = [...new Set(items.map((item) => item.did).filter(Boolean))];
+  const galleryUris = items.map((item) => item.uri);
+
+  // Resolve viewer favorites
+  const viewerFavs = new Map<string, string>();
+  if (ctx.viewer?.did && galleryUris.length > 0) {
+    const favRows = (await ctx.db.query(
+      `SELECT subject, uri FROM "social.grain.favorite"
+       WHERE did = $1 AND subject IN (${galleryUris.map((_, i) => `$${i + 2}`).join(",")})`,
+      [ctx.viewer.did, ...galleryUris],
+    )) as { subject: string; uri: string }[];
+    for (const row of favRows) viewerFavs.set(row.subject, row.uri);
+  }
+
+  const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows] = await Promise.all([
+    ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
+    ctx.count("social.grain.favorite", "subject", galleryUris),
+    ctx.count("social.grain.comment", "subject", galleryUris),
+    ctx.labels(galleryUris) as Promise<Map<string, Label[]>>,
+    galleryUris.length > 0
+      ? (ctx.db.query(
+          `SELECT uri, did, cid, gallery, item, position, created_at
+           FROM "social.grain.gallery.item"
+           WHERE gallery IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")})
+           ORDER BY position ASC`,
+          galleryUris,
+        ) as Promise<
+          Array<{
+            uri: string;
+            did: string;
+            cid: string;
+            gallery: string;
+            item: string;
+            position: number;
+            created_at: string;
+          }>
+        >)
+      : Promise.resolve([]),
+  ]);
+
+  // Group gallery items by gallery URI
+  const itemsByGallery = new Map<string, Array<{ photoUri: string; position: number }>>();
+  for (const row of galleryItemRows) {
+    if (!itemsByGallery.has(row.gallery)) itemsByGallery.set(row.gallery, []);
+    itemsByGallery.get(row.gallery)!.push({ photoUri: row.item, position: row.position ?? 0 });
+  }
+
+  // Fetch all referenced photos + EXIF data
+  const allPhotoUris = [...new Set(galleryItemRows.map((r) => r.item))];
+  const [photos, exifByPhoto] = await Promise.all([
+    allPhotoUris.length > 0
+      ? ctx.getRecords<Photo>("social.grain.photo", allPhotoUris)
+      : Promise.resolve(new Map<string, Row<Photo>>()),
+    allPhotoUris.length > 0
+      ? (
+          ctx.db.query(
+            `SELECT * FROM "social.grain.photo.exif"
+           WHERE photo IN (${allPhotoUris.map((_, i) => `$${i + 1}`).join(",")})`,
+            allPhotoUris,
+          ) as Promise<ExifRow[]>
+        ).then((rows) => {
+          const map = new Map<string, ExifRow>();
+          for (const row of rows) map.set(row.photo, row);
+          return map;
+        })
+      : Promise.resolve(new Map<string, ExifRow>()),
+  ]);
+
+  return items.map((item) => {
+    const author = profiles.get(item.did);
+    const galleryItems = itemsByGallery.get(item.uri) ?? [];
+
+    const photoViews: PhotoView[] = galleryItems
+      .map((gi) => {
+        const photo = photos.get(gi.photoUri);
+        if (!photo) return null;
+        const val = photo.value;
+        const exifRow = exifByPhoto.get(photo.uri);
+        return views.photoView({
+          uri: photo.uri,
+          cid: photo.cid,
+          thumb: ctx.blobUrl(photo.did, val.photo, "feed_thumbnail") ?? "",
+          fullsize: ctx.blobUrl(photo.did, val.photo, "feed_fullsize") ?? "",
+          alt: val.alt,
+          aspectRatio: val.aspectRatio ?? { width: 4, height: 3 },
+          ...(exifRow ? { exif: buildExifView(exifRow) } : {}),
+        });
+      })
+      .filter((v): v is PhotoView => v !== null);
+
+    return views.galleryView({
+      uri: item.uri,
+      cid: item.cid,
+      record: item.value,
+      indexedAt: item.indexed_at ?? item.value.createdAt,
+      title: item.value.title,
+      description: item.value.description,
+      createdAt: item.value.createdAt,
+      favCount: favCounts.get(item.uri) ?? 0,
+      commentCount: commentCounts.get(item.uri) ?? 0,
+      creator: author
+        ? views.grainActorDefsProfileView({
+            cid: author.cid,
+            did: author.did,
+            handle: author.handle ?? author.did,
+            displayName: author.value.displayName,
+            avatar: ctx.blobUrl(author.did, author.value.avatar) ?? undefined,
+          })
+        : views.grainActorDefsProfileView({
+            cid: item.cid,
+            did: item.did,
+            handle: item.handle ?? item.did,
+          }),
+      items: photoViews,
+      ...(item.value.location
+        ? {
+            location: {
+              name: item.value.location.name,
+              value: item.value.location.value,
+            },
+            ...(item.value.address ? { address: item.value.address } : {}),
+          }
+        : {}),
+      ...(labelsByUri.has(item.uri) ? { labels: labelsByUri.get(item.uri) } : {}),
+      ...(viewerFavs.has(item.uri) ? { viewer: { fav: viewerFavs.get(item.uri) } } : {}),
+    });
+  });
+}

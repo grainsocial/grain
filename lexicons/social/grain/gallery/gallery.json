@@ -21,6 +21,8 @@
             "description": "Self-label values for this post. Effectively content warnings.",
             "refs": ["com.atproto.label.defs#selfLabels"]
           },
+          "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
+          "address": { "type": "ref", "ref": "community.lexicon.location.address" },
           "updatedAt": { "type": "string", "format": "datetime" },
           "createdAt": { "type": "string", "format": "datetime" }
         }

@@ -1,0 +1,61 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getNotifications",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get notifications for the authenticated user.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+          "cursor": { "type": "string" },
+          "countOnly": {
+            "type": "boolean",
+            "description": "If true, only return unseenCount without hydrating notifications."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["notifications"],
+          "properties": {
+            "notifications": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#notificationItem" }
+            },
+            "cursor": { "type": "string" },
+            "unseenCount": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "notificationItem": {
+      "type": "object",
+      "required": ["uri", "reason", "createdAt", "author"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "reason": {
+          "type": "string",
+          "knownValues": [
+            "gallery-favorite",
+            "gallery-comment",
+            "gallery-comment-mention",
+            "gallery-mention",
+            "reply",
+            "follow"
+          ]
+        },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "author": { "type": "ref", "ref": "social.grain.actor.defs#profileView" },
+        "galleryUri": { "type": "string", "format": "at-uri" },
+        "galleryTitle": { "type": "string" },
+        "galleryThumb": { "type": "string" },
+        "commentText": { "type": "string" },
+        "replyToText": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,7 +1,0 @@
-{
-  "lexicons": [
-    "com.atproto.label.defs",
-    "com.atproto.label.queryLabels",
-    "com.atproto.label.subscribeLabels"
-  ]
-}

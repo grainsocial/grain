@@ -1,6 +1,0 @@
-**/node_modules
-**/*.db
-*.toml
-.env
-**/services
-**/local-infra

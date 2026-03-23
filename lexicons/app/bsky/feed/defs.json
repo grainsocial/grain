@@ -1,140 +1,172 @@
 {
-  "lexicon": 1,
-  "id": "app.bsky.feed.defs",
+  "$type": "com.atproto.lexicon.schema",
   "defs": {
-    "postView": {
-      "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "author",
-        "record",
-        "indexedAt"
-      ],
+    "blockedAuthor": {
       "properties": {
-        "cid": {
-          "type": "string",
-          "format": "cid"
-        },
-        "uri": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "embed": {
-          "refs": [
-            "app.bsky.embed.images#view",
-            "app.bsky.embed.video#view",
-            "app.bsky.embed.external#view",
-            "app.bsky.embed.record#view",
-            "app.bsky.embed.recordWithMedia#view"
-          ],
-          "type": "union"
-        },
-        "author": {
-          "ref": "app.bsky.actor.defs#profileViewBasic",
-          "type": "ref"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "ref": "com.atproto.label.defs#label",
-            "type": "ref"
-          }
-        },
-        "record": {
-          "type": "unknown"
+        "did": {
+          "format": "did",
+          "type": "string"
         },
         "viewer": {
-          "ref": "#viewerState",
+          "ref": "app.bsky.actor.defs#viewerState",
           "type": "ref"
-        },
-        "indexedAt": {
-          "type": "string",
-          "format": "datetime"
-        },
-        "likeCount": {
-          "type": "integer"
-        },
-        "quoteCount": {
-          "type": "integer"
-        },
-        "replyCount": {
-          "type": "integer"
-        },
-        "threadgate": {
-          "ref": "#threadgateView",
-          "type": "ref"
-        },
-        "repostCount": {
-          "type": "integer"
         }
-      }
-    },
-    "replyRef": {
-      "type": "object",
-      "required": [
-        "root",
-        "parent"
-      ],
-      "properties": {
-        "root": {
-          "refs": [
-            "#postView",
-            "#notFoundPost",
-            "#blockedPost"
-          ],
-          "type": "union"
-        },
-        "parent": {
-          "refs": [
-            "#postView",
-            "#notFoundPost",
-            "#blockedPost"
-          ],
-          "type": "union"
-        },
-        "grandparentAuthor": {
-          "ref": "app.bsky.actor.defs#profileViewBasic",
-          "type": "ref",
-          "description": "When parent is a reply to another post, this is the author of that post."
-        }
-      }
-    },
-    "reasonPin": {
-      "type": "object",
-      "properties": {}
+      },
+      "required": ["did"],
+      "type": "object"
     },
     "blockedPost": {
-      "type": "object",
-      "required": [
-        "uri",
-        "blocked",
-        "author"
-      ],
       "properties": {
-        "uri": {
-          "type": "string",
-          "format": "at-uri"
-        },
         "author": {
           "ref": "#blockedAuthor",
           "type": "ref"
         },
         "blocked": {
-          "type": "boolean",
-          "const": true
+          "const": true,
+          "type": "boolean"
+        },
+        "uri": {
+          "format": "at-uri",
+          "type": "string"
         }
-      }
+      },
+      "required": ["uri", "blocked", "author"],
+      "type": "object"
+    },
+    "clickthroughAuthor": {
+      "description": "User clicked through to the author of the feed item",
+      "type": "token"
+    },
+    "clickthroughEmbed": {
+      "description": "User clicked through to the embedded content of the feed item",
+      "type": "token"
+    },
+    "clickthroughItem": {
+      "description": "User clicked through to the feed item",
+      "type": "token"
+    },
+    "clickthroughReposter": {
+      "description": "User clicked through to the reposter of the feed item",
+      "type": "token"
+    },
+    "contentModeUnspecified": {
+      "description": "Declares the feed generator returns any types of posts.",
+      "type": "token"
+    },
+    "contentModeVideo": {
+      "description": "Declares the feed generator returns posts containing app.bsky.embed.video embeds.",
+      "type": "token"
+    },
+    "feedViewPost": {
+      "properties": {
+        "feedContext": {
+          "description": "Context provided by feed generator that may be passed back alongside interactions.",
+          "maxLength": 2000,
+          "type": "string"
+        },
+        "post": {
+          "ref": "#postView",
+          "type": "ref"
+        },
+        "reason": {
+          "refs": ["#reasonRepost", "#reasonPin"],
+          "type": "union"
+        },
+        "reply": {
+          "ref": "#replyRef",
+          "type": "ref"
+        },
+        "reqId": {
+          "description": "Unique identifier per request that may be passed back alongside interactions.",
+          "maxLength": 100,
+          "type": "string"
+        }
+      },
+      "required": ["post"],
+      "type": "object"
+    },
+    "generatorView": {
+      "properties": {
+        "acceptsInteractions": {
+          "type": "boolean"
+        },
+        "avatar": {
+          "format": "uri",
+          "type": "string"
+        },
+        "cid": {
+          "format": "cid",
+          "type": "string"
+        },
+        "contentMode": {
+          "knownValues": [
+            "app.bsky.feed.defs#contentModeUnspecified",
+            "app.bsky.feed.defs#contentModeVideo"
+          ],
+          "type": "string"
+        },
+        "creator": {
+          "ref": "app.bsky.actor.defs#profileView",
+          "type": "ref"
+        },
+        "description": {
+          "maxGraphemes": 300,
+          "maxLength": 3000,
+          "type": "string"
+        },
+        "descriptionFacets": {
+          "items": {
+            "ref": "app.bsky.richtext.facet",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "did": {
+          "format": "did",
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "indexedAt": {
+          "format": "datetime",
+          "type": "string"
+        },
+        "labels": {
+          "items": {
+            "ref": "com.atproto.label.defs#label",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "likeCount": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "uri": {
+          "format": "at-uri",
+          "type": "string"
+        },
+        "viewer": {
+          "ref": "#generatorViewerState",
+          "type": "ref"
+        }
+      },
+      "required": ["uri", "cid", "did", "creator", "displayName", "indexedAt"],
+      "type": "object"
+    },
+    "generatorViewerState": {
+      "properties": {
+        "like": {
+          "format": "at-uri",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "interaction": {
-      "type": "object",
       "properties": {
-        "item": {
-          "type": "string",
-          "format": "at-uri"
-        },
         "event": {
-          "type": "string",
           "knownValues": [
             "app.bsky.feed.defs#requestLess",
             "app.bsky.feed.defs#requestMore",
@@ -148,368 +180,307 @@
             "app.bsky.feed.defs#interactionReply",
             "app.bsky.feed.defs#interactionQuote",
             "app.bsky.feed.defs#interactionShare"
-          ]
+          ],
+          "type": "string"
         },
         "feedContext": {
-          "type": "string",
+          "description": "Context on a feed item that was originally supplied by the feed generator on getFeedSkeleton.",
           "maxLength": 2000,
-          "description": "Context on a feed item that was originally supplied by the feed generator on getFeedSkeleton."
-        }
-      }
-    },
-    "requestLess": {
-      "type": "token",
-      "description": "Request that less content like the given feed item be shown in the feed"
-    },
-    "requestMore": {
-      "type": "token",
-      "description": "Request that more content like the given feed item be shown in the feed"
-    },
-    "viewerState": {
-      "type": "object",
-      "properties": {
-        "like": {
-          "type": "string",
-          "format": "at-uri"
+          "type": "string"
         },
-        "pinned": {
-          "type": "boolean"
+        "item": {
+          "format": "at-uri",
+          "type": "string"
         },
-        "repost": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "threadMuted": {
-          "type": "boolean"
-        },
-        "replyDisabled": {
-          "type": "boolean"
-        },
-        "embeddingDisabled": {
-          "type": "boolean"
+        "reqId": {
+          "description": "Unique identifier per request that may be passed back alongside interactions.",
+          "maxLength": 100,
+          "type": "string"
         }
       },
-      "description": "Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests."
+      "type": "object"
     },
-    "feedViewPost": {
-      "type": "object",
-      "required": [
-        "post"
-      ],
+    "interactionLike": {
+      "description": "User liked the feed item",
+      "type": "token"
+    },
+    "interactionQuote": {
+      "description": "User quoted the feed item",
+      "type": "token"
+    },
+    "interactionReply": {
+      "description": "User replied to the feed item",
+      "type": "token"
+    },
+    "interactionRepost": {
+      "description": "User reposted the feed item",
+      "type": "token"
+    },
+    "interactionSeen": {
+      "description": "Feed item was seen by user",
+      "type": "token"
+    },
+    "interactionShare": {
+      "description": "User shared the feed item",
+      "type": "token"
+    },
+    "notFoundPost": {
       "properties": {
-        "post": {
-          "ref": "#postView",
+        "notFound": {
+          "const": true,
+          "type": "boolean"
+        },
+        "uri": {
+          "format": "at-uri",
+          "type": "string"
+        }
+      },
+      "required": ["uri", "notFound"],
+      "type": "object"
+    },
+    "postView": {
+      "properties": {
+        "author": {
+          "ref": "app.bsky.actor.defs#profileViewBasic",
           "type": "ref"
         },
-        "reply": {
-          "ref": "#replyRef",
-          "type": "ref"
+        "bookmarkCount": {
+          "type": "integer"
         },
-        "reason": {
+        "cid": {
+          "format": "cid",
+          "type": "string"
+        },
+        "debug": {
+          "description": "Debug information for internal development",
+          "type": "unknown"
+        },
+        "embed": {
           "refs": [
-            "#reasonRepost",
-            "#reasonPin"
+            "app.bsky.embed.images#view",
+            "app.bsky.embed.video#view",
+            "app.bsky.embed.external#view",
+            "app.bsky.embed.record#view",
+            "app.bsky.embed.recordWithMedia#view"
           ],
           "type": "union"
         },
-        "feedContext": {
-          "type": "string",
-          "maxLength": 2000,
-          "description": "Context provided by feed generator that may be passed back alongside interactions."
-        }
-      }
-    },
-    "notFoundPost": {
-      "type": "object",
-      "required": [
-        "uri",
-        "notFound"
-      ],
-      "properties": {
-        "uri": {
-          "type": "string",
-          "format": "at-uri"
+        "indexedAt": {
+          "format": "datetime",
+          "type": "string"
         },
-        "notFound": {
-          "type": "boolean",
-          "const": true
+        "labels": {
+          "items": {
+            "ref": "com.atproto.label.defs#label",
+            "type": "ref"
+          },
+          "type": "array"
+        },
+        "likeCount": {
+          "type": "integer"
+        },
+        "quoteCount": {
+          "type": "integer"
+        },
+        "record": {
+          "type": "unknown"
+        },
+        "replyCount": {
+          "type": "integer"
+        },
+        "repostCount": {
+          "type": "integer"
+        },
+        "threadgate": {
+          "ref": "#threadgateView",
+          "type": "ref"
+        },
+        "uri": {
+          "format": "at-uri",
+          "type": "string"
+        },
+        "viewer": {
+          "ref": "#viewerState",
+          "type": "ref"
         }
-      }
+      },
+      "required": ["uri", "cid", "author", "record", "indexedAt"],
+      "type": "object"
+    },
+    "reasonPin": {
+      "properties": {},
+      "type": "object"
     },
     "reasonRepost": {
-      "type": "object",
-      "required": [
-        "by",
-        "indexedAt"
-      ],
       "properties": {
         "by": {
           "ref": "app.bsky.actor.defs#profileViewBasic",
           "type": "ref"
         },
-        "indexedAt": {
-          "type": "string",
-          "format": "datetime"
-        }
-      }
-    },
-    "blockedAuthor": {
-      "type": "object",
-      "required": [
-        "did"
-      ],
-      "properties": {
-        "did": {
-          "type": "string",
-          "format": "did"
-        },
-        "viewer": {
-          "ref": "app.bsky.actor.defs#viewerState",
-          "type": "ref"
-        }
-      }
-    },
-    "generatorView": {
-      "type": "object",
-      "required": [
-        "uri",
-        "cid",
-        "did",
-        "creator",
-        "displayName",
-        "indexedAt"
-      ],
-      "properties": {
         "cid": {
-          "type": "string",
-          "format": "cid"
-        },
-        "did": {
-          "type": "string",
-          "format": "did"
-        },
-        "uri": {
-          "type": "string",
-          "format": "at-uri"
-        },
-        "avatar": {
-          "type": "string",
-          "format": "uri"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "ref": "com.atproto.label.defs#label",
-            "type": "ref"
-          }
-        },
-        "viewer": {
-          "ref": "#generatorViewerState",
-          "type": "ref"
-        },
-        "creator": {
-          "ref": "app.bsky.actor.defs#profileView",
-          "type": "ref"
-        },
-        "indexedAt": {
-          "type": "string",
-          "format": "datetime"
-        },
-        "likeCount": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "contentMode": {
-          "type": "string",
-          "knownValues": [
-            "app.bsky.feed.defs#contentModeUnspecified",
-            "app.bsky.feed.defs#contentModeVideo"
-          ]
-        },
-        "description": {
-          "type": "string",
-          "maxLength": 3000,
-          "maxGraphemes": 300
-        },
-        "displayName": {
+          "format": "cid",
           "type": "string"
         },
-        "descriptionFacets": {
-          "type": "array",
-          "items": {
-            "ref": "app.bsky.richtext.facet",
-            "type": "ref"
-          }
+        "indexedAt": {
+          "format": "datetime",
+          "type": "string"
         },
-        "acceptsInteractions": {
-          "type": "boolean"
-        }
-      }
-    },
-    "threadContext": {
-      "type": "object",
-      "properties": {
-        "rootAuthorLike": {
-          "type": "string",
-          "format": "at-uri"
+        "uri": {
+          "format": "at-uri",
+          "type": "string"
         }
       },
-      "description": "Metadata about this post within the context of the thread it is in."
+      "required": ["by", "indexedAt"],
+      "type": "object"
+    },
+    "replyRef": {
+      "properties": {
+        "grandparentAuthor": {
+          "description": "When parent is a reply to another post, this is the author of that post.",
+          "ref": "app.bsky.actor.defs#profileViewBasic",
+          "type": "ref"
+        },
+        "parent": {
+          "refs": ["#postView", "#notFoundPost", "#blockedPost"],
+          "type": "union"
+        },
+        "root": {
+          "refs": ["#postView", "#notFoundPost", "#blockedPost"],
+          "type": "union"
+        }
+      },
+      "required": ["root", "parent"],
+      "type": "object"
+    },
+    "requestLess": {
+      "description": "Request that less content like the given feed item be shown in the feed",
+      "type": "token"
+    },
+    "requestMore": {
+      "description": "Request that more content like the given feed item be shown in the feed",
+      "type": "token"
+    },
+    "skeletonFeedPost": {
+      "properties": {
+        "feedContext": {
+          "description": "Context that will be passed through to client and may be passed to feed generator back alongside interactions.",
+          "maxLength": 2000,
+          "type": "string"
+        },
+        "post": {
+          "format": "at-uri",
+          "type": "string"
+        },
+        "reason": {
+          "refs": ["#skeletonReasonRepost", "#skeletonReasonPin"],
+          "type": "union"
+        }
+      },
+      "required": ["post"],
+      "type": "object"
+    },
+    "skeletonReasonPin": {
+      "properties": {},
+      "type": "object"
+    },
+    "skeletonReasonRepost": {
+      "properties": {
+        "repost": {
+          "format": "at-uri",
+          "type": "string"
+        }
+      },
+      "required": ["repost"],
+      "type": "object"
+    },
+    "threadContext": {
+      "description": "Metadata about this post within the context of the thread it is in.",
+      "properties": {
+        "rootAuthorLike": {
+          "format": "at-uri",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "threadViewPost": {
-      "type": "object",
-      "required": [
-        "post"
-      ],
       "properties": {
+        "parent": {
+          "refs": ["#threadViewPost", "#notFoundPost", "#blockedPost"],
+          "type": "union"
+        },
         "post": {
           "ref": "#postView",
           "type": "ref"
         },
-        "parent": {
-          "refs": [
-            "#threadViewPost",
-            "#notFoundPost",
-            "#blockedPost"
-          ],
-          "type": "union"
-        },
         "replies": {
-          "type": "array",
           "items": {
-            "refs": [
-              "#threadViewPost",
-              "#notFoundPost",
-              "#blockedPost"
-            ],
+            "refs": ["#threadViewPost", "#notFoundPost", "#blockedPost"],
             "type": "union"
-          }
+          },
+          "type": "array"
         },
         "threadContext": {
           "ref": "#threadContext",
           "type": "ref"
         }
-      }
+      },
+      "required": ["post"],
+      "type": "object"
     },
     "threadgateView": {
-      "type": "object",
       "properties": {
         "cid": {
-          "type": "string",
-          "format": "cid"
-        },
-        "uri": {
-          "type": "string",
-          "format": "at-uri"
+          "format": "cid",
+          "type": "string"
         },
         "lists": {
-          "type": "array",
           "items": {
             "ref": "app.bsky.graph.defs#listViewBasic",
             "type": "ref"
-          }
+          },
+          "type": "array"
         },
         "record": {
           "type": "unknown"
-        }
-      }
-    },
-    "interactionLike": {
-      "type": "token",
-      "description": "User liked the feed item"
-    },
-    "interactionSeen": {
-      "type": "token",
-      "description": "Feed item was seen by user"
-    },
-    "clickthroughItem": {
-      "type": "token",
-      "description": "User clicked through to the feed item"
-    },
-    "contentModeVideo": {
-      "type": "token",
-      "description": "Declares the feed generator returns posts containing app.bsky.embed.video embeds."
-    },
-    "interactionQuote": {
-      "type": "token",
-      "description": "User quoted the feed item"
-    },
-    "interactionReply": {
-      "type": "token",
-      "description": "User replied to the feed item"
-    },
-    "interactionShare": {
-      "type": "token",
-      "description": "User shared the feed item"
-    },
-    "skeletonFeedPost": {
-      "type": "object",
-      "required": [
-        "post"
-      ],
-      "properties": {
-        "post": {
-          "type": "string",
-          "format": "at-uri"
         },
-        "reason": {
-          "refs": [
-            "#skeletonReasonRepost",
-            "#skeletonReasonPin"
-          ],
-          "type": "union"
-        },
-        "feedContext": {
-          "type": "string",
-          "maxLength": 2000,
-          "description": "Context that will be passed through to client and may be passed to feed generator back alongside interactions."
+        "uri": {
+          "format": "at-uri",
+          "type": "string"
         }
-      }
+      },
+      "type": "object"
     },
-    "clickthroughEmbed": {
-      "type": "token",
-      "description": "User clicked through to the embedded content of the feed item"
-    },
-    "interactionRepost": {
-      "type": "token",
-      "description": "User reposted the feed item"
-    },
-    "skeletonReasonPin": {
-      "type": "object",
-      "properties": {}
-    },
-    "clickthroughAuthor": {
-      "type": "token",
-      "description": "User clicked through to the author of the feed item"
-    },
-    "clickthroughReposter": {
-      "type": "token",
-      "description": "User clicked through to the reposter of the feed item"
-    },
-    "generatorViewerState": {
-      "type": "object",
+    "viewerState": {
+      "description": "Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests.",
       "properties": {
+        "bookmarked": {
+          "type": "boolean"
+        },
+        "embeddingDisabled": {
+          "type": "boolean"
+        },
         "like": {
-          "type": "string",
-          "format": "at-uri"
-        }
-      }
-    },
-    "skeletonReasonRepost": {
-      "type": "object",
-      "required": [
-        "repost"
-      ],
-      "properties": {
+          "format": "at-uri",
+          "type": "string"
+        },
+        "pinned": {
+          "type": "boolean"
+        },
+        "replyDisabled": {
+          "type": "boolean"
+        },
         "repost": {
-          "type": "string",
-          "format": "at-uri"
+          "format": "at-uri",
+          "type": "string"
+        },
+        "threadMuted": {
+          "type": "boolean"
         }
-      }
-    },
-    "contentModeUnspecified": {
-      "type": "token",
-      "description": "Declares the feed generator returns any types of posts."
+      },
+      "type": "object"
     }
-  }
+  },
+  "id": "app.bsky.feed.defs",
+  "lexicon": 1
 }

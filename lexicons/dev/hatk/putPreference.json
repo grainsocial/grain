@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "dev.hatk.putPreference",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Set a single preference by key.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["key", "value"],
+          "properties": {
+            "key": { "type": "string" },
+            "value": { "type": "unknown" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    }
+  }
+}

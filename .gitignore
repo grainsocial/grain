@@ -1,8 +1,10 @@
-node_modules
-*.db*
+node_modules/
+dist/
+build/
+*.db
+data/
+test-results/
+.svelte-kit/
 .DS_Store
-*.fly.toml
 .env
-grain-root.crt
-*.log
-build
+public/

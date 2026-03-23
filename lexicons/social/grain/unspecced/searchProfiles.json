@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.searchProfiles",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Full-text search for user profiles.",
+      "parameters": {
+        "type": "params",
+        "required": ["q"],
+        "properties": {
+          "q": { "type": "string", "description": "Search query" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 },
+          "cursor": { "type": "string" },
+          "fuzzy": { "type": "boolean", "default": true }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.searchProfiles#profileSearchResult"
+              }
+            },
+            "cursor": { "type": "string" }
+          }
+        }
+      }
+    },
+    "profileSearchResult": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getLocations",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get top locations by gallery count.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "locations": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getLocations#locationItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "locationItem": {
+      "type": "object",
+      "required": ["name", "h3Index", "galleryCount"],
+      "properties": {
+        "name": { "type": "string" },
+        "h3Index": { "type": "string" },
+        "galleryCount": { "type": "integer" }
+      }
+    }
+  }
+}

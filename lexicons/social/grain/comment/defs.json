@@ -25,16 +25,12 @@
         },
         "subject": {
           "type": "union",
-          "refs": [
-            "social.grain.gallery.defs#galleryView"
-          ],
+          "refs": ["social.grain.gallery.defs#galleryView"],
           "description": "The subject of the comment, which can be a gallery or a photo."
         },
         "focus": {
           "type": "union",
-          "refs": [
-            "social.grain.photo.defs#photoView"
-          ],
+          "refs": ["social.grain.photo.defs#photoView"],
           "description": "The photo that the comment is focused on, if applicable."
         },
         "replyTo": {

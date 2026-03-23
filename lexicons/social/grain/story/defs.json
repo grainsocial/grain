@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.story.defs",
+  "defs": {
+    "storyView": {
+      "type": "object",
+      "required": ["uri", "cid", "creator", "thumb", "fullsize", "aspectRatio", "createdAt"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "creator": { "type": "ref", "ref": "social.grain.actor.defs#profileView" },
+        "thumb": {
+          "type": "string",
+          "format": "uri",
+          "description": "Thumbnail URL for the story image."
+        },
+        "fullsize": {
+          "type": "string",
+          "format": "uri",
+          "description": "Full-size URL for the story image."
+        },
+        "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" },
+        "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
+        "address": { "type": "ref", "ref": "community.lexicon.location.address" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

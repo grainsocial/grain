@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getCameras",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get top cameras by photo count.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "cameras": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getCameras#cameraItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "cameraItem": {
+      "type": "object",
+      "required": ["camera", "photoCount"],
+      "properties": {
+        "camera": { "type": "string" },
+        "photoCount": { "type": "integer" }
+      }
+    }
+  }
+}

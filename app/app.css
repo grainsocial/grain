@@ -1,0 +1,87 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-root: #080b12;
+  --bg-surface: #0f1419;
+  --bg-elevated: #161d27;
+  --bg-hover: #1c2633;
+  --border: #1e293b;
+  --border-light: #2a3a4e;
+  --grain: #85a1ff;
+  --grain-btn: rgb(74, 93, 249);
+  --grain-btn-dim: rgb(60, 78, 220);
+  --grain-dim: #6b8bef;
+  --grain-glow: rgba(133, 161, 255, 0.15);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-faint: #475569;
+  --danger: #f87171;
+  --danger-bg: #1c1117;
+  --col-left: 78px;
+  --col-right: 320px;
+  --col-center: minmax(0, 600px);
+  --font-display: "Syne", sans-serif;
+  --font-body: "Plus Jakarta Sans", -apple-system, sans-serif;
+}
+
+html {
+  background: var(--bg-root);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+html:not(.fonts-loaded) body {
+  opacity: 0;
+}
+html.fonts-loaded body {
+  opacity: 1;
+  transition: opacity 0.1s;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  html, body {
+    overflow: hidden;
+    position: fixed;
+    inset: 0;
+    min-height: 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+}

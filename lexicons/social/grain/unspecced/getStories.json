@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getStories",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a user's active stories (posted within the last 24 hours).",
+      "parameters": {
+        "type": "params",
+        "required": ["actor"],
+        "properties": {
+          "actor": { "type": "string", "format": "did" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["stories"],
+          "properties": {
+            "stories": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.story.defs#storyView"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

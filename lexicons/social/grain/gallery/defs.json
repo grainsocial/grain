@@ -15,6 +15,8 @@
           "description": "List of camera make and models used in this gallery derived from EXIF data.",
           "items": { "type": "string" }
         },
+        "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
+        "address": { "type": "ref", "ref": "community.lexicon.location.address" },
         "facets": {
           "type": "array",
           "description": "Annotations of description text (mentions, URLs, hashtags, etc)",
@@ -29,9 +31,7 @@
           "type": "array",
           "items": {
             "type": "union",
-            "refs": [
-              "social.grain.photo.defs#photoView"
-            ]
+            "refs": ["social.grain.photo.defs#photoView"]
           }
         },
         "favCount": { "type": "integer" },

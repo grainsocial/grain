@@ -1,0 +1,100 @@
+// Auto-generated client-safe subset. Do not edit.
+// Import this in app components instead of hatk.generated.ts
+// to avoid pulling in server-only dependencies.
+export type { XrpcSchema } from './hatk.generated.ts'
+import type { XrpcSchema } from './hatk.generated.ts'
+export type { BskyActorProfile, BskyGraphFollow, CreateReport, DescribeCollections, DescribeFeeds, DescribeLabels, GetFeed, GetPreferences, GetRecord, GetRecords, PutPreference, SearchRecords, UploadBlob, GrainActorProfile, Comment, Favorite, Gallery, Item, GrainGraphFollow, Photo, Exif, Story, DeleteGallery, GetActorProfile, GetCameras, GetFollowers, GetFollowing, GetGallery, GetGalleryThread, GetKnownFollowers, GetLocations, GetNotifications, GetStories, GetStoryAuthors, GetSuggestedFollows, SearchGalleries, SearchProfiles, RecordRegistry, CreateRecord, DeleteRecord, PutRecord, AdultContentPref, BskyAppProgressGuide, BskyAppStatePref, ContentLabelPref, DeclaredAgePref, FeedViewPref, HiddenPostsPref, InterestsPref, KnownFollowers, LabelerPrefItem, LabelersPref, LiveEventPreferences, MutedWord, MutedWordsPref, Nux, PersonalDetailsPref, PostInteractionSettingsPref, ProfileAssociated, ProfileAssociatedActivitySubscription, ProfileAssociatedChat, ProfileAssociatedGerm, BskyActorDefsProfileView, ProfileViewBasic, BskyActorDefsProfileViewDetailed, SavedFeed, SavedFeedsPref, SavedFeedsPrefV2, StatusView, ThreadViewPref, VerificationPrefs, VerificationState, VerificationView, BskyActorDefsViewerState, BlockedAuthor, BlockedPost, FeedViewPost, GeneratorView, GeneratorViewerState, Interaction, NotFoundPost, PostView, ReasonPin, ReasonRepost, ReplyRef, SkeletonFeedPost, SkeletonReasonPin, SkeletonReasonRepost, ThreadContext, ThreadViewPost, ThreadgateView, BskyFeedDefsViewerState, ListItemView, ListView, ListViewBasic, ListViewerState, NotFoundActor, Relationship, StarterPackView, StarterPackViewBasic, ActivitySubscription, ChatPreference, FilterablePreference, Preference, Preferences, RecordDeleted, SubjectActivitySubscription, ByteSlice, Link, Mention, Tag, Label, LabelValueDefinition, LabelValueDefinitionStrings, SelfLabel, SelfLabels, RepoRef, LabelDefinition, LabelLocale, GrainActorDefsProfileView, GrainActorDefsProfileViewDetailed, GrainActorDefsViewerState, CommentView, AspectRatio, GalleryView, GrainGalleryDefsViewerState, PhotoView, ExifView, GalleryState, StoryView, CameraItem, GetFollowersFollowerItem, FollowingItem, GetKnownFollowersFollowerItem, LocationItem, NotificationItem, StoryAuthor, SuggestedItem, ProfileSearchResult } from './hatk.generated.ts'
+
+const _procedures = new Set(['dev.hatk.createRecord', 'dev.hatk.createReport', 'dev.hatk.deleteRecord', 'dev.hatk.putPreference', 'dev.hatk.putRecord', 'social.grain.unspecced.deleteGallery'])
+const _blobInputs = new Set(['dev.hatk.uploadBlob'])
+
+type CallArg<K extends keyof XrpcSchema> =
+  XrpcSchema[K] extends { input: infer I } ? I :
+  XrpcSchema[K] extends { params: infer P } ? P :
+  Record<string, unknown>
+type OutputOf<K extends keyof XrpcSchema> = XrpcSchema[K]['output']
+
+export async function callXrpc<K extends keyof XrpcSchema & string>(
+  nsid: K,
+  arg?: CallArg<K>,
+  customFetch?: typeof globalThis.fetch,
+): Promise<OutputOf<K>> {
+  if (typeof window === 'undefined' && !customFetch) {
+    const bridge = (globalThis as any).__hatk_callXrpc
+    if (!bridge) throw new Error('callXrpc: server bridge not available — is hatk initialized?')
+    if (_procedures.has(nsid) || _blobInputs.has(nsid)) return bridge(nsid, {}, arg) as Promise<OutputOf<K>>
+    return bridge(nsid, arg) as Promise<OutputOf<K>>
+  }
+  const _fetch = customFetch ?? globalThis.fetch
+  // Use relative URL so SvelteKit's fetch can deduplicate server/client requests
+  let path = `/xrpc/${nsid}`
+  if (_blobInputs.has(nsid)) {
+    const blob = arg as Blob | ArrayBuffer
+    const ct = blob instanceof Blob ? blob.type : 'application/octet-stream'
+    const res = await _fetch(path, { method: 'POST', headers: { 'Content-Type': ct }, body: blob })
+    if (!res.ok) throw new Error(`XRPC ${nsid} failed: ${res.status}`)
+    return res.json() as Promise<OutputOf<K>>
+  }
+  if (_procedures.has(nsid)) {
+    const res = await _fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(arg) })
+    if (typeof window !== 'undefined' && res.status === 401) { const _b = await res.json().catch(() => ({})); const _h = _b.handle ?? getViewer()?.handle; window.location.href = _h ? `/oauth/login?handle=${encodeURIComponent(_h)}` : '/oauth/login'; return new Promise(() => {}) as any }
+    if (!res.ok) throw new Error(`XRPC ${nsid} failed: ${res.status}`)
+    return res.json() as Promise<OutputOf<K>>
+  }
+  const params = new URLSearchParams()
+  for (const [k, v] of Object.entries(arg || {})) {
+    if (v != null) params.set(k, String(v))
+  }
+  const qs = params.toString()
+  if (qs) path += `?${qs}`
+  const res = await _fetch(path)
+  if (typeof window !== 'undefined' && res.status === 401) { const _b = await res.json().catch(() => ({})); const _h = _b.handle ?? getViewer()?.handle; window.location.href = _h ? `/oauth/login?handle=${encodeURIComponent(_h)}` : '/oauth/login'; return new Promise(() => {}) as any }
+  if (!res.ok) throw new Error(`XRPC ${nsid} failed: ${res.status}`)
+  return res.json() as Promise<OutputOf<K>>
+}
+
+export function getViewer(): { did: string; handle: string } | null {
+  return (globalThis as any).__hatk_viewer ?? null
+}
+
+// ─── Auth Helpers ────────────────────────────────────────────────────
+
+export async function login(handle: string): Promise<void> {
+  const res = await fetch(`/oauth/login?handle=${encodeURIComponent(handle)}`, { redirect: 'manual' })
+  if (res.type === 'opaqueredirect') {
+    window.location.href = `/oauth/login?handle=${encodeURIComponent(handle)}`
+    return
+  }
+  if (res.ok) return
+  const body = await res.json().catch(() => ({ error: 'Login failed' }))
+  throw new Error(body.error || 'Login failed')
+}
+
+export async function logout(): Promise<void> {
+  ;(globalThis as any).__hatk_viewer = null
+  await fetch('/auth/logout', { method: 'POST' }).catch(() => {})
+}
+
+export function viewerDid(): string | null {
+  if (typeof window === 'undefined') return null
+  const viewer = (globalThis as any).__hatk_viewer
+  return viewer?.did ?? null
+}
+
+// Expose viewer for getViewer() bridge
+;(globalThis as any).__hatk_auth = { viewerDid }
+
+// ─── Server Helpers ──────────────────────────────────────────────────
+
+export async function parseViewer(cookies: { get(name: string): string | undefined }): Promise<{ did: string; handle?: string } | null> {
+  const parseSessionCookie = (globalThis as any).__hatk_parseSessionCookie
+  if (!parseSessionCookie) return null
+  const cookieValue = cookies.get('__hatk_session')
+  if (!cookieValue) return null
+  try {
+    const request = new Request('http://localhost', { headers: { cookie: `__hatk_session=${cookieValue}` } })
+    const viewer = await parseSessionCookie(request)
+    if (viewer) (globalThis as any).__hatk_viewer = viewer
+    return viewer
+  } catch { return null }
+}

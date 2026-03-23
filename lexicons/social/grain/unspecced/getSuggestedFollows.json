@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getSuggestedFollows",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get suggested profiles to follow based on bsky follow graph.",
+      "parameters": {
+        "type": "params",
+        "required": ["actor"],
+        "properties": {
+          "actor": { "type": "string", "format": "did" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 20, "default": 10 }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getSuggestedFollows#suggestedItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "suggestedItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" },
+        "followersCount": { "type": "integer" }
+      }
+    }
+  }
+}

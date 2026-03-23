@@ -8,10 +8,7 @@
       "key": "tid",
       "record": {
         "type": "object",
-        "required": [
-          "photo",
-          "createdAt"
-        ],
+        "required": ["photo", "createdAt"],
         "properties": {
           "photo": { "type": "string", "format": "at-uri" },
           "createdAt": { "type": "string", "format": "datetime" },

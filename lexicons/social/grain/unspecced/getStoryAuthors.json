@@ -1,0 +1,35 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getStoryAuthors",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get authors who have active stories (posted within the last 24 hours).",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["authors"],
+          "properties": {
+            "authors": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getStoryAuthors#storyAuthor"
+              }
+            }
+          }
+        }
+      }
+    },
+    "storyAuthor": {
+      "type": "object",
+      "required": ["profile", "storyCount", "latestAt"],
+      "properties": {
+        "profile": { "type": "ref", "ref": "social.grain.actor.defs#profileView" },
+        "storyCount": { "type": "integer" },
+        "latestAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}
