@@ -98,31 +98,36 @@
   </div>
 {/if}
 
-{#if lightboxSrc}
-  <AvatarLightbox src={lightboxSrc} onclose={() => (lightboxSrc = null)} />
-{/if}
-
-<div class="view-toggle">
-  <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => (viewMode = 'grid')} aria-label="Grid view">
-    <Grid3x3 size={18} />
-  </button>
-  <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => (viewMode = 'list')} aria-label="List view">
-    <List size={18} />
-  </button>
-</div>
-
-{#if viewMode === 'grid'}
-  <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
+{#if profile.isError}
+  <DetailHeader label="Not Found" />
+  <div class="not-found">This profile doesn't exist.</div>
 {:else}
-  {#if feed.isLoading}
-    <FeedList feed="actor" params={{ actor: did }} skeleton />
-  {:else}
-    <FeedList feed="actor" params={{ actor: did }} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
+  {#if lightboxSrc}
+    <AvatarLightbox src={lightboxSrc} onclose={() => (lightboxSrc = null)} />
   {/if}
-{/if}
 
-{#if showStoryViewer}
-  <StoryViewer initialDid={did} onclose={() => (showStoryViewer = false)} />
+  <div class="view-toggle">
+    <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => (viewMode = 'grid')} aria-label="Grid view">
+      <Grid3x3 size={18} />
+    </button>
+    <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => (viewMode = 'list')} aria-label="List view">
+      <List size={18} />
+    </button>
+  </div>
+
+  {#if viewMode === 'grid'}
+    <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
+  {:else}
+    {#if feed.isLoading}
+      <FeedList feed="actor" params={{ actor: did }} skeleton />
+    {:else}
+      <FeedList feed="actor" params={{ actor: did }} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
+    {/if}
+  {/if}
+
+  {#if showStoryViewer}
+    <StoryViewer initialDid={did} onclose={() => (showStoryViewer = false)} />
+  {/if}
 {/if}
 
 <style>
@@ -197,4 +202,5 @@
   }
   .toggle-btn:hover { color: var(--text-secondary); }
   .toggle-btn.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+  .not-found { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; }
 </style>

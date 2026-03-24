@@ -1,4 +1,4 @@
-import { defineQuery } from "$hatk";
+import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
 
 export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx) => {
@@ -13,6 +13,8 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     }[];
     if (rows[0]?.did) {
       actor = rows[0].did;
+    } else {
+      throw new InvalidRequestError("Actor not found");
     }
   }
 

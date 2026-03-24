@@ -10,9 +10,20 @@ export default defineFeed({
   async generate(ctx) {
     const { params, ok, isTakendown } = ctx;
 
-    const actor = params.actor;
+    let actor = params.actor;
     if (!actor) {
       return ok({ uris: [], cursor: undefined });
+    }
+
+    // Resolve handle to DID if needed
+    if (!actor.startsWith("did:")) {
+      const rows = (await ctx.db.query(
+        `SELECT did FROM _repos WHERE handle = $1`,
+        [actor],
+      )) as { did: string }[];
+      if (rows[0]?.did) {
+        actor = rows[0].did;
+      }
     }
 
     if (await isTakendown(actor)) {
