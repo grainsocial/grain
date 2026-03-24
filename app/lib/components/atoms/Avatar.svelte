@@ -21,13 +21,15 @@
 
   const url = $derived(src || blobUrl(did, blob))
   const fallback = $derived(name?.[0]?.toUpperCase() || initials(did))
+  let imgError = $state(false)
+  $effect(() => { void url; imgError = false })
   const innerSize = $derived(hasStory ? size - 6 : size)
   const fontSize = $derived(Math.round(innerSize * 0.35))
 </script>
 
 {#snippet avatarContent()}
-  {#if url}
-    <img src={url} alt="" class="avatar" style="width:{innerSize}px;height:{innerSize}px;" loading="lazy" />
+  {#if url && !imgError}
+    <img src={url} alt="" class="avatar" style="width:{innerSize}px;height:{innerSize}px;" loading="lazy" onerror={() => (imgError = true)} />
   {:else}
     <div class="avatar fallback" style="width:{innerSize}px;height:{innerSize}px;font-size:{fontSize}px;">{fallback}</div>
   {/if}
