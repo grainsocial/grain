@@ -1,5 +1,5 @@
 {
-  "name": "hatk-template-grain",
+  "name": "grain",
   "private": true,
   "type": "module",
   "scripts": {
