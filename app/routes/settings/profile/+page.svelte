@@ -122,6 +122,7 @@
       // Save EXIF preference
       await setIncludeExif(localIncludeExif)
       queryClient.invalidateQueries({ queryKey: ['preferences'] })
+      queryClient.invalidateQueries({ queryKey: ['actorProfile', $viewer.did] })
 
       // Update local viewer store
       $viewer = {
