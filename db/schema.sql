@@ -56,6 +56,7 @@ CREATE TABLE _oauth_requests (
   dpop_jkt TEXT NOT NULL,
   pds_request_uri TEXT,
   pds_auth_server TEXT,
+  pds_endpoint TEXT,
   pds_code_verifier TEXT,
   pds_state TEXT,
   did TEXT,
