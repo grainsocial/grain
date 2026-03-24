@@ -8,6 +8,7 @@ Users create galleries of photos, browse feeds, leave comments, and follow other
 
 ```bash
 npm install
+npx svelte-kit sync
 npm run dev
 ```
 
