@@ -69,7 +69,7 @@
         <span class="profile-handle">{p.handle ? `@${p.handle}` : did}</span>
       </div>
       <div class="stat-row">
-        <span><strong>{(p.galleryCount ?? 0).toLocaleString()}</strong> {p.galleryCount === 1 ? 'gallery' : 'galleries'}</span>
+        <span><strong>{(p.galleryCount ?? 0).toLocaleString()}</strong> {Number(p.galleryCount) === 1 ? 'gallery' : 'galleries'}</span>
         <a href="/profile/{did}/followers" class="stat-link"><strong>{((p.followersCount ?? 0) + followersOffset).toLocaleString()}</strong> followers</a>
         <a href="/profile/{did}/following" class="stat-link"><strong>{(p.followsCount ?? 0).toLocaleString()}</strong> following</a>
       </div>
