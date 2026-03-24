@@ -8,7 +8,7 @@
   <button class="mobile-hamburger" onclick={onHamburger}>
     <Menu size={20} />
   </button>
-  <span class="mobile-logo">grain</span>
+  <a href="/" class="mobile-logo">grain</a>
   <button class="mobile-search-btn" onclick={onSearch}>
     <Search size={20} />
   </button>
@@ -46,6 +46,7 @@
     font-weight: 800;
     font-size: 20px;
     color: #fff;
+    text-decoration: none;
   }
 
   @media (max-width: 600px) {
