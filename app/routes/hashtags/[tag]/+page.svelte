@@ -13,7 +13,7 @@
 <DetailHeader label="#{tag}">
   {#snippet actions()}
     {#if $isAuthenticated}
-      <PinButton feed={{ id: `hashtag:${tag}`, label: `#${tag}`, type: 'hashtag', path: `/hashtags/${encodeURIComponent(tag)}` }} />
+      <PinButton feed={{ id: `hashtag:${tag}`, label: tag, type: 'hashtag', path: `/hashtags/${encodeURIComponent(tag)}` }} />
     {/if}
   {/snippet}
 </DetailHeader>

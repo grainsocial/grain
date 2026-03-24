@@ -30,7 +30,7 @@
         class:active={page.url.pathname + page.url.search === feed.path || page.url.pathname === feed.path}
       >
         <span class="sidebar-link-icon"><svelte:component this={feedIcon(feed)} size={16} /></span>
-        <span class="sidebar-link-label">{feed.label}</span>
+        <span class="sidebar-link-label">{feed.type === 'hashtag' ? feed.label.replace(/^#/, '') : feed.label}</span>
       </a>
     {/each}
     {#if $isAuthenticated}

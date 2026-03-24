@@ -92,7 +92,7 @@
 
 {#if !loading || items.length > 0}
   <div class="feed-status">
-    <span>{items.length} gallerie{items.length !== 1 ? 's' : 'y'}{cursor ? '+' : ''}</span>
+    <span>{items.length} {items.length === 1 ? 'gallery' : 'galleries'}{cursor ? '+' : ''}</span>
     <button class="refresh" onclick={() => load()} title="Refresh"><RefreshCw size={14} /></button>
   </div>
 {/if}

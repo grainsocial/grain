@@ -43,7 +43,7 @@
   {#each $pinnedFeeds as feed (feed.id)}
     {@const Icon = feedIcon(feed)}
     <button class="drawer-link" onclick={() => nav(feed.path)}>
-      <span class="drawer-link-icon"><Icon size={18} /></span> {feed.label}
+      <span class="drawer-link-icon"><Icon size={18} /></span> {feed.type === 'hashtag' ? feed.label.replace(/^#/, '') : feed.label}
     </button>
   {/each}
 
