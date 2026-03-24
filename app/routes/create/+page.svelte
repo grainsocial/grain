@@ -9,6 +9,7 @@
   import { latLonToH3 } from '$lib/utils/h3'
   import { X, LoaderCircle } from 'lucide-svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
   import Field from '$lib/components/atoms/Field.svelte'
   import { includeExif } from '$lib/preferences'
@@ -203,6 +204,7 @@
   }
 </script>
 
+<OGMeta title="Create - grain" />
 <div class="create-page">
   <DetailHeader
     label={step === 3 ? 'Add image descriptions' : 'Create a gallery'}

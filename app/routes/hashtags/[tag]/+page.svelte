@@ -3,11 +3,13 @@
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import PinButton from '$lib/components/atoms/PinButton.svelte'
   import { isAuthenticated } from '$lib/stores'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   let { data } = $props()
   const tag = $derived(data.tag)
 </script>
 
+<OGMeta title="#{tag} - grain" />
 <DetailHeader label="#{tag}">
   {#snippet actions()}
     {#if $isAuthenticated}

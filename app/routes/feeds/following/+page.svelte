@@ -4,10 +4,12 @@
   import FeedTabs from '$lib/components/molecules/FeedTabs.svelte'
   import { followingFeedQuery } from '$lib/queries'
   import { viewer } from '$lib/stores'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   const feed = createQuery(() => followingFeedQuery($viewer?.did ?? ''))
 </script>
 
+<OGMeta title="Following - grain" />
 <FeedTabs />
 {#if !$viewer?.did}
   <div class="empty">Log in to see galleries from people you follow.</div>

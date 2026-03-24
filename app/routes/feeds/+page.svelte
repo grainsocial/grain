@@ -3,11 +3,13 @@
   import PinButton from '$lib/components/atoms/PinButton.svelte'
   import { pinnedFeeds, DEFAULT_PINNED, feedIcon } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   const coreIds = new Set(DEFAULT_PINNED.map((f) => f.id))
   const customFeeds = $derived($pinnedFeeds.filter((f) => !coreIds.has(f.id)))
 </script>
 
+<OGMeta title="My Feeds - grain" />
 <DetailHeader label="My Feeds" />
 
 <div class="feeds-page">

@@ -6,6 +6,7 @@
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryCreate from '$lib/components/molecules/StoryCreate.svelte'
   import { recentFeedQuery } from '$lib/queries'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   const feed = createQuery(() => recentFeedQuery())
 
@@ -31,6 +32,7 @@
   }
 </script>
 
+<OGMeta title="grain" />
 <FeedTabs />
 <StoryStrip onCreateStory={openCreate} onViewStory={openViewer} />
 {#if feed.isLoading}

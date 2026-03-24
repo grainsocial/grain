@@ -8,6 +8,7 @@
   import { truncDid } from '$lib/utils'
   import { page } from '$app/state'
   import { searchGalleriesQuery, searchProfilesQuery } from '$lib/queries'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   const query = $derived(page.url.searchParams.get('q') || '')
   const activeTab = $derived(
@@ -19,6 +20,7 @@
   const people = createQuery(() => ({ ...searchProfilesQuery(query), enabled: activeTab === 'people' && !!query }))
 </script>
 
+<OGMeta title="Search - grain" />
 <DetailHeader label='"{query}"' />
 
 <div class="search-tabs">

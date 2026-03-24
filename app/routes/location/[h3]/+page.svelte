@@ -6,6 +6,7 @@
   import { createQuery } from '@tanstack/svelte-query'
   import { locationFeedQuery } from '$lib/queries'
   import { isAuthenticated } from '$lib/stores'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   let { data } = $props()
 
@@ -14,6 +15,7 @@
   const feed = createQuery(() => locationFeedQuery(h3Index))
 </script>
 
+<OGMeta title="{name} - grain" />
 <DetailHeader label={name}>
   {#snippet actions()}
     {#if $isAuthenticated}

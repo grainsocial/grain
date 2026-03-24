@@ -5,6 +5,7 @@
   import { createQuery } from '@tanstack/svelte-query'
   import { cameraFeedQuery } from '$lib/queries'
   import { isAuthenticated } from '$lib/stores'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   let { data } = $props()
 
@@ -12,6 +13,7 @@
   const feed = createQuery(() => cameraFeedQuery(camera))
 </script>
 
+<OGMeta title="{camera} - grain" />
 <DetailHeader label={camera}>
   {#snippet actions()}
     {#if $isAuthenticated}
