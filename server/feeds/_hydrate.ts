@@ -79,7 +79,17 @@ export async function hydrateGalleries(
 
   const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows] = await Promise.all([
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
-    ctx.count("social.grain.favorite", "subject", galleryUris),
+    galleryUris.length > 0
+      ? (ctx.db.query(
+          `SELECT subject, COUNT(DISTINCT did) as count FROM "social.grain.favorite"
+           WHERE subject IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")}) GROUP BY subject`,
+          galleryUris,
+        ) as Promise<{ subject: string; count: number }[]>).then((rows) => {
+          const m = new Map<string, number>();
+          for (const r of rows) m.set(r.subject, Number(r.count));
+          return m;
+        })
+      : Promise.resolve(new Map<string, number>()),
     ctx.count("social.grain.comment", "subject", galleryUris),
     ctx.labels(galleryUris) as Promise<Map<string, Label[]>>,
     galleryUris.length > 0

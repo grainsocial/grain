@@ -73,7 +73,7 @@
     if (!requireAuth()) return
     if (isFollowing && followUri && followUri !== 'pending') {
       unfollowMut.mutate(followUri)
-    } else if (!isFollowing) {
+    } else if (!isFollowing && !followMut.isPending) {
       followMut.mutate()
     }
   }

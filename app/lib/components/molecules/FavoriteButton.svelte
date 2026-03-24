@@ -69,7 +69,7 @@
     type="button"
     class="stat faved"
     title="Unfavorite"
-    onclick={() => requireAuth() && favUri && favUri !== 'pending' && deleteFavMut.mutate(favUri)}
+    onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && favUri && favUri !== 'pending' && deleteFavMut.mutate(favUri)}
   >
     <Heart size={22} fill="currentColor" />
     {#if displayCount > 0}<span class="stat-count">{displayCount}</span>{/if}
@@ -79,7 +79,7 @@
     type="button"
     class="stat"
     title="Favorite"
-    onclick={() => requireAuth() && createFavMut.mutate()}
+    onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && !isFaved && createFavMut.mutate()}
   >
     <Heart size={22} />
     {#if displayCount > 0}<span class="stat-count">{displayCount}</span>{/if}
