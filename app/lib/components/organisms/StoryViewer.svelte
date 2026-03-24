@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import { X, MapPin, Trash2 } from 'lucide-svelte'
+  import { goto } from '$app/navigation'
   import { callXrpc } from '$hatk/client'
   import { storiesQuery, storyAuthorsQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
@@ -203,12 +204,14 @@
     {#if currentStory}
       <div class="story-header">
         <div class="author-info">
-          {#if currentStory.creator.avatar}
-            <img class="author-avatar" src={currentStory.creator.avatar} alt="" />
-          {/if}
-          <span class="author-name">
-            {currentStory.creator.displayName ?? currentStory.creator.handle}
-          </span>
+          <a class="author-link" href="/profile/{currentStory.creator.did}" onclick={(e) => { e.stopPropagation(); onclose(); goto(`/profile/${currentStory.creator.did}`) }}>
+            {#if currentStory.creator.avatar}
+              <img class="author-avatar" src={currentStory.creator.avatar} alt="" />
+            {/if}
+            <span class="author-name">
+              {currentStory.creator.displayName ?? currentStory.creator.handle}
+            </span>
+          </a>
           <span class="story-time">
             {timeAgo(currentStory.createdAt)}
           </span>
@@ -311,6 +314,13 @@
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .author-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
   }
   .author-avatar {
     width: 32px;
