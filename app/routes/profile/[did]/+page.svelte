@@ -151,7 +151,7 @@
   .stat-row strong { color: var(--text-primary); font-weight: 600; }
   .stat-link { text-decoration: none; color: inherit; }
   .stat-link:hover { text-decoration: underline; }
-  .bio { margin-top: 8px; font-size: 14px; color: var(--text-secondary); }
+  .bio { margin-top: 8px; font-size: 14px; color: var(--text-secondary); white-space: pre-wrap; }
   .links-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .known-followers {
     display: flex;

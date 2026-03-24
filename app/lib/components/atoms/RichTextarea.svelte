@@ -1,5 +1,6 @@
 <script lang="ts">
   const urlRe = /https?:\/\/[^\s<>[\]()]+/g
+  const bareDomainRe = /(?<![/@\w])([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(\/[^\s<>[\]()]*)?/g
   const mentionRe = /@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/g
   const hashtagRe = /#([a-zA-Z][a-zA-Z0-9_]*)/g
 
@@ -23,6 +24,11 @@
 
     for (const m of input.matchAll(urlRe)) {
       matches.push({ start: m.index!, end: m.index! + m[0].length, type: 'link' })
+    }
+    for (const m of input.matchAll(bareDomainRe)) {
+      const s = m.index!, e = s + m[0].length
+      if (matches.some((x) => s < x.end && e > x.start)) continue
+      matches.push({ start: s, end: e, type: 'link' })
     }
     for (const m of input.matchAll(mentionRe)) {
       const s = m.index!, e = s + m[0].length
@@ -56,6 +62,12 @@
 
   let el: HTMLTextAreaElement = $state()!
 
+  function autoResize() {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = el.scrollHeight + 'px'
+  }
+
   function syncScroll() {
     const backdrop = el?.previousElementSibling as HTMLElement | null
     if (backdrop) {
@@ -63,6 +75,11 @@
       backdrop.scrollLeft = el.scrollLeft
     }
   }
+
+  $effect(() => {
+    value;
+    autoResize();
+  })
 
   const highlighted = $derived(highlight(value))
 </script>
@@ -77,7 +94,7 @@
     {rows}
     {disabled}
     class="input"
-    oninput={syncScroll}
+    oninput={() => { autoResize(); syncScroll(); }}
     onscroll={syncScroll}
   ></textarea>
 </div>
@@ -122,7 +139,8 @@
     background: none;
     color: transparent;
     caret-color: var(--text-primary);
-    resize: vertical;
+    resize: none;
+    overflow: hidden;
     transition: border-color 0.15s;
   }
   .input:focus {

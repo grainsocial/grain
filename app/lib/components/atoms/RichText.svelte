@@ -8,6 +8,7 @@
   let { text }: { text: string } = $props()
 
   const urlRe = /https?:\/\/[^\s<>[\]()]+/g
+  const bareDomainRe = /(?<![/@\w])([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(\/[^\s<>[\]()]*)?/g
   const mentionRe = /@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/g
   const hashtagRe = /#([a-zA-Z][a-zA-Z0-9_]*)/g
 
@@ -20,6 +21,17 @@
         start: m.index!,
         end: m.index! + m[0].length,
         segment: { type: 'link', text: m[0], href: m[0] },
+      })
+    }
+
+    for (const m of input.matchAll(bareDomainRe)) {
+      const start = m.index!
+      const end = start + m[0].length
+      if (matches.some((x) => start < x.end && end > x.start)) continue
+      matches.push({
+        start,
+        end,
+        segment: { type: 'link', text: m[0], href: `https://${m[0]}` },
       })
     }
 
