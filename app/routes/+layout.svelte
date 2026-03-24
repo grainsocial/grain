@@ -27,7 +27,6 @@
 
   $effect(() => {
     if (data.viewer) {
-      $isAuthenticated = true
       $viewer = { did: data.viewer.did, handle: data.viewer.handle ?? null, displayName: data.viewer.handle ?? data.viewer.did.slice(0, 18), avatar: null }
       Promise.resolve(data.profile).then((profile) => {
         if (profile) {
@@ -40,7 +39,6 @@
         }
       })
     } else {
-      $isAuthenticated = false
       $viewer = null
     }
   })

@@ -10,7 +10,6 @@
   async function doLogout() {
     await logout()
     resetPreferences()
-    $isAuthenticated = false
     $viewer = null
     window.location.href = '/'
   }

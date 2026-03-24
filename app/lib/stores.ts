@@ -1,4 +1,5 @@
-import { writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
+import { page } from "$app/stores";
 
 export interface ViewerProfile {
   did: string;
@@ -8,7 +9,7 @@ export interface ViewerProfile {
 }
 
 export const viewer = writable<ViewerProfile | null>(null);
-export const isAuthenticated = writable(false);
+export const isAuthenticated = derived(page, ($page) => !!$page.data?.viewer);
 export const loginModalOpen = writable(false);
 
 /** Check auth and open login modal if not authenticated. Returns true if authenticated. */
