@@ -81,6 +81,99 @@
     if (photos.length === 0) step = 1
   }
 
+  // ─── Drag to Reorder ────────────────────────────────────────────────
+
+  let dragIndex: number | null = $state(null)
+  let dragOverIndex: number | null = $state(null)
+  let dragOffsetX = $state(0)
+  let dropping = $state(false)
+  let longPressTimer: ReturnType<typeof setTimeout> | null = null
+  let dragStartX = 0
+  let stripEl: HTMLDivElement | undefined = $state(undefined)
+  let slotMidpoints: number[] = []
+
+  function snapshotGeometry() {
+    if (!stripEl) return
+    const thumbs = stripEl.querySelectorAll('.photo-thumb') as NodeListOf<HTMLElement>
+    // Remove transforms temporarily to get clean layout positions
+    const prev = Array.from(thumbs).map((t) => t.style.transform)
+    thumbs.forEach((t) => (t.style.transform = 'none'))
+    slotMidpoints = Array.from(thumbs).map((t) => {
+      const rect = t.getBoundingClientRect()
+      return rect.left + rect.width / 2
+    })
+    thumbs.forEach((t, i) => (t.style.transform = prev[i]))
+  }
+
+  function indexFromPointerX(px: number): number {
+    for (let i = 0; i < slotMidpoints.length; i++) {
+      if (px < slotMidpoints[i]) return i
+    }
+    return slotMidpoints.length - 1
+  }
+
+  function onThumbPointerDown(e: PointerEvent, index: number) {
+    if (photos.length < 2) return
+    const target = e.currentTarget as HTMLElement
+    dragStartX = e.clientX
+
+    longPressTimer = setTimeout(() => {
+      dragIndex = index
+      dragOverIndex = index
+      snapshotGeometry()
+      target.setPointerCapture(e.pointerId)
+    }, 200)
+  }
+
+  function onThumbPointerMove(e: PointerEvent) {
+    if (dragIndex === null && longPressTimer && Math.abs(e.clientX - dragStartX) > 10) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+      return
+    }
+    if (dragIndex === null) return
+    e.preventDefault()
+    dragOffsetX = e.clientX - dragStartX
+
+    // Use the dragged item's displaced midpoint against the frozen snapshot
+    const draggedMidX = slotMidpoints[dragIndex] + dragOffsetX
+    dragOverIndex = indexFromPointerX(draggedMidX)
+  }
+
+  function onThumbPointerUp() {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
+    if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+      // Suppress transitions during the reorder so there's no snap-back
+      dropping = true
+      const moved = photos[dragIndex]
+      const next = photos.filter((_, i) => i !== dragIndex)
+      next.splice(dragOverIndex, 0, moved)
+      photos = next
+      // Re-enable transitions after Svelte renders the new order
+      requestAnimationFrame(() => {
+        dropping = false
+      })
+    }
+    dragIndex = null
+    dragOverIndex = null
+    dragOffsetX = 0
+  }
+
+  function thumbShift(index: number): number {
+    if (dragIndex === null || dragOverIndex === null) return 0
+    if (index === dragIndex) return 0
+    const slot = 80 // thumb width (72) + gap (8)
+    if (dragIndex < dragOverIndex) {
+      if (index > dragIndex && index <= dragOverIndex) return -slot
+    } else if (dragIndex > dragOverIndex) {
+      if (index < dragIndex && index >= dragOverIndex) return slot
+    }
+    return 0
+  }
+
   // ─── Step 2: Metadata ──────────────────────────────────────────────
 
   const canProceed = $derived(title.trim().length > 0 && photos.length > 0)
@@ -254,13 +347,29 @@
 
   <!-- Step 2: Metadata -->
   {#if step === 2}
-    <div class="photo-strip">
+    <div
+      class="photo-strip"
+      class:dragging={dragIndex !== null}
+      class:dropping
+      bind:this={stripEl}
+      onpointermove={onThumbPointerMove}
+      onpointerup={onThumbPointerUp}
+      onpointercancel={onThumbPointerUp}
+    >
       {#each photos as photo, i}
-        <div class="photo-thumb">
-          <img src={photo.dataUrl} alt="Photo {i + 1}" />
-          <button class="remove-btn" onclick={() => removePhoto(i)}>
-            <X size={12} />
-          </button>
+        {@const shift = thumbShift(i)}
+        <div
+          class="photo-thumb"
+          class:drag-active={dragIndex === i}
+          style={dragIndex === i ? `transform: translateX(${dragOffsetX}px) scale(1.08)` : shift ? `transform: translateX(${shift}px)` : ''}
+          onpointerdown={(e) => onThumbPointerDown(e, i)}
+        >
+          <img src={photo.dataUrl} alt="Photo {i + 1}" draggable="false" />
+          {#if dragIndex === null}
+            <button class="remove-btn" onclick={() => removePhoto(i)}>
+              <X size={12} />
+            </button>
+          {/if}
         </div>
       {/each}
     </div>
@@ -363,15 +472,32 @@
     overflow-x: auto;
     border-bottom: 1px solid var(--border);
   }
+  .photo-strip.dragging {
+    touch-action: none;
+    overflow-x: hidden;
+  }
+  .photo-strip.dropping .photo-thumb {
+    transition: none !important;
+  }
   .photo-thumb {
     position: relative;
     flex-shrink: 0;
+    transition: transform 150ms ease;
+    user-select: none;
+    touch-action: none;
+  }
+  .photo-thumb.drag-active {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    opacity: 0.9;
+    transition: none;
   }
   .photo-thumb img {
     width: 72px;
     height: 72px;
     object-fit: cover;
     border-radius: 6px;
+    pointer-events: none;
   }
   .remove-btn {
     position: absolute;
