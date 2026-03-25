@@ -118,6 +118,98 @@ CREATE TABLE "app.bsky.actor.profile" (
   created_at TEXT
 );
 
+CREATE TABLE "app.bsky.feed.post" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  tags TEXT,
+  text TEXT NOT NULL,
+  embed TEXT,
+  langs TEXT,
+  reply TEXT,
+  facets TEXT,
+  labels TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE "app.bsky.feed.post__embed_external" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  uri TEXT,
+  thumb TEXT,
+  title TEXT,
+  description TEXT
+);
+
+CREATE TABLE "app.bsky.feed.post__embed_images" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  alt TEXT,
+  image TEXT,
+  aspect_ratio TEXT
+);
+
+CREATE TABLE "app.bsky.feed.post__embed_record" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  uri TEXT,
+  cid TEXT
+);
+
+CREATE TABLE "app.bsky.feed.post__embed_recordWithMedia" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  media TEXT NOT NULL,
+  record TEXT NOT NULL
+);
+
+CREATE TABLE "app.bsky.feed.post__embed_video" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  alt TEXT,
+  video TEXT NOT NULL,
+  captions TEXT,
+  aspect_ratio TEXT,
+  presentation TEXT
+);
+
+CREATE TABLE "app.bsky.feed.post__entities" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  type TEXT NOT NULL,
+  index TEXT NOT NULL,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE "app.bsky.feed.post__labels_self_labels" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  val TEXT
+);
+
+CREATE TABLE "app.bsky.feed.postgate" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  post TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  embedding_rules TEXT,
+  detached_embedding_uris TEXT
+);
+
+CREATE TABLE "app.bsky.feed.threadgate" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  post TEXT NOT NULL,
+  allow TEXT,
+  created_at TEXT NOT NULL,
+  hidden_replies TEXT
+);
+
 CREATE TABLE "app.bsky.graph.follow" (
   uri TEXT PRIMARY KEY,
   cid TEXT,

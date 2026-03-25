@@ -32,6 +32,7 @@ export async function callXrpc<K extends keyof XrpcSchema & string>(
     const blob = arg as Blob | ArrayBuffer
     const ct = blob instanceof Blob ? blob.type : 'application/octet-stream'
     const res = await _fetch(path, { method: 'POST', headers: { 'Content-Type': ct }, body: blob })
+    if (typeof window !== 'undefined' && res.status === 401) { const _b = await res.json().catch(() => ({})); const _h = _b.handle ?? getViewer()?.handle; window.location.href = _h ? `/oauth/login?handle=${encodeURIComponent(_h)}` : '/oauth/login'; return new Promise(() => {}) as any }
     if (!res.ok) throw new Error(`XRPC ${nsid} failed: ${res.status}`)
     return res.json() as Promise<OutputOf<K>>
   }
