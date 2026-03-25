@@ -12,6 +12,7 @@
   import Input from '$lib/components/atoms/Input.svelte'
   import RichTextarea from '$lib/components/atoms/RichTextarea.svelte'
   import Toast from '$lib/components/atoms/Toast.svelte'
+  import Checkbox from '$lib/components/atoms/Checkbox.svelte'
   import { setIncludeExif } from '$lib/preferences'
   import { Camera, LoaderCircle, Trash2 } from 'lucide-svelte'
 
@@ -179,10 +180,7 @@
   </div>
 
   <div class="preferences">
-    <label class="pref-toggle">
-      <input type="checkbox" bind:checked={localIncludeExif} />
-      <span class="pref-label">Include camera data (EXIF) when uploading photos</span>
-    </label>
+    <Checkbox bind:checked={localIncludeExif} label="Include camera data (EXIF) when uploading photos" />
   </div>
 
   <div class="actions">
@@ -255,20 +253,6 @@
     margin-top: 24px;
     padding-top: 16px;
     border-top: 1px solid var(--border);
-  }
-  .pref-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-  .pref-toggle input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--grain-btn);
-    cursor: pointer;
   }
   .actions {
     margin-top: 24px;

@@ -68,6 +68,16 @@ export const storyAuthorsQuery = (f?: Fetch) =>
     staleTime: 60_000,
   });
 
+export const storyQuery = (storyUri: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["getStory", storyUri],
+    queryFn: () =>
+      callXrpc("social.grain.unspecced.getStory", { story: storyUri }, f).then(
+        (r) => r?.story ?? null,
+      ),
+    staleTime: 60_000,
+  });
+
 export const storiesQuery = (did: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["stories", did],

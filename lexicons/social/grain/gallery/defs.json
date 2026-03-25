@@ -42,7 +42,15 @@
         },
         "createdAt": { "type": "string", "format": "datetime" },
         "indexedAt": { "type": "string", "format": "datetime" },
-        "viewer": { "type": "ref", "ref": "#viewerState" }
+        "viewer": { "type": "ref", "ref": "#viewerState" },
+        "crossPost": { "type": "ref", "ref": "#crossPostInfo" }
+      }
+    },
+    "crossPostInfo": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string", "format": "uri", "description": "URL to the cross-posted Bluesky post." }
       }
     },
     "viewerState": {

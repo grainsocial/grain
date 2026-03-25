@@ -77,7 +77,7 @@ export async function hydrateGalleries(
     for (const row of favRows) viewerFavs.set(row.subject, row.uri);
   }
 
-  const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows] = await Promise.all([
+  const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows, crossPosts] = await Promise.all([
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
     galleryUris.length > 0
       ? (ctx.db.query(
@@ -111,6 +111,25 @@ export async function hydrateGalleries(
           }>
         >)
       : Promise.resolve([]),
+    // Cross-post lookup: find Bluesky posts that link back to these galleries
+    galleryUris.length > 0
+      ? (async () => {
+          const map = new Map<string, string>();
+          for (const item of items) {
+            const rkey = item.uri.split("/").pop();
+            const url = `grain.social/profile/${item.did}/gallery/${rkey}`;
+            const rows = (await ctx.db.query(
+              `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%' || $2 || '%' LIMIT 1`,
+              [item.did, url],
+            )) as Array<{ uri: string }>;
+            if (rows.length) {
+              const postRkey = rows[0].uri.split("/").pop();
+              map.set(item.uri, `https://bsky.app/profile/${item.did}/post/${postRkey}`);
+            }
+          }
+          return map;
+        })()
+      : Promise.resolve(new Map<string, string>()),
   ]);
 
   // Group gallery items by gallery URI
@@ -198,6 +217,7 @@ export async function hydrateGalleries(
         : {}),
       ...(labelsByUri.has(item.uri) ? { labels: labelsByUri.get(item.uri) } : {}),
       ...(viewerFavs.has(item.uri) ? { viewer: { fav: viewerFavs.get(item.uri) } } : {}),
+      ...(crossPosts.has(item.uri) ? { crossPost: { url: crossPosts.get(item.uri) } } : {}),
     });
   });
 }

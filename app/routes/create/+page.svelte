@@ -4,8 +4,8 @@
   import { useQueryClient } from '@tanstack/svelte-query'
   import { callXrpc } from '$hatk/client'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
-  import { parseTextToFacets } from '$lib/utils/rich-text'
   import { reverseGeocode, formatLocationName, extractAddress } from '$lib/utils/nominatim'
+  import { createBskyPost } from '$lib/utils/bsky-post'
   import { latLonToH3 } from '$lib/utils/h3'
   import { X, LoaderCircle } from 'lucide-svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
@@ -13,10 +13,12 @@
   import Button from '$lib/components/atoms/Button.svelte'
   import Field from '$lib/components/atoms/Field.svelte'
   import { includeExif } from '$lib/preferences'
+  import { viewer } from '$lib/stores'
   import Input from '$lib/components/atoms/Input.svelte'
   import Textarea from '$lib/components/atoms/Textarea.svelte'
   import RichTextarea from '$lib/components/atoms/RichTextarea.svelte'
   import LocationInput from '$lib/components/atoms/LocationInput.svelte'
+  import Checkbox from '$lib/components/atoms/Checkbox.svelte'
   import type { LocationData } from '$lib/components/atoms/LocationInput.svelte'
 
   onMount(() => window.scrollTo(0, 0))
@@ -30,6 +32,7 @@
   let location = $state<LocationData | null>(null)
   let processing = $state(false)
   let publishing = $state(false)
+  let postToBluesky = $state(false)
   let error = $state<string | null>(null)
 
   let fileInput: HTMLInputElement = $state()!
@@ -274,6 +277,18 @@
         })
       }
 
+      // 5. Create Bluesky post if opted in
+      if (postToBluesky && $viewer) {
+        const galleryRkey = galleryUri.split('/').pop()
+        const galleryUrl = `${window.location.origin}/profile/${$viewer.did}/gallery/${galleryRkey}`
+        await createBskyPost({
+          url: galleryUrl,
+          location: location ? { name: location.name, address: location.address } : null,
+          description: description.trim() || undefined,
+          images: photos,
+        })
+      }
+
       queryClient.invalidateQueries({ queryKey: ['getFeed'] })
       goto('/')
     } catch (err: any) {
@@ -392,6 +407,7 @@
         />
       </Field>
       <LocationInput bind:value={location} />
+      <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
     </div>
   {/if}
 

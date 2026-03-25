@@ -8,6 +8,9 @@
   import LocationInput from '$lib/components/atoms/LocationInput.svelte'
   import type { LocationData } from '$lib/components/atoms/LocationInput.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
+  import Checkbox from '$lib/components/atoms/Checkbox.svelte'
+  import { createBskyPost } from '$lib/utils/bsky-post'
+  import { viewer } from '$lib/stores'
 
   let { onclose }: { onclose: () => void } = $props()
 
@@ -15,6 +18,7 @@
   let location = $state<LocationData | null>(null)
   let processing = $state(false)
   let publishing = $state(false)
+  let postToBluesky = $state(false)
   let error = $state<string | null>(null)
   let fileInput: HTMLInputElement = $state()!
 
@@ -76,7 +80,7 @@
 
       const uploadResult = await callXrpc('dev.hatk.uploadBlob', blob as any)
 
-      await callXrpc('dev.hatk.createRecord', {
+      const result = await callXrpc('dev.hatk.createRecord', {
         collection: 'social.grain.story',
         record: {
           media: (uploadResult as any).blob,
@@ -93,6 +97,23 @@
           createdAt: now,
         },
       })
+
+      // Post to Bluesky if opted in
+      if (postToBluesky && $viewer) {
+        const storyUri = (result as any).uri as string
+        const storyRkey = storyUri.split('/').pop()
+        const storyUrl = `${window.location.origin}/profile/${$viewer.did}/story/${storyRkey}`
+        await createBskyPost({
+          url: storyUrl,
+          location: location ? { name: location.name, address: location.address } : null,
+          images: [{
+            dataUrl: photo.dataUrl,
+            alt: '',
+            width: photo.width,
+            height: photo.height,
+          }],
+        })
+      }
 
       queryClient.invalidateQueries({ queryKey: ['storyAuthors'] })
       onclose()
@@ -152,6 +173,9 @@
       </div>
       <div class="location-field">
         <LocationInput bind:value={location} placeholder="Add location..." />
+      </div>
+      <div class="bsky-field">
+        <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
       </div>
     {/if}
   </div>
@@ -248,5 +272,8 @@
   }
   .location-field {
     padding: 12px 16px;
+  }
+  .bsky-field {
+    padding: 0 16px 12px;
   }
 </style>

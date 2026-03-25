@@ -26,7 +26,8 @@
         "labels": {
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
-        }
+        },
+        "crossPost": { "type": "ref", "ref": "social.grain.gallery.defs#crossPostInfo" }
       }
     }
   }
