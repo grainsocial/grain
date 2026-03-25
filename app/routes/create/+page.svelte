@@ -347,6 +347,7 @@
 
   <!-- Step 2: Metadata -->
   {#if step === 2}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="photo-strip"
       class:dragging={dragIndex !== null}
