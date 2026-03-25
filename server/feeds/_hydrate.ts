@@ -58,6 +58,28 @@ function buildExifView(row: ExifRow): ExifView {
   });
 }
 
+/** Look up Bluesky cross-posts for a set of grain URIs by searching bsky post text. */
+export async function lookupCrossPosts(
+  db: BaseContext["db"],
+  items: Array<{ uri: string; did: string }>,
+  collection: "gallery" | "story",
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  for (const item of items) {
+    const rkey = item.uri.split("/").pop();
+    const url = `/profile/${item.did}/${collection}/${rkey}`;
+    const rows = (await db.query(
+      `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%' || $2 || '%' LIMIT 1`,
+      [item.did, url],
+    )) as Array<{ uri: string }>;
+    if (rows.length) {
+      const postRkey = rows[0].uri.split("/").pop();
+      map.set(item.uri, `https://bsky.app/profile/${item.did}/post/${postRkey}`);
+    }
+  }
+  return map;
+}
+
 /** Shared hydration for gallery feeds — resolves photos, profiles, fav/comment counts. */
 export async function hydrateGalleries(
   ctx: BaseContext,
@@ -111,25 +133,7 @@ export async function hydrateGalleries(
           }>
         >)
       : Promise.resolve([]),
-    // Cross-post lookup: find Bluesky posts that link back to these galleries
-    galleryUris.length > 0
-      ? (async () => {
-          const map = new Map<string, string>();
-          for (const item of items) {
-            const rkey = item.uri.split("/").pop();
-            const url = `grain.social/profile/${item.did}/gallery/${rkey}`;
-            const rows = (await ctx.db.query(
-              `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%' || $2 || '%' LIMIT 1`,
-              [item.did, url],
-            )) as Array<{ uri: string }>;
-            if (rows.length) {
-              const postRkey = rows[0].uri.split("/").pop();
-              map.set(item.uri, `https://bsky.app/profile/${item.did}/post/${postRkey}`);
-            }
-          }
-          return map;
-        })()
-      : Promise.resolve(new Map<string, string>()),
+    lookupCrossPosts(ctx.db, items, "gallery"),
   ]);
 
   // Group gallery items by gallery URI
@@ -217,7 +221,7 @@ export async function hydrateGalleries(
         : {}),
       ...(labelsByUri.has(item.uri) ? { labels: labelsByUri.get(item.uri) } : {}),
       ...(viewerFavs.has(item.uri) ? { viewer: { fav: viewerFavs.get(item.uri) } } : {}),
-      ...(crossPosts.has(item.uri) ? { crossPost: { url: crossPosts.get(item.uri) } } : {}),
+      ...(crossPosts.has(item.uri) ? { crossPost: { url: crossPosts.get(item.uri)! } } : {}),
     });
   });
 }

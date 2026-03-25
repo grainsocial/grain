@@ -1,6 +1,7 @@
 import { defineQuery } from "$hatk";
 import { views } from "$hatk";
 import type { GrainActorProfile, Story } from "$hatk";
+import { lookupCrossPosts } from "../feeds/_hydrate.ts";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   const { db, ok } = ctx;
@@ -79,17 +80,9 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   }
 
   // Cross-post lookup
-  let crossPost: { url: string } | undefined;
-  const rkey = row.uri.split("/").pop();
-  const searchUrl = `grain.social/profile/${row.did}/story/${rkey}`;
-  const postRows = (await db.query(
-    `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%' || $2 || '%' LIMIT 1`,
-    [row.did, searchUrl],
-  )) as Array<{ uri: string }>;
-  if (postRows.length) {
-    const postRkey = postRows[0].uri.split("/").pop();
-    crossPost = { url: `https://bsky.app/profile/${row.did}/post/${postRkey}` };
-  }
+  const crossPostMap = await lookupCrossPosts(db, [row], "story");
+  const crossPostUrl = crossPostMap.get(row.uri);
+  const crossPost = crossPostUrl ? { url: crossPostUrl } : undefined;
 
   const story = views.storyView({
     uri: row.uri,

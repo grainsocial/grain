@@ -2,6 +2,7 @@ import { defineQuery } from "$hatk";
 import { views } from "$hatk";
 import type { GrainActorProfile, Story, Label } from "$hatk";
 import { HIDE_LABELS } from "../labels/_hidden.ts";
+import { lookupCrossPosts } from "../feeds/_hydrate.ts";
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
@@ -65,6 +66,9 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
     return !labels.some((l) => HIDE_LABELS.has(l.val) && !l.neg);
   });
 
+  // Cross-post lookup
+  const crossPosts = await lookupCrossPosts(db, visibleRows, "story");
+
   const stories = visibleRows.map((row) => {
     // Parse the JSON blob reference for URL generation
     let blobRef: any;
@@ -121,6 +125,7 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
         : {}),
       createdAt: row.created_at,
       ...(labelsByUri.has(row.uri) ? { labels: labelsByUri.get(row.uri) } : {}),
+      ...(crossPosts.has(row.uri) ? { crossPost: { url: crossPosts.get(row.uri)! } } : {}),
     });
   });
 

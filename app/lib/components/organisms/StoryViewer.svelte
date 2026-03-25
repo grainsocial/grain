@@ -7,6 +7,7 @@
   import { viewer as viewerStore } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import ReportButton from '$lib/components/molecules/ReportButton.svelte'
+  import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
 
   let {
     initialDid,
@@ -56,6 +57,8 @@
   const currentStory = $derived(stories.data?.[currentStoryIndex])
   const totalStories = $derived(stories.data?.length ?? 0)
   const isOwn = $derived(currentDid === $viewerStore?.did)
+  const bskyUrl = $derived((currentStory as any)?.crossPost?.url ?? null)
+
   let deleting = $state(false)
 
   // Label moderation
@@ -279,6 +282,13 @@
         </div>
       {/if}
 
+      <!-- Bluesky cross-post link -->
+      {#if bskyUrl}
+        <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky" onclick={(e) => e.stopPropagation()}>
+          <BskyIcon size={16} />
+        </a>
+      {/if}
+
       <!-- Location overlay -->
       {#if currentStory.location}
         <div class="story-location">
@@ -459,6 +469,20 @@
     border-radius: 8px;
     font-size: 13px;
     cursor: pointer;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Bluesky link */
+  .bsky-link {
+    position: absolute;
+    bottom: 24px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    color: white;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px;
+    border-radius: 50%;
     backdrop-filter: blur(4px);
   }
 
