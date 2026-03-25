@@ -22,7 +22,11 @@
         "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" },
         "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
         "address": { "type": "ref", "ref": "community.lexicon.location.address" },
-        "createdAt": { "type": "string", "format": "datetime" }
+        "createdAt": { "type": "string", "format": "datetime" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
+        }
       }
     }
   }

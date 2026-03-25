@@ -1,10 +1,11 @@
 <script lang="ts">
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { X, MapPin, Trash2 } from 'lucide-svelte'
+  import { X, MapPin, Trash2, AlertTriangle } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { callXrpc } from '$hatk/client'
   import { storiesQuery, storyAuthorsQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
+  import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import ReportButton from '$lib/components/molecules/ReportButton.svelte'
 
   let {
@@ -56,6 +57,29 @@
   const totalStories = $derived(stories.data?.length ?? 0)
   const isOwn = $derived(currentDid === $viewerStore?.did)
   let deleting = $state(false)
+
+  // Label moderation
+  const labelDefs = createQuery(() => labelDefsQuery())
+  const labelResult = $derived(resolveLabels(currentStory?.labels, labelDefs.data ?? []))
+  let labelRevealed = $state(false)
+
+  // Reset revealed state when story changes
+  let prevStoryUri = $state('')
+  $effect(() => {
+    const uri = currentStory?.uri ?? ''
+    if (uri !== prevStoryUri) {
+      prevStoryUri = uri
+      labelRevealed = false
+    }
+  })
+
+  // Pause timer while a label warning is shown
+  const labelWarningActive = $derived(
+    !labelRevealed && (labelResult.action === 'warn-content' || labelResult.action === 'warn-media')
+  )
+  $effect(() => {
+    paused = labelWarningActive
+  })
 
   async function deleteStory() {
     if (!currentStory || deleting) return
@@ -231,14 +255,29 @@
       </div>
 
       <!-- Image -->
-      <div class="story-image-wrapper">
-        <img
-          class="story-image"
-          src={currentStory.fullsize}
-          alt=""
-          style="aspect-ratio: {currentStory.aspectRatio.width}/{currentStory.aspectRatio.height}"
-        />
-      </div>
+      {#if labelResult.action === 'warn-content' && !labelRevealed}
+        <div class="story-content-warning">
+          <AlertTriangle size={20} />
+          <span class="cw-label">{labelResult.name}</span>
+          <p class="cw-text">This content has been flagged for review.</p>
+          <button class="cw-reveal" onclick={(e) => { e.stopPropagation(); labelRevealed = true }}>Show content</button>
+        </div>
+      {:else}
+        <div class="story-image-wrapper" class:media-blurred={labelResult.action === 'warn-media' && !labelRevealed}>
+          {#if labelResult.action === 'warn-media' && !labelRevealed}
+            <button class="media-warning" onclick={(e) => { e.stopPropagation(); labelRevealed = true }}>
+              <AlertTriangle size={16} />
+              <span>{labelResult.name}</span>
+            </button>
+          {/if}
+          <img
+            class="story-image"
+            src={currentStory.fullsize}
+            alt=""
+            style="aspect-ratio: {currentStory.aspectRatio.width}/{currentStory.aspectRatio.height}"
+          />
+        </div>
+      {/if}
 
       <!-- Location overlay -->
       {#if currentStory.location}
@@ -365,6 +404,62 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+  }
+
+  /* Label moderation */
+  .story-content-warning {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    text-align: center;
+    padding: 24px;
+  }
+  .cw-label {
+    font-weight: 600;
+  }
+  .cw-text {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+  }
+  .cw-reveal {
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .media-blurred {
+    position: relative;
+  }
+  .media-blurred .story-image {
+    filter: blur(24px);
+  }
+  .media-warning {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
   }
 
   /* Location */

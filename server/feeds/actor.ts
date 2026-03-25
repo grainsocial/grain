@@ -1,5 +1,6 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "./_hydrate.ts";
+import { hideLabelsFilter } from "../labels/_hidden.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -34,6 +35,7 @@ export default defineFeed({
       `SELECT t.uri, t.cid, t.created_at
        FROM "social.grain.gallery" t
        WHERE t.did = $1
+         AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
       { params: [actor], orderBy: "t.created_at" },
     );

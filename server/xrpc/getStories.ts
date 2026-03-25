@@ -1,6 +1,7 @@
 import { defineQuery } from "$hatk";
 import { views } from "$hatk";
-import type { GrainActorProfile, Story } from "$hatk";
+import type { GrainActorProfile, Story, Label } from "$hatk";
+import { HIDE_LABELS } from "../labels/_hidden.ts";
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
@@ -13,10 +14,12 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
 
   // hatk stores aspect_ratio and location as JSON TEXT columns, media as JSON blob ref
   const rows = (await db.query(
-    `SELECT uri, cid, did, media, aspect_ratio, location, address, created_at
-       FROM "social.grain.story"
-       WHERE did = $1 AND created_at > $2
-       ORDER BY created_at ASC`,
+    `SELECT s.uri, s.cid, s.did, s.media, s.aspect_ratio, s.location, s.address, s.created_at
+       FROM "social.grain.story" s
+       LEFT JOIN _repos r ON s.did = r.did
+       WHERE s.did = $1 AND s.created_at > $2
+         AND (r.status IS NULL OR r.status != 'takendown')
+       ORDER BY s.created_at ASC`,
     [actor, cutoff],
   )) as {
     uri: string;
@@ -48,7 +51,21 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
         handle: actor,
       });
 
-  const stories = rows.map((row) => {
+  // Hydrate external labels for story URIs
+  const storyUris = rows.map((r) => r.uri);
+  const labelsByUri =
+    storyUris.length > 0
+      ? ((await ctx.labels(storyUris)) as Map<string, Label[]>)
+      : new Map<string, Label[]>();
+
+  // Filter out stories with hide-severity labels
+  const visibleRows = rows.filter((row) => {
+    const labels = labelsByUri.get(row.uri);
+    if (!labels) return true;
+    return !labels.some((l) => HIDE_LABELS.has(l.val) && !l.neg);
+  });
+
+  const stories = visibleRows.map((row) => {
     // Parse the JSON blob reference for URL generation
     let blobRef: any;
     try {
@@ -103,6 +120,7 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
           }
         : {}),
       createdAt: row.created_at,
+      ...(labelsByUri.has(row.uri) ? { labels: labelsByUri.get(row.uri) } : {}),
     });
   });
 

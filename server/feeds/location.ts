@@ -7,6 +7,7 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "./_hydrate.ts";
 import { getResolution, cellToParent } from "h3-js";
+import { hideLabelsFilter } from "../labels/_hidden.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -32,6 +33,7 @@ export default defineFeed({
          LEFT JOIN _repos r ON t.did = r.did
          WHERE (r.status IS NULL OR r.status != 'takendown')
            AND t.location IS NOT NULL
+           AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
         { orderBy: "t.created_at" },
       );
@@ -58,6 +60,7 @@ export default defineFeed({
        LEFT JOIN _repos r ON t.did = r.did
        WHERE (r.status IS NULL OR r.status != 'takendown')
          AND json_extract(t.location, '$.value') = $1
+         AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
       { orderBy: "t.created_at", params: [location] },
     );
