@@ -59,11 +59,16 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
       ? ((await ctx.labels(storyUris)) as Map<string, Label[]>)
       : new Map<string, Label[]>();
 
-  // Filter out stories with hide-severity labels
+  // Filter out stories with active hide-severity labels (latest entry per val wins)
   const visibleRows = rows.filter((row) => {
     const labels = labelsByUri.get(row.uri);
     if (!labels) return true;
-    return !labels.some((l) => HIDE_LABELS.has(l.val) && !l.neg);
+    const latestByVal = new Map<string, Label>();
+    for (const l of labels) {
+      const prev = latestByVal.get(l.val);
+      if (!prev || l.cts > prev.cts) latestByVal.set(l.val, l);
+    }
+    return ![...latestByVal.values()].some((l) => HIDE_LABELS.has(l.val) && !l.neg);
   });
 
   // Cross-post lookup
