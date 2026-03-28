@@ -90,11 +90,10 @@ export async function createBskyPost(options: BskyPostOptions): Promise<void> {
   await callXrpc('dev.hatk.createRecord', {
     collection: 'app.bsky.feed.post',
     record: {
-      $type: 'app.bsky.feed.post',
       text: postText,
       facets: postFacets.length > 0 ? postFacets : undefined,
       embed: imageRefs.length > 0
-        ? { $type: 'app.bsky.embed.images', images: imageRefs }
+        ? { $type: 'app.bsky.embed.images' as const, images: imageRefs }
         : undefined,
       tags: ['grainsocial'],
       createdAt: new Date().toISOString(),

@@ -6,6 +6,7 @@
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { reverseGeocode, formatLocationName, extractAddress } from '$lib/utils/nominatim'
   import { createBskyPost } from '$lib/utils/bsky-post'
+  import { parseTextToFacets } from '$lib/utils/rich-text'
   import { latLonToH3 } from '$lib/utils/h3'
   import { X, LoaderCircle } from 'lucide-svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'

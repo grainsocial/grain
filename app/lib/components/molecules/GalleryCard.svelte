@@ -6,6 +6,7 @@
   import ExifInfo from '../atoms/ExifInfo.svelte'
   import FavoriteButton from './FavoriteButton.svelte'
   import ReportButton from './ReportButton.svelte'
+  import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
   import { MessageCircle, Send, ChevronLeft, ChevronRight } from 'lucide-svelte'
   import { share } from '$lib/utils/share'
@@ -117,21 +118,23 @@
   {/if}
   <div class:content-obscured={labelResult.action === 'warn-content' && !revealed}>
   <header class="card-header">
-    <a href="/profile/{gallery.creator?.did}" class="author-chip">
-      <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} size={32} />
-      <div class="author-info">
-        <span class="author-name-row">
-          <span class="author-handle">{displayName}</span>
-          {#if handle}<span class="author-subtext">{handle}</span>{/if}
-        </span>
-        {#if gallery.location}
-          <!-- svelte-ignore node_invalid_placement_ssr -->
-          <a class="location-link" href="/location/{encodeURIComponent(gallery.location.value)}?name={encodeURIComponent(gallery.location.name ?? gallery.location.value)}" onclick={(e) => e.stopPropagation()}>
-            {gallery.location.name ?? gallery.address?.locality ?? gallery.location.value}
-          </a>
-        {/if}
-      </div>
-    </a>
+    <ProfilePopover did={gallery.creator?.did ?? ''}>
+      <a href="/profile/{gallery.creator?.did}" class="author-chip">
+        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} size={32} />
+        <div class="author-info">
+          <span class="author-name-row">
+            <span class="author-handle">{displayName}</span>
+            {#if handle}<span class="author-subtext">{handle}</span>{/if}
+          </span>
+          {#if gallery.location}
+            <!-- svelte-ignore node_invalid_placement_ssr -->
+            <a class="location-link" href="/location/{encodeURIComponent(gallery.location.value)}?name={encodeURIComponent(gallery.location.name ?? gallery.location.value)}" onclick={(e) => e.stopPropagation()}>
+              {gallery.location.name ?? gallery.address?.locality ?? gallery.location.value}
+            </a>
+          {/if}
+        </div>
+      </a>
+    </ProfilePopover>
   </header>
 
   {#if photos.length > 0}
