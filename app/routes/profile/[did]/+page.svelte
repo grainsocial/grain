@@ -8,21 +8,22 @@
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
-  import { ExternalLink, Grid3x3, List } from 'lucide-svelte'
+  import { ExternalLink, Grid3x3, List, Clock } from 'lucide-svelte'
   import { createQuery } from '@tanstack/svelte-query'
   import { actorProfileQuery, actorFeedQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
+  import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
 
   let { data } = $props()
   let lightboxSrc: string | null = $state(null)
-  let viewMode: 'grid' | 'list' = $state('grid')
+  let viewMode: 'grid' | 'list' | 'stories' = $state('grid')
   let followersOffset = $state(0)
   let showStoryViewer = $state(false)
-
   const did = $derived(data.did)
-  $effect(() => { void did; void profile.data; followersOffset = 0 })
+  $effect(() => { void did; void profile.data; followersOffset = 0; viewMode = 'grid' })
   const viewerDid = $derived($viewerStore?.did)
+  const isOwnProfile = $derived(viewerDid === did)
 
   const profile = createQuery(() => actorProfileQuery(did, viewerDid))
   const feed = createQuery(() => actorFeedQuery(did))
@@ -113,9 +114,16 @@
     <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => (viewMode = 'list')} aria-label="List view">
       <List size={18} />
     </button>
+    {#if isOwnProfile}
+      <button class="toggle-btn" class:active={viewMode === 'stories'} onclick={() => (viewMode = 'stories')} aria-label="Story archive">
+        <Clock size={18} />
+      </button>
+    {/if}
   </div>
 
-  {#if viewMode === 'grid'}
+  {#if viewMode === 'stories' && isOwnProfile}
+    <StoryArchive {did} />
+  {:else if viewMode === 'grid'}
     <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
   {:else}
     {#if feed.isLoading}

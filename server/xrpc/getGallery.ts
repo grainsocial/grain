@@ -1,6 +1,6 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
 import type { Gallery } from "$hatk";
-import { hydrateGalleries } from "../feeds/_hydrate.ts";
+import { hydrateGalleries } from "../hydrate/galleries.ts";
 
 export default defineQuery("social.grain.unspecced.getGallery", async (ctx) => {
   const { ok, params, db } = ctx;

@@ -88,6 +88,18 @@ export const storiesQuery = (did: string, f?: Fetch) =>
     staleTime: 30_000,
   });
 
+export const storyArchiveQuery = (did: string, cursor?: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["stories", "archive", did, cursor],
+    queryFn: () =>
+      callXrpc(
+        "social.grain.unspecced.getStoryArchive",
+        { actor: did, ...(cursor ? { cursor } : {}) },
+        f,
+      ).then((r) => r ?? { stories: [], cursor: undefined }),
+    staleTime: 60_000,
+  });
+
 // ─── Preferences ────────────────────────────────────────────────────
 
 export const preferencesQuery = (f?: Fetch) =>

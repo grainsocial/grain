@@ -1,5 +1,5 @@
 import { defineQuery } from "$hatk";
-import { hydrateGalleries } from "../feeds/_hydrate.ts";
+import { hydrateGalleries } from "../hydrate/galleries.ts";
 
 export default defineQuery("social.grain.unspecced.searchGalleries", async (ctx) => {
   const { params, search, ok } = ctx;

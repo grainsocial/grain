@@ -3,7 +3,7 @@
   import { X, MapPin, Trash2, AlertTriangle } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { callXrpc } from '$hatk/client'
-  import { storiesQuery, storyAuthorsQuery } from '$lib/queries'
+  import { storiesQuery, storyAuthorsQuery, storyQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import ReportButton from '$lib/components/molecules/ReportButton.svelte'
@@ -12,9 +12,11 @@
   let {
     initialDid,
     onclose,
+    singleStory,
   }: {
     initialDid: string
     onclose: () => void
+    singleStory?: { uri: string } | null
   } = $props()
 
   const queryClient = useQueryClient()
@@ -52,10 +54,19 @@
   })
 
   const currentDid = $derived(authorDids[currentAuthorIndex] ?? initialDid)
-  const stories = createQuery(() => storiesQuery(currentDid))
+  const stories = createQuery(() => ({
+    ...storiesQuery(currentDid),
+    enabled: !singleStory,
+  }))
+  const singleStoryData = createQuery(() => ({
+    ...storyQuery(singleStory?.uri ?? ''),
+    enabled: !!singleStory,
+  }))
 
-  const currentStory = $derived(stories.data?.[currentStoryIndex])
-  const totalStories = $derived(stories.data?.length ?? 0)
+  const currentStory = $derived(
+    singleStory ? (singleStoryData.data ?? undefined) : stories.data?.[currentStoryIndex]
+  )
+  const totalStories = $derived(singleStory ? 1 : (stories.data?.length ?? 0))
   const isOwn = $derived(currentDid === $viewerStore?.did)
   const bskyUrl = $derived((currentStory as any)?.crossPost?.url ?? null)
 
@@ -108,6 +119,7 @@
         currentStoryIndex = Math.max(0, currentStoryIndex - 1)
       }
       await queryClient.invalidateQueries({ queryKey: ['stories', currentDid] })
+      queryClient.invalidateQueries({ queryKey: ['stories', 'archive'] })
       queryClient.invalidateQueries({ queryKey: ['storyAuthors'] })
     } catch (err) {
       console.error('Failed to delete story:', err)
@@ -123,7 +135,10 @@
       const mins = Math.floor(diff / (1000 * 60))
       return `${mins}m`
     }
-    return `${hours}h`
+    if (hours < 24) {
+      return `${hours}h`
+    }
+    return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }
 
   function startTimer() {
@@ -149,7 +164,7 @@
     if (currentStoryIndex < totalStories - 1) {
       currentStoryIndex++
       progress = 0
-    } else if (currentAuthorIndex < authorDids.length - 1) {
+    } else if (!singleStory && currentAuthorIndex < authorDids.length - 1) {
       currentAuthorIndex++
       // currentStoryIndex reset by $effect above
     } else {
@@ -161,7 +176,7 @@
     if (currentStoryIndex > 0) {
       currentStoryIndex--
       progress = 0
-    } else if (currentAuthorIndex > 0) {
+    } else if (!singleStory && currentAuthorIndex > 0) {
       currentAuthorIndex--
       // currentStoryIndex reset by $effect above
     }

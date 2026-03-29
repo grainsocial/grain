@@ -5,7 +5,7 @@
 // For city-level queries, matches galleries whose venue H3 is a child of the city cell.
 
 import { defineFeed } from "$hatk";
-import { hydrateGalleries } from "./_hydrate.ts";
+import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { getResolution, cellToParent } from "h3-js";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 

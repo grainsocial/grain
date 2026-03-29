@@ -1,12 +1,12 @@
 import { defineQuery } from "$hatk";
 import { views } from "$hatk";
 import type { GrainActorProfile, Story } from "$hatk";
-import { lookupCrossPosts } from "../feeds/_hydrate.ts";
+import { lookupCrossPosts } from "../hydrate/galleries.ts";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   const { db, ok } = ctx;
   const storyUri = ctx.params.story;
-  if (!storyUri) return ok({ story: null });
+  if (!storyUri) return ok({});
 
   const rows = (await db.query(
     `SELECT uri, cid, did, media, aspect_ratio, location, address, created_at
@@ -25,7 +25,7 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   }[];
 
   const row = rows[0];
-  if (!row) return ok({ story: null });
+  if (!row) return ok({});
 
   // Resolve author profile
   const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [

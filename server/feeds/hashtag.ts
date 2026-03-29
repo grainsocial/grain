@@ -1,5 +1,5 @@
 import { defineFeed } from "$hatk";
-import { hydrateGalleries } from "./_hydrate.ts";
+import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 
 export default defineFeed({

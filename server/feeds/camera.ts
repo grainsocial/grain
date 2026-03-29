@@ -2,7 +2,7 @@
 //   GET /xrpc/dev.hatk.getFeed?feed=camera&camera=Sony+A7III&limit=50
 
 import { defineFeed } from "$hatk";
-import { hydrateGalleries } from "./_hydrate.ts";
+import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 
 export default defineFeed({
