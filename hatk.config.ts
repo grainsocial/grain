@@ -42,6 +42,7 @@ export default defineConfig({
               redirect_uris: [
                 `https://${prodDomain}/oauth/callback`,
                 `https://${prodDomain}/admin`,
+                "grain://oauth/callback",
               ],
             },
           ]
@@ -51,6 +52,12 @@ export default defineConfig({
         client_name: "grain",
         scope: grainScopes,
         redirect_uris: ["http://127.0.0.1:3000/oauth/callback", "http://127.0.0.1:3000/admin"],
+      },
+      {
+        client_id: "grain-native://app",
+        client_name: "Grain for iOS",
+        scope: grainScopes,
+        redirect_uris: ["grain://oauth/callback"],
       },
     ],
   },

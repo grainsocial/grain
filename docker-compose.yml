@@ -36,6 +36,7 @@ services:
       - LOG_ENABLED=true
     volumes:
       - pds_data:/pds
+      - ./patches/pds-csrf-no-secure.js:/app/node_modules/.pnpm/@atproto+oauth-provider@0.15.9/node_modules/@atproto/oauth-provider/dist/router/assets/csrf.js:ro
     depends_on:
       plc:
         condition: service_healthy
