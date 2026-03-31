@@ -153,6 +153,7 @@ await createRecord(
 // Upload photos
 const cityNight = await uploadBlob(alice, "./seeds/images/city-night.jpg");
 const skyline = await uploadBlob(alice, "./seeds/images/skyline.jpg");
+const skylinePortrait = await uploadBlob(alice, "./seeds/images/skyline-portrait.jpg");
 const forest = await uploadBlob(bob, "./seeds/images/forest.jpg");
 const wildlife = await uploadBlob(bob, "./seeds/images/wildlife.jpg");
 const filmCafe = await uploadBlob(carol, "./seeds/images/film-cafe.jpg");
@@ -208,6 +209,25 @@ await createRecord(
   "social.grain.gallery.item",
   { gallery: aliceGallery.uri, item: alicePhoto2.uri, position: 1, createdAt: ago(49) },
   { rkey: "gi-skyline" },
+);
+
+const alicePhoto3 = await createRecord(
+  alice,
+  "social.grain.photo",
+  {
+    photo: skylinePortrait,
+    alt: "Vertical view of the skyline through an alley",
+    aspectRatio: { width: 3, height: 4 },
+    createdAt: ago(48),
+  },
+  { rkey: "photo-skyline-portrait" },
+);
+
+await createRecord(
+  alice,
+  "social.grain.gallery.item",
+  { gallery: aliceGallery.uri, item: alicePhoto3.uri, position: 2, createdAt: ago(48) },
+  { rkey: "gi-skyline-portrait" },
 );
 
 // ── Bob's gallery: "Forest Trail" (2 photos) ──
