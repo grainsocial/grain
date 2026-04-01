@@ -2,6 +2,7 @@ import { views } from "$hatk";
 import type { GrainActorProfile, Photo, Gallery, Label } from "$hatk";
 import type { PhotoView, GalleryView, ExifView } from "$hatk";
 import type { BaseContext, Row } from "$hatk";
+import { countComments } from "./comments.ts";
 
 const SCALE = 1_000_000;
 
@@ -115,7 +116,7 @@ export async function hydrateGalleries(
             return m;
           })
         : Promise.resolve(new Map<string, number>()),
-      ctx.count("social.grain.comment", "subject", galleryUris),
+      countComments(ctx.db, galleryUris),
       ctx.labels(galleryUris) as Promise<Map<string, Label[]>>,
       galleryUris.length > 0
         ? (ctx.db.query(

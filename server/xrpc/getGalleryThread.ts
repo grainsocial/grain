@@ -1,6 +1,7 @@
 import { defineQuery } from "$hatk";
 import type { GrainActorProfile, Photo } from "$hatk";
 import { views } from "$hatk";
+import { NOT_ORPHANED } from "../hydrate/comments.ts";
 
 export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx) => {
   const { ok, params, db, lookup, blobUrl, getRecords } = ctx;
@@ -9,10 +10,7 @@ export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx
   // Count total comments for this gallery, excluding orphaned replies
   const countRows = (await db.query(
     `SELECT count(*) as cnt FROM "social.grain.comment" c
-     WHERE c.subject = $1
-     AND (c.reply_to IS NULL OR EXISTS (
-       SELECT 1 FROM "social.grain.comment" p WHERE p.uri = c.reply_to
-     ))`,
+     WHERE c.subject = $1 AND ${NOT_ORPHANED}`,
     [gallery],
   )) as { cnt: number }[];
   const totalCount = countRows[0]?.cnt ?? 0;
@@ -20,10 +18,7 @@ export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx
   // Fetch comments with cursor-based pagination (oldest first), excluding orphaned replies
   let query = `SELECT c.uri, c.did, c.cid, c.text, c.facets, c.focus, c.reply_to, c.created_at
     FROM "social.grain.comment" c
-    WHERE c.subject = $1
-    AND (c.reply_to IS NULL OR EXISTS (
-      SELECT 1 FROM "social.grain.comment" p WHERE p.uri = c.reply_to
-    ))`;
+    WHERE c.subject = $1 AND ${NOT_ORPHANED}`;
   const queryParams: any[] = [gallery];
 
   if (cursor) {
