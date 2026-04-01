@@ -13,6 +13,7 @@
 ### Task 1: Lexicon + Server Endpoint
 
 **Files:**
+
 - Create: `lexicons/social/grain/unspecced/getStoryArchive.json`
 - Create: `server/xrpc/getStoryArchive.ts`
 
@@ -59,6 +60,7 @@ Create `lexicons/social/grain/unspecced/getStoryArchive.json`:
 **Step 2: Create the server endpoint**
 
 Create `server/xrpc/getStoryArchive.ts`. This mirrors `server/xrpc/getStories.ts` with these differences:
+
 - No 24-hour cutoff
 - `ORDER BY created_at DESC` (newest first, not ASC)
 - Cursor-based pagination using `created_at` timestamp
@@ -226,6 +228,7 @@ git commit -m "feat: add getStoryArchive endpoint (no 24h cutoff, cursor paginat
 ### Task 2: Client Query
 
 **Files:**
+
 - Modify: `app/lib/queries.ts` (add after `storiesQuery` around line 89)
 
 **Step 1: Add `storyArchiveQuery` to queries.ts**
@@ -237,9 +240,11 @@ export const storyArchiveQuery = (did: string, cursor?: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["stories", "archive", did, cursor],
     queryFn: () =>
-      callXrpc("social.grain.unspecced.getStoryArchive", { actor: did, ...(cursor ? { cursor } : {}) }, f).then(
-        (r) => r ?? { stories: [], cursor: undefined },
-      ),
+      callXrpc(
+        "social.grain.unspecced.getStoryArchive",
+        { actor: did, ...(cursor ? { cursor } : {}) },
+        f,
+      ).then((r) => r ?? { stories: [], cursor: undefined }),
     staleTime: 60_000,
   });
 ```
@@ -261,6 +266,7 @@ git commit -m "feat: add storyArchiveQuery client query"
 ### Task 3: StoryViewer — Single-Story Mode + Date Formatting
 
 **Files:**
+
 - Modify: `app/lib/components/organisms/StoryViewer.svelte`
 
 **Step 1: Add `singleStory` prop**
@@ -273,10 +279,10 @@ let {
   onclose,
   singleStory,
 }: {
-  initialDid: string
-  onclose: () => void
-  singleStory?: { uri: string } | null
-} = $props()
+  initialDid: string;
+  onclose: () => void;
+  singleStory?: { uri: string } | null;
+} = $props();
 ```
 
 **Step 2: Override story loading in single-story mode**
@@ -286,7 +292,7 @@ When `singleStory` is provided, use `storyQuery` instead of `storiesQuery` and d
 Add a new import at line 6:
 
 ```typescript
-import { storiesQuery, storyAuthorsQuery, storyQuery } from '$lib/queries'
+import { storiesQuery, storyAuthorsQuery, storyQuery } from "$lib/queries";
 ```
 
 Add after the `storyAuthors` query (around line 23):
@@ -294,24 +300,22 @@ Add after the `storyAuthors` query (around line 23):
 ```typescript
 // Single-story mode: load just one story by URI
 const singleStoryData = createQuery(() => ({
-  ...storyQuery(singleStory?.uri ?? ''),
+  ...storyQuery(singleStory?.uri ?? ""),
   enabled: !!singleStory,
-}))
+}));
 ```
 
 Override `stories` and `authorDids` derivations. Replace the existing `stories` line (line 55) and `totalStories` (line 58) with:
 
 ```typescript
 const stories = createQuery(() =>
-  singleStory ? { ...storyQuery(singleStory.uri), enabled: true } : storiesQuery(currentDid)
-)
+  singleStory ? { ...storyQuery(singleStory.uri), enabled: true } : storiesQuery(currentDid),
+);
 
 const currentStory = $derived(
-  singleStory
-    ? (singleStoryData.data ?? undefined)
-    : stories.data?.[currentStoryIndex]
-)
-const totalStories = $derived(singleStory ? 1 : (stories.data?.length ?? 0))
+  singleStory ? (singleStoryData.data ?? undefined) : stories.data?.[currentStoryIndex],
+);
+const totalStories = $derived(singleStory ? 1 : (stories.data?.length ?? 0));
 ```
 
 **Step 3: Disable author swiping in single-story mode**
@@ -321,12 +325,12 @@ In the `next()` function (line 148), wrap the author-advance logic:
 ```typescript
 function next() {
   if (currentStoryIndex < totalStories - 1) {
-    currentStoryIndex++
-    progress = 0
+    currentStoryIndex++;
+    progress = 0;
   } else if (!singleStory && currentAuthorIndex < authorDids.length - 1) {
-    currentAuthorIndex++
+    currentAuthorIndex++;
   } else {
-    onclose()
+    onclose();
   }
 }
 ```
@@ -336,10 +340,10 @@ In the `prev()` function (line 160):
 ```typescript
 function prev() {
   if (currentStoryIndex > 0) {
-    currentStoryIndex--
-    progress = 0
+    currentStoryIndex--;
+    progress = 0;
   } else if (!singleStory && currentAuthorIndex > 0) {
-    currentAuthorIndex--
+    currentAuthorIndex--;
   }
 }
 ```
@@ -350,16 +354,16 @@ Replace the `timeAgo` function (lines 119-127) with:
 
 ```typescript
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
   if (hours < 1) {
-    const mins = Math.floor(diff / (1000 * 60))
-    return `${mins}m`
+    const mins = Math.floor(diff / (1000 * 60));
+    return `${mins}m`;
   }
   if (hours < 24) {
-    return `${hours}h`
+    return `${hours}h`;
   }
-  return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return new Date(dateStr).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 ```
 
@@ -380,6 +384,7 @@ git commit -m "feat: add single-story mode and full date display to StoryViewer"
 ### Task 4: StoryArchive Grid Component
 
 **Files:**
+
 - Create: `app/lib/components/molecules/StoryArchive.svelte`
 
 **Step 1: Create the component**
@@ -559,6 +564,7 @@ git commit -m "feat: add StoryArchive thumbnail grid component"
 ### Task 5: Wire Into Profile Page
 
 **Files:**
+
 - Modify: `app/routes/profile/[did]/+page.svelte`
 
 **Step 1: Add imports and state**
@@ -566,20 +572,20 @@ git commit -m "feat: add StoryArchive thumbnail grid component"
 Add to the imports (after the StoryViewer import, line 15):
 
 ```typescript
-import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
-import { Archive } from 'lucide-svelte'
+import StoryArchive from "$lib/components/molecules/StoryArchive.svelte";
+import { Archive } from "lucide-svelte";
 ```
 
 Add state variable (after `showStoryViewer` at line 21):
 
 ```typescript
-let showArchive = $state(false)
+let showArchive = $state(false);
 ```
 
 Add derived (after `hasStory` at line 30):
 
 ```typescript
-const isOwnProfile = $derived(viewerDid === did)
+const isOwnProfile = $derived(viewerDid === did);
 ```
 
 **Step 2: Add archive button to the profile header**
@@ -668,7 +674,12 @@ Add to the `<style>` block:
 Update the existing `$effect` at line 24 to also reset archive state:
 
 ```typescript
-$effect(() => { void did; void profile.data; followersOffset = 0; showArchive = false })
+$effect(() => {
+  void did;
+  void profile.data;
+  followersOffset = 0;
+  showArchive = false;
+});
 ```
 
 **Step 6: Verify types**

@@ -99,42 +99,45 @@ export async function hydrateGalleries(
     for (const row of favRows) viewerFavs.set(row.subject, row.uri);
   }
 
-  const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows, crossPosts] = await Promise.all([
-    ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
-    galleryUris.length > 0
-      ? (ctx.db.query(
-          `SELECT subject, COUNT(DISTINCT did) as count FROM "social.grain.favorite"
+  const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows, crossPosts] =
+    await Promise.all([
+      ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
+      galleryUris.length > 0
+        ? (
+            ctx.db.query(
+              `SELECT subject, COUNT(DISTINCT did) as count FROM "social.grain.favorite"
            WHERE subject IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")}) GROUP BY subject`,
-          galleryUris,
-        ) as Promise<{ subject: string; count: number }[]>).then((rows) => {
-          const m = new Map<string, number>();
-          for (const r of rows) m.set(r.subject, Number(r.count));
-          return m;
-        })
-      : Promise.resolve(new Map<string, number>()),
-    ctx.count("social.grain.comment", "subject", galleryUris),
-    ctx.labels(galleryUris) as Promise<Map<string, Label[]>>,
-    galleryUris.length > 0
-      ? (ctx.db.query(
-          `SELECT uri, did, cid, gallery, item, position, created_at
+              galleryUris,
+            ) as Promise<{ subject: string; count: number }[]>
+          ).then((rows) => {
+            const m = new Map<string, number>();
+            for (const r of rows) m.set(r.subject, Number(r.count));
+            return m;
+          })
+        : Promise.resolve(new Map<string, number>()),
+      ctx.count("social.grain.comment", "subject", galleryUris),
+      ctx.labels(galleryUris) as Promise<Map<string, Label[]>>,
+      galleryUris.length > 0
+        ? (ctx.db.query(
+            `SELECT uri, did, cid, gallery, item, position, created_at
            FROM "social.grain.gallery.item"
            WHERE gallery IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")})
            ORDER BY position ASC`,
-          galleryUris,
-        ) as Promise<
-          Array<{
-            uri: string;
-            did: string;
-            cid: string;
-            gallery: string;
-            item: string;
-            position: number;
-            created_at: string;
-          }>
-        >)
-      : Promise.resolve([]),
-    lookupCrossPosts(ctx.db, items, "gallery"),
-  ]);
+            galleryUris,
+          ) as Promise<
+            Array<{
+              uri: string;
+              did: string;
+              cid: string;
+              gallery: string;
+              item: string;
+              position: number;
+              created_at: string;
+            }>
+          >)
+        : Promise.resolve([]),
+      lookupCrossPosts(ctx.db, items, "gallery"),
+    ]);
 
   // Group gallery items by gallery URI
   const itemsByGallery = new Map<string, Array<{ photoUri: string; position: number }>>();

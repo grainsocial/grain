@@ -18,10 +18,9 @@ export default defineFeed({
 
     // Resolve handle to DID if needed
     if (!actor.startsWith("did:")) {
-      const rows = (await ctx.db.query(
-        `SELECT did FROM _repos WHERE handle = $1`,
-        [actor],
-      )) as { did: string }[];
+      const rows = (await ctx.db.query(`SELECT did FROM _repos WHERE handle = $1`, [actor])) as {
+        did: string;
+      }[];
       if (rows[0]?.did) {
         actor = rows[0].did;
       }

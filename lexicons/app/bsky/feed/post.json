@@ -6,10 +6,7 @@
       "type": "record",
       "record": {
         "type": "object",
-        "required": [
-          "text",
-          "createdAt"
-        ],
+        "required": ["text", "createdAt"],
         "properties": {
           "tags": {
             "type": "array",
@@ -59,9 +56,7 @@
             "description": "Annotations of text (mentions, URLs, hashtags, etc)"
           },
           "labels": {
-            "refs": [
-              "com.atproto.label.defs#selfLabels"
-            ],
+            "refs": ["com.atproto.label.defs#selfLabels"],
             "type": "union",
             "description": "Self-label values for this post. Effectively content warnings."
           },
@@ -84,11 +79,7 @@
     },
     "entity": {
       "type": "object",
-      "required": [
-        "index",
-        "type",
-        "value"
-      ],
+      "required": ["index", "type", "value"],
       "properties": {
         "type": {
           "type": "string",
@@ -106,10 +97,7 @@
     },
     "replyRef": {
       "type": "object",
-      "required": [
-        "root",
-        "parent"
-      ],
+      "required": ["root", "parent"],
       "properties": {
         "root": {
           "ref": "com.atproto.repo.strongRef",
@@ -123,10 +111,7 @@
     },
     "textSlice": {
       "type": "object",
-      "required": [
-        "start",
-        "end"
-      ],
+      "required": ["start", "end"],
       "properties": {
         "end": {
           "type": "integer",

@@ -33,17 +33,13 @@ self.addEventListener("fetch", (event) => {
 
   // For navigation requests, try network first (so new deploys are picked up)
   if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request)),
-    );
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
     return;
   }
 
   // For assets, use cache-first with network fallback
   if (ASSETS.has(url.pathname)) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request)),
-    );
+    event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
     return;
   }
 

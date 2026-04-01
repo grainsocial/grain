@@ -18,11 +18,7 @@ export type StoryRow = {
  * Hydrate raw story rows into StoryView objects.
  * Resolves the author profile, filters by label moderation, and maps to views.
  */
-export async function hydrateStories(
-  ctx: BaseContext,
-  actor: string,
-  rows: StoryRow[],
-) {
+export async function hydrateStories(ctx: BaseContext, actor: string, rows: StoryRow[]) {
   // Resolve author profile
   const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [
     actor,

@@ -59,7 +59,8 @@ a {
 }
 
 @media (max-width: 600px) {
-  html, body {
+  html,
+  body {
     overflow: hidden;
     position: fixed;
     inset: 0;

@@ -117,8 +117,7 @@ export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
                         type: "div",
                         props: {
                           children:
-                            author?.value.displayName ||
-                            `@${author?.handle || did.slice(0, 24)}`,
+                            author?.value.displayName || `@${author?.handle || did.slice(0, 24)}`,
                           style: { fontSize: 24, fontWeight: 600, color: "#ffffff" },
                         },
                       },

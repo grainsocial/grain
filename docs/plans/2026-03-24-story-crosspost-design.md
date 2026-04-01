@@ -13,6 +13,7 @@
 ### Task 1: Extract shared Bluesky post utility
 
 **Files:**
+
 - Create: `app/lib/utils/bsky-post.ts`
 - Modify: `app/routes/create/+page.svelte` (lines 187-275)
 
@@ -21,114 +22,121 @@
 This extracts the Bluesky posting logic from gallery create into a reusable function.
 
 ```ts
-import { callXrpc } from '$hatk/client'
-import { parseTextToFacets } from '$lib/utils/rich-text'
+import { callXrpc } from "$hatk/client";
+import { parseTextToFacets } from "$lib/utils/rich-text";
 
 interface BskyPostOptions {
   /** The grain permalink URL */
-  url: string
+  url: string;
   /** Optional location data */
   location?: {
-    name: string
+    name: string;
     address?: {
-      locality?: string
-      region?: string
-      country?: string
-    }
-  } | null
+      locality?: string;
+      region?: string;
+      country?: string;
+    };
+  } | null;
   /** Optional description text (will be truncated to fit 300 grapheme limit) */
-  description?: string
+  description?: string;
   /** Images to embed (max 4 for Bluesky) */
   images: Array<{
-    dataUrl: string
-    alt?: string
-    width: number
-    height: number
-  }>
+    dataUrl: string;
+    alt?: string;
+    width: number;
+    height: number;
+  }>;
 }
 
 export async function createBskyPost(options: BskyPostOptions): Promise<void> {
-  const { url, location, description, images } = options
+  const { url, location, description, images } = options;
 
-  const graphemeLength = (s: string) => [...new Intl.Segmenter().segment(s)].length
+  const graphemeLength = (s: string) => [...new Intl.Segmenter().segment(s)].length;
 
-  const lines: string[] = []
+  const lines: string[] = [];
   if (location) {
-    lines.push(`📍 ${location.name}`)
+    lines.push(`📍 ${location.name}`);
     if (location.address) {
-      const parts: string[] = []
-      if (location.address.locality) parts.push(location.address.locality)
-      if (location.address.region) parts.push(location.address.region)
-      if (location.address.country) parts.push(location.address.country)
-      if (parts.length > 0) lines.push(parts.join(', '))
+      const parts: string[] = [];
+      if (location.address.locality) parts.push(location.address.locality);
+      if (location.address.region) parts.push(location.address.region);
+      if (location.address.country) parts.push(location.address.country);
+      if (parts.length > 0) lines.push(parts.join(", "));
     }
   }
 
-  const suffix = `\n\n${url}\n\n#grainsocial`
-  const prefixText = lines.length > 0 ? lines.join('\n') + '\n' : ''
-  const overhead = graphemeLength(prefixText + suffix)
-  const maxDesc = 300 - overhead
+  const suffix = `\n\n${url}\n\n#grainsocial`;
+  const prefixText = lines.length > 0 ? lines.join("\n") + "\n" : "";
+  const overhead = graphemeLength(prefixText + suffix);
+  const maxDesc = 300 - overhead;
 
   if (description?.trim()) {
-    let desc = description.trim()
+    let desc = description.trim();
     if (graphemeLength(desc) > maxDesc) {
-      const segments = [...new Intl.Segmenter().segment(desc)]
-      desc = segments.slice(0, Math.max(0, maxDesc - 1)).map((s) => s.segment).join('') + '…'
+      const segments = [...new Intl.Segmenter().segment(desc)];
+      desc =
+        segments
+          .slice(0, Math.max(0, maxDesc - 1))
+          .map((s) => s.segment)
+          .join("") + "…";
     }
     if (desc) {
-      lines.push('')
-      lines.push(desc)
+      lines.push("");
+      lines.push(desc);
     }
   }
-  lines.push('')
-  lines.push(url)
-  lines.push('')
-  lines.push('#grainsocial')
+  lines.push("");
+  lines.push(url);
+  lines.push("");
+  lines.push("#grainsocial");
 
-  const postText = lines.join('\n')
+  const postText = lines.join("\n");
 
   // Resolve Bluesky handles for mentions
   const resolveHandle = async (handle: string): Promise<string | null> => {
     try {
       const res = await fetch(
-        `https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`
-      )
-      if (!res.ok) return null
-      const data = await res.json()
-      return data.did ?? null
+        `https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`,
+      );
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.did ?? null;
     } catch {
-      return null
+      return null;
     }
-  }
-  const postFacets = (await parseTextToFacets(postText, resolveHandle)).facets
+  };
+  const postFacets = (await parseTextToFacets(postText, resolveHandle)).facets;
 
   // Upload images (max 4)
-  const imageRefs: Array<{ image: any; alt: string; aspectRatio?: { width: number; height: number } }> = []
+  const imageRefs: Array<{
+    image: any;
+    alt: string;
+    aspectRatio?: { width: number; height: number };
+  }> = [];
   for (const img of images.slice(0, 4)) {
-    const base64 = img.dataUrl.split(',')[1]
-    const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-    const blob = new Blob([binary], { type: 'image/jpeg' })
-    const uploadResult = await callXrpc('dev.hatk.uploadBlob', blob as any)
+    const base64 = img.dataUrl.split(",")[1];
+    const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([binary], { type: "image/jpeg" });
+    const uploadResult = await callXrpc("dev.hatk.uploadBlob", blob as any);
     imageRefs.push({
       image: (uploadResult as any).blob,
-      alt: img.alt || '',
+      alt: img.alt || "",
       aspectRatio: { width: img.width, height: img.height },
-    })
+    });
   }
 
-  await callXrpc('dev.hatk.createRecord', {
-    collection: 'app.bsky.feed.post',
+  await callXrpc("dev.hatk.createRecord", {
+    collection: "app.bsky.feed.post",
     record: {
-      $type: 'app.bsky.feed.post',
+      $type: "app.bsky.feed.post",
       text: postText,
       facets: postFacets.length > 0 ? postFacets : undefined,
-      embed: imageRefs.length > 0
-        ? { $type: 'app.bsky.embed.images', images: imageRefs }
-        : undefined,
-      tags: ['grainsocial'],
+      embed:
+        imageRefs.length > 0 ? { $type: "app.bsky.embed.images", images: imageRefs } : undefined,
+      tags: ["grainsocial"],
       createdAt: new Date().toISOString(),
     },
-  })
+  });
 }
 ```
 
@@ -137,23 +145,25 @@ export async function createBskyPost(options: BskyPostOptions): Promise<void> {
 In `app/routes/create/+page.svelte`, replace lines 187-275 (the `if (postToBluesky && $viewer)` block) with:
 
 ```ts
-import { createBskyPost } from '$lib/utils/bsky-post'
+import { createBskyPost } from "$lib/utils/bsky-post";
 
 // ... inside publish(), after step 4 (gallery items created):
 
 // 5. Create Bluesky post if opted in
 if (postToBluesky && $viewer) {
-  const galleryRkey = galleryUri.split('/').pop()
-  const galleryUrl = `https://grain.social/profile/${$viewer.did}/gallery/${galleryRkey}`
+  const galleryRkey = galleryUri.split("/").pop();
+  const galleryUrl = `https://grain.social/profile/${$viewer.did}/gallery/${galleryRkey}`;
   await createBskyPost({
     url: galleryUrl,
-    location: location ? {
-      name: location.name,
-      address: location.address,
-    } : null,
+    location: location
+      ? {
+          name: location.name,
+          address: location.address,
+        }
+      : null,
     description: description.trim() || undefined,
     images: photos,
-  })
+  });
 }
 ```
 
@@ -174,6 +184,7 @@ git commit -m "refactor: extract shared Bluesky post utility from gallery create
 ### Task 2: Add story permalink route
 
 **Files:**
+
 - Create: `app/routes/profile/[did]/story/[rkey]/+page.ts`
 - Create: `app/routes/profile/[did]/story/[rkey]/+page.svelte`
 
@@ -182,19 +193,19 @@ git commit -m "refactor: extract shared Bluesky post utility from gallery create
 `app/routes/profile/[did]/story/[rkey]/+page.ts` — follows same pattern as gallery `+page.ts`:
 
 ```ts
-import { browser } from "$app/environment"
-import { storyQuery } from "$lib/queries"
-import type { PageLoad } from "./$types"
+import { browser } from "$app/environment";
+import { storyQuery } from "$lib/queries";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ params, parent, fetch }) => {
-  const did = decodeURIComponent(params.did)
-  const rkey = params.rkey
-  const storyUri = `at://${did}/social.grain.story/${rkey}`
-  const { queryClient } = await parent()
-  const prefetch = queryClient.prefetchQuery(storyQuery(storyUri, fetch))
-  if (!browser) await prefetch
-  return { did, rkey, storyUri }
-}
+  const did = decodeURIComponent(params.did);
+  const rkey = params.rkey;
+  const storyUri = `at://${did}/social.grain.story/${rkey}`;
+  const { queryClient } = await parent();
+  const prefetch = queryClient.prefetchQuery(storyQuery(storyUri, fetch));
+  if (!browser) await prefetch;
+  return { did, rkey, storyUri };
+};
 ```
 
 **Step 2: Add `storyQuery` to `app/lib/queries.ts`**
@@ -218,14 +229,14 @@ export const storyQuery = (storyUri: string, f?: Fetch) =>
 This is like `getStories.ts` but fetches a single story by URI with NO 24h filter:
 
 ```ts
-import { defineQuery } from "$hatk"
-import { views } from "$hatk"
-import type { GrainActorProfile, Story } from "$hatk"
+import { defineQuery } from "$hatk";
+import { views } from "$hatk";
+import type { GrainActorProfile, Story } from "$hatk";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
-  const { db, ok } = ctx
-  const storyUri = ctx.params.story
-  if (!storyUri) return ok({ story: null })
+  const { db, ok } = ctx;
+  const storyUri = ctx.params.story;
+  if (!storyUri) return ok({ story: null });
 
   const rows = (await db.query(
     `SELECT uri, cid, did, media, aspect_ratio, location, address, created_at
@@ -233,22 +244,24 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
      WHERE uri = $1`,
     [storyUri],
   )) as {
-    uri: string
-    cid: string
-    did: string
-    media: string
-    aspect_ratio: string
-    location: string | null
-    address: string | null
-    created_at: string
-  }[]
+    uri: string;
+    cid: string;
+    did: string;
+    media: string;
+    aspect_ratio: string;
+    location: string | null;
+    address: string | null;
+    created_at: string;
+  }[];
 
-  const row = rows[0]
-  if (!row) return ok({ story: null })
+  const row = rows[0];
+  if (!row) return ok({ story: null });
 
   // Resolve author profile
-  const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [row.did])
-  const author = profiles.get(row.did)
+  const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [
+    row.did,
+  ]);
+  const author = profiles.get(row.did);
   const profileView = author
     ? views.grainActorDefsProfileView({
         cid: author.cid,
@@ -261,51 +274,52 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
         cid: "",
         did: row.did,
         handle: row.did,
-      })
+      });
 
-  let blobRef: any
+  let blobRef: any;
   try {
-    blobRef = typeof row.media === "string" ? JSON.parse(row.media) : row.media
+    blobRef = typeof row.media === "string" ? JSON.parse(row.media) : row.media;
   } catch {
-    blobRef = row.media
+    blobRef = row.media;
   }
 
-  let aspectRatio: { width: number; height: number }
+  let aspectRatio: { width: number; height: number };
   try {
-    aspectRatio = typeof row.aspect_ratio === "string" ? JSON.parse(row.aspect_ratio) : row.aspect_ratio
+    aspectRatio =
+      typeof row.aspect_ratio === "string" ? JSON.parse(row.aspect_ratio) : row.aspect_ratio;
   } catch {
-    aspectRatio = { width: 4, height: 3 }
+    aspectRatio = { width: 4, height: 3 };
   }
 
-  let location: Story["location"] | null = null
+  let location: Story["location"] | null = null;
   if (row.location) {
     try {
-      location = typeof row.location === "string" ? JSON.parse(row.location) : row.location
+      location = typeof row.location === "string" ? JSON.parse(row.location) : row.location;
     } catch {
-      location = null
+      location = null;
     }
   }
 
-  let address: Story["address"] | null = null
+  let address: Story["address"] | null = null;
   if (row.address) {
     try {
-      address = typeof row.address === "string" ? JSON.parse(row.address) : row.address
+      address = typeof row.address === "string" ? JSON.parse(row.address) : row.address;
     } catch {
-      address = null
+      address = null;
     }
   }
 
   // Cross-post lookup
-  let crossPost: { url: string } | undefined
-  const rkey = row.uri.split("/").pop()
-  const searchUrl = `grain.social/profile/${row.did}/story/${rkey}`
+  let crossPost: { url: string } | undefined;
+  const rkey = row.uri.split("/").pop();
+  const searchUrl = `grain.social/profile/${row.did}/story/${rkey}`;
   const postRows = (await db.query(
     `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%' || $2 || '%' LIMIT 1`,
     [row.did, searchUrl],
-  )) as Array<{ uri: string }>
+  )) as Array<{ uri: string }>;
   if (postRows.length) {
-    const postRkey = postRows[0].uri.split("/").pop()
-    crossPost = { url: `https://bsky.app/profile/${row.did}/post/${postRkey}` }
+    const postRkey = postRows[0].uri.split("/").pop();
+    crossPost = { url: `https://bsky.app/profile/${row.did}/post/${postRkey}` };
   }
 
   const story = views.storyView({
@@ -323,10 +337,10 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
       : {}),
     ...(crossPost ? { crossPost } : {}),
     createdAt: row.created_at,
-  })
+  });
 
-  return ok({ story })
-})
+  return ok({ story });
+});
 ```
 
 **Step 4: Create the lexicon `lexicons/social/grain/unspecced/getStory.json`**
@@ -508,48 +522,56 @@ git commit -m "feat: add story permalink route with cross-post hydration"
 ### Task 3: Add "Post to Bluesky" to StoryCreate
 
 **Files:**
+
 - Modify: `app/lib/components/molecules/StoryCreate.svelte`
 
 **Step 1: Add checkbox and Bluesky posting to StoryCreate**
 
 Add imports:
+
 ```ts
-import Checkbox from '$lib/components/atoms/Checkbox.svelte'
-import { createBskyPost } from '$lib/utils/bsky-post'
-import { viewer } from '$lib/stores'
+import Checkbox from "$lib/components/atoms/Checkbox.svelte";
+import { createBskyPost } from "$lib/utils/bsky-post";
+import { viewer } from "$lib/stores";
 ```
 
 Add state:
+
 ```ts
-let postToBluesky = $state(false)
+let postToBluesky = $state(false);
 ```
 
 After the existing `await callXrpc('dev.hatk.createRecord', ...)` in `publish()`, add:
 
 ```ts
-const storyUri = (result as any).uri as string
+const storyUri = (result as any).uri as string;
 
 // Post to Bluesky if opted in
 if (postToBluesky && $viewer) {
-  const storyRkey = storyUri.split('/').pop()
-  const storyUrl = `https://grain.social/profile/${$viewer.did}/story/${storyRkey}`
+  const storyRkey = storyUri.split("/").pop();
+  const storyUrl = `https://grain.social/profile/${$viewer.did}/story/${storyRkey}`;
   await createBskyPost({
     url: storyUrl,
-    location: location ? {
-      name: location.name,
-      address: location.address,
-    } : null,
-    images: [{
-      dataUrl: photo.dataUrl,
-      alt: '',
-      width: photo.width,
-      height: photo.height,
-    }],
-  })
+    location: location
+      ? {
+          name: location.name,
+          address: location.address,
+        }
+      : null,
+    images: [
+      {
+        dataUrl: photo.dataUrl,
+        alt: "",
+        width: photo.width,
+        height: photo.height,
+      },
+    ],
+  });
 }
 ```
 
 Add checkbox in the template below the LocationInput:
+
 ```svelte
 <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
 ```
@@ -566,6 +588,7 @@ git commit -m "feat: add Post to Bluesky option to story creation"
 ### Task 4: OG image endpoint for stories (optional but recommended)
 
 **Files:**
+
 - Create: `server/og/story.ts`
 
 **Step 1: Create `server/og/story.ts`**
@@ -573,83 +596,117 @@ git commit -m "feat: add Post to Bluesky option to story creation"
 Simpler than gallery OG — single image with author info:
 
 ```ts
-import { defineOG } from "$hatk"
-import type { GrainActorProfile, Story } from "$hatk"
+import { defineOG } from "$hatk";
+import type { GrainActorProfile, Story } from "$hatk";
 
 export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
-  const { db, params, fetchImage, lookup, blobUrl } = ctx
-  const { did, rkey } = params
+  const { db, params, fetchImage, lookup, blobUrl } = ctx;
+  const { did, rkey } = params;
 
-  const storyUri = `at://${did}/social.grain.story/${rkey}`
+  const storyUri = `at://${did}/social.grain.story/${rkey}`;
 
   const rows = (await db.query(
     `SELECT uri, did, cid, media, aspect_ratio FROM "social.grain.story" WHERE uri = $1`,
     [storyUri],
   )) as Array<{
-    uri: string
-    did: string
-    cid: string
-    media: string
-    aspect_ratio: string
-  }>
+    uri: string;
+    did: string;
+    cid: string;
+    media: string;
+    aspect_ratio: string;
+  }>;
 
-  const row = rows[0]
+  const row = rows[0];
   if (!row) {
     return {
       element: {
         type: "div",
         props: {
-          style: { display: "flex", width: "100%", height: "100%", background: "#ffffff", color: "#171717", alignItems: "center", justifyContent: "center" },
+          style: {
+            display: "flex",
+            width: "100%",
+            height: "100%",
+            background: "#ffffff",
+            color: "#171717",
+            alignItems: "center",
+            justifyContent: "center",
+          },
           children: "Story not found",
         },
       },
-    }
+    };
   }
 
-  let blobRef: any
+  let blobRef: any;
   try {
-    blobRef = typeof row.media === "string" ? JSON.parse(row.media) : row.media
+    blobRef = typeof row.media === "string" ? JSON.parse(row.media) : row.media;
   } catch {
-    blobRef = row.media
+    blobRef = row.media;
   }
 
-  const imageUrl = blobUrl(row.did, blobRef, "feed_fullsize")
-  const imageDataUrl = imageUrl ? await fetchImage(imageUrl) : null
+  const imageUrl = blobUrl(row.did, blobRef, "feed_fullsize");
+  const imageDataUrl = imageUrl ? await fetchImage(imageUrl) : null;
 
-  const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did])
-  const author = profiles.get(did)
-  const avatarRef = author ? blobUrl(did, author.value.avatar) : null
-  const avatarDataUrl = avatarRef ? await fetchImage(avatarRef) : null
+  const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did]);
+  const author = profiles.get(did);
+  const avatarRef = author ? blobUrl(did, author.value.avatar) : null;
+  const avatarDataUrl = avatarRef ? await fetchImage(avatarRef) : null;
 
   return {
     element: {
       type: "div",
       props: {
-        style: { display: "flex", width: "100%", height: "100%", backgroundColor: "#000000", position: "relative" },
+        style: {
+          display: "flex",
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#000000",
+          position: "relative",
+        },
         children: [
-          ...(imageDataUrl ? [{
-            type: "img",
-            props: {
-              src: imageDataUrl,
-              style: { width: "100%", height: "100%", objectFit: "contain" },
-            },
-          }] : []),
+          ...(imageDataUrl
+            ? [
+                {
+                  type: "img",
+                  props: {
+                    src: imageDataUrl,
+                    style: { width: "100%", height: "100%", objectFit: "contain" },
+                  },
+                },
+              ]
+            : []),
           {
             type: "div",
             props: {
               style: {
-                position: "absolute", bottom: "0", left: "0", right: "0", height: "80px",
+                position: "absolute",
+                bottom: "0",
+                left: "0",
+                right: "0",
+                height: "80px",
                 background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
-                display: "flex", alignItems: "flex-end", padding: "0 24px 16px 24px", gap: "12px",
+                display: "flex",
+                alignItems: "flex-end",
+                padding: "0 24px 16px 24px",
+                gap: "12px",
               },
               children: [
-                ...(avatarDataUrl ? [{
-                  type: "img",
-                  props: {
-                    src: avatarDataUrl,
-                    style: { width: "44px", height: "44px", borderRadius: "22px", objectFit: "cover" as const },
-                  },
-                }] : []),
+                ...(avatarDataUrl
+                  ? [
+                      {
+                        type: "img",
+                        props: {
+                          src: avatarDataUrl,
+                          style: {
+                            width: "44px",
+                            height: "44px",
+                            borderRadius: "22px",
+                            objectFit: "cover" as const,
+                          },
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   type: "div",
                   props: {
@@ -658,7 +715,8 @@ export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
                       {
                         type: "div",
                         props: {
-                          children: author?.value.displayName || `@${author?.handle || did.slice(0, 24)}`,
+                          children:
+                            author?.value.displayName || `@${author?.handle || did.slice(0, 24)}`,
                           style: { fontSize: 24, fontWeight: 600, color: "#ffffff" },
                         },
                       },
@@ -682,8 +740,8 @@ export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
       title: `Story by @${author?.handle || did.slice(0, 24)} — Grain`,
       description: "Photo story on Grain",
     },
-  }
-})
+  };
+});
 ```
 
 **Step 2: Update story permalink OGMeta to use the OG endpoint**

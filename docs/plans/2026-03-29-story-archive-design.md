@@ -38,11 +38,13 @@ Client query: `storyArchiveQuery(did, cursor?)` in `queries.ts`.
 ## Files
 
 **New:**
+
 - `server/xrpc/getStoryArchive.ts`
 - `lexicons/social/grain/unspecced/getStoryArchive.json`
 - `app/lib/components/molecules/StoryArchive.svelte`
 
 **Modified:**
+
 - `app/lib/queries.ts` — add `storyArchiveQuery`
 - `app/routes/profile/[did]/+page.svelte` — archive button + grid section
 - `app/lib/components/organisms/StoryViewer.svelte` — single-story mode, full date for old stories
