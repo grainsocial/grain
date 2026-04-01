@@ -6,25 +6,32 @@ export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx
   const { ok, params, db, lookup, blobUrl, getRecords } = ctx;
   const { gallery, limit = 20, cursor } = params;
 
-  // Count total comments for this gallery
+  // Count total comments for this gallery, excluding orphaned replies
   const countRows = (await db.query(
-    `SELECT count(*) as cnt FROM "social.grain.comment" WHERE subject = $1`,
+    `SELECT count(*) as cnt FROM "social.grain.comment" c
+     WHERE c.subject = $1
+     AND (c.reply_to IS NULL OR EXISTS (
+       SELECT 1 FROM "social.grain.comment" p WHERE p.uri = c.reply_to
+     ))`,
     [gallery],
   )) as { cnt: number }[];
   const totalCount = countRows[0]?.cnt ?? 0;
 
-  // Fetch comments with cursor-based pagination (oldest first)
-  let query = `SELECT uri, did, cid, text, facets, focus, reply_to, created_at
-    FROM "social.grain.comment"
-    WHERE subject = $1`;
+  // Fetch comments with cursor-based pagination (oldest first), excluding orphaned replies
+  let query = `SELECT c.uri, c.did, c.cid, c.text, c.facets, c.focus, c.reply_to, c.created_at
+    FROM "social.grain.comment" c
+    WHERE c.subject = $1
+    AND (c.reply_to IS NULL OR EXISTS (
+      SELECT 1 FROM "social.grain.comment" p WHERE p.uri = c.reply_to
+    ))`;
   const queryParams: any[] = [gallery];
 
   if (cursor) {
-    query += ` AND created_at > $2`;
+    query += ` AND c.created_at > $2`;
     queryParams.push(cursor);
   }
 
-  query += ` ORDER BY created_at ASC LIMIT $${queryParams.length + 1}`;
+  query += ` ORDER BY c.created_at ASC LIMIT $${queryParams.length + 1}`;
   queryParams.push(limit + 1); // fetch one extra for cursor
 
   const rows = (await db.query(query, queryParams)) as Array<{

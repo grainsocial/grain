@@ -29,8 +29,8 @@
     </div>
     <div class="meta">
       <span class="time">{timeStr}</span>
-      {#if onReply && !isReply}
-        <button class="meta-btn" onclick={() => onReply?.(comment.uri, comment.author?.handle ?? '')}>Reply</button>
+      {#if onReply}
+        <button class="meta-btn" onclick={() => onReply?.(comment.replyTo ?? comment.uri, comment.author?.handle ?? '')}>Reply</button>
       {/if}
       {#if isOwner && onDelete}
         <button class="meta-btn delete" onclick={() => onDelete?.(comment.uri)}>Delete</button>
