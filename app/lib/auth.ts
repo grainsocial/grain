@@ -11,6 +11,11 @@ export async function login(handle: string): Promise<void> {
   throw new Error(body.error || "Login failed");
 }
 
+export async function createAccount(): Promise<void> {
+  const pds = import.meta.env.DEV ? "localhost:2583" : "selfhosted.social";
+  window.location.href = `/oauth/login?prompt=create&pds=${encodeURIComponent(pds)}`;
+}
+
 export async function logout(): Promise<void> {
   (globalThis as any).__hatk_viewer = null;
   await fetch("/auth/logout", { method: "POST" }).catch(() => {});

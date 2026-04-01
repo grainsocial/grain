@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { login } from '$lib/auth'
+  import { login, createAccount } from '$lib/auth'
   import Modal from '../atoms/Modal.svelte'
   import Button from '../atoms/Button.svelte'
 
@@ -141,6 +141,10 @@
       {submitting ? 'Signing in\u2026' : 'Sign in'}
     </Button>
   </div>
+  <div class="create-account">
+    <span class="create-account-text">Don't have an account?</span>
+    <button class="create-account-link" onclick={createAccount}>Create one</button>
+  </div>
 </Modal>
 
 <style>
@@ -223,7 +227,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 12px; }
+  .create-account { text-align: center; font-size: 13px; }
+  .create-account-text { color: var(--text-muted); }
+  .create-account-link {
+    background: none;
+    border: none;
+    color: var(--grain);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-body);
+    padding: 0;
+    text-decoration: none;
+  }
+  .create-account-link:hover { text-decoration: underline; }
   .legal-links {
     font-size: 11px;
     color: var(--text-faint);
