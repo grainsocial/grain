@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
+  import { callXrpc } from '$hatk/client'
+  import { goto } from '$app/navigation'
   import Avatar from '../atoms/Avatar.svelte'
   import RichText from '../atoms/RichText.svelte'
   import Toast from '../atoms/Toast.svelte'
@@ -8,15 +10,38 @@
   import ReportButton from './ReportButton.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight } from 'lucide-svelte'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2 } from 'lucide-svelte'
+  import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
-  import { isAuthenticated, requireAuth } from '$lib/stores'
+  import { isAuthenticated, requireAuth, viewer } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
-  import { createQuery } from '@tanstack/svelte-query'
+  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import { EyeOff, AlertTriangle } from 'lucide-svelte'
 
   let { gallery, onCommentClick }: { gallery: GalleryView; onCommentClick?: (focusPhoto: PhotoView | null) => void } = $props()
+
+  const queryClient = useQueryClient()
+  const isOwner = $derived($viewer?.did === gallery.creator?.did)
+  let deleting = $state(false)
+
+  async function deleteGallery() {
+    if (deleting) return
+    if (!confirm('Delete this gallery? This cannot be undone.')) return
+
+    const rkey = gallery.uri.split('/').pop()
+    deleting = true
+    try {
+      await callXrpc('social.grain.unspecced.deleteGallery', { rkey })
+      queryClient.invalidateQueries({ queryKey: ['getFeed'] })
+      goto(`/profile/${gallery.creator?.did}`)
+    } catch (err) {
+      console.error('Failed to delete gallery:', err)
+      alert('Failed to delete gallery. Please try again.')
+    } finally {
+      deleting = false
+    }
+  }
 
   const isDesktop = browser ? window.matchMedia('(min-width: 768px)').matches : false
 
@@ -135,6 +160,14 @@
         </div>
       </a>
     </ProfilePopover>
+    {#if isOwner}
+      <OverflowMenu>
+        <button class="menu-item delete" type="button" onclick={deleteGallery} disabled={deleting}>
+          <Trash2 size={15} />
+          Delete gallery
+        </button>
+      </OverflowMenu>
+    {/if}
   </header>
 
   {#if photos.length > 0}
@@ -239,7 +272,7 @@
   }
 
   /* Header */
-  .card-header { padding: 12px 16px; }
+  .card-header { padding: 12px 16px; display: flex; align-items: center; }
   .author-chip {
     display: flex;
     align-items: center;
@@ -272,6 +305,37 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex-shrink: 1;
+  }
+
+  .card-header :global(.overflow-menu) {
+    margin-left: auto;
+  }
+
+  /* Menu items (inside OverflowMenu) */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .menu-item:hover {
+    background: var(--bg-hover);
+  }
+  .menu-item.delete {
+    color: #f87171;
+  }
+  .menu-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   /* Carousel — matches grain-next's grain-image-carousel */

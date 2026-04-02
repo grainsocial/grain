@@ -1,19 +1,14 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { callXrpc } from '$hatk/client'
+  import { createQuery } from '@tanstack/svelte-query'
   import { galleryQuery } from '$lib/queries'
-  import { viewer } from '$lib/stores'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import GalleryCard from '$lib/components/molecules/GalleryCard.svelte'
   import CommentSheet from '$lib/components/organisms/CommentSheet.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
-  import { Trash2 } from 'lucide-svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
   import type { GalleryView, PhotoView } from '$hatk/client'
 
   let { data } = $props()
-  const queryClient = useQueryClient()
 
   const did = $derived(data.did)
   const rkey = $derived(data.rkey)
@@ -22,12 +17,9 @@
   const gallery = $derived((galleryQ.data as GalleryView) ?? null)
   const bskyUrl = $derived((gallery as any)?.crossPost?.url ?? null)
 
-  const isOwner = $derived($viewer?.did === gallery?.creator?.did)
-
   let commentSheetOpen = $state(false)
   let focusPhotoUri = $state<string | null>(null)
   let focusPhotoThumb = $state<string | null>(null)
-  let deleting = $state(false)
 
   function openComments(focusPhoto: PhotoView | null) {
     if (focusPhoto) {
@@ -38,23 +30,6 @@
       focusPhotoThumb = null
     }
     commentSheetOpen = true
-  }
-
-  async function deleteGallery() {
-    if (!gallery || deleting) return
-    if (!confirm('Delete this gallery? This cannot be undone.')) return
-
-    deleting = true
-    try {
-      await callXrpc('social.grain.unspecced.deleteGallery', { rkey })
-      queryClient.invalidateQueries({ queryKey: ['getFeed'] })
-      goto(`/profile/${did}`)
-    } catch (err) {
-      console.error('Failed to delete gallery:', err)
-      alert('Failed to delete gallery. Please try again.')
-    } finally {
-      deleting = false
-    }
   }
 </script>
 
@@ -69,11 +44,6 @@
       <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky">
         <BskyIcon />
       </a>
-    {/if}
-    {#if isOwner}
-      <button class="delete-btn" type="button" onclick={deleteGallery} disabled={deleting} aria-label="Delete gallery">
-        <Trash2 size={18} />
-      </button>
     {/if}
   {/snippet}
 </DetailHeader>
@@ -116,22 +86,5 @@
   }
   .bsky-link:hover {
     color: #0085ff;
-  }
-  .delete-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    transition: color 0.15s;
-  }
-  .delete-btn:hover {
-    color: #f87171;
-  }
-  .delete-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 </style>
