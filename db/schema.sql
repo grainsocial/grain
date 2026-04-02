@@ -72,7 +72,8 @@ CREATE TABLE _oauth_sessions (
   dpop_jkt TEXT NOT NULL,
   token_expires_at INTEGER,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  pds_auth_server TEXT
 );
 
 CREATE TABLE _preferences (
