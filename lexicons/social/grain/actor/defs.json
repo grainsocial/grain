@@ -58,11 +58,20 @@
         "galleryCount": { "type": "integer" },
         "indexedAt": { "type": "string", "format": "datetime" },
         "createdAt": { "type": "string", "format": "datetime" },
+        "messageMe": { "type": "ref", "ref": "#messageMe" },
         "viewer": { "type": "ref", "ref": "#viewerState" },
         "labels": {
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         }
+      }
+    },
+    "messageMe": {
+      "type": "object",
+      "required": ["showButtonTo", "messageMeUrl"],
+      "properties": {
+        "messageMeUrl": { "type": "string", "format": "uri" },
+        "showButtonTo": { "type": "string", "knownValues": ["usersIFollow", "everyone"] }
       }
     },
     "viewerState": {

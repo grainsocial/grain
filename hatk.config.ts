@@ -29,6 +29,15 @@ export default defineConfig({
     fullNetwork: false,
     parallelism: 5,
   },
+  push: {
+    apns: {
+      keyFile: isProd ? "/data/certs/AuthKey_J53A95HDW7.p8" : "./certs/AuthKey_J53A95HDW7.p8",
+      keyId: "J53A95HDW7",
+      teamId: "YN68LN9T7Z",
+      bundleId: "social.grain.grain",
+      production: isProd,
+    },
+  },
   oauth: {
     issuer: isProd && prodDomain ? `https://${prodDomain}` : undefined,
     scopes: grainScopes.split(" "),

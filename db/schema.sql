@@ -84,6 +84,14 @@ CREATE TABLE _preferences (
   PRIMARY KEY (did, key)
 );
 
+CREATE TABLE _push_tokens (
+  did TEXT NOT NULL,
+  token TEXT NOT NULL,
+  platform TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (did, token)
+);
+
 CREATE TABLE _reports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   subject_uri TEXT NOT NULL,

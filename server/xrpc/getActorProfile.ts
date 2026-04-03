@@ -72,7 +72,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
 
   const profile = profiles.get(actor);
   const germDecl = germDeclarations.get(actor);
-  const messageMe = germDecl?.value.messageMe ?? null;
+  const messageMe = germDecl?.value.messageMe;
   const galleryCount = galleryCounts.get(actor) || 0;
   const followersCount = followerCounts.get(actor) || 0;
   const followsCount = followsCounts.get(actor) || 0;
@@ -88,7 +88,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
       galleryCount,
       followersCount,
       followsCount,
-      ...(messageMe ? { messageMe } : {}),
+      messageMe,
     });
   }
 
@@ -103,7 +103,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     followersCount,
     followsCount,
     createdAt: profile.value.createdAt,
-    ...(messageMe ? { messageMe } : {}),
+    messageMe,
     ...(viewer && viewer !== actor && (viewerFollowing || followedBy)
       ? {
           viewer: {
