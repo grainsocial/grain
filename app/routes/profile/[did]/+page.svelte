@@ -46,7 +46,7 @@
   const germUrl = $derived.by(() => {
     const p = profile.data as any
     if (!p?.messageMe?.messageMeUrl || !viewerDid) return null
-    return `${p.messageMe.messageMeUrl}#${viewerDid},${did}`
+    return `${p.messageMe.messageMeUrl}/web#${viewerDid}+${did}`
   })
 </script>
 
