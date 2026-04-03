@@ -33,6 +33,21 @@
     ...knownFollowersQuery(did, viewerDid ?? ''),
     enabled: !!viewerDid && viewerDid !== did,
   }))
+
+  const showGermButton = $derived.by(() => {
+    const p = profile.data as any
+    if (!p?.messageMe || !viewerDid) return false
+    if (isOwnProfile) return true
+    const policy = p.messageMe.showButtonTo
+    if (policy === 'everyone') return true
+    if (policy === 'usersIFollow') return !!p.viewer?.followedBy
+    return false
+  })
+  const germUrl = $derived.by(() => {
+    const p = profile.data as any
+    if (!p?.messageMe?.messageMeUrl || !viewerDid) return null
+    return `${p.messageMe.messageMeUrl}#${viewerDid},${did}`
+  })
 </script>
 
 {#if profile.isLoading}
@@ -81,6 +96,11 @@
         <a class="link-pill" href="https://bsky.app/profile/{p.handle || did}" target="_blank" rel="noopener noreferrer">
           Bluesky <ExternalLink size={12} />
         </a>
+        {#if showGermButton && germUrl}
+          <a class="link-pill germ-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
+            <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM
+          </a>
+        {/if}
       </div>
       {#if (knownFollowers.data?.items ?? []).length > 0}
         {@const known = knownFollowers.data?.items ?? []}
@@ -189,6 +209,9 @@
     font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: all 0.12s;
   }
   .link-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .germ-pill { color: var(--grain); border-color: var(--grain); }
+  .germ-pill:hover { color: var(--text-primary); }
+  .germ-logo { width: 14px; height: 14px; object-fit: contain; }
   .view-toggle {
     display: flex;
     justify-content: center;

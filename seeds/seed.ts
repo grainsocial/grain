@@ -58,6 +58,24 @@ await createRecord(
   { rkey: "self" },
 );
 
+// ── Germ Network declarations ──
+
+// Alice has Germ messaging enabled for users she follows
+await createRecord(
+  alice,
+  "com.germnetwork.declaration",
+  {
+    version: "1.1.0",
+    currentKey: { $bytes: "Azc2tAgeZWS34YcWN7UDzTaOzg4xdjWmYbf+vB5LB4TC" },
+    keyPackage: { $bytes: "AL/f8xbdFZKLpMrQ5M/b7QY+BfTgfaGjahUvM+mYpSgLNfX4GabAK35eZcc82/gH5prfMAdL0zstue5tANLRSQ3/AaUAAQOKYDZhOmLO7A2FjOChb0qd/TWXk92+ReIFfsT5aHZmJAICAAAB/wE5AAEABQABAAMgmpd+v4DDNFjLBgz06YhDT2ASVcmL/YJHtEmj1JKcaBYgxd8SYRHfUmB9zcvZD/5tlncv5JC3C/A8h5F72K80j2Qg35g6S+kU9GcGaH42IBHO9ppO6sN9WM778DvzYsy0VM0AASEDimA2YTpizuwNhYzgoW9Knf01l5PdvkXiBX7E+Wh2ZiQCAAEKAAIABwAFAAEAAwAAAgABAQAAAABpxD7yAAAAAGulcnIAQEClCz3WcbcBX1MQ6UXuqgJpmrthu6BaFOx3Mmig8IV742QPVOrKVFeUGLrbrtAzUqLwIQZd7fhSfvGWwSX1yHkAAEBAiXcc+ULcjO7KOzJi7J//OiNKJpNeJzeX47rD62Zpgg5saL9mt0xH7a0oIYpDC3VjEatEkMpEaqyrLD8DR3bQDgBNYOHLzoWUUbuj6/ycxhAC8RIzuqZnNVVU6tft8fKZLTGOOIRLfF1g9YuMv/6dNH3LKx+EfZq/sTOsZ1Ye9sYO" },
+    messageMe: {
+      showButtonTo: "usersIFollow",
+      messageMeUrl: "https://landing.ger.mx/newUser",
+    },
+  },
+  { rkey: "self" },
+);
+
 // Alice follows Bob and Carol
 await createRecord(
   alice,

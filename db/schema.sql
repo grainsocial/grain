@@ -67,13 +67,13 @@ CREATE TABLE _oauth_requests (
 CREATE TABLE _oauth_sessions (
   did TEXT PRIMARY KEY,
   pds_endpoint TEXT NOT NULL,
+  pds_auth_server TEXT,
   access_token TEXT NOT NULL,
   refresh_token TEXT,
   dpop_jkt TEXT NOT NULL,
   token_expires_at INTEGER,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  pds_auth_server TEXT
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE _preferences (
@@ -218,6 +218,18 @@ CREATE TABLE "app.bsky.graph.follow" (
   indexed_at TEXT NOT NULL,
   subject TEXT NOT NULL,
   created_at TEXT NOT NULL
+);
+
+CREATE TABLE "com.germnetwork.declaration" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  version TEXT NOT NULL,
+  current_key BLOB NOT NULL,
+  message_me TEXT,
+  key_package BLOB,
+  continuity_proofs TEXT
 );
 
 CREATE TABLE "social.grain.actor.profile" (

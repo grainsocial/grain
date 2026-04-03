@@ -1,5 +1,5 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
-import type { GrainActorProfile } from "$hatk";
+import type { GrainActorProfile, Declaration } from "$hatk";
 
 export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx) => {
   const { ok, params, isTakendown, lookup, count, blobUrl } = ctx;
@@ -24,6 +24,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
 
   const [
     profiles,
+    germDeclarations,
     galleryCounts,
     followerCounts,
     followsCounts,
@@ -31,6 +32,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     followedByRows,
   ] = await Promise.all([
     lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
+    lookup<Declaration>("com.germnetwork.declaration", "did", [actor]),
     count("social.grain.gallery", "did", [actor]),
     ctx.db
       .query(
@@ -69,6 +71,8 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
   const followedBy = (followedByRows as { uri: string }[])[0]?.uri ?? null;
 
   const profile = profiles.get(actor);
+  const germDecl = germDeclarations.get(actor);
+  const messageMe = germDecl?.value.messageMe ?? null;
   const galleryCount = galleryCounts.get(actor) || 0;
   const followersCount = followerCounts.get(actor) || 0;
   const followsCount = followsCounts.get(actor) || 0;
@@ -84,6 +88,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
       galleryCount,
       followersCount,
       followsCount,
+      ...(messageMe ? { messageMe } : {}),
     });
   }
 
@@ -98,6 +103,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     followersCount,
     followsCount,
     createdAt: profile.value.createdAt,
+    ...(messageMe ? { messageMe } : {}),
     ...(viewer && viewer !== actor && (viewerFollowing || followedBy)
       ? {
           viewer: {
