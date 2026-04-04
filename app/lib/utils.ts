@@ -25,16 +25,16 @@ export function truncDid(did: string): string {
   return did.slice(0, 12) + "\u2026" + did.slice(-6);
 }
 
-/** Format a date like grain-next: Today, Yesterday, N days ago, then Mon DD. */
+/** Compact relative time matching grain-native: now, 2m, 3h, 4d, 1w, then Mon DD. */
 export function relativeTime(iso: string): string {
   const date = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diff = (Date.now() - date.getTime()) / 1000;
 
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diff < 60) return "now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+  if (diff < 2592000) return `${Math.floor(diff / 604800)}w`;
 
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }

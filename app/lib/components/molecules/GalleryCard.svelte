@@ -84,6 +84,15 @@
   let currentIndex = $state(0)
   let carouselEl: HTMLDivElement | undefined = $state(undefined)
   let activeAltIndex: number | null = $state(null)
+  let descriptionExpanded = $state(false)
+  let descriptionClamped = $state(false)
+  let descriptionEl: HTMLParagraphElement | undefined = $state(undefined)
+
+  $effect(() => {
+    if (descriptionEl && !descriptionExpanded) {
+      descriptionClamped = descriptionEl.scrollHeight > descriptionEl.clientHeight + 1
+    }
+  })
   const currentExif = $derived(photos[currentIndex]?.exif as ExifView | undefined)
 
   function onScroll() {
@@ -150,6 +159,7 @@
           <span class="author-name-row">
             <span class="author-handle">{displayName}</span>
             {#if handle}<span class="author-subtext">{handle}</span>{/if}
+            <span class="header-time">· {timeStr}</span>
           </span>
           {#if gallery.location}
             <!-- svelte-ignore node_invalid_placement_ssr -->
@@ -255,12 +265,14 @@
       <p class="title">{gallery.title}</p>
     </a>
     {#if gallery.description}
-      <p class="description"><RichText text={gallery.description} /></p>
+      <p class="description" class:expanded={descriptionExpanded} bind:this={descriptionEl}><RichText text={gallery.description} /></p>
+      {#if descriptionClamped && !descriptionExpanded}
+        <button class="more-btn" type="button" onclick={() => (descriptionExpanded = true)}>more</button>
+      {/if}
     {/if}
     {#if labelResult.action === 'badge'}
       <span class="label-badge"><AlertTriangle size={12} /> {labelResult.name}</span>
     {/if}
-    <time class="timestamp">{timeStr}</time>
   </div>
   </div>
 </article>
@@ -305,6 +317,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex-shrink: 1;
+  }
+  .header-time {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .card-header :global(.overflow-menu) {
@@ -517,6 +535,25 @@
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+  .description.expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
+  }
+  .more-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .more-btn:hover {
+    color: var(--text-secondary);
   }
   .location-link {
     font-size: 12px;
