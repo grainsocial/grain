@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.searchActorsTypeahead",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Typeahead search for actors, merging bsky and grain profiles.",
+      "parameters": {
+        "type": "params",
+        "required": ["q"],
+        "properties": {
+          "q": { "type": "string", "description": "Search query" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 10, "default": 5 }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "actors": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["did"],
+                "properties": {
+                  "did": { "type": "string", "format": "did" },
+                  "handle": { "type": "string" },
+                  "displayName": { "type": "string" },
+                  "avatar": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

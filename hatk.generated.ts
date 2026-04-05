@@ -75,6 +75,7 @@ const getStoryLex = {"lexicon":1,"id":"social.grain.unspecced.getStory","defs":{
 const getStoryArchiveLex = {"lexicon":1,"id":"social.grain.unspecced.getStoryArchive","defs":{"main":{"type":"query","description":"Get all stories for an actor, including expired ones. For archive browsing.","parameters":{"type":"params","required":["actor"],"properties":{"actor":{"type":"string","format":"did"},"limit":{"type":"integer","minimum":1,"maximum":100,"default":50},"cursor":{"type":"string"}}},"output":{"encoding":"application/json","schema":{"type":"object","required":["stories"],"properties":{"stories":{"type":"array","items":{"type":"ref","ref":"social.grain.story.defs#storyView"}},"cursor":{"type":"string"}}}}}}} as const
 const getStoryAuthorsLex = {"lexicon":1,"id":"social.grain.unspecced.getStoryAuthors","defs":{"main":{"type":"query","description":"Get authors who have active stories (posted within the last 24 hours).","output":{"encoding":"application/json","schema":{"type":"object","required":["authors"],"properties":{"authors":{"type":"array","items":{"type":"ref","ref":"social.grain.unspecced.getStoryAuthors#storyAuthor"}}}}}},"storyAuthor":{"type":"object","required":["profile","storyCount","latestAt"],"properties":{"profile":{"type":"ref","ref":"social.grain.actor.defs#profileView"},"storyCount":{"type":"integer"},"latestAt":{"type":"string","format":"datetime"}}}}} as const
 const getSuggestedFollowsLex = {"lexicon":1,"id":"social.grain.unspecced.getSuggestedFollows","defs":{"main":{"type":"query","description":"Get suggested profiles to follow based on bsky follow graph.","parameters":{"type":"params","required":["actor"],"properties":{"actor":{"type":"string","format":"did"},"limit":{"type":"integer","minimum":1,"maximum":20,"default":10}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"items":{"type":"array","items":{"type":"ref","ref":"social.grain.unspecced.getSuggestedFollows#suggestedItem"}}}}}},"suggestedItem":{"type":"object","required":["did"],"properties":{"did":{"type":"string","format":"did"},"handle":{"type":"string"},"displayName":{"type":"string"},"description":{"type":"string"},"avatar":{"type":"string"},"followersCount":{"type":"integer"}}}}} as const
+const searchActorsTypeaheadLex = {"lexicon":1,"id":"social.grain.unspecced.searchActorsTypeahead","defs":{"main":{"type":"query","description":"Typeahead search for actors, merging bsky and grain profiles.","parameters":{"type":"params","required":["q"],"properties":{"q":{"type":"string","description":"Search query"},"limit":{"type":"integer","minimum":1,"maximum":10,"default":5}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"actors":{"type":"array","items":{"type":"object","required":["did"],"properties":{"did":{"type":"string","format":"did"},"handle":{"type":"string"},"displayName":{"type":"string"},"avatar":{"type":"string"}}}}}}}}}} as const
 const searchGalleriesLex = {"lexicon":1,"id":"social.grain.unspecced.searchGalleries","defs":{"main":{"type":"query","description":"Full-text search for galleries, returning full gallery views.","parameters":{"type":"params","required":["q"],"properties":{"q":{"type":"string","description":"Search query"},"limit":{"type":"integer","minimum":1,"maximum":100,"default":30},"cursor":{"type":"string"},"fuzzy":{"type":"boolean","default":true}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"items":{"type":"array","items":{"type":"ref","ref":"social.grain.gallery.defs#galleryView"}},"cursor":{"type":"string"}}}}}}} as const
 const searchProfilesLex = {"lexicon":1,"id":"social.grain.unspecced.searchProfiles","defs":{"main":{"type":"query","description":"Full-text search for user profiles.","parameters":{"type":"params","required":["q"],"properties":{"q":{"type":"string","description":"Search query"},"limit":{"type":"integer","minimum":1,"maximum":100,"default":30},"cursor":{"type":"string"},"fuzzy":{"type":"boolean","default":true}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"items":{"type":"array","items":{"type":"ref","ref":"social.grain.unspecced.searchProfiles#profileSearchResult"}},"cursor":{"type":"string"}}}}},"profileSearchResult":{"type":"object","required":["did"],"properties":{"did":{"type":"string","format":"did"},"handle":{"type":"string"},"displayName":{"type":"string"},"description":{"type":"string"},"avatar":{"type":"string"}}}}} as const
 
@@ -149,6 +150,7 @@ type Registry = {
   'social.grain.unspecced.getStoryArchive': typeof getStoryArchiveLex
   'social.grain.unspecced.getStoryAuthors': typeof getStoryAuthorsLex
   'social.grain.unspecced.getSuggestedFollows': typeof getSuggestedFollowsLex
+  'social.grain.unspecced.searchActorsTypeahead': typeof searchActorsTypeaheadLex
   'social.grain.unspecced.searchGalleries': typeof searchGalleriesLex
   'social.grain.unspecced.searchProfiles': typeof searchProfilesLex
 }
@@ -196,6 +198,7 @@ export type GetStory = Prettify<LexQuery<typeof getStoryLex, Registry>>
 export type GetStoryArchive = Prettify<LexQuery<typeof getStoryArchiveLex, Registry>>
 export type GetStoryAuthors = Prettify<LexQuery<typeof getStoryAuthorsLex, Registry>>
 export type GetSuggestedFollows = Prettify<LexQuery<typeof getSuggestedFollowsLex, Registry>>
+export type SearchActorsTypeahead = Prettify<LexQuery<typeof searchActorsTypeaheadLex, Registry>>
 export type SearchGalleries = Prettify<LexQuery<typeof searchGalleriesLex, Registry>>
 export type SearchProfiles = Prettify<LexQuery<typeof searchProfilesLex, Registry>>
 
@@ -400,6 +403,7 @@ export type XrpcSchema = {
   'social.grain.unspecced.getStoryArchive': GetStoryArchive
   'social.grain.unspecced.getStoryAuthors': GetStoryAuthors
   'social.grain.unspecced.getSuggestedFollows': GetSuggestedFollows
+  'social.grain.unspecced.searchActorsTypeahead': SearchActorsTypeahead
   'social.grain.unspecced.searchGalleries': SearchGalleries
   'social.grain.unspecced.searchProfiles': SearchProfiles
 }

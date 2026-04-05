@@ -1,5 +1,6 @@
 <script lang="ts">
   import { login, createAccount } from '$lib/auth'
+  import { callXrpc } from '$hatk/client'
   import Modal from '../atoms/Modal.svelte'
   import Button from '../atoms/Button.svelte'
 
@@ -40,11 +41,8 @@
 
   async function search(q: string) {
     try {
-      const url = `https://public.api.bsky.app/xrpc/app.bsky.actor.searchActorsTypeahead?q=${encodeURIComponent(q)}&limit=5`
-      const res = await fetch(url)
-      if (!res.ok) return
-      const json = await res.json()
-      suggestions = json.actors || []
+      const result = await callXrpc('social.grain.unspecced.searchActorsTypeahead', { q, limit: 5 })
+      suggestions = result.actors || []
       activeIndex = -1
     } catch {
       // ignore search errors
