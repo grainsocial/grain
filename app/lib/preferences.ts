@@ -32,6 +32,7 @@ export function feedIcon(feed: { id: string; type: string }): any {
 
 export const pinnedFeeds = writable<PinnedFeed[]>(DEFAULT_PINNED);
 export const includeExif = writable(true);
+export const includeLocation = writable(true);
 
 function isValidFeed(f: unknown): f is PinnedFeed {
   return (
@@ -50,11 +51,17 @@ export function loadPreferences(prefs: Record<string, unknown> | null): void {
     if (valid.length > 0) pinnedFeeds.set(valid);
   }
   if (typeof prefs.includeExif === "boolean") includeExif.set(prefs.includeExif);
+  if (typeof prefs.includeLocation === "boolean") includeLocation.set(prefs.includeLocation);
 }
 
 export async function setIncludeExif(value: boolean): Promise<void> {
   includeExif.set(value);
   await callXrpc("dev.hatk.putPreference", { key: "includeExif", value });
+}
+
+export async function setIncludeLocation(value: boolean): Promise<void> {
+  includeLocation.set(value);
+  await callXrpc("dev.hatk.putPreference", { key: "includeLocation", value });
 }
 
 export async function pinFeed(feed: PinnedFeed): Promise<boolean> {
@@ -86,6 +93,7 @@ export async function unpinFeed(id: string): Promise<boolean> {
 export function resetPreferences(): void {
   pinnedFeeds.set(DEFAULT_PINNED);
   includeExif.set(true);
+  includeLocation.set(true);
 }
 
 export async function markNotificationsSeen(): Promise<void> {

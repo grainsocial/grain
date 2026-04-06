@@ -13,7 +13,7 @@
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
   import Field from '$lib/components/atoms/Field.svelte'
-  import { includeExif } from '$lib/preferences'
+  import { includeExif, includeLocation } from '$lib/preferences'
   import { viewer } from '$lib/stores'
   import Input from '$lib/components/atoms/Input.svelte'
   import Textarea from '$lib/components/atoms/Textarea.svelte'
@@ -64,7 +64,7 @@
 
       // Auto-suggest location from first photo's GPS
       const gps = photos.find((p) => p.gps)?.gps
-      if (gps) {
+      if (gps && $includeLocation) {
         reverseGeocode(gps.latitude, gps.longitude).then((result) => {
           if (result) {
             const name = formatLocationName(result)

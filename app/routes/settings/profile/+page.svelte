@@ -13,7 +13,7 @@
   import RichTextarea from '$lib/components/atoms/RichTextarea.svelte'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import Checkbox from '$lib/components/atoms/Checkbox.svelte'
-  import { setIncludeExif } from '$lib/preferences'
+  import { setIncludeExif, setIncludeLocation } from '$lib/preferences'
   import { Camera, LoaderCircle, Trash2 } from 'lucide-svelte'
 
   let displayName = $state('')
@@ -28,6 +28,7 @@
   let showToast = $state(false)
   let loaded = $state(false)
   let localIncludeExif = $state(true)
+  let localIncludeLocation = $state(true)
   let fileInput: HTMLInputElement = $state()!
 
   const profile = createQuery(() => actorProfileQuery($viewer?.did ?? ''))
@@ -42,6 +43,9 @@
     avatarPreview = p.avatar || null
     if (typeof prefs.data?.includeExif === 'boolean') {
       localIncludeExif = prefs.data.includeExif as boolean
+    }
+    if (typeof prefs.data?.includeLocation === 'boolean') {
+      localIncludeLocation = prefs.data.includeLocation as boolean
     }
     loaded = true
   })
@@ -120,8 +124,9 @@
         record,
       })
 
-      // Save EXIF preference
+      // Save preferences
       await setIncludeExif(localIncludeExif)
+      await setIncludeLocation(localIncludeLocation)
       queryClient.invalidateQueries({ queryKey: ['preferences'] })
       queryClient.invalidateQueries({ queryKey: ['actorProfile', $viewer.did] })
 
@@ -180,7 +185,10 @@
   </div>
 
   <div class="preferences">
-    <Checkbox bind:checked={localIncludeExif} label="Include camera data (EXIF) when uploading photos" />
+    <h3 class="preferences-header">Privacy</h3>
+    <Checkbox bind:checked={localIncludeLocation} label="Include location" />
+    <Checkbox bind:checked={localIncludeExif} label="Include camera data" />
+    <p class="preferences-note">Camera data includes make, model, and exposure info. Location is auto-detected from photo metadata when available.</p>
   </div>
 
   <div class="actions">
@@ -253,6 +261,20 @@
     margin-top: 24px;
     padding-top: 16px;
     border-top: 1px solid var(--border);
+  }
+  .preferences-header {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .preferences-note {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
   }
   .actions {
     margin-top: 24px;

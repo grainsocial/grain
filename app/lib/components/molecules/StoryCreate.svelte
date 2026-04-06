@@ -12,6 +12,7 @@
   import Checkbox from '$lib/components/atoms/Checkbox.svelte'
   import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import { createBskyPost } from '$lib/utils/bsky-post'
+  import { includeLocation } from '$lib/preferences'
   import { viewer } from '$lib/stores'
 
   let { onclose }: { onclose: () => void } = $props()
@@ -52,7 +53,7 @@
 
       // Auto-suggest location from GPS
       const gps = photo.gps
-      if (gps) {
+      if (gps && $includeLocation) {
         reverseGeocode(gps.latitude, gps.longitude).then((result) => {
           if (result) {
             const name = formatLocationName(result)
