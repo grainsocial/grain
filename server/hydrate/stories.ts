@@ -45,6 +45,21 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
       ? ((await ctx.labels(storyUris)) as Map<string, Label[]>)
       : new Map<string, Label[]>();
 
+  // Merge self-labels from records
+  if (storyUris.length > 0) {
+    const selfLabelRows = (await ctx.db.query(
+      `SELECT parent_uri, val FROM "social.grain.story__labels_self_labels"
+       WHERE parent_uri IN (${storyUris.map((_, i) => `$${i + 1}`).join(",")})`,
+      storyUris,
+    )) as { parent_uri: string; val: string }[];
+    for (const row of selfLabelRows) {
+      const label: Label = { src: row.parent_uri.split("/")[2], uri: row.parent_uri, val: row.val, cts: new Date().toISOString() };
+      const existing = labelsByUri.get(row.parent_uri) ?? [];
+      existing.push(label);
+      labelsByUri.set(row.parent_uri, existing);
+    }
+  }
+
   // Filter stories with hide-severity labels (latest entry per val wins)
   const visibleRows = rows.filter((row) => {
     const labels = labelsByUri.get(row.uri);

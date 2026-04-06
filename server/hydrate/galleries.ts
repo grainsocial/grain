@@ -117,7 +117,21 @@ export async function hydrateGalleries(
           })
         : Promise.resolve(new Map<string, number>()),
       countComments(ctx.db, galleryUris),
-      ctx.labels(galleryUris) as Promise<Map<string, Label[]>>,
+      ctx.labels(galleryUris).then(async (externalLabels: Map<string, Label[]>) => {
+        if (galleryUris.length === 0) return externalLabels;
+        const selfLabelRows = (await ctx.db.query(
+          `SELECT parent_uri, val FROM "social.grain.gallery__labels_self_labels"
+           WHERE parent_uri IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")})`,
+          galleryUris,
+        )) as { parent_uri: string; val: string }[];
+        for (const row of selfLabelRows) {
+          const label: Label = { src: row.parent_uri.split("/")[2], uri: row.parent_uri, val: row.val, cts: new Date().toISOString() };
+          const existing = externalLabels.get(row.parent_uri) ?? [];
+          existing.push(label);
+          externalLabels.set(row.parent_uri, existing);
+        }
+        return externalLabels;
+      }) as Promise<Map<string, Label[]>>,
       galleryUris.length > 0
         ? (ctx.db.query(
             `SELECT uri, did, cid, gallery, item, position, created_at

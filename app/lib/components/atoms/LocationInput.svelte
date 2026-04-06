@@ -133,18 +133,18 @@
   }
   .input {
     width: 100%;
-    background: var(--bg-elevated);
+    background: none;
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 8px;
     padding: 10px 36px 10px 34px;
     color: var(--text-primary);
-    font-family: var(--font-body);
+    font-family: inherit;
     font-size: 16px;
     outline: none;
     transition: border-color 0.15s;
   }
   .input::placeholder {
-    color: var(--text-faint);
+    color: var(--text-muted);
   }
   .input:focus {
     border-color: var(--grain);

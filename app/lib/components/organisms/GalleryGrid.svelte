@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { GalleryView, PhotoView } from '$hatk/client'
   import Skeleton from '../atoms/Skeleton.svelte'
+  import { resolveLabels, labelDefsQuery } from '$lib/labels'
+  import { createQuery } from '@tanstack/svelte-query'
+  import { Info } from 'lucide-svelte'
+
+  const labelDefs = createQuery(() => labelDefsQuery())
 
   let {
     items,
@@ -31,19 +36,27 @@
 {:else}
   <div class="grid">
     {#each items as gallery (gallery.uri)}
+      {@const lr = resolveLabels(gallery.labels, labelDefs.data ?? [])}
       <a class="cell" href="/profile/{gallery.creator?.did}/gallery/{rkey(gallery.uri)}">
-        {#if thumb(gallery)}
-          <img
-            src={thumb(gallery)}
-            alt={gallery.title ?? ''}
-            decoding="async"
-            loading="lazy"
-            onload={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}
-          />
+        {#if lr.action === 'warn-media' || lr.action === 'warn-content' || lr.action === 'hide'}
+          <div class="label-cover">
+            <Info size={14} />
+            <span>{lr.name}</span>
+          </div>
+        {:else}
+          {#if thumb(gallery)}
+            <img
+              src={thumb(gallery)}
+              alt={gallery.title ?? ''}
+              decoding="async"
+              loading="lazy"
+              onload={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}
+            />
+          {/if}
+          <div class="overlay">
+            <span class="overlay-title">{gallery.title}</span>
+          </div>
         {/if}
-        <div class="overlay">
-          <span class="overlay-title">{gallery.title}</span>
-        </div>
       </a>
     {/each}
   </div>
@@ -94,6 +107,17 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     width: 100%;
+  }
+  .label-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
   }
   .empty-state {
     padding: 48px;

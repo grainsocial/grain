@@ -5,10 +5,12 @@
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { reverseGeocode, formatLocationName, extractAddress } from '$lib/utils/nominatim'
   import { latLonToH3 } from '$lib/utils/h3'
+  import Field from '$lib/components/atoms/Field.svelte'
   import LocationInput from '$lib/components/atoms/LocationInput.svelte'
   import type { LocationData } from '$lib/components/atoms/LocationInput.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
   import Checkbox from '$lib/components/atoms/Checkbox.svelte'
+  import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import { createBskyPost } from '$lib/utils/bsky-post'
   import { viewer } from '$lib/stores'
 
@@ -19,6 +21,7 @@
   let processing = $state(false)
   let publishing = $state(false)
   let postToBluesky = $state(false)
+  let selectedLabels = $state<string[]>([])
   let error = $state<string | null>(null)
   let fileInput: HTMLInputElement = $state()!
 
@@ -92,6 +95,14 @@
                   value: location.h3Index,
                 },
                 ...(location.address ? { address: location.address } : {}),
+              }
+            : {}),
+          ...(selectedLabels.length > 0
+            ? {
+                labels: {
+                  $type: 'com.atproto.label.defs#selfLabels',
+                  values: selectedLabels.map((val) => ({ val })),
+                },
               }
             : {}),
           createdAt: now,
@@ -172,8 +183,16 @@
         <img src={photo.dataUrl} alt="Story preview" />
       </div>
       <div class="location-field">
-        <LocationInput bind:value={location} placeholder="Add location..." />
+        <Field label="Location">
+          <LocationInput bind:value={location} placeholder="Add location..." />
+        </Field>
       </div>
+      <div class="cw-field">
+        <Field label="Labels">
+          <ContentWarningPicker bind:selected={selectedLabels} />
+        </Field>
+      </div>
+      <div class="divider"></div>
       <div class="bsky-field">
         <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
       </div>
@@ -273,7 +292,14 @@
   .location-field {
     padding: 12px 16px;
   }
+  .cw-field {
+    padding: 0 16px 8px;
+  }
+  .divider {
+    border-top: 1px solid var(--border);
+    margin: 4px 16px;
+  }
   .bsky-field {
-    padding: 0 16px 12px;
+    padding: 8px 16px 12px;
   }
 </style>

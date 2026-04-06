@@ -1,6 +1,6 @@
 import { defineQuery } from "$hatk";
 import { views } from "$hatk";
-import type { GrainActorProfile, Story } from "$hatk";
+import type { GrainActorProfile, Story, Label } from "$hatk";
 import { lookupCrossPosts } from "../hydrate/galleries.ts";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
@@ -79,6 +79,17 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
     }
   }
 
+  // Labels: merge external + self-labels
+  const externalLabels = (await ctx.labels([row.uri])) as Map<string, Label[]>;
+  const selfLabelRows = (await db.query(
+    `SELECT parent_uri, val FROM "social.grain.story__labels_self_labels" WHERE parent_uri = $1`,
+    [row.uri],
+  )) as { parent_uri: string; val: string }[];
+  const labels = externalLabels.get(row.uri) ?? [];
+  for (const sl of selfLabelRows) {
+    labels.push({ src: row.did, uri: row.uri, val: sl.val, cts: new Date().toISOString() });
+  }
+
   // Cross-post lookup
   const crossPostMap = await lookupCrossPosts(db, [row], "story");
   const crossPostUrl = crossPostMap.get(row.uri);
@@ -98,6 +109,7 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
         }
       : {}),
     ...(crossPost ? { crossPost } : {}),
+    ...(labels.length > 0 ? { labels } : {}),
     createdAt: row.created_at,
   });
 

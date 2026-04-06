@@ -353,5 +353,12 @@ CREATE TABLE "social.grain.story" (
   aspect_ratio TEXT NOT NULL,
   location TEXT,
   address TEXT,
+  labels TEXT,
   created_at TEXT NOT NULL
+);
+
+CREATE TABLE "social.grain.story__labels_self_labels" (
+  parent_uri TEXT NOT NULL,
+  parent_did TEXT NOT NULL,
+  val TEXT
 );

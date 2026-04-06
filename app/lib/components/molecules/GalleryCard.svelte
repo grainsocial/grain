@@ -17,7 +17,7 @@
   import { isAuthenticated, requireAuth, viewer } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { EyeOff, AlertTriangle } from 'lucide-svelte'
+  import { EyeOff, AlertTriangle, Info } from 'lucide-svelte'
 
   let { gallery, onCommentClick }: { gallery: GalleryView; onCommentClick?: (focusPhoto: PhotoView | null) => void } = $props()
 
@@ -132,25 +132,19 @@
   })
 </script>
 
-{#if labelResult.action === 'hide' && !revealed}
+{#if (labelResult.action === 'hide' || labelResult.action === 'warn-content') && !revealed}
   <article class="gallery-card gallery-hidden">
-    <div class="content-warning">
-      <EyeOff size={18} />
-      <span>Hidden: {labelResult.name}</span>
-      <button class="cw-reveal" onclick={() => (revealed = true)}>Show anyway</button>
+    <div class="media-warning-bar">
+      <div class="media-warning-left">
+        <Info size={16} />
+        <span>{labelResult.name}</span>
+      </div>
+      <button class="media-warning-show" onclick={() => (revealed = true)}>Show</button>
     </div>
   </article>
 {:else}
 <article class="gallery-card" class:has-label-badge={labelResult.action === 'badge'}>
-  {#if labelResult.action === 'warn-content' && !revealed}
-    <div class="content-warning content-warning-full">
-      <AlertTriangle size={20} />
-      <span class="cw-label">{labelResult.name}</span>
-      <p class="cw-text">This content has been flagged for review.</p>
-      <button class="cw-reveal" onclick={() => (revealed = true)}>Show content</button>
-    </div>
-  {/if}
-  <div class:content-obscured={labelResult.action === 'warn-content' && !revealed}>
+  <div>
   <header class="card-header">
     <ProfilePopover did={gallery.creator?.did ?? ''}>
       <a href="/profile/{gallery.creator?.did}" class="author-chip">
@@ -181,12 +175,15 @@
   </header>
 
   {#if photos.length > 0}
-    <div class="carousel-host" class:media-blurred={labelResult.action === 'warn-media' && !revealed}>
+    <div class="carousel-host" class:media-obscured={labelResult.action === 'warn-media' && !revealed}>
       {#if labelResult.action === 'warn-media' && !revealed}
-        <button class="media-warning" onclick={() => (revealed = true)}>
-          <AlertTriangle size={16} />
-          <span>{labelResult.name}</span>
-        </button>
+        <div class="media-warning-bar">
+          <div class="media-warning-left">
+            <Info size={16} />
+            <span>{labelResult.name}</span>
+          </div>
+          <button class="media-warning-show" onclick={() => (revealed = true)}>Show</button>
+        </div>
       {/if}
       <div
         class="carousel"
@@ -621,34 +618,54 @@
     background: var(--bg-hover);
     color: var(--text-primary);
   }
-  .content-obscured {
-    display: none;
-  }
-  .media-blurred {
+  .media-obscured {
     position: relative;
   }
-  .media-blurred .carousel {
-    filter: blur(40px);
-    pointer-events: none;
+  .media-obscured .carousel {
+    visibility: hidden;
   }
-  .media-warning {
+  .media-obscured::before {
+    content: '';
     position: absolute;
     inset: 0;
+    background: var(--bg-elevated);
+    z-index: 1;
+  }
+  .media-warning-bar {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    right: 12px;
+    transform: translateY(-50%);
     z-index: 2;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .media-warning-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .media-warning-show {
     background: none;
     border: none;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 600;
+    color: var(--grain);
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
     font-family: var(--font-body);
+    padding: 0;
   }
-  .media-warning:hover {
-    color: var(--text-primary);
+  .media-warning-show:hover {
+    opacity: 0.8;
   }
   .label-badge {
     display: inline-flex;

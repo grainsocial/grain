@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { X, MapPin, Trash2, AlertTriangle } from 'lucide-svelte'
+  import { X, MapPin, Trash2, AlertTriangle, Info } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { callXrpc } from '$hatk/client'
   import { storiesQuery, storyAuthorsQuery, storyQuery } from '$lib/queries'
@@ -87,13 +87,6 @@
     }
   })
 
-  // Pause timer while a label warning is shown
-  const labelWarningActive = $derived(
-    !labelRevealed && (labelResult.action === 'warn-content' || labelResult.action === 'warn-media')
-  )
-  $effect(() => {
-    paused = labelWarningActive
-  })
 
   async function deleteStory() {
     if (!currentStory || deleting) return
@@ -273,29 +266,23 @@
       </div>
 
       <!-- Image -->
-      {#if labelResult.action === 'warn-content' && !labelRevealed}
-        <div class="story-content-warning">
-          <AlertTriangle size={20} />
-          <span class="cw-label">{labelResult.name}</span>
-          <p class="cw-text">This content has been flagged for review.</p>
-          <button class="cw-reveal" onclick={(e) => { e.stopPropagation(); labelRevealed = true }}>Show content</button>
-        </div>
-      {:else}
-        <div class="story-image-wrapper" class:media-blurred={labelResult.action === 'warn-media' && !labelRevealed}>
-          {#if labelResult.action === 'warn-media' && !labelRevealed}
-            <button class="media-warning" onclick={(e) => { e.stopPropagation(); labelRevealed = true }}>
-              <AlertTriangle size={16} />
+      <div class="story-image-wrapper" class:media-obscured={(labelResult.action === 'warn-media' || labelResult.action === 'warn-content' || labelResult.action === 'hide') && !labelRevealed}>
+        {#if (labelResult.action === 'warn-media' || labelResult.action === 'warn-content' || labelResult.action === 'hide') && !labelRevealed}
+          <div class="media-warning-bar">
+            <div class="media-warning-left">
+              <Info size={16} />
               <span>{labelResult.name}</span>
-            </button>
-          {/if}
-          <img
-            class="story-image"
-            src={currentStory.fullsize}
-            alt=""
-            style="aspect-ratio: {currentStory.aspectRatio.width}/{currentStory.aspectRatio.height}"
-          />
-        </div>
-      {/if}
+            </div>
+            <button class="media-warning-show" onclick={(e) => { e.stopPropagation(); labelRevealed = true }}>Show</button>
+          </div>
+        {/if}
+        <img
+          class="story-image"
+          src={currentStory.fullsize}
+          alt=""
+          style="aspect-ratio: {currentStory.aspectRatio.width}/{currentStory.aspectRatio.height}"
+        />
+      </div>
 
       <!-- Bluesky cross-post link -->
       {#if bskyUrl}
@@ -432,59 +419,54 @@
   }
 
   /* Label moderation */
-  .story-content-warning {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 14px;
-    text-align: center;
-    padding: 24px;
-  }
-  .cw-label {
-    font-weight: 600;
-  }
-  .cw-text {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 13px;
-  }
-  .cw-reveal {
-    margin-top: 8px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .media-blurred {
+  .media-obscured {
     position: relative;
   }
-  .media-blurred .story-image {
-    filter: blur(24px);
+  .media-obscured .story-image {
+    visibility: hidden;
   }
-  .media-warning {
+  .media-obscured::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--bg-elevated, #1a1a1a);
+    z-index: 1;
+  }
+  .media-warning-bar {
     position: absolute;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 5;
+    left: 12px;
+    right: 12px;
+    transform: translateY(-50%);
+    z-index: 2;
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 8px 14px;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
-    font-size: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+  .media-warning-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .media-warning-show {
+    background: none;
+    border: none;
+    color: var(--grain);
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    backdrop-filter: blur(4px);
+    font-family: var(--font-body);
+    padding: 0;
+  }
+  .media-warning-show:hover {
+    opacity: 0.8;
   }
 
   /* Bluesky link */

@@ -20,6 +20,7 @@
   import RichTextarea from '$lib/components/atoms/RichTextarea.svelte'
   import LocationInput from '$lib/components/atoms/LocationInput.svelte'
   import Checkbox from '$lib/components/atoms/Checkbox.svelte'
+  import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import type { LocationData } from '$lib/components/atoms/LocationInput.svelte'
 
   onMount(() => window.scrollTo(0, 0))
@@ -34,6 +35,7 @@
   let processing = $state(false)
   let publishing = $state(false)
   let postToBluesky = $state(false)
+  let selectedLabels = $state<string[]>([])
   let error = $state<string | null>(null)
 
   let fileInput: HTMLInputElement = $state()!
@@ -260,6 +262,14 @@
                 ...(location.address ? { address: location.address } : {}),
               }
             : {}),
+          ...(selectedLabels.length > 0
+            ? {
+                labels: {
+                  $type: 'com.atproto.label.defs#selfLabels',
+                  values: selectedLabels.map((val) => ({ val })),
+                },
+              }
+            : {}),
           createdAt: now,
         },
       })
@@ -391,7 +401,7 @@
       {/each}
     </div>
     <div class="form">
-      <Field count={title.length} max={100} showCount="always">
+      <Field label="Title" count={title.length} max={100} showCount="always">
         <Input
           type="text"
           placeholder="Add a title..."
@@ -399,7 +409,7 @@
           bind:value={title}
         />
       </Field>
-      <Field count={description.length} max={1000}>
+      <Field label="Description" count={description.length} max={1000}>
         <RichTextarea
           placeholder="Add a description. Supports @mentions, #hashtags, and links."
           maxlength={1000}
@@ -407,7 +417,13 @@
           rows={6}
         />
       </Field>
-      <LocationInput bind:value={location} />
+      <Field label="Location">
+        <LocationInput bind:value={location} />
+      </Field>
+      <Field label="Labels">
+        <ContentWarningPicker bind:selected={selectedLabels} />
+      </Field>
+      <div class="divider"></div>
       <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
     </div>
   {/if}
@@ -539,6 +555,10 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+  .divider {
+    border-top: 1px solid var(--border);
+    margin: 4px 0;
   }
 
   /* Alt text (step 3) */
