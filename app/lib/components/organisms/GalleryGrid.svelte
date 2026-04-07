@@ -10,9 +10,11 @@
   let {
     items,
     loading = false,
+    emptyText = 'No galleries yet.',
   }: {
     items: GalleryView[]
     loading?: boolean
+    emptyText?: string
   } = $props()
 
   function thumb(gallery: GalleryView): string | undefined {
@@ -32,7 +34,7 @@
     {/each}
   </div>
 {:else if items.length === 0}
-  <div class="empty-state">No galleries yet.</div>
+  <div class="empty-state">{emptyText}</div>
 {:else}
   <div class="grid">
     {#each items as gallery (gallery.uri)}

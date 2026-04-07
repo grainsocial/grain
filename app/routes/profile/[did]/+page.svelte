@@ -147,7 +147,7 @@
   {#if viewMode === 'stories' && isOwnProfile}
     <StoryArchive {did} />
   {:else if viewMode === 'favorites' && isOwnProfile}
-    <GalleryGrid items={favorites.data?.items ?? []} loading={favorites.isLoading} />
+    <GalleryGrid items={favorites.data?.items ?? []} loading={favorites.isLoading} emptyText="No favorites yet." />
   {:else}
     <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
   {/if}
