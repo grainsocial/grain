@@ -11,10 +11,16 @@
     items,
     loading = false,
     emptyText = 'No galleries yet.',
+    hasMore = false,
+    loadingMore = false,
+    onLoadMore,
   }: {
     items: GalleryView[]
     loading?: boolean
     emptyText?: string
+    hasMore?: boolean
+    loadingMore?: boolean
+    onLoadMore?: () => void
   } = $props()
 
   function thumb(gallery: GalleryView): string | undefined {
@@ -62,6 +68,13 @@
       </a>
     {/each}
   </div>
+  {#if hasMore}
+    <div class="load-more">
+      <button class="load-more-btn" onclick={() => onLoadMore?.()} disabled={loadingMore}>
+        {loadingMore ? 'Loading\u2026' : 'Load more'}
+      </button>
+    </div>
+  {/if}
 {/if}
 
 <style>
@@ -121,6 +134,24 @@
     font-size: 11px;
     font-weight: 500;
   }
+  .load-more { padding: 16px; text-align: center; }
+  .load-more-btn {
+    padding: 10px 24px;
+    border-radius: 20px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .load-more-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+  .load-more-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .empty-state {
     padding: 48px;
     text-align: center;

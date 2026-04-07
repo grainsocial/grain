@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/svelte-query";
+import { infiniteQueryOptions, queryOptions } from "@tanstack/svelte-query";
 import { callXrpc } from "$hatk/client";
 
 type Fetch = typeof globalThis.fetch;
@@ -58,11 +58,17 @@ export const locationsQuery = (f?: Fetch) =>
 
 // ─── Favorites ──────────────────────────────────────────────────────
 
-export const actorFavoritesQuery = (did: string, f?: Fetch) =>
-  queryOptions({
+export const actorFavoritesInfiniteQuery = (did: string, f?: Fetch) =>
+  infiniteQueryOptions({
     queryKey: ["actorFavorites", did],
-    queryFn: () =>
-      callXrpc("social.grain.unspecced.getActorFavorites", { actor: did }, f),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      callXrpc(
+        "social.grain.unspecced.getActorFavorites",
+        { actor: did, limit: 30, ...(pageParam ? { cursor: pageParam } : {}) },
+        f,
+      ),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
     staleTime: 60_000,
   });
 

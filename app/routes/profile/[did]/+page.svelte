@@ -8,8 +8,8 @@
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
   import { ArrowUpRight, Grid3x3, Heart, Clock } from 'lucide-svelte'
-  import { createQuery } from '@tanstack/svelte-query'
-  import { actorProfileQuery, actorFeedQuery, actorFavoritesQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
+  import { createQuery, createInfiniteQuery } from '@tanstack/svelte-query'
+  import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
@@ -26,10 +26,11 @@
 
   const profile = createQuery(() => actorProfileQuery(did, viewerDid))
   const feed = createQuery(() => actorFeedQuery(did))
-  const favorites = createQuery(() => ({
-    ...actorFavoritesQuery(did),
+  const favorites = createInfiniteQuery(() => ({
+    ...actorFavoritesInfiniteQuery(did),
     enabled: isOwnProfile,
   }))
+  const favoriteItems = $derived(favorites.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const stories = createQuery(() => storiesQuery(did))
   const hasStory = $derived((stories.data?.length ?? 0) > 0)
   const knownFollowers = createQuery(() => ({
@@ -147,7 +148,14 @@
   {#if viewMode === 'stories' && isOwnProfile}
     <StoryArchive {did} />
   {:else if viewMode === 'favorites' && isOwnProfile}
-    <GalleryGrid items={favorites.data?.items ?? []} loading={favorites.isLoading} emptyText="No favorites yet." />
+    <GalleryGrid
+      items={favoriteItems}
+      loading={favorites.isLoading}
+      emptyText="No favorites yet."
+      hasMore={favorites.hasNextPage}
+      loadingMore={favorites.isFetchingNextPage}
+      onLoadMore={() => favorites.fetchNextPage()}
+    />
   {:else}
     <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
   {/if}
