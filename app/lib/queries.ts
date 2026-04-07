@@ -56,6 +56,16 @@ export const locationsQuery = (f?: Fetch) =>
     staleTime: 5 * 60_000,
   });
 
+// ─── Favorites ──────────────────────────────────────────────────────
+
+export const actorFavoritesQuery = (did: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["actorFavorites", did],
+    queryFn: () =>
+      callXrpc("social.grain.unspecced.getActorFavorites", { actor: did }, f),
+    staleTime: 60_000,
+  });
+
 // ─── Stories ────────────────────────────────────────────────────────
 
 export const storyAuthorsQuery = (f?: Fetch) =>

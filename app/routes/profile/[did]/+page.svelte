@@ -1,5 +1,4 @@
 <script lang="ts">
-  import FeedList from '$lib/components/organisms/FeedList.svelte'
   import GalleryGrid from '$lib/components/organisms/GalleryGrid.svelte'
   import Avatar from '$lib/components/atoms/Avatar.svelte'
   import AvatarLightbox from '$lib/components/atoms/AvatarLightbox.svelte'
@@ -8,16 +7,16 @@
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
-  import { ExternalLink, Grid3x3, List, Clock } from 'lucide-svelte'
+  import { ArrowUpRight, Grid3x3, Heart, Clock } from 'lucide-svelte'
   import { createQuery } from '@tanstack/svelte-query'
-  import { actorProfileQuery, actorFeedQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
+  import { actorProfileQuery, actorFeedQuery, actorFavoritesQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
 
   let { data } = $props()
   let lightboxSrc: string | null = $state(null)
-  let viewMode: 'grid' | 'list' | 'stories' = $state('grid')
+  let viewMode: 'grid' | 'favorites' | 'stories' = $state('grid')
   let followersOffset = $state(0)
   let showStoryViewer = $state(false)
   const did = $derived(data.did)
@@ -27,6 +26,10 @@
 
   const profile = createQuery(() => actorProfileQuery(did, viewerDid))
   const feed = createQuery(() => actorFeedQuery(did))
+  const favorites = createQuery(() => ({
+    ...actorFavoritesQuery(did),
+    enabled: isOwnProfile,
+  }))
   const stories = createQuery(() => storiesQuery(did))
   const hasStory = $derived((stories.data?.length ?? 0) > 0)
   const knownFollowers = createQuery(() => ({
@@ -94,11 +97,11 @@
       {/if}
       <div class="links-row">
         <a class="link-pill" href="https://bsky.app/profile/{p.handle || did}" target="_blank" rel="noopener noreferrer">
-          Bluesky <ExternalLink size={12} />
+          Bluesky <ArrowUpRight size={14} />
         </a>
         {#if showGermButton && germUrl}
-          <a class="link-pill germ-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
-            <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM
+          <a class="link-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
+            <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM <ArrowUpRight size={14} />
           </a>
         {/if}
       </div>
@@ -129,28 +132,24 @@
 
   <div class="view-toggle">
     <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => (viewMode = 'grid')} aria-label="Grid view">
-      <Grid3x3 size={18} />
-    </button>
-    <button class="toggle-btn" class:active={viewMode === 'list'} onclick={() => (viewMode = 'list')} aria-label="List view">
-      <List size={18} />
+      <Grid3x3 size={20} />
     </button>
     {#if isOwnProfile}
+      <button class="toggle-btn" class:active={viewMode === 'favorites'} onclick={() => (viewMode = 'favorites')} aria-label="Favorites">
+        <Heart size={20} />
+      </button>
       <button class="toggle-btn" class:active={viewMode === 'stories'} onclick={() => (viewMode = 'stories')} aria-label="Story archive">
-        <Clock size={18} />
+        <Clock size={20} />
       </button>
     {/if}
   </div>
 
   {#if viewMode === 'stories' && isOwnProfile}
     <StoryArchive {did} />
-  {:else if viewMode === 'grid'}
-    <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
+  {:else if viewMode === 'favorites' && isOwnProfile}
+    <GalleryGrid items={favorites.data?.items ?? []} loading={favorites.isLoading} />
   {:else}
-    {#if feed.isLoading}
-      <FeedList feed="actor" params={{ actor: did }} skeleton />
-    {:else}
-      <FeedList feed="actor" params={{ actor: did }} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
-    {/if}
+    <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
   {/if}
 
   {#if showStoryViewer}
@@ -209,29 +208,40 @@
     font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: all 0.12s;
   }
   .link-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .germ-pill { color: var(--grain); border-color: var(--grain); }
-  .germ-pill:hover { color: var(--text-primary); }
   .germ-logo { width: 14px; height: 14px; object-fit: contain; }
   .view-toggle {
     display: flex;
     justify-content: center;
     gap: 4px;
-    padding: 10px 16px;
+    padding: 8px 16px;
     border-bottom: 1px solid var(--border);
   }
   .toggle-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 16px;
+    padding: 8px 16px;
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-bottom-color 0.15s;
+    position: relative;
+    transition: color 0.15s;
+  }
+  .toggle-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 2.5px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background 0.15s;
   }
   .toggle-btn:hover { color: var(--text-secondary); }
-  .toggle-btn.active { color: var(--text-primary); border-bottom-color: var(--text-primary); }
+  .toggle-btn.active { color: var(--text-primary); }
+  .toggle-btn.active::after { background: var(--grain); }
   .not-found { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; }
 </style>
