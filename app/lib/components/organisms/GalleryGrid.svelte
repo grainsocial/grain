@@ -43,7 +43,7 @@
   <div class="empty-state">{emptyText}</div>
 {:else}
   <div class="grid">
-    {#each items as gallery (gallery.uri)}
+    {#each items as gallery, i (`${gallery.uri}:${i}`)}
       {@const lr = resolveLabels(gallery.labels, labelDefs.data ?? [])}
       <a class="cell" href="/profile/{gallery.creator?.did}/gallery/{rkey(gallery.uri)}">
         {#if lr.action === 'warn-media' || lr.action === 'warn-content' || lr.action === 'hide'}
