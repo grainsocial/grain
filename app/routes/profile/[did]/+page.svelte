@@ -146,7 +146,12 @@
 
 {#if profile.isError}
   <DetailHeader label="Not Found" />
-  <div class="not-found">This profile doesn't exist.</div>
+  <div class="not-found">
+    <p>This user doesn't have a Grain profile yet.</p>
+    <a class="bsky-link" href="https://bsky.app/profile/{did}" target="_blank" rel="noopener noreferrer">
+      View on Bluesky <ArrowUpRight size={14} />
+    </a>
+  </div>
 {:else}
   {#if lightboxSrc}
     <AvatarLightbox src={lightboxSrc} onclose={() => (lightboxSrc = null)} />
@@ -272,5 +277,15 @@
   .toggle-btn:hover { color: var(--text-secondary); }
   .toggle-btn.active { color: var(--text-primary); }
   .toggle-btn.active::after { background: var(--grain); }
-  .not-found { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; }
+  .not-found { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .bsky-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--grain);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .bsky-link:hover { text-decoration: underline; }
 </style>
