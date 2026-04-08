@@ -32,7 +32,7 @@
     const rkey = gallery.uri.split('/').pop()
     deleting = true
     try {
-      await callXrpc('social.grain.unspecced.deleteGallery', { rkey })
+      await callXrpc('social.grain.unspecced.deleteGallery', { rkey: rkey! })
       queryClient.invalidateQueries({ queryKey: ['getFeed'] })
       goto(`/profile/${gallery.creator?.did}`)
     } catch (err) {

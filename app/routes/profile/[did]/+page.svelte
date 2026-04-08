@@ -13,14 +13,35 @@
   import { viewer as viewerStore } from '$lib/stores'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
+  import { page } from '$app/state'
+  import { goto } from '$app/navigation'
+
+  const validTabs = ['grid', 'favorites', 'stories'] as const
+  type ViewMode = (typeof validTabs)[number]
+  function parseTab(v: string | null): ViewMode {
+    return validTabs.includes(v as ViewMode) ? (v as ViewMode) : 'grid'
+  }
 
   let { data } = $props()
   let lightboxSrc: string | null = $state(null)
-  let viewMode: 'grid' | 'favorites' | 'stories' = $state('grid')
+  const viewMode: ViewMode = $derived.by(() => {
+    page.url.href
+    return parseTab(page.url.searchParams.get('tab'))
+  })
   let followersOffset = $state(0)
   let showStoryViewer = $state(false)
   const did = $derived(data.did)
-  $effect(() => { void did; void profile.data; followersOffset = 0; viewMode = 'grid' })
+  $effect(() => { void did; void profile.data; followersOffset = 0 })
+
+  function setTab(tab: ViewMode) {
+    const url = new URL(page.url)
+    if (tab === 'grid') {
+      url.searchParams.delete('tab')
+    } else {
+      url.searchParams.set('tab', tab)
+    }
+    goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+  }
   const viewerDid = $derived($viewerStore?.did)
   const isOwnProfile = $derived(viewerDid === did)
 
@@ -132,14 +153,14 @@
   {/if}
 
   <div class="view-toggle">
-    <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => (viewMode = 'grid')} aria-label="Grid view">
+    <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => setTab('grid')} aria-label="Grid view">
       <Grid3x3 size={20} />
     </button>
     {#if isOwnProfile}
-      <button class="toggle-btn" class:active={viewMode === 'favorites'} onclick={() => (viewMode = 'favorites')} aria-label="Favorites">
+      <button class="toggle-btn" class:active={viewMode === 'favorites'} onclick={() => setTab('favorites')} aria-label="Favorites">
         <Heart size={20} />
       </button>
-      <button class="toggle-btn" class:active={viewMode === 'stories'} onclick={() => (viewMode = 'stories')} aria-label="Story archive">
+      <button class="toggle-btn" class:active={viewMode === 'stories'} onclick={() => setTab('stories')} aria-label="Story archive">
         <Clock size={20} />
       </button>
     {/if}
