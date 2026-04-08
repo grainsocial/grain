@@ -2,7 +2,7 @@
   const urlRe = /https?:\/\/[^\s<>[\]()]+/g
   const bareDomainRe = /(?<![/@\w])([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(\/[^\s<>[\]()]*)?/g
   const mentionRe = /@([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?/g
-  const hashtagRe = /#([a-zA-Z][a-zA-Z0-9_]*)/g
+  const hashtagRe = /#(\p{L}[\p{L}\p{N}_]*)/gu
 
   let {
     value = $bindable(''),

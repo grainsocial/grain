@@ -75,7 +75,7 @@ export async function parseTextToFacets(
   }
 
   // Hashtags
-  const hashtagRegex = /#([a-zA-Z][a-zA-Z0-9_]*)/g;
+  const hashtagRegex = /#(\p{L}[\p{L}\p{N}_]*)/gu;
   let hashtagMatch;
   while ((hashtagMatch = hashtagRegex.exec(text)) !== null) {
     const start = hashtagMatch.index;
