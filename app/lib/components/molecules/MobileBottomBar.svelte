@@ -2,8 +2,9 @@
   import { Image, Search, Plus, Bell } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
-  import { isAuthenticated, viewer } from '$lib/stores'
+  import { isAuthenticated, loginModalOpen, viewer } from '$lib/stores'
   import Avatar from '../atoms/Avatar.svelte'
+  import Button from '../atoms/Button.svelte'
   import { createQuery } from '@tanstack/svelte-query'
   import { unseenNotificationCountQuery } from '$lib/queries'
 
@@ -15,15 +16,15 @@
   }))
 </script>
 
-<div class="mobile-bottom">
-  <button
-    class="mobile-tab"
-    class:active={page.url.pathname === '/'}
-    onclick={() => goto('/')}
-  >
-    <Image size={22} />
-  </button>
-  {#if $isAuthenticated}
+{#if $isAuthenticated}
+  <div class="mobile-bottom">
+    <button
+      class="mobile-tab"
+      class:active={page.url.pathname === '/'}
+      onclick={() => goto('/')}
+    >
+      <Image size={22} />
+    </button>
     <button
       class="mobile-tab"
       class:active={page.url.pathname === '/create'}
@@ -43,20 +44,25 @@
         {/if}
       </span>
     </button>
-  {/if}
-  <button class="mobile-tab" onclick={onSearch}>
-    <Search size={22} />
-  </button>
-  {#if $isAuthenticated && $viewer}
-    <button
-      class="mobile-tab"
-      class:active={page.url.pathname.startsWith('/profile/')}
-      onclick={() => goto(`/profile/${encodeURIComponent($viewer!.did)}`)}
-    >
-      <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />
+    <button class="mobile-tab" onclick={onSearch}>
+      <Search size={22} />
     </button>
-  {/if}
-</div>
+    {#if $viewer}
+      <button
+        class="mobile-tab"
+        class:active={page.url.pathname.startsWith('/profile/')}
+        onclick={() => goto(`/profile/${encodeURIComponent($viewer!.did)}`)}
+      >
+        <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />
+      </button>
+    {/if}
+  </div>
+{:else}
+  <div class="mobile-bottom mobile-bottom-signed-out">
+    <span class="mobile-tagline">Share your photography</span>
+    <Button size="sm" onclick={() => ($loginModalOpen = true)}>Sign in</Button>
+  </div>
+{/if}
 
 <style>
   .mobile-bottom {
@@ -110,6 +116,16 @@
     justify-content: center;
     padding: 0 3px;
     font-family: var(--font-body);
+  }
+
+  .mobile-bottom-signed-out {
+    justify-content: space-between;
+    padding: 0 16px env(safe-area-inset-bottom, 0px);
+  }
+  .mobile-tagline {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
   }
 
   @media (max-width: 600px) {

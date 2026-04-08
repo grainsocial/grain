@@ -94,7 +94,7 @@
   <div class="input-wrapper">
     <input
       type="text"
-      placeholder="e.g. jasmine.garden"
+      placeholder="e.g. user.bsky.social"
       bind:value={handle}
       bind:this={inputEl}
       oninput={onInput}

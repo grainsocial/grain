@@ -1,11 +1,8 @@
 <script lang="ts">
-  import { LogIn, LogOut } from 'lucide-svelte'
-  import LoginModal from './LoginModal.svelte'
-  import { viewer, isAuthenticated } from '$lib/stores'
+  import { LogOut } from 'lucide-svelte'
+  import { viewer } from '$lib/stores'
   import { logout } from '$lib/auth'
   import { resetPreferences } from '$lib/preferences'
-
-  let loginOpen = $state(false)
 
   async function doLogout() {
     await logout()
@@ -15,18 +12,10 @@
   }
 </script>
 
-<LoginModal bind:open={loginOpen} />
-
 <div class="auth-bar">
-  {#if $isAuthenticated && $viewer}
-    <button class="nav-item" title="Sign out" onclick={doLogout}>
-      <LogOut size={20} />
-    </button>
-  {:else}
-    <button class="nav-item" title="Sign in" onclick={() => (loginOpen = true)}>
-      <LogIn size={20} />
-    </button>
-  {/if}
+  <button class="nav-item" title="Sign out" onclick={doLogout}>
+    <LogOut size={20} />
+  </button>
 </div>
 
 <style>

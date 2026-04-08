@@ -7,7 +7,9 @@
   import MobileDrawer from '../organisms/MobileDrawer.svelte'
   import MobileSearch from '../organisms/MobileSearch.svelte'
   import LoginModal from '../organisms/LoginModal.svelte'
-  import { loginModalOpen } from '$lib/stores'
+  import { loginModalOpen, isAuthenticated } from '$lib/stores'
+
+  const colLeft = $derived($isAuthenticated ? '78px' : '140px')
 
   let { children }: { children: Snippet } = $props()
   let drawerOpen = $state(false)
@@ -16,7 +18,7 @@
 
 <MobileTopBar onHamburger={() => drawerOpen = true} onSearch={() => searchOpen = true} />
 
-<div class="shell">
+<div class="shell" style:--col-left={colLeft}>
   <Sidebar />
   <main class="col-center">
     {@render children()}

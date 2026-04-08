@@ -2,10 +2,14 @@
   import { Home, Plus, Settings, Bell } from 'lucide-svelte'
   import AuthBar from './AuthBar.svelte'
   import Avatar from '../atoms/Avatar.svelte'
+  import Button from '../atoms/Button.svelte'
+  import LoginModal from './LoginModal.svelte'
   import { isAuthenticated, viewer } from '$lib/stores'
   import { page } from '$app/state'
   import { createQuery } from '@tanstack/svelte-query'
   import { unseenNotificationCountQuery } from '$lib/queries'
+
+  let loginOpen = $state(false)
 
   const unseenCount = createQuery(() => ({
     ...unseenNotificationCountQuery($viewer?.did ?? ''),
@@ -13,21 +17,29 @@
   }))
 </script>
 
-<nav class="sidebar-left">
+{#if !$isAuthenticated}
+  <LoginModal bind:open={loginOpen} />
+{/if}
+
+<nav class="sidebar-left" class:signed-out={!$isAuthenticated}>
   <div class="sidebar-top">
     {#if $isAuthenticated && $viewer}
       <a href="/profile/{$viewer.did}" class="sidebar-avatar-link">
         <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={42} />
       </a>
     {:else}
-      <a href="/" class="logo-text">grain</a>
+      <div class="signed-out-hero">
+        <a href="/" class="logo-text">grain</a>
+        <p class="sidebar-tagline">Share your<br/>photography</p>
+        <Button size="sm" onclick={() => (loginOpen = true)}>Sign in</Button>
+      </div>
     {/if}
   </div>
   <div class="nav-items">
-    <a href="/" class="nav-item" class:active={page.url.pathname === '/'} title="Home">
-      <Home size={22} />
-    </a>
     {#if $isAuthenticated}
+      <a href="/" class="nav-item" class:active={page.url.pathname === '/'} title="Home">
+        <Home size={22} />
+      </a>
       <a href="/notifications" class="nav-item" class:active={page.url.pathname === '/notifications'} title="Notifications">
         <span class="bell-wrap">
           <Bell size={22} />
@@ -44,9 +56,11 @@
       </a>
     {/if}
   </div>
-  <div class="sidebar-bottom">
-    <AuthBar />
-  </div>
+  {#if $isAuthenticated}
+    <div class="sidebar-bottom">
+      <AuthBar />
+    </div>
+  {/if}
 </nav>
 
 <style>
@@ -61,17 +75,35 @@
     border-right: 1px solid var(--border);
     z-index: 101;
   }
+  .signed-out {
+    align-items: flex-start;
+    padding: 20px 16px 16px;
+  }
   .sidebar-top {
     margin-bottom: 28px;
+  }
+  .signed-out-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
   }
   .logo-text {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 15px;
+    font-size: 22px;
     display: block;
-    text-align: center;
     color: #fff;
     text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .sidebar-tagline {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
   }
   .sidebar-avatar-link { text-decoration: none; }
   .nav-items {

@@ -1,8 +1,11 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { pinnedFeeds } from '$lib/preferences'
+  import { isAuthenticated } from '$lib/stores'
 
-  const tabFeeds = $derived($pinnedFeeds)
+  const tabFeeds = $derived(
+    $isAuthenticated ? $pinnedFeeds : $pinnedFeeds.filter((f) => f.id !== 'following')
+  )
 </script>
 
 <div class="center-header">

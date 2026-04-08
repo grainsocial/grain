@@ -39,6 +39,12 @@
     <button type="button" class="drawer-logo" onclick={() => nav('/')}>grain</button>
   </div>
 
+  {#if !$isAuthenticated}
+    <div class="drawer-sign-in">
+      <Button onclick={() => { open = false; loginOpen = true }}>Sign In</Button>
+    </div>
+  {/if}
+
   {#each $pinnedFeeds as feed (feed.id)}
     {@const Icon = feedIcon(feed)}
     <button class="drawer-link" onclick={() => nav(feed.path)}>
@@ -87,8 +93,6 @@
         <span class="drawer-handle">{$viewer.handle || $viewer.displayName}</span>
       </div>
       <Button variant="secondary" onclick={() => { open = false; doLogout() }}>Sign Out</Button>
-    {:else}
-      <Button onclick={() => { open = false; loginOpen = true }}>Sign In</Button>
     {/if}
   </div>
 </div>
@@ -198,6 +202,14 @@
   .camera-pill:hover {
     border-color: var(--grain);
     color: var(--text-primary);
+  }
+  .drawer-sign-in {
+    padding: 0 8px 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .drawer-sign-in :global(.btn) {
+    width: 100%;
   }
   .drawer-auth {
     margin-top: auto;
