@@ -527,6 +527,7 @@
     font-size: 13px;
     color: var(--text-secondary);
     margin: 0 0 4px;
+    white-space: pre-wrap;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
