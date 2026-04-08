@@ -8,10 +8,12 @@
     galleryUri,
     viewerFav = null,
     favCount = 0,
+    favorite = $bindable(undefined),
   }: {
     galleryUri: string
     viewerFav?: string | null
     favCount?: number
+    favorite?: () => void
   } = $props()
 
   let favOverride: string | null | undefined = $state(undefined)
@@ -62,6 +64,14 @@
       favOverride = context?.prev ?? undefined
     },
   }))
+
+  function doFavorite() {
+    if (isFaved || createFavMut.isPending || deleteFavMut.isPending) return
+    if (!requireAuth()) return
+    createFavMut.mutate()
+  }
+
+  $effect(() => { favorite = doFavorite })
 </script>
 
 {#if isFaved}

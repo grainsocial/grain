@@ -10,7 +10,7 @@
   import ReportButton from './ReportButton.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2 } from 'lucide-svelte'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart } from 'lucide-svelte'
   import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
@@ -24,6 +24,8 @@
   const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
   let deleting = $state(false)
+  let doFavorite: (() => void) | undefined = $state(undefined)
+  let showHeartAnim = $state(false)
 
   async function deleteGallery() {
     if (deleting) return
@@ -185,10 +187,12 @@
           <button class="media-warning-show" onclick={() => (revealed = true)}>Show</button>
         </div>
       {/if}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="carousel"
         bind:this={carouselEl}
         onscroll={onScroll}
+        ondblclick={() => { doFavorite?.(); showHeartAnim = true; setTimeout(() => (showHeartAnim = false), 800) }}
         style={hasPortrait ? `aspect-ratio: ${minRatio};` : ''}
       >
         {#each photos as photo, i}
@@ -233,11 +237,17 @@
           {/each}
         </div>
       {/if}
+
+      {#if showHeartAnim}
+        <div class="heart-anim">
+          <Heart size={64} fill="currentColor" />
+        </div>
+      {/if}
     </div>
   {/if}
 
   <div class="engagement">
-    <FavoriteButton galleryUri={gallery.uri} viewerFav={gallery.viewer?.fav ?? null} {favCount} />
+    <FavoriteButton galleryUri={gallery.uri} viewerFav={gallery.viewer?.fav ?? null} {favCount} bind:favorite={doFavorite} />
     <button class="stat" type="button" onclick={() => requireAuth() && onCommentClick?.(photos[currentIndex] ?? null)}>
       <MessageCircle size={20} />
       {#if commentCount > 0}<span class="stat-count">{commentCount}</span>{/if}
@@ -357,6 +367,25 @@
   .carousel-host {
     display: block;
     position: relative;
+  }
+  .heart-anim {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    color: #f87171;
+    animation: heart-pop 0.8s ease-out forwards;
+    z-index: 5;
+  }
+  @keyframes heart-pop {
+    0% { opacity: 0; transform: scale(0); }
+    15% { opacity: 1; transform: scale(1.2); }
+    30% { transform: scale(0.95); }
+    45% { transform: scale(1); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: scale(1); }
   }
   .carousel {
     display: flex;
