@@ -134,6 +134,8 @@
   .popover-trigger {
     position: relative;
     display: inline-flex;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .popover {
