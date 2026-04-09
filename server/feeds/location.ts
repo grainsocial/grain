@@ -26,32 +26,44 @@ export default defineFeed({
     // is a child of the requested city cell. We do this in application code
     // since SQLite doesn't have H3 functions.
     if (isCityLevel) {
-      // Fetch all galleries with locations, then filter
-      const { rows, cursor } = await ctx.paginate<{ uri: string; location: string }>(
-        `SELECT t.uri, t.cid, t.created_at, json_extract(t.location, '$.value') AS location
+      // Fetch all galleries with locations, filter by H3 parent in JS, then paginate
+      const limit = ctx.params.limit ? Number(ctx.params.limit) : 30;
+      const allRows = (await ctx.db.query(
+        `SELECT t.uri, t.created_at, json_extract(t.location, '$.value') AS location
          FROM "social.grain.gallery" t
          LEFT JOIN _repos r ON t.did = r.did
          WHERE (r.status IS NULL OR r.status != 'takendown')
            AND t.location IS NOT NULL
            AND ${hideLabelsFilter("t.uri")}
-           AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
-        { orderBy: "t.created_at" },
-      );
+           AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+         ORDER BY t.created_at DESC`,
+      )) as { uri: string; created_at: string; location: string }[];
 
-      const filtered = rows.filter((r) => {
+      const filtered = allRows.filter((r) => {
         if (!r.location) return false;
         try {
           const cellRes = getResolution(r.location);
-          // Legacy res-5 cells: exact match
           if (cellRes <= 5) return r.location === location;
-          // Res-10 cells: check if parent at res 5 matches
           return cellToParent(r.location, 5) === location;
         } catch {
           return false;
         }
       });
 
-      return ctx.ok({ uris: filtered.map((r) => r.uri), cursor });
+      // Manual cursor pagination over filtered results
+      let startIdx = 0;
+      if (ctx.params.cursor) {
+        const cursorUri = atob(ctx.params.cursor);
+        const idx = filtered.findIndex((r) => r.uri === cursorUri);
+        if (idx >= 0) startIdx = idx + 1;
+      }
+      const page = filtered.slice(startIdx, startIdx + limit);
+      const cursor =
+        page.length > 0 && startIdx + limit < filtered.length
+          ? btoa(page[page.length - 1].uri)
+          : undefined;
+
+      return ctx.ok({ uris: page.map((r) => r.uri), cursor });
     }
 
     // Venue-level: exact match

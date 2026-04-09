@@ -26,8 +26,11 @@ async function refresh(db: any) {
     country: string | null;
   }[];
 
-  // Group by region-level H3 cell
-  const regionMap = new Map<string, { name: string; h3Index: string; count: number }>();
+  // Group by region-level H3 cell, picking the most common locality name
+  const regionMap = new Map<
+    string,
+    { nameCounts: Map<string, number>; h3Index: string; count: number }
+  >();
   for (const row of rows) {
     if (!row.h3_index) continue;
     let regionH3: string;
@@ -37,20 +40,35 @@ async function refresh(db: any) {
     } catch {
       continue;
     }
+    const displayName =
+      [row.locality, row.region, row.country].filter(Boolean).join(", ") || row.name;
     const existing = regionMap.get(regionH3);
     if (existing) {
       existing.count++;
+      existing.nameCounts.set(displayName, (existing.nameCounts.get(displayName) ?? 0) + 1);
     } else {
-      const displayName =
-        [row.locality, row.region, row.country].filter(Boolean).join(", ") || row.name;
-      regionMap.set(regionH3, { name: displayName, h3Index: regionH3, count: 1 });
+      regionMap.set(regionH3, {
+        nameCounts: new Map([[displayName, 1]]),
+        h3Index: regionH3,
+        count: 1,
+      });
     }
   }
 
   const data = [...regionMap.values()]
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .slice(0, 30)
-    .map((r) => ({ name: r.name, h3Index: r.h3Index, galleryCount: r.count }));
+    .map((r) => {
+      let bestName = "";
+      let bestCount = 0;
+      for (const [name, count] of r.nameCounts) {
+        if (count > bestCount) {
+          bestCount = count;
+          bestName = name;
+        }
+      }
+      return { name: bestName, h3Index: r.h3Index, galleryCount: r.count };
+    })
+    .sort((a, b) => b.galleryCount - a.galleryCount || a.name.localeCompare(b.name))
+    .slice(0, 30);
 
   cache = { data, expires: Date.now() + TTL };
   return data;
