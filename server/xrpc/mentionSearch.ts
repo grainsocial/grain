@@ -7,7 +7,7 @@ const baseUrl = isProd && prodDomain ? `https://${prodDomain}` : "http://127.0.0
 
 export default defineQuery("parts.page.mention.search", async (ctx) => {
   const { params, search, db, blobUrl, ok } = ctx;
-  const { search: query, scope, limit = 20 } = params;
+  const { search: query = "", scope, limit = 20 } = params;
 
   // Scoped to a user DID → search their galleries
   if (scope) {

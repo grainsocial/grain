@@ -7,7 +7,7 @@
       "description": "Search a mention service for matching results.",
       "parameters": {
         "type": "params",
-        "required": ["service", "search"],
+        "required": ["service"],
         "properties": {
           "service": {
             "type": "string",
