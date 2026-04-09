@@ -19,6 +19,13 @@ export const followingFeedQuery = (did: string, limit = 50, f?: Fetch) =>
     staleTime: 60_000,
   });
 
+export const forYouFeedQuery = (did: string, limit = 50, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["getFeed", "foryou", did],
+    queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "foryou", actor: did, limit }, f),
+    staleTime: 60_000,
+  });
+
 export const actorFeedQuery = (did: string, limit = 50, f?: Fetch) =>
   queryOptions({
     queryKey: ["getFeed", "actor", did],

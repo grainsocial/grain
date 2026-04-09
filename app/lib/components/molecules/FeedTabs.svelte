@@ -3,8 +3,9 @@
   import { pinnedFeeds } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
 
+  const authOnlyFeeds = new Set(['following', 'foryou'])
   const tabFeeds = $derived(
-    $isAuthenticated ? $pinnedFeeds : $pinnedFeeds.filter((f) => f.id !== 'following')
+    $isAuthenticated ? $pinnedFeeds : $pinnedFeeds.filter((f) => !authOnlyFeeds.has(f.id))
   )
 </script>
 

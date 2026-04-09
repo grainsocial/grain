@@ -461,7 +461,141 @@ await createRecord(
   { rkey: "exif-portrait" },
 );
 
+// ── Additional galleries for For You feed testing ──
+
+// Bob's second gallery: "Mountain Dawn"
+const mountainDawn = await createRecord(
+  bob,
+  "social.grain.gallery",
+  {
+    title: "Mountain Dawn",
+    description: "First light on the peaks #nature #landscape",
+    createdAt: ago(15),
+  },
+  { rkey: "mountain-dawn" },
+);
+const mdPhoto = await createRecord(
+  bob,
+  "social.grain.photo",
+  { photo: forest, alt: "Mountain at sunrise", aspectRatio: { width: 4, height: 3 }, createdAt: ago(15) },
+  { rkey: "photo-mountain" },
+);
+await createRecord(
+  bob,
+  "social.grain.gallery.item",
+  { gallery: mountainDawn.uri, item: mdPhoto.uri, position: 0, createdAt: ago(15) },
+  { rkey: "gi-mountain" },
+);
+
+// Carol's second gallery: "Rainy Days"
+const rainyDays = await createRecord(
+  carol,
+  "social.grain.gallery",
+  {
+    title: "Rainy Days",
+    description: "Puddles and reflections #streetphotography #film",
+    createdAt: ago(12),
+  },
+  { rkey: "rainy-days" },
+);
+const rdPhoto = await createRecord(
+  carol,
+  "social.grain.photo",
+  { photo: filmCafe, alt: "Rain on cobblestones", aspectRatio: { width: 3, height: 4 }, createdAt: ago(12) },
+  { rkey: "photo-rain" },
+);
+await createRecord(
+  carol,
+  "social.grain.gallery.item",
+  { gallery: rainyDays.uri, item: rdPhoto.uri, position: 0, createdAt: ago(12) },
+  { rkey: "gi-rain" },
+);
+
+// Carol's third gallery: "Golden Hour Portraits"
+const goldenPortraits = await createRecord(
+  carol,
+  "social.grain.gallery",
+  {
+    title: "Golden Hour Portraits",
+    description: "Warm light and soft shadows #portrait #film",
+    createdAt: ago(8),
+  },
+  { rkey: "golden-portraits" },
+);
+const gpPhoto = await createRecord(
+  carol,
+  "social.grain.photo",
+  { photo: filmPortrait, alt: "Portrait in golden light", aspectRatio: { width: 3, height: 4 }, createdAt: ago(8) },
+  { rkey: "photo-golden" },
+);
+await createRecord(
+  carol,
+  "social.grain.gallery.item",
+  { gallery: goldenPortraits.uri, item: gpPhoto.uri, position: 0, createdAt: ago(8) },
+  { rkey: "gi-golden" },
+);
+
+// Dave's gallery: "Concrete Jungle"
+const concreteJungle = await createRecord(
+  dave,
+  "social.grain.gallery",
+  {
+    title: "Concrete Jungle",
+    description: "Brutalist architecture up close #architecture #city",
+    createdAt: ago(18),
+  },
+  { rkey: "concrete-jungle" },
+);
+const cjPhoto = await uploadBlob(dave, "./seeds/images/skyline.jpg");
+const cjPhotoRec = await createRecord(
+  dave,
+  "social.grain.photo",
+  { photo: cjPhoto, alt: "Concrete facade", aspectRatio: { width: 4, height: 3 }, createdAt: ago(18) },
+  { rkey: "photo-concrete" },
+);
+await createRecord(
+  dave,
+  "social.grain.gallery.item",
+  { gallery: concreteJungle.uri, item: cjPhotoRec.uri, position: 0, createdAt: ago(18) },
+  { rkey: "gi-concrete" },
+);
+
+// Dave's second gallery: "Night Architecture"
+const nightArch = await createRecord(
+  dave,
+  "social.grain.gallery",
+  {
+    title: "Night Architecture",
+    description: "Buildings after dark #architecture #city #night",
+    createdAt: ago(7),
+  },
+  { rkey: "night-architecture" },
+);
+const naPhoto = await uploadBlob(dave, "./seeds/images/city-night.jpg");
+const naPhotoRec = await createRecord(
+  dave,
+  "social.grain.photo",
+  { photo: naPhoto, alt: "Building lit up at night", aspectRatio: { width: 4, height: 3 }, createdAt: ago(7) },
+  { rkey: "photo-night-arch" },
+);
+await createRecord(
+  dave,
+  "social.grain.gallery.item",
+  { gallery: nightArch.uri, item: naPhotoRec.uri, position: 0, createdAt: ago(7) },
+  { rkey: "gi-night-arch" },
+);
+
 // ── Favorites ──
+// Create a web of favorites that gives the collaborative filtering algorithm signal.
+//
+// Alice favorites: Bob's Forest Trail, Carol's Kodak Moments
+// Bob favorites: Alice's City Lights, Carol's Rainy Days, Dave's Concrete Jungle
+// Carol favorites: Alice's City Lights, Bob's Forest Trail, Dave's Night Architecture
+// Dave favorites: Alice's City Lights, Bob's Forest Trail, Bob's Mountain Dawn, Carol's Golden Portraits
+//
+// For Alice: co-likers on Forest Trail = Carol, Dave. Co-likers on Kodak Moments = (none extra).
+//   Carol also liked: City Lights (Alice's own, skip), Dave's Night Architecture → candidate!
+//   Dave also liked: City Lights (Alice's own, skip), Mountain Dawn → candidate!, Golden Portraits → candidate!
 
 // Alice favorites Bob's gallery
 await createRecord(
@@ -471,12 +605,36 @@ await createRecord(
   { rkey: "fav-forest" },
 );
 
+// Alice favorites Carol's gallery
+await createRecord(
+  alice,
+  "social.grain.favorite",
+  { subject: carolGallery.uri, createdAt: ago(6) },
+  { rkey: "fav-kodak" },
+);
+
 // Bob favorites Alice's gallery
 await createRecord(
   bob,
   "social.grain.favorite",
   { subject: aliceGallery.uri, createdAt: ago(40) },
   { rkey: "fav-city" },
+);
+
+// Bob favorites Carol's Rainy Days
+await createRecord(
+  bob,
+  "social.grain.favorite",
+  { subject: rainyDays.uri, createdAt: ago(10) },
+  { rkey: "fav-rainy" },
+);
+
+// Bob favorites Dave's Concrete Jungle
+await createRecord(
+  bob,
+  "social.grain.favorite",
+  { subject: concreteJungle.uri, createdAt: ago(14) },
+  { rkey: "fav-concrete" },
 );
 
 // Carol favorites Alice's gallery
@@ -493,6 +651,46 @@ await createRecord(
   "social.grain.favorite",
   { subject: bobGallery.uri, createdAt: ago(20) },
   { rkey: "fav-forest-2" },
+);
+
+// Carol favorites Dave's Night Architecture
+await createRecord(
+  carol,
+  "social.grain.favorite",
+  { subject: nightArch.uri, createdAt: ago(5) },
+  { rkey: "fav-night-arch" },
+);
+
+// Dave favorites Alice's gallery
+await createRecord(
+  dave,
+  "social.grain.favorite",
+  { subject: aliceGallery.uri, createdAt: ago(16) },
+  { rkey: "fav-city-3" },
+);
+
+// Dave favorites Bob's Forest Trail
+await createRecord(
+  dave,
+  "social.grain.favorite",
+  { subject: bobGallery.uri, createdAt: ago(14) },
+  { rkey: "fav-forest-3" },
+);
+
+// Dave favorites Bob's Mountain Dawn
+await createRecord(
+  dave,
+  "social.grain.favorite",
+  { subject: mountainDawn.uri, createdAt: ago(11) },
+  { rkey: "fav-mountain" },
+);
+
+// Dave favorites Carol's Golden Hour Portraits
+await createRecord(
+  dave,
+  "social.grain.favorite",
+  { subject: goldenPortraits.uri, createdAt: ago(4) },
+  { rkey: "fav-golden" },
 );
 
 // ── Comments ──

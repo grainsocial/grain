@@ -1,6 +1,6 @@
 import { writable, get } from "svelte/store";
 import { callXrpc } from "$hatk/client";
-import { Images, Users, Camera, MapPin, Hash, Pin } from "lucide-svelte";
+import { Images, Users, Camera, MapPin, Hash, Pin, Sparkles } from "lucide-svelte";
 
 export interface PinnedFeed {
   id: string;
@@ -12,12 +12,14 @@ export interface PinnedFeed {
 export const DEFAULT_PINNED: PinnedFeed[] = [
   { id: "recent", label: "Recent", type: "feed", path: "/" },
   { id: "following", label: "Following", type: "feed", path: "/feeds/following" },
+  { id: "foryou", label: "For You", type: "feed", path: "/feeds/for-you" },
 ];
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const CORE_ICONS: Record<string, any> = {
   recent: Images,
   following: Users,
+  foryou: Sparkles,
 };
 
 const TYPE_ICONS: Record<string, any> = {
