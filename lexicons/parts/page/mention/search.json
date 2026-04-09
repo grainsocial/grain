@@ -1,0 +1,98 @@
+{
+  "lexicon": 1,
+  "id": "parts.page.mention.search",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Search a mention service for matching results.",
+      "parameters": {
+        "type": "params",
+        "required": ["service", "search"],
+        "properties": {
+          "service": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "AT URI of the parts.page.mention.service record"
+          },
+          "search": {
+            "type": "string",
+            "description": "Search query string"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Optional scope identifier to narrow results"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50,
+            "default": 20
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["results"],
+          "properties": {
+            "results": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#result" },
+              "maxLength": 50
+            }
+          }
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": ["uri", "name"],
+      "properties": {
+        "uri": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#mentionLabel" }
+        },
+        "href": { "type": "string", "format": "uri" },
+        "icon": { "type": "string", "format": "uri" },
+        "embed": { "type": "ref", "ref": "#embedInfo" },
+        "subscope": { "type": "ref", "ref": "#subscopeInfo" }
+      }
+    },
+    "mentionLabel": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" }
+      }
+    },
+    "embedInfo": {
+      "type": "object",
+      "required": ["src"],
+      "properties": {
+        "src": { "type": "string", "format": "uri" },
+        "width": { "type": "integer", "minimum": 16, "maximum": 3200 },
+        "height": { "type": "integer", "minimum": 16, "maximum": 3200 },
+        "aspectRatio": { "type": "ref", "ref": "#aspectRatio" }
+      }
+    },
+    "aspectRatio": {
+      "type": "object",
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer" },
+        "height": { "type": "integer" }
+      }
+    },
+    "subscopeInfo": {
+      "type": "object",
+      "required": ["scope", "label"],
+      "properties": {
+        "scope": { "type": "string" },
+        "label": { "type": "string", "maxLength": 100 }
+      }
+    }
+  }
+}
