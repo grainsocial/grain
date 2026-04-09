@@ -1,4 +1,4 @@
-import type { RequestHandler } from "./$types";
+import type { RequestHandler } from "@sveltejs/kit";
 
 const DID_DOCUMENT = {
   "@context": ["https://www.w3.org/ns/did/v1"],
