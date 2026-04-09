@@ -198,7 +198,7 @@
         {#each photos as photo, i}
           <div class="slide" class:centered={hasPortrait}>
             <div class="grain-image">
-              <svg class="spacer" viewBox="0 0 1 {1 / photoRatio(photo)}"></svg>
+              <svg class="spacer" viewBox="0 0 1 {1 / Math.max(photoRatio(photo), hasPortrait ? minRatio : photoRatio(photo))}"></svg>
               <img
                 src={Math.abs(i - currentIndex) <= 1 ? (isDesktop ? photo.fullsize : photo.thumb) : ''}
                 alt={photo.alt ?? ''}
@@ -390,6 +390,7 @@
   .carousel {
     display: flex;
     overflow-x: auto;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     -ms-overflow-style: none;
