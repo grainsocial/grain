@@ -8,6 +8,8 @@
 
   const coreIds = new Set(DEFAULT_PINNED.map((f) => f.id))
   const customFeeds = $derived($pinnedFeeds.filter((f) => !coreIds.has(f.id)))
+  const pinnedIds = $derived(new Set($pinnedFeeds.map((f) => f.id)))
+  const unpinnedDefaults = $derived(DEFAULT_PINNED.filter((f) => !pinnedIds.has(f.id)))
 
   // Drag state
   let dragIndex: number | null = $state(null)
@@ -134,6 +136,20 @@
         {#if $isAuthenticated}
           <PinButton {feed} stopPropagation />
         {/if}
+      </a>
+    {/each}
+  {/if}
+
+  {#if unpinnedDefaults.length > 0 && $isAuthenticated}
+    <div class="section-label">Feeds</div>
+    {#each unpinnedDefaults as feed (feed.id)}
+      {@const Icon = feedIcon(feed)}
+      <a href={feed.path} class="feed-row">
+        <span class="feed-icon">
+          <Icon size={18} />
+        </span>
+        <span class="feed-label">{feed.label}</span>
+        <PinButton {feed} stopPropagation />
       </a>
     {/each}
   {/if}
