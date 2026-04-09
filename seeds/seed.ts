@@ -185,8 +185,8 @@ const aliceGallery = await createRecord(
   {
     title: "City Lights",
     description: "Evening shots around downtown Tokyo during golden hour. These were all taken within about 30 minutes as the sun was setting behind the skyscrapers. The neon lights were just starting to flicker on and the contrast between natural and artificial light was incredible. Shot on Fujifilm X-T5 with the 23mm f/1.4. #streetphotography #city #tokyo #goldenhour",
-    location: { name: "Shibuya Crossing", value: "8a2f5a363ba7fff" },
-    address: { name: "Shibuya Crossing", locality: "Shibuya", region: "Tokyo", country: "JP" },
+    location: { name: "821 Southeast 14th Avenue, Central Eastside, Buckman, Portland, Multnomah County, Oregon, 97214", value: "8a2f5a363ba7fff" },
+    address: { name: "821 Southeast 14th Avenue", locality: "Portland", region: "Oregon", country: "US" },
     createdAt: ago(50),
   },
   { rkey: "city-lights" },
