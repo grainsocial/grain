@@ -298,11 +298,14 @@
     gap: 10px;
     text-decoration: none;
     color: inherit;
+    min-width: 0;
+    overflow: hidden;
   }
   .author-info {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    overflow: hidden;
   }
   .author-name-row {
     display: flex;
