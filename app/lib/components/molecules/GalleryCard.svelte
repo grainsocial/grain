@@ -75,8 +75,13 @@
   }
 
   const hasPortrait = $derived(photos.some((p) => photoRatio(p) < 1))
+  const ratios = $derived(photos.map(photoRatio))
+  const hasMixedRatios = $derived(
+    photos.length > 1 && ratios.length > 0 && Math.max(...ratios) / Math.min(...ratios) > 1.3
+  )
+  const needsFixedHeight = $derived(hasPortrait || hasMixedRatios)
   const minRatio = $derived(
-    photos.length > 0 ? Math.max(Math.min(...photos.map(photoRatio)), 0.56) : 1
+    photos.length > 0 ? Math.max(Math.min(...ratios), hasPortrait ? 0.56 : Math.min(...ratios)) : 1
   )
 
   const labelDefs = createQuery(() => labelDefsQuery())
@@ -193,12 +198,12 @@
         bind:this={carouselEl}
         onscroll={onScroll}
         ondblclick={() => { doFavorite?.(); showHeartAnim = true; setTimeout(() => (showHeartAnim = false), 800) }}
-        style={hasPortrait ? `aspect-ratio: ${minRatio};` : ''}
+        style={needsFixedHeight ? `aspect-ratio: ${minRatio};` : ''}
       >
         {#each photos as photo, i}
-          <div class="slide" class:centered={hasPortrait}>
+          <div class="slide" class:centered={needsFixedHeight}>
             <div class="grain-image">
-              <svg class="spacer" viewBox="0 0 1 {1 / Math.max(photoRatio(photo), hasPortrait ? minRatio : photoRatio(photo))}"></svg>
+              <svg class="spacer" viewBox="0 0 1 {1 / Math.max(photoRatio(photo), needsFixedHeight ? minRatio : photoRatio(photo))}"></svg>
               <img
                 src={Math.abs(i - currentIndex) <= 1 ? (isDesktop ? photo.fullsize : photo.thumb) : ''}
                 alt={photo.alt ?? ''}
