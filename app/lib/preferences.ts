@@ -92,6 +92,16 @@ export async function unpinFeed(id: string): Promise<boolean> {
   return true;
 }
 
+export async function reorderFeeds(feeds: PinnedFeed[]): Promise<void> {
+  const previous = get(pinnedFeeds);
+  pinnedFeeds.set(feeds);
+  try {
+    await callXrpc("dev.hatk.putPreference", { key: "pinnedFeeds", value: feeds });
+  } catch {
+    pinnedFeeds.set(previous);
+  }
+}
+
 export function resetPreferences(): void {
   pinnedFeeds.set(DEFAULT_PINNED);
   includeExif.set(true);
