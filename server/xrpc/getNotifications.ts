@@ -155,6 +155,16 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   const dids = [...new Set(items.map((r) => r.did))];
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
 
+  // Look up handles from _repos for all notification authors
+  const handleMap = new Map<string, string>();
+  if (dids.length > 0) {
+    const handleRows = (await db.query(
+      `SELECT did, handle FROM _repos WHERE did IN (${dids.map((_, i) => `$${i + 1}`).join(",")})`,
+      dids,
+    )) as { did: string; handle: string }[];
+    for (const row of handleRows) handleMap.set(row.did, row.handle);
+  }
+
   // Hydrate galleries for thumbnails
   const galleryUris = [...new Set(items.map((r) => r.gallery_uri).filter(Boolean))] as string[];
   const galleries =
@@ -216,14 +226,14 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
         ? views.grainActorDefsProfileView({
             cid: author.cid,
             did: author.did,
-            handle: author.handle ?? author.did,
+            handle: author.handle ?? handleMap.get(author.did) ?? author.did,
             displayName: author.value.displayName,
             avatar: blobUrl(author.did, author.value.avatar) ?? undefined,
           })
         : views.grainActorDefsProfileView({
             cid: row.uri,
             did: row.did,
-            handle: row.did,
+            handle: handleMap.get(row.did) ?? row.did,
           }),
       ...(gallery ? { galleryUri: row.gallery_uri!, galleryTitle: gallery.value.title } : {}),
       ...(thumb ? { galleryThumb: thumb } : {}),
