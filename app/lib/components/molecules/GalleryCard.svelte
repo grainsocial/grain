@@ -76,10 +76,9 @@
 
   const hasPortrait = $derived(photos.some((p) => photoRatio(p) < 1))
   const ratios = $derived(photos.map(photoRatio))
-  const hasMixedRatios = $derived(
-    photos.length > 1 && ratios.length > 0 && Math.max(...ratios) / Math.min(...ratios) > 1.3
+  const needsFixedHeight = $derived(
+    photos.length > 1 && new Set(ratios.map((r) => r.toFixed(2))).size > 1
   )
-  const needsFixedHeight = $derived(hasPortrait || hasMixedRatios)
   const minRatio = $derived(
     photos.length > 0 ? Math.max(Math.min(...ratios), hasPortrait ? 0.56 : Math.min(...ratios)) : 1
   )
