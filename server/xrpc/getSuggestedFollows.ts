@@ -1,5 +1,6 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
 import { blockMuteFilter } from "../filters/blockMute.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (ctx) => {
   const { ok, params, lookup, blobUrl, db } = ctx;
@@ -70,11 +71,13 @@ export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (
     }
   }
 
+  const handleMap = await lookupHandles(db, dids);
+
   const items = dids.map((did) => {
     const p = profiles.get(did);
     return {
       did,
-      handle: p?.handle ?? did,
+      handle: p?.handle ?? handleMap.get(did) ?? did,
       displayName: p?.value.displayName,
       description: p?.value.description,
       avatar: p ? blobUrl(did, p.value.avatar, "avatar") : undefined,

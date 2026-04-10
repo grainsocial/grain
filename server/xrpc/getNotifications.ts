@@ -1,6 +1,7 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile, Photo, Gallery } from "$hatk";
 import { views } from "$hatk";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 function blockMuteNotifFilter(didCol = "did"): string {
   return `
@@ -163,15 +164,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   const dids = [...new Set(items.map((r) => r.did))];
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
 
-  // Look up handles from _repos for all notification authors
-  const handleMap = new Map<string, string>();
-  if (dids.length > 0) {
-    const handleRows = (await db.query(
-      `SELECT did, handle FROM _repos WHERE did IN (${dids.map((_, i) => `$${i + 1}`).join(",")})`,
-      dids,
-    )) as { did: string; handle: string }[];
-    for (const row of handleRows) handleMap.set(row.did, row.handle);
-  }
+  const handleMap = await lookupHandles(db, dids);
 
   // Hydrate galleries for thumbnails
   const galleryUris = [...new Set(items.map((r) => r.gallery_uri).filter(Boolean))] as string[];

@@ -1,4 +1,5 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 export default defineQuery("social.grain.unspecced.getFollowing", async (ctx) => {
   const { ok, params, lookup, blobUrl, packCursor, unpackCursor } = ctx;
@@ -33,11 +34,13 @@ export default defineQuery("social.grain.unspecced.getFollowing", async (ctx) =>
 
   const viewerFollowMap = new Map(viewerFollows.map((r) => [r.subject, r.uri]));
 
+  const handleMap = await lookupHandles(ctx.db, dids);
+
   const items = dids.map((did) => {
     const p = profiles.get(did);
     return {
       did,
-      handle: p?.handle ?? did,
+      handle: p?.handle ?? handleMap.get(did) ?? did,
       displayName: p?.value.displayName,
       description: p?.value.description,
       avatar: p ? blobUrl(did, p.value.avatar, "avatar") : undefined,

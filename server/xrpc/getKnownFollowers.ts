@@ -2,6 +2,7 @@
 //   GET /xrpc/social.grain.unspecced.getKnownFollowers?actor=did:...&viewer=did:...
 
 import { defineQuery, type GrainActorProfile } from "$hatk";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 export default defineQuery("social.grain.unspecced.getKnownFollowers", async (ctx) => {
   const { ok, params, lookup, blobUrl } = ctx;
@@ -24,11 +25,13 @@ export default defineQuery("social.grain.unspecced.getKnownFollowers", async (ct
 
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
 
+  const handleMap = await lookupHandles(ctx.db, dids);
+
   const items = dids.map((did) => {
     const p = profiles.get(did);
     return {
       did,
-      handle: p?.handle ?? did,
+      handle: p?.handle ?? handleMap.get(did) ?? did,
       displayName: p?.value.displayName,
       description: p?.value.description,
       avatar: p ? blobUrl(did, p.value.avatar, "avatar") : undefined,
