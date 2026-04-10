@@ -48,7 +48,7 @@
           {/if}
         </span>
       </a>
-      <a href="/settings/profile" class="nav-item" class:active={page.url.pathname.startsWith('/settings')} title="Settings">
+      <a href="/settings" class="nav-item" class:active={page.url.pathname.startsWith('/settings')} title="Settings">
         <Settings size={22} />
       </a>
       <a href="/create" class="nav-item" class:active={page.url.pathname === '/create'} title="Create">

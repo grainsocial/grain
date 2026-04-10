@@ -2,8 +2,8 @@ import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile, Declaration } from "$hatk";
 
 export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx) => {
-  const { ok, params, isTakendown, lookup, count, blobUrl } = ctx;
-  const { viewer } = params;
+  const { ok, params, isTakendown, lookup, count, blobUrl, viewer: authViewer } = ctx;
+  const viewer = authViewer?.did ?? params.viewer;
 
   // Resolve handle to DID if needed
   let actor = params.actor;
@@ -30,6 +30,9 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     followsCounts,
     viewerFollowingRows,
     followedByRows,
+    viewerBlockingRows,
+    blockedByRows,
+    viewerMutedRows,
   ] = await Promise.all([
     lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
     lookup<Declaration>("com.germnetwork.declaration", "did", [actor]),
@@ -64,11 +67,26 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
             `SELECT uri FROM "social.grain.graph.follow" WHERE did = $1 AND subject = $2 LIMIT 1`,
             [actor, viewer],
           ) as Promise<{ uri: string }[]>,
+          ctx.db.query(
+            `SELECT uri FROM "social.grain.graph.block" WHERE did = $1 AND subject = $2 LIMIT 1`,
+            [viewer, actor],
+          ) as Promise<{ uri: string }[]>,
+          ctx.db.query(
+            `SELECT uri FROM "social.grain.graph.block" WHERE did = $1 AND subject = $2 LIMIT 1`,
+            [actor, viewer],
+          ) as Promise<{ uri: string }[]>,
+          ctx.db.query(
+            `SELECT 1 as v FROM _mutes WHERE did = $1 AND subject = $2 LIMIT 1`,
+            [viewer, actor],
+          ) as Promise<{ v: number }[]>,
         ]
-      : [Promise.resolve([]), Promise.resolve([])]),
+      : [Promise.resolve([]), Promise.resolve([]), Promise.resolve([]), Promise.resolve([]), Promise.resolve([])]),
   ]);
   const viewerFollowing = (viewerFollowingRows as { uri: string }[])[0]?.uri ?? null;
   const followedBy = (followedByRows as { uri: string }[])[0]?.uri ?? null;
+  const viewerBlocking = (viewerBlockingRows as { uri: string }[])?.[0]?.uri ?? null;
+  const blockedBy = !!(blockedByRows as { uri: string }[])?.[0]?.uri;
+  const viewerMuted = !!(viewerMutedRows as { v: number }[])?.[0];
 
   const profile = profiles.get(actor);
   const germDecl = germDeclarations.get(actor);
@@ -104,11 +122,15 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     followsCount,
     createdAt: profile.value.createdAt,
     messageMe,
-    ...(viewer && viewer !== actor && (viewerFollowing || followedBy)
+    ...(viewer && viewer !== actor && (viewerFollowing || followedBy || viewerBlocking || blockedBy || viewerMuted)
       ? {
           viewer: {
-            ...(viewerFollowing ? { following: viewerFollowing } : {}),
-            ...(followedBy ? { followedBy: followedBy } : {}),
+            // Hide follow relationships when either party blocks the other
+            ...(!viewerBlocking && !blockedBy && viewerFollowing ? { following: viewerFollowing } : {}),
+            ...(!viewerBlocking && !blockedBy && followedBy ? { followedBy: followedBy } : {}),
+            ...(viewerBlocking ? { blocking: viewerBlocking } : {}),
+            ...(blockedBy ? { blockedBy: true } : {}),
+            ...(viewerMuted ? { muted: true } : {}),
           },
         }
       : {}),

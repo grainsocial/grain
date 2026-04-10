@@ -1,4 +1,5 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
+import { blockMuteFilter } from "../filters/blockMute.ts";
 
 export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (ctx) => {
   const { ok, params, lookup, blobUrl, db } = ctx;
@@ -17,6 +18,7 @@ export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (
        AND bf.subject NOT IN (
          SELECT gf.subject FROM "social.grain.graph.follow" gf WHERE gf.did = $1
        )
+       AND ${blockMuteFilter("bf.subject", "$1")}
      LIMIT $2`,
     [actor, Number(limit)],
   )) as { subject: string }[];
@@ -39,6 +41,7 @@ export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (
          AND gp.did NOT IN (
            SELECT gf.subject FROM "social.grain.graph.follow" gf WHERE gf.did = $1
          )
+         AND ${blockMuteFilter("gp.did", "$1")}
        ORDER BY follower_count DESC
        LIMIT $${exclude.length + 1}`,
       [...exclude, remaining],

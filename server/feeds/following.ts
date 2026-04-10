@@ -1,6 +1,7 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { blockMuteFilter } from "../filters/blockMute.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -18,7 +19,8 @@ export default defineFeed({
        WHERE (r.status IS NULL OR r.status != 'takendown')
          AND t.did IN (SELECT subject FROM "social.grain.graph.follow" WHERE did = $1)
          AND ${hideLabelsFilter("t.uri")}
-         AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
+         AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+         AND ${blockMuteFilter("t.did", "$1")}`,
       { orderBy: "t.created_at", params: [actor] },
     );
 

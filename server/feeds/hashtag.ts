@@ -1,6 +1,7 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { blockMuteFilter } from "../filters/blockMute.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -13,6 +14,9 @@ export default defineFeed({
     if (!tag) return ctx.ok({ uris: [] });
 
     const pattern = `%#${tag}%`;
+    const viewer = ctx.viewer?.did;
+    const bmFilter = viewer ? `AND ${blockMuteFilter("t.did", "$2")}` : "";
+    const bmParams = viewer ? [viewer] : [];
 
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.created_at FROM "social.grain.gallery" t
@@ -23,8 +27,9 @@ export default defineFeed({
            OR EXISTS (SELECT 1 FROM "social.grain.comment" c WHERE c.subject = t.uri AND c.text LIKE $1)
          )
          AND ${hideLabelsFilter("t.uri")}
-         AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
-      { orderBy: "t.created_at", params: [pattern] },
+         AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+         ${bmFilter}`,
+      { orderBy: "t.created_at", params: [pattern, ...bmParams] },
     );
 
     return ctx.ok({ uris: rows.map((r) => r.uri), cursor });

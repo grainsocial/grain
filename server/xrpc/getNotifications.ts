@@ -2,6 +2,14 @@ import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile, Photo, Gallery } from "$hatk";
 import { views } from "$hatk";
 
+function blockMuteNotifFilter(didCol = "did"): string {
+  return `
+    AND ${didCol} NOT IN (SELECT subject FROM "social.grain.graph.block" WHERE did = $1)
+    AND ${didCol} NOT IN (SELECT did FROM "social.grain.graph.block" WHERE subject = $1)
+    AND ${didCol} NOT IN (SELECT subject FROM _mutes WHERE did = $1)
+  `;
+}
+
 /** Builds the UNION ALL query for notification sources. Pass select columns or `count(*) as cnt`. */
 function notificationUnion(select: "count" | "full", extraFilter: string): string {
   const favCols =
@@ -37,24 +45,24 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
   return `
     SELECT ${favCols} FROM "social.grain.favorite"
     WHERE subject IN (SELECT uri FROM "social.grain.gallery" WHERE did = $1)
-      AND did != $1 ${extraFilter}
+      AND did != $1 ${blockMuteNotifFilter()} ${extraFilter}
 
     UNION ALL
 
     SELECT ${commentCols} FROM "social.grain.comment"
     WHERE subject IN (SELECT uri FROM "social.grain.gallery" WHERE did = $1)
-      AND did != $1 AND reply_to IS NULL ${extraFilter}
+      AND did != $1 AND reply_to IS NULL ${blockMuteNotifFilter()} ${extraFilter}
 
     UNION ALL
 
     SELECT ${replyCols} FROM "social.grain.comment" c
     WHERE c.reply_to IN (SELECT uri FROM "social.grain.comment" WHERE did = $1)
-      AND c.did != $1 ${extraFilter}
+      AND c.did != $1 ${blockMuteNotifFilter("c.did")} ${extraFilter}
 
     UNION ALL
 
     SELECT ${followCols} FROM "social.grain.graph.follow"
-    WHERE subject = $1 AND did != $1 ${extraFilter}
+    WHERE subject = $1 AND did != $1 ${blockMuteNotifFilter()} ${extraFilter}
 
     UNION ALL
 
@@ -62,12 +70,12 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
     WHERE facets LIKE '%' || $1 || '%' AND did != $1
       AND subject NOT IN (SELECT uri FROM "social.grain.gallery" WHERE did = $1)
       AND reply_to NOT IN (SELECT uri FROM "social.grain.comment" WHERE did = $1)
-      ${extraFilter}
+      ${blockMuteNotifFilter()} ${extraFilter}
 
     UNION ALL
 
     SELECT ${mentionGalleryCols} FROM "social.grain.gallery"
-    WHERE facets LIKE '%' || $1 || '%' AND did != $1 ${extraFilter}
+    WHERE facets LIKE '%' || $1 || '%' AND did != $1 ${blockMuteNotifFilter()} ${extraFilter}
   `;
 }
 

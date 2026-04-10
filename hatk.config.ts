@@ -15,6 +15,7 @@ const grainScopes = [
   "repo:social.grain.favorite",
   "repo:social.grain.comment",
   "repo:social.grain.story",
+  "repo:social.grain.graph.block",
   "repo:app.bsky.feed.post?action=create",
 ].join(" ");
 

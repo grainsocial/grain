@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getBlocks",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the viewer's blocked users.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.unspecced.getBlocks#blockItem" }
+            },
+            "cursor": { "type": "string" }
+          }
+        }
+      }
+    },
+    "blockItem": {
+      "type": "object",
+      "required": ["did", "blockUri"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" },
+        "blockUri": { "type": "string", "format": "at-uri" }
+      }
+    }
+  }
+}

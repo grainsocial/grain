@@ -755,6 +755,27 @@ await createRecord(
   { rkey: "comment-5" },
 );
 
+// ── Blocks ──
+// Dave blocks Alice (tests "blockedBy" state when Alice views Dave's profile)
+await createRecord(
+  dave,
+  "social.grain.graph.block",
+  { subject: alice.did, createdAt: ago(3) },
+  { rkey: "block-alice" },
+);
+
+// Bob blocks Carol (tests "blocking" state when Bob views Carol's profile,
+// and feed/notification filtering between them)
+await createRecord(
+  bob,
+  "social.grain.graph.block",
+  { subject: carol.did, createdAt: ago(2) },
+  { rkey: "block-carol" },
+);
+
+// Note: Mutes are stored in the server-side _mutes table (not AT Protocol records)
+// and cannot be seeded via createRecord. Test mutes manually via the UI or XRPC.
+
 // ── Stories ──
 
 await createRecord(
