@@ -10,3 +10,4 @@ test-results/
 certs/
 *.p8
 public/
+*.tsbuildinfo
