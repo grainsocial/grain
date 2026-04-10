@@ -1,3 +1,16 @@
+<script lang="ts" module>
+  import type { Snapshot } from './$types'
+
+  export const snapshot: Snapshot<number> = {
+    capture: () => document.querySelector('main.col-center')?.scrollTop ?? 0,
+    restore: (y) => {
+      requestAnimationFrame(() => {
+        document.querySelector('main.col-center')?.scrollTo(0, y)
+      })
+    },
+  }
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import '../app.css'
@@ -8,8 +21,7 @@
   import { loadPreferences } from '$lib/preferences'
   import { afterNavigate } from '$app/navigation'
 
-  // Safety net: clear any stale body overflow locks left by overlays (e.g. StoryViewer)
-  // that were destroyed during navigation without proper cleanup
+  // Clear stale body overflow locks left by overlays (e.g. StoryViewer)
   afterNavigate(() => {
     if (document.body.style.overflow === 'hidden') {
       document.body.style.overflow = ''
