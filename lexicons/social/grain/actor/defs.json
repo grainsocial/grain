@@ -79,7 +79,10 @@
       "description": "Metadata about the requesting account's relationship with the subject account. Only has meaningful content for authed requests.",
       "properties": {
         "following": { "type": "string", "format": "at-uri" },
-        "followedBy": { "type": "string", "format": "at-uri" }
+        "followedBy": { "type": "string", "format": "at-uri" },
+        "blocking": { "type": "string", "format": "at-uri" },
+        "blockedBy": { "type": "boolean" },
+        "muted": { "type": "boolean" }
       }
     }
   }

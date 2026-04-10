@@ -4,6 +4,7 @@
   import RichText from '../atoms/RichText.svelte'
   import { relativeTime } from '$lib/utils'
   import { viewer } from '$lib/stores'
+  import { VolumeX } from 'lucide-svelte'
 
   let {
     comment,
@@ -15,32 +16,44 @@
     onDelete?: (uri: string) => void
   } = $props()
 
+  let expanded = $state(false)
+
   const isOwner = $derived($viewer?.did === comment.author?.did)
   const timeStr = $derived(relativeTime(comment.createdAt || ''))
   const isReply = $derived(!!comment.replyTo)
+  const isMuted = $derived(!!comment.muted && !expanded)
 </script>
 
-<div class="comment" class:reply={isReply}>
-  <Avatar did={comment.author?.did ?? ''} src={comment.author?.avatar ?? null} size={28} />
-  <div class="content">
-    <div class="text-line">
-      <a href="/profile/{comment.author?.did}" class="handle">{comment.author?.handle ?? comment.author?.did}</a>
-      <span class="text"><RichText text={comment.text} /></span>
-    </div>
-    <div class="meta">
-      <span class="time">{timeStr}</span>
-      {#if onReply}
-        <button class="meta-btn" onclick={() => onReply?.(comment.replyTo ?? comment.uri, comment.author?.handle ?? '')}>Reply</button>
-      {/if}
-      {#if isOwner && onDelete}
-        <button class="meta-btn delete" onclick={() => onDelete?.(comment.uri)}>Delete</button>
-      {/if}
-    </div>
+{#if comment.muted && !expanded}
+  <div class="comment muted-comment" class:reply={isReply}>
+    <button class="muted-toggle" onclick={() => (expanded = true)}>
+      <VolumeX size={14} />
+      <span>Muted comment</span>
+    </button>
   </div>
-  {#if comment.focus?.thumb}
-    <img class="focus-thumb" src={comment.focus.thumb} alt={comment.focus?.alt ?? ''} />
-  {/if}
-</div>
+{:else}
+  <div class="comment" class:reply={isReply}>
+    <Avatar did={comment.author?.did ?? ''} src={comment.author?.avatar ?? null} size={28} />
+    <div class="content">
+      <div class="text-line">
+        <a href="/profile/{comment.author?.did}" class="handle">{comment.author?.handle ?? comment.author?.did}</a>
+        <span class="text"><RichText text={comment.text} /></span>
+      </div>
+      <div class="meta">
+        <span class="time">{timeStr}</span>
+        {#if onReply}
+          <button class="meta-btn" onclick={() => onReply?.(comment.replyTo ?? comment.uri, comment.author?.handle ?? '')}>Reply</button>
+        {/if}
+        {#if isOwner && onDelete}
+          <button class="meta-btn delete" onclick={() => onDelete?.(comment.uri)}>Delete</button>
+        {/if}
+      </div>
+    </div>
+    {#if comment.focus?.thumb}
+      <img class="focus-thumb" src={comment.focus.thumb} alt={comment.focus?.alt ?? ''} />
+    {/if}
+  </div>
+{/if}
 
 <style>
   .comment {
@@ -96,4 +109,17 @@
     object-fit: cover;
     flex-shrink: 0;
   }
+  .muted-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+  .muted-toggle:hover { color: var(--text-secondary); }
 </style>

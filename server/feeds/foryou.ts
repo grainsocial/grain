@@ -1,6 +1,7 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { blockMuteFilter } from "../filters/blockMute.ts";
 
 // ─── Scoring parameters (spacecowboy17's optimized A/B values) ───────
 const HALF_LIFE_HOURS = 6;
@@ -106,7 +107,8 @@ export default defineFeed({
            AND t.did != $1
            AND (r.status IS NULL OR r.status != 'takendown')
            AND ${hideLabelsFilter("t.uri")}
-           AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
+           AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+           AND ${blockMuteFilter("t.did", "$1")}`,
         [actor, ...colikerList, ...seedUris],
       ) as Promise<{ coliker: string; gallery_uri: string; gallery_created_at: string }[]>,
 
@@ -239,6 +241,7 @@ async function coldStartFeed(
        AND t.created_at > $2
        AND ${hideLabelsFilter("t.uri")}
        AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+       AND ${blockMuteFilter("t.did", "$1")}
      GROUP BY t.uri
      ORDER BY fav_count DESC, t.created_at DESC
      LIMIT $3 OFFSET $4`,

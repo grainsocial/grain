@@ -41,6 +41,10 @@
         "createdAt": {
           "type": "string",
           "format": "datetime"
+        },
+        "muted": {
+          "type": "boolean",
+          "description": "True if the viewer has muted the comment author. Client should show collapsed with option to expand."
         }
       }
     }

@@ -16,6 +16,13 @@ CREATE TABLE _labels (
   exp TEXT
 );
 
+CREATE TABLE _mutes (
+  did TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (did, subject)
+);
+
 CREATE TABLE _oauth_codes (
   code TEXT PRIMARY KEY,
   request_uri TEXT NOT NULL,
@@ -303,6 +310,15 @@ CREATE TABLE "social.grain.gallery__labels_self_labels" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
   val TEXT
+);
+
+CREATE TABLE "social.grain.graph.block" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 
 CREATE TABLE "social.grain.graph.follow" (

@@ -6,11 +6,13 @@
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
+  import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
-  import { ArrowUpRight, Grid3x3, Heart, Clock } from 'lucide-svelte'
-  import { createQuery, createInfiniteQuery } from '@tanstack/svelte-query'
+  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX } from 'lucide-svelte'
+  import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
   import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
-  import { viewer as viewerStore } from '$lib/stores'
+  import { viewer as viewerStore, requireAuth } from '$lib/stores'
+  import { blockActor, unblockActor, muteActor, unmuteActor } from '$lib/mutations'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
   import { page } from '$app/state'
@@ -59,6 +61,30 @@
     enabled: !!viewerDid && viewerDid !== did,
   }))
 
+  const queryClient = useQueryClient()
+
+  async function handleBlock() {
+    if (!requireAuth()) return
+    const p = profile.data as any
+    if (p?.viewer?.blocking) {
+      await unblockActor(did, p.viewer.blocking, queryClient)
+    } else {
+      await blockActor(did, queryClient)
+    }
+  }
+
+  async function handleMute() {
+    if (!requireAuth()) return
+    const p = profile.data as any
+    if (p?.viewer?.muted) {
+      await unmuteActor(did, queryClient)
+    } else {
+      await muteActor(did, queryClient)
+    }
+  }
+
+  const blockHide = $derived(!!profile.data?.viewer?.blocking || !!profile.data?.viewer?.blockedBy)
+
   const showGermButton = $derived.by(() => {
     const p = profile.data as any
     if (!p?.messageMe || !viewerDid) return false
@@ -100,45 +126,70 @@
         <Avatar {did} src={p.avatar ?? null} name={p.displayName} size={64} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
         {#if viewerDid && viewerDid !== did}
           <div class="actions">
-            <FollowButton {did} viewerFollow={p.viewer?.following ?? null} onCountChange={(d) => (followersOffset += d)} />
+            {#if !p.viewer?.blocking && !p.viewer?.blockedBy}
+              <FollowButton {did} viewerFollow={p.viewer?.following ?? null} onCountChange={(d) => (followersOffset += d)} />
+            {/if}
+            <OverflowMenu>
+              {#if !blockHide}
+                <button class="menu-item" type="button" onclick={handleMute}>
+                  <VolumeX size={15} />
+                  {p.viewer?.muted ? 'Unmute' : 'Mute'}
+                </button>
+              {/if}
+              <button class="menu-item danger" type="button" onclick={handleBlock}>
+                <Ban size={15} />
+                {p.viewer?.blocking ? 'Unblock' : 'Block'}
+              </button>
+            </OverflowMenu>
           </div>
         {/if}
       </div>
       <div class="profile-name">{p.displayName || did.slice(0, 18)}</div>
       <div class="handle-row">
-        {#if p.viewer?.followedBy}<span class="follows-you">Follows you</span>{/if}
+        {#if !blockHide && p.viewer?.followedBy}<span class="follows-you">Follows you</span>{/if}
         <span class="profile-handle">{p.handle ? `@${p.handle}` : did}</span>
       </div>
-      <div class="stat-row">
-        <span><strong>{(p.galleryCount ?? 0).toLocaleString()}</strong> {Number(p.galleryCount) === 1 ? 'gallery' : 'galleries'}</span>
-        <a href="/profile/{did}/followers" class="stat-link"><strong>{((p.followersCount ?? 0) + followersOffset).toLocaleString()}</strong> followers</a>
-        <a href="/profile/{did}/following" class="stat-link"><strong>{(p.followsCount ?? 0).toLocaleString()}</strong> following</a>
-      </div>
-      {#if p.description}
-        <div class="bio"><RichText text={p.description} /></div>
-      {/if}
-      <div class="links-row">
-        <a class="link-pill" href="https://bsky.app/profile/{p.handle || did}" target="_blank" rel="noopener noreferrer">
-          Bluesky <ArrowUpRight size={14} />
-        </a>
-        {#if showGermButton && germUrl}
-          <a class="link-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
-            <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM <ArrowUpRight size={14} />
+      {#if blockHide}
+        <div class="block-alert">
+          <Ban size={14} />
+          {#if p.viewer?.blocking}
+            <span>Account blocked</span>
+          {:else}
+            <span>This user has blocked you</span>
+          {/if}
+        </div>
+      {:else}
+        <div class="stat-row">
+          <span><strong>{(p.galleryCount ?? 0).toLocaleString()}</strong> {Number(p.galleryCount) === 1 ? 'gallery' : 'galleries'}</span>
+          <a href="/profile/{did}/followers" class="stat-link"><strong>{((p.followersCount ?? 0) + followersOffset).toLocaleString()}</strong> followers</a>
+          <a href="/profile/{did}/following" class="stat-link"><strong>{(p.followsCount ?? 0).toLocaleString()}</strong> following</a>
+        </div>
+        {#if p.description}
+          <div class="bio"><RichText text={p.description} /></div>
+        {/if}
+        <div class="links-row">
+          <a class="link-pill" href="https://bsky.app/profile/{p.handle || did}" target="_blank" rel="noopener noreferrer">
+            Bluesky <ArrowUpRight size={14} />
+          </a>
+          {#if showGermButton && germUrl}
+            <a class="link-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
+              <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM <ArrowUpRight size={14} />
+            </a>
+          {/if}
+        </div>
+        {#if (knownFollowers.data?.items ?? []).length > 0}
+          {@const known = knownFollowers.data?.items ?? []}
+          <a href="/profile/{did}/known-followers" class="known-followers">
+            <div class="known-avatars">
+              {#each known.slice(0, 3) as k (k.did)}
+                <Avatar did={k.did} src={k.avatar ?? null} name={k.displayName} size={20} />
+              {/each}
+            </div>
+            <span class="known-text">
+              Followed by {known.slice(0, 2).map((k) => k.displayName || k.handle).join(', ')}{#if known.length > 2}{' '}and {known.length - 2} other{known.length - 2 !== 1 ? 's' : ''} you follow{/if}
+            </span>
           </a>
         {/if}
-      </div>
-      {#if (knownFollowers.data?.items ?? []).length > 0}
-        {@const known = knownFollowers.data?.items ?? []}
-        <a href="/profile/{did}/known-followers" class="known-followers">
-          <div class="known-avatars">
-            {#each known.slice(0, 3) as k (k.did)}
-              <Avatar did={k.did} src={k.avatar ?? null} name={k.displayName} size={20} />
-            {/each}
-          </div>
-          <span class="known-text">
-            Followed by {known.slice(0, 2).map((k) => k.displayName || k.handle).join(', ')}{#if known.length > 2}{' '}and {known.length - 2} other{known.length - 2 !== 1 ? 's' : ''} you follow{/if}
-          </span>
-        </a>
       {/if}
     </div>
   </div>
@@ -157,6 +208,7 @@
     <AvatarLightbox src={lightboxSrc} onclose={() => (lightboxSrc = null)} />
   {/if}
 
+  {#if !blockHide}
   <div class="view-toggle">
     <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => setTab('grid')} aria-label="Grid view">
       <Grid3x3 size={20} />
@@ -184,6 +236,7 @@
     />
   {:else}
     <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
+  {/if}
   {/if}
 
   {#if showStoryViewer}
@@ -288,4 +341,33 @@
     font-weight: 500;
   }
   .bsky-link:hover { text-decoration: underline; }
+  .block-alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .menu-item:hover { background: var(--bg-hover); }
+  .menu-item.danger { color: #f87171; }
 </style>

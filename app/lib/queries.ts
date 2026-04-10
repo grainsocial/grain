@@ -165,6 +165,22 @@ export const followingQuery = (did: string, f?: Fetch) =>
     staleTime: 60_000,
   });
 
+// ─── Blocks / Mutes ─────────────────────────────────────────────────
+
+export const blocksQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["blocks"],
+    queryFn: () => callXrpc("social.grain.unspecced.getBlocks", {}, f),
+    staleTime: 60_000,
+  });
+
+export const mutesQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["mutes"],
+    queryFn: () => callXrpc("social.grain.unspecced.getMutes", {}, f),
+    staleTime: 60_000,
+  });
+
 export const knownFollowersQuery = (did: string, viewer: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["knownFollowers", did, viewer],

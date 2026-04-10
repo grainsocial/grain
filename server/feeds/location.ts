@@ -8,6 +8,7 @@ import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { getResolution, cellToParent } from "h3-js";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { blockMuteFilter } from "../filters/blockMute.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -25,9 +26,13 @@ export default defineFeed({
     // For city-level queries, we need to check if the gallery's H3 cell
     // is a child of the requested city cell. We do this in application code
     // since SQLite doesn't have H3 functions.
+    const viewer = ctx.viewer?.did;
+
     if (isCityLevel) {
       // Fetch all galleries with locations, filter by H3 parent in JS, then paginate
       const limit = ctx.params.limit ? Number(ctx.params.limit) : 30;
+      const bmFilter = viewer ? `AND ${blockMuteFilter("t.did", "$1")}` : "";
+      const bmParams = viewer ? [viewer] : [];
       const allRows = (await ctx.db.query(
         `SELECT t.uri, t.created_at, json_extract(t.location, '$.value') AS location
          FROM "social.grain.gallery" t
@@ -36,7 +41,9 @@ export default defineFeed({
            AND t.location IS NOT NULL
            AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+           ${bmFilter}
          ORDER BY t.created_at DESC`,
+        bmParams,
       )) as { uri: string; created_at: string; location: string }[];
 
       const filtered = allRows.filter((r) => {
@@ -67,14 +74,17 @@ export default defineFeed({
     }
 
     // Venue-level: exact match
+    const bmFilterVenue = viewer ? `AND ${blockMuteFilter("t.did", "$2")}` : "";
+    const bmParamsVenue = viewer ? [viewer] : [];
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.created_at FROM "social.grain.gallery" t
        LEFT JOIN _repos r ON t.did = r.did
        WHERE (r.status IS NULL OR r.status != 'takendown')
          AND json_extract(t.location, '$.value') = $1
          AND ${hideLabelsFilter("t.uri")}
-         AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
-      { orderBy: "t.created_at", params: [location] },
+         AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+         ${bmFilterVenue}`,
+      { orderBy: "t.created_at", params: [location, ...bmParamsVenue] },
     );
 
     return ctx.ok({ uris: rows.map((r) => r.uri), cursor });

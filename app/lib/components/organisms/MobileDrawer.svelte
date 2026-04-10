@@ -59,8 +59,8 @@
   {/if}
 
   {#if $isAuthenticated}
-    <button class="drawer-link" onclick={() => nav('/settings/profile')}>
-      <span class="drawer-link-icon"><Settings size={18} /></span> Edit Profile
+    <button class="drawer-link" onclick={() => nav('/settings')}>
+      <span class="drawer-link-icon"><Settings size={18} /></span> Settings
     </button>
   {/if}
 
