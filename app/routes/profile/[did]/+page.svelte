@@ -48,7 +48,8 @@
   const isOwnProfile = $derived(viewerDid === did)
 
   const profile = createQuery(() => actorProfileQuery(did, viewerDid))
-  const feed = createQuery(() => actorFeedQuery(did))
+  const feed = createInfiniteQuery(() => actorFeedQuery(did))
+  const feedItems = $derived(feed.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const favorites = createInfiniteQuery(() => ({
     ...actorFavoritesInfiniteQuery(did),
     enabled: isOwnProfile,
@@ -235,7 +236,13 @@
       onLoadMore={() => favorites.fetchNextPage()}
     />
   {:else}
-    <GalleryGrid items={feed.data?.items ?? []} loading={feed.isLoading} />
+    <GalleryGrid
+      items={feedItems}
+      loading={feed.isLoading}
+      hasMore={feed.hasNextPage}
+      loadingMore={feed.isFetchingNextPage}
+      onLoadMore={() => feed.fetchNextPage()}
+    />
   {/if}
   {/if}
 

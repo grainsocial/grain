@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ params, parent, fetch }) => {
   const { queryClient, viewer } = await parent();
   const prefetch = Promise.all([
     queryClient.prefetchQuery(actorProfileQuery(did, viewer?.did, fetch)),
-    queryClient.prefetchQuery(actorFeedQuery(did, 50, fetch)),
+    queryClient.prefetchInfiniteQuery(actorFeedQuery(did, fetch)),
   ]);
   if (!browser) await prefetch;
   return { did };

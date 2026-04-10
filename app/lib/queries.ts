@@ -26,10 +26,17 @@ export const forYouFeedQuery = (did: string, limit = 50, f?: Fetch) =>
     staleTime: 60_000,
   });
 
-export const actorFeedQuery = (did: string, limit = 50, f?: Fetch) =>
-  queryOptions({
+export const actorFeedQuery = (did: string, f?: Fetch) =>
+  infiniteQueryOptions({
     queryKey: ["getFeed", "actor", did],
-    queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "actor", actor: did, limit }, f),
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      callXrpc(
+        "dev.hatk.getFeed",
+        { feed: "actor", actor: did, limit: 30, ...(pageParam ? { cursor: pageParam } : {}) },
+        f,
+      ),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
     staleTime: 60_000,
   });
 
@@ -111,15 +118,17 @@ export const storiesQuery = (did: string, f?: Fetch) =>
     staleTime: 30_000,
   });
 
-export const storyArchiveQuery = (did: string, cursor?: string, f?: Fetch) =>
-  queryOptions({
-    queryKey: ["stories", "archive", did, cursor],
-    queryFn: () =>
+export const storyArchiveQuery = (did: string, f?: Fetch) =>
+  infiniteQueryOptions({
+    queryKey: ["stories", "archive", did],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
       callXrpc(
         "social.grain.unspecced.getStoryArchive",
-        { actor: did, ...(cursor ? { cursor } : {}) },
+        { actor: did, limit: 30, ...(pageParam ? { cursor: pageParam } : {}) },
         f,
       ).then((r) => r ?? { stories: [], cursor: undefined }),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
     staleTime: 60_000,
   });
 

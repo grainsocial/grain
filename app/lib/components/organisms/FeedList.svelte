@@ -6,6 +6,8 @@
   import GalleryCardSkeleton from '../molecules/GalleryCardSkeleton.svelte'
   import { queryFeed } from '$lib/feed'
   import { isAuthenticated } from '$lib/stores'
+  import Spinner from '../atoms/Spinner.svelte'
+  import { infiniteScroll } from '$lib/actions/infinite-scroll'
 
   let {
     feed,
@@ -50,7 +52,7 @@
     loading = true
     error = null
     try {
-      const result = await queryFeed(feed, { limit: '50', ...params })
+      const result = await queryFeed(feed, { limit: '30', ...params })
       items = result.items ?? []
       cursor = result.cursor
     } catch (e: any) {
@@ -64,7 +66,7 @@
     if (!cursor || loadingMore) return
     loadingMore = true
     try {
-      const result = await queryFeed(feed, { limit: '50', cursor, ...params })
+      const result = await queryFeed(feed, { limit: '30', cursor, ...params })
       items = [...items, ...(result.items ?? [])]
       cursor = result.cursor
     } finally {
@@ -116,10 +118,8 @@
   />
 
   {#if cursor}
-    <div class="load-more">
-      <button class="load-more-btn" onclick={() => loadMore()} disabled={loadingMore}>
-        {loadingMore ? 'Loading\u2026' : 'Load more'}
-      </button>
+    <div use:infiniteScroll={loadMore} class="sentinel">
+      {#if loadingMore}<Spinner />{/if}
     </div>
   {/if}
 {/if}
@@ -132,22 +132,9 @@
   }
   .error-state { color: var(--danger); }
   .empty-state { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .load-more { padding: 16px; text-align: center; }
-  .load-more-btn {
-    padding: 10px 24px;
-    border-radius: 20px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.12s;
+  .sentinel {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
   }
-  .load-more-btn:hover:not(:disabled) {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .load-more-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

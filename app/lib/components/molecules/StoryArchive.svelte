@@ -1,48 +1,23 @@
 <script lang="ts">
-  import { createQuery } from '@tanstack/svelte-query'
-  import type { StoryView } from '$hatk/client'
+  import { createInfiniteQuery } from '@tanstack/svelte-query'
   import { storyArchiveQuery } from '$lib/queries'
-  import { callXrpc } from '$hatk/client'
+  import Spinner from '$lib/components/atoms/Spinner.svelte'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
+  import { infiniteScroll } from '$lib/actions/infinite-scroll'
 
   let { did }: { did: string } = $props()
 
-  const initial = createQuery(() => storyArchiveQuery(did))
+  const archive = createInfiniteQuery(() => storyArchiveQuery(did))
+  const allStories = $derived(archive.data?.pages.flatMap((p) => p.stories ?? []) ?? [])
 
-  let allStories = $state<StoryView[]>([])
-  let cursor = $state<string | undefined>(undefined)
-  let loadingMore = $state(false)
-  let hasLoadedMore = $state(false)
   let viewingStory = $state<{ uri: string } | null>(null)
-
-  // Sync initial query data into local state (skip if user has loaded more pages)
-  $effect(() => {
-    const data = initial.data as { stories?: StoryView[]; cursor?: string } | undefined
-    if (data?.stories && !hasLoadedMore) {
-      allStories = data.stories
-      cursor = data.cursor
-    }
-  })
-
-  async function loadMore() {
-    if (!cursor || loadingMore) return
-    loadingMore = true
-    try {
-      const result = await callXrpc('social.grain.unspecced.getStoryArchive', { actor: did, cursor }) as { stories?: StoryView[]; cursor?: string }
-      allStories = [...allStories, ...(result.stories ?? [])]
-      cursor = result.cursor
-      hasLoadedMore = true
-    } finally {
-      loadingMore = false
-    }
-  }
 
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   }
 </script>
 
-{#if initial.isLoading}
+{#if archive.isLoading}
   <div class="archive-grid">
     {#each { length: 6 } as _}
       <div class="cell placeholder"></div>
@@ -66,11 +41,9 @@
     {/each}
   </div>
 
-  {#if cursor}
-    <div class="load-more">
-      <button class="load-more-btn" onclick={loadMore} disabled={loadingMore}>
-        {loadingMore ? 'Loading\u2026' : 'Load more'}
-      </button>
+  {#if archive.hasNextPage}
+    <div use:infiniteScroll={() => archive.fetchNextPage()} class="sentinel">
+      {#if archive.isFetchingNextPage}<Spinner />{/if}
     </div>
   {/if}
 {/if}
@@ -122,29 +95,10 @@
     color: #fff;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
   }
-  .load-more {
+  .sentinel {
     display: flex;
     justify-content: center;
-    padding: 16px;
-  }
-  .load-more-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 8px 24px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .load-more-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .load-more-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    padding: 20px;
   }
   .empty {
     padding: 32px;

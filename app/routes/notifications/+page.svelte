@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
+  import { infiniteScroll } from '$lib/actions/infinite-scroll'
   import { notificationsQuery } from '$lib/queries'
   import { markNotificationsSeen } from '$lib/preferences'
   import { viewer as viewerStore } from '$lib/stores'
@@ -23,7 +24,6 @@
   let allItems: NotifItem[] = $state([])
   let currentCursor: string | undefined = $state(undefined)
   let hasMore = $state(true)
-  let sentinel: HTMLDivElement | undefined = $state(undefined)
 
   $effect(() => {
     if (notifications.data) {
@@ -56,15 +56,6 @@
     }
   }
 
-  $effect(() => {
-    if (!sentinel) return
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0]?.isIntersecting) loadMore() },
-      { rootMargin: '200px' },
-    )
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  })
 </script>
 
 <OGMeta title="Notifications - grain" />
@@ -80,7 +71,7 @@
       <NotificationItem {notif} />
     {/each}
     {#if hasMore}
-      <div bind:this={sentinel} class="sentinel">
+      <div use:infiniteScroll={loadMore} class="sentinel">
         {#if loadingMore}<Spinner />{/if}
       </div>
     {/if}

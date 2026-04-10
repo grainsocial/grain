@@ -1,9 +1,11 @@
 <script lang="ts">
   import type { GalleryView, PhotoView } from '$hatk/client'
   import Skeleton from '../atoms/Skeleton.svelte'
+  import Spinner from '../atoms/Spinner.svelte'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import { createQuery } from '@tanstack/svelte-query'
   import { Info } from 'lucide-svelte'
+  import { infiniteScroll } from '$lib/actions/infinite-scroll'
 
   const labelDefs = createQuery(() => labelDefsQuery())
 
@@ -69,10 +71,8 @@
     {/each}
   </div>
   {#if hasMore}
-    <div class="load-more">
-      <button class="load-more-btn" onclick={() => onLoadMore?.()} disabled={loadingMore}>
-        {loadingMore ? 'Loading\u2026' : 'Load more'}
-      </button>
+    <div use:infiniteScroll={() => onLoadMore?.()} class="sentinel">
+      {#if loadingMore}<Spinner />{/if}
     </div>
   {/if}
 {/if}
@@ -134,24 +134,11 @@
     font-size: 11px;
     font-weight: 500;
   }
-  .load-more { padding: 16px; text-align: center; }
-  .load-more-btn {
-    padding: 10px 24px;
-    border-radius: 20px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.12s;
+  .sentinel {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
   }
-  .load-more-btn:hover:not(:disabled) {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .load-more-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .empty-state {
     padding: 48px;
     text-align: center;
