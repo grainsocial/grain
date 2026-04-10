@@ -1,6 +1,6 @@
 import { defineOG } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
-import { syneBrandFont } from "./fonts.ts";
+import { allFonts } from "./fonts.ts";
 
 export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
@@ -138,7 +138,7 @@ export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
         ],
       },
     },
-    options: { fonts: [syneBrandFont()] },
+    options: { fonts: allFonts() },
     meta: {
       title: `Story by @${author?.handle || did.slice(0, 24)} — Grain`,
       description: "Photo story on Grain",

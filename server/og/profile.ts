@@ -1,5 +1,6 @@
 import { defineOG } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
+import { fallbackFonts } from "./fonts.ts";
 
 export default defineOG("/og/profile/:did", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
@@ -195,6 +196,7 @@ export default defineOG("/og/profile/:did", async (ctx) => {
         ],
       },
     },
+    options: { fonts: fallbackFonts() },
     meta: {
       title: `${displayName} (@${handle}) — Grain`,
       description: description || `@${handle} on Grain`,
