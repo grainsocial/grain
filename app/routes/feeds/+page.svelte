@@ -110,10 +110,12 @@
       <span class="feed-label">{feed.label}</span>
       {#if $isAuthenticated}
         <PinButton {feed} stopPropagation />
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <span
           class="drag-handle"
+          role="button"
+          tabindex="-1"
           onclick={(e) => { e.preventDefault(); e.stopPropagation() }}
+          onkeydown={(e) => e.stopPropagation()}
           ontouchstart={(e) => handleTouchStart(e, i)}
           ontouchmove={(e) => handleTouchMove(e)}
           ontouchend={handleTouchEnd}

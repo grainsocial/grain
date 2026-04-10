@@ -648,10 +648,6 @@
     margin-left: auto;
     transition: all 0.15s;
   }
-  .content-warning-full .cw-reveal {
-    margin-left: 0;
-    margin-top: 8px;
-  }
   .cw-reveal:hover {
     background: var(--bg-hover);
     color: var(--text-primary);

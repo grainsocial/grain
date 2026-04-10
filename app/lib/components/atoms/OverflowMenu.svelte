@@ -12,8 +12,7 @@
     <EllipsisVertical size={18} />
   </button>
   {#if open}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="overflow-backdrop" onclick={() => (open = false)}></div>
+    <div class="overflow-backdrop" role="button" tabindex="-1" onclick={() => (open = false)} onkeydown={(e) => e.key === 'Escape' && (open = false)}></div>
     <div class="overflow-dropdown">
       {@render children()}
     </div>
