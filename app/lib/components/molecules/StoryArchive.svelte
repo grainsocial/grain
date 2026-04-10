@@ -42,7 +42,7 @@
   </div>
 
   {#if archive.hasNextPage}
-    <div use:infiniteScroll={() => archive.fetchNextPage()} class="sentinel">
+    <div use:infiniteScroll={() => { if (!archive.isFetchingNextPage) archive.fetchNextPage() }} class="sentinel">
       {#if archive.isFetchingNextPage}<Spinner />{/if}
     </div>
   {/if}

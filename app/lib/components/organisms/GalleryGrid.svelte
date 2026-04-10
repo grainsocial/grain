@@ -71,7 +71,7 @@
     {/each}
   </div>
   {#if hasMore}
-    <div use:infiniteScroll={() => onLoadMore?.()} class="sentinel">
+    <div use:infiniteScroll={() => { if (!loadingMore) onLoadMore?.() }} class="sentinel">
       {#if loadingMore}<Spinner />{/if}
     </div>
   {/if}

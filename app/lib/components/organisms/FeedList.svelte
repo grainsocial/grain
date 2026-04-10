@@ -107,7 +107,7 @@
   />
 
   {#if cursor}
-    <div use:infiniteScroll={loadMore} class="sentinel">
+    <div use:infiniteScroll={() => { if (!loadingMore) loadMore() }} class="sentinel">
       {#if loadingMore}<Spinner />{/if}
     </div>
   {/if}
