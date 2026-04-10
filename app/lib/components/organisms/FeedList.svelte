@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { RefreshCw } from 'lucide-svelte'
   import type { GalleryView, PhotoView } from '$hatk/client'
   import GalleryCard from '../molecules/GalleryCard.svelte'
   import CommentSheet from './CommentSheet.svelte'
@@ -90,13 +89,6 @@
   })
 </script>
 
-{#if !loading || items.length > 0}
-  <div class="feed-status">
-    <span>{items.length} {items.length === 1 ? 'gallery' : 'galleries'}{cursor ? '+' : ''}</span>
-    <button class="refresh" onclick={() => load()} title="Refresh"><RefreshCw size={14} /></button>
-  </div>
-{/if}
-
 {#if loading && items.length === 0}
   {#each {length: 3} as _}
     <GalleryCardSkeleton />
@@ -133,26 +125,6 @@
 {/if}
 
 <style>
-  .feed-status {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-    font-size: 12px;
-    color: var(--text-muted);
-    border-bottom: 1px solid var(--border);
-  }
-  .refresh {
-    margin-left: auto;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--text-muted);
-    transition: color 0.15s;
-    background: none;
-    border: none;
-    font-family: inherit;
-  }
-  .refresh:hover { color: var(--grain); }
   .error-state, .empty-state {
     padding: 48px;
     text-align: center;
