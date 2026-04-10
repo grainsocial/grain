@@ -18,10 +18,12 @@
   let dismissedDids = $state<Set<string>>(new Set())
   let followedDids = $state<Set<string>>(new Set())
 
+  const viewerDid = $derived($viewer?.did)
+
   const suggestions = createQuery(() => ({
-    queryKey: ['suggestedFollows', $viewer?.did],
-    queryFn: () => callXrpc('social.grain.unspecced.getSuggestedFollows', { actor: $viewer!.did, limit: 10 }),
-    enabled: !!$viewer?.did,
+    queryKey: ['suggestedFollows'],
+    queryFn: () => callXrpc('social.grain.unspecced.getSuggestedFollows', { actor: viewerDid!, limit: 10 }),
+    enabled: !!viewerDid,
     staleTime: 5 * 60_000,
   }))
 

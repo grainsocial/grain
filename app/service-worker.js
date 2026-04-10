@@ -28,8 +28,9 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Skip cross-origin requests
+  // Skip cross-origin requests and API calls
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/xrpc/")) return;
 
   // For navigation requests, try network first (so new deploys are picked up)
   if (event.request.mode === "navigate") {

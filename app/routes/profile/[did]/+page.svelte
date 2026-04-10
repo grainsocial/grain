@@ -52,7 +52,7 @@
   const feedItems = $derived(feed.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const favorites = createInfiniteQuery(() => ({
     ...actorFavoritesInfiniteQuery(did),
-    enabled: isOwnProfile,
+    enabled: isOwnProfile && viewMode === 'favorites',
   }))
   const favoriteItems = $derived(favorites.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const stories = createQuery(() => storiesQuery(did))
