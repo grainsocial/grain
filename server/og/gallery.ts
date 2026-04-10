@@ -1,5 +1,6 @@
 import { defineOG } from "$hatk";
 import type { GrainActorProfile, Photo } from "$hatk";
+import { syneBrandFont } from "./fonts.ts";
 
 export default defineOG("/og/profile/:did/gallery/:rkey", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
@@ -227,8 +228,8 @@ export default defineOG("/og/profile/:did/gallery/:rkey", async (ctx) => {
                       {
                         type: "div",
                         props: {
-                          children: "Grain",
-                          style: { fontSize: 32, color: "#171717" },
+                          children: "grain",
+                          style: { fontSize: 32, fontFamily: "Syne", fontWeight: 800, color: "#171717", letterSpacing: "-0.02em" },
                         },
                       },
                     ],
@@ -240,6 +241,7 @@ export default defineOG("/og/profile/:did/gallery/:rkey", async (ctx) => {
         ],
       },
     },
+    options: { fonts: [syneBrandFont()] },
     meta: {
       title: `${gallery.title} by @${author?.handle || did.slice(0, 24)} — Grain`,
       description: gallery.description || `Photo gallery on Grain`,
