@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { GalleryView, PhotoView } from '$hatk/client'
+  import type { GalleryView } from '$hatk/client'
   import GalleryCard from '../molecules/GalleryCard.svelte'
   import CommentSheet from './CommentSheet.svelte'
   import SuggestedFollows from './SuggestedFollows.svelte'
@@ -32,19 +32,10 @@
   // Comment sheet state
   let commentSheetOpen = $state(false)
   let commentGalleryUri = $state('')
-  let commentFocusUri = $state<string | null>(null)
-  let commentFocusThumb = $state<string | null>(null)
 
-  function openComments(gallery: GalleryView, focusPhoto: PhotoView | null) {
+  function openComments(gallery: GalleryView) {
     if (!$isAuthenticated) return
     commentGalleryUri = gallery.uri
-    if (focusPhoto) {
-      commentFocusUri = focusPhoto.uri
-      commentFocusThumb = focusPhoto.thumb ?? null
-    } else {
-      commentFocusUri = null
-      commentFocusThumb = null
-    }
     commentSheetOpen = true
   }
 
@@ -103,7 +94,7 @@
   </div>
 {:else}
   {#each items as item, i (`${item.uri}:${i}`)}
-    <GalleryCard gallery={item} onCommentClick={(photo) => openComments(item, photo)} />
+    <GalleryCard gallery={item} onCommentClick={() => openComments(item)} />
     {#if i === 4 && $isAuthenticated}
       <SuggestedFollows />
     {/if}
@@ -112,8 +103,6 @@
   <CommentSheet
     open={commentSheetOpen}
     galleryUri={commentGalleryUri}
-    focusPhotoUri={commentFocusUri}
-    focusPhotoThumb={commentFocusThumb}
     onClose={() => { commentSheetOpen = false }}
   />
 

@@ -6,7 +6,7 @@
   import CommentSheet from '$lib/components/organisms/CommentSheet.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import type { GalleryView, PhotoView } from '$hatk/client'
+  import type { GalleryView } from '$hatk/client'
 
   let { data } = $props()
 
@@ -18,17 +18,8 @@
   const bskyUrl = $derived((gallery as any)?.crossPost?.url ?? null)
 
   let commentSheetOpen = $state(false)
-  let focusPhotoUri = $state<string | null>(null)
-  let focusPhotoThumb = $state<string | null>(null)
 
-  function openComments(focusPhoto: PhotoView | null) {
-    if (focusPhoto) {
-      focusPhotoUri = focusPhoto.uri
-      focusPhotoThumb = focusPhoto.thumb ?? null
-    } else {
-      focusPhotoUri = null
-      focusPhotoThumb = null
-    }
+  function openComments() {
     commentSheetOpen = true
   }
 </script>
@@ -58,8 +49,6 @@
     <CommentSheet
       open={commentSheetOpen}
       galleryUri={gallery.uri}
-      {focusPhotoUri}
-      {focusPhotoThumb}
       onClose={() => { commentSheetOpen = false }}
     />
   {/if}

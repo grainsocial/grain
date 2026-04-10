@@ -19,7 +19,7 @@
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import { EyeOff, AlertTriangle, Info } from 'lucide-svelte'
 
-  let { gallery, onCommentClick }: { gallery: GalleryView; onCommentClick?: (focusPhoto: PhotoView | null) => void } = $props()
+  let { gallery, onCommentClick }: { gallery: GalleryView; onCommentClick?: () => void } = $props()
 
   const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
@@ -252,7 +252,7 @@
 
   <div class="engagement">
     <FavoriteButton galleryUri={gallery.uri} viewerFav={gallery.viewer?.fav ?? null} {favCount} bind:favorite={doFavorite} />
-    <button class="stat" type="button" onclick={() => requireAuth() && onCommentClick?.(photos[currentIndex] ?? null)}>
+    <button class="stat" type="button" onclick={() => requireAuth() && onCommentClick?.()}>
       <MessageCircle size={20} />
       {#if commentCount > 0}<span class="stat-count">{commentCount}</span>{/if}
     </button>

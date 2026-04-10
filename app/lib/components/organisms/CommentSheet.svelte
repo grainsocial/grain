@@ -11,14 +11,10 @@
   let {
     open = false,
     galleryUri,
-    focusPhotoUri = null,
-    focusPhotoThumb = null,
     onClose,
   }: {
     open: boolean
     galleryUri: string
-    focusPhotoUri?: string | null
-    focusPhotoThumb?: string | null
     onClose: () => void
   } = $props()
 
@@ -31,8 +27,6 @@
   let inputValue = $state('')
   let replyToUri = $state<string | null>(null)
   let replyToHandle = $state<string | null>(null)
-  let localFocusUri = $state<string | null>(null)
-  let localFocusThumb = $state<string | null>(null)
   let error = $state<string | null>(null)
   let inputEl = $state<HTMLInputElement | null>(null)
   let sheetEl = $state<HTMLDivElement | null>(null)
@@ -76,8 +70,6 @@
   // Load comments when sheet opens
   $effect(() => {
     if (open && galleryUri) {
-      localFocusUri = focusPhotoUri
-      localFocusThumb = focusPhotoThumb
       loadComments()
     }
   })
@@ -141,7 +133,6 @@
           subject: galleryUri,
           ...(facets ? { facets } : {}),
           ...(replyToUri ? { replyTo: replyToUri } : {}),
-          ...(localFocusUri ? { focus: localFocusUri } : {}),
           createdAt: now,
         },
       })
@@ -160,9 +151,6 @@
           cid: '',
         },
         replyTo: replyToUri ?? undefined,
-        ...(localFocusUri && localFocusThumb
-          ? { focus: { uri: localFocusUri, cid: '', thumb: localFocusThumb, fullsize: '', aspectRatio: { width: 1, height: 1 } } }
-          : {}),
         createdAt: now,
       } as any
 
@@ -202,11 +190,6 @@
     replyToHandle = handle
     inputValue = `@${handle} `
     inputEl?.focus()
-  }
-
-  function clearFocus() {
-    localFocusUri = null
-    localFocusThumb = null
   }
 
   function cancelReply() {
@@ -264,12 +247,6 @@
     <div class="input-bar">
       {#if $viewer}
         <Avatar did={$viewer.did} src={$viewer.avatar} size={28} />
-      {/if}
-      {#if localFocusThumb}
-        <div class="focus-indicator">
-          <img src={localFocusThumb} alt="Focus target" />
-          <button class="clear-focus" onclick={clearFocus}>&times;</button>
-        </div>
       {/if}
       <div class="input-wrapper">
         <input
@@ -405,35 +382,6 @@
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--border);
     flex-shrink: 0;
-  }
-  .focus-indicator {
-    position: relative;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-  }
-  .focus-indicator img {
-    width: 28px;
-    height: 28px;
-    border-radius: 4px;
-    object-fit: cover;
-  }
-  .clear-focus {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: var(--text-primary);
-    color: var(--bg-root);
-    border: none;
-    cursor: pointer;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
   }
   .input-wrapper {
     flex: 1;
