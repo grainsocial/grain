@@ -1,23 +1,31 @@
 <script lang="ts">
-  import { createQuery } from '@tanstack/svelte-query'
+  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import FeedList from '$lib/components/organisms/FeedList.svelte'
   import FeedTabs from '$lib/components/molecules/FeedTabs.svelte'
+  import PullToRefresh from '$lib/components/molecules/PullToRefresh.svelte'
   import { followingFeedQuery } from '$lib/queries'
   import { viewer } from '$lib/stores'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
+  const queryClient = useQueryClient()
   const feed = createQuery(() => followingFeedQuery($viewer?.did ?? ''))
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ['getFeed'] })
+  }
 </script>
 
 <OGMeta title="Following - grain" />
 <FeedTabs />
-{#if !$viewer?.did}
-  <div class="empty">Log in to see galleries from people you follow.</div>
-{:else if feed.isLoading}
-  <FeedList feed="following" params={{ actor: $viewer.did }} skeleton />
-{:else}
-  <FeedList feed="following" params={{ actor: $viewer.did }} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
-{/if}
+<PullToRefresh onRefresh={refresh}>
+  {#if !$viewer?.did}
+    <div class="empty">Log in to see galleries from people you follow.</div>
+  {:else if feed.isLoading}
+    <FeedList feed="following" params={{ actor: $viewer.did }} skeleton />
+  {:else}
+    <FeedList feed="following" params={{ actor: $viewer.did }} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
+  {/if}
+</PullToRefresh>
 
 <style>
   .empty {
