@@ -3,6 +3,7 @@ import type { GrainActorProfile, Photo, Gallery, Label } from "$hatk";
 import type { PhotoView, GalleryView, ExifView } from "$hatk";
 import type { BaseContext, Row } from "$hatk";
 import { countComments } from "./comments.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 const SCALE = 1_000_000;
 
@@ -100,9 +101,10 @@ export async function hydrateGalleries(
     for (const row of favRows) viewerFavs.set(row.subject, row.uri);
   }
 
-  const [profiles, favCounts, commentCounts, labelsByUri, galleryItemRows, crossPosts] =
+  const [profiles, handleMap, favCounts, commentCounts, labelsByUri, galleryItemRows, crossPosts] =
     await Promise.all([
       ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
+      lookupHandles(ctx.db, dids),
       galleryUris.length > 0
         ? (
             ctx.db.query(
@@ -219,14 +221,14 @@ export async function hydrateGalleries(
         ? views.grainActorDefsProfileView({
             cid: author.cid,
             did: author.did,
-            handle: author.handle ?? author.did,
+            handle: author.handle ?? handleMap.get(author.did) ?? author.did,
             displayName: author.value.displayName,
             avatar: ctx.blobUrl(author.did, author.value.avatar) ?? undefined,
           })
         : views.grainActorDefsProfileView({
             cid: item.cid,
             did: item.did,
-            handle: item.handle ?? item.did,
+            handle: handleMap.get(item.did) ?? item.did,
           }),
       items: photoViews,
       ...(item.value.location

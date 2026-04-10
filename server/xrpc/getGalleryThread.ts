@@ -3,6 +3,7 @@ import type { GrainActorProfile, Photo } from "$hatk";
 import { views } from "$hatk";
 import { NOT_ORPHANED } from "../hydrate/comments.ts";
 import { blockFilter } from "../filters/blockMute.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx) => {
   const { ok, params, db, lookup, blobUrl, getRecords, viewer } = ctx;
@@ -62,7 +63,10 @@ export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx
 
   // Hydrate author profiles
   const dids = [...new Set(items.map((r) => r.did))];
-  const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
+  const [profiles, handleMap] = await Promise.all([
+    lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
+    lookupHandles(db, dids),
+  ]);
 
   // Check which comment authors the viewer has muted
   let mutedDids = new Set<string>();
@@ -97,14 +101,14 @@ export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx
           ? views.grainActorDefsProfileView({
               cid: author.cid,
               did: author.did,
-              handle: author.handle ?? author.did,
+              handle: author.handle ?? handleMap.get(author.did) ?? author.did,
               displayName: author.value.displayName,
               avatar: blobUrl(author.did, author.value.avatar) ?? undefined,
             })
           : views.grainActorDefsProfileView({
               cid: row.cid,
               did: row.did,
-              handle: row.did,
+              handle: handleMap.get(row.did) ?? row.did,
             }),
         ...(focusPhoto
           ? {

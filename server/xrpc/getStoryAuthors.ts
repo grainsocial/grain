@@ -3,6 +3,7 @@ import { views } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 import { blockMuteFilter } from "../filters/blockMute.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
@@ -29,7 +30,10 @@ export default defineQuery("social.grain.unspecced.getStoryAuthors", async (ctx)
   )) as { did: string; story_count: number; latest_at: string }[];
 
   const dids = rows.map((r) => r.did);
-  const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
+  const [profiles, handleMap] = await Promise.all([
+    ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
+    lookupHandles(db, dids),
+  ]);
 
   const authors = rows.map((row) => {
     const author = profiles.get(row.did);
@@ -38,14 +42,14 @@ export default defineQuery("social.grain.unspecced.getStoryAuthors", async (ctx)
         ? views.grainActorDefsProfileView({
             cid: author.cid,
             did: author.did,
-            handle: author.handle ?? author.did,
+            handle: author.handle ?? handleMap.get(author.did) ?? author.did,
             displayName: author.value.displayName,
             avatar: ctx.blobUrl(author.did, author.value.avatar) ?? undefined,
           })
         : views.grainActorDefsProfileView({
             cid: "",
             did: row.did,
-            handle: row.did,
+            handle: handleMap.get(row.did) ?? row.did,
           }),
       storyCount: row.story_count,
       latestAt: row.latest_at,

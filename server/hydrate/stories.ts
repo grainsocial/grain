@@ -2,6 +2,7 @@ import { views } from "$hatk";
 import type { GrainActorProfile, Story, Label, Row, BaseContext } from "$hatk";
 import { HIDE_LABELS } from "../labels/_hidden.ts";
 import { lookupCrossPosts } from "./galleries.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 export type StoryRow = {
   uri: string;
@@ -20,22 +21,23 @@ export type StoryRow = {
  */
 export async function hydrateStories(ctx: BaseContext, actor: string, rows: StoryRow[]) {
   // Resolve author profile
-  const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [
-    actor,
+  const [profiles, handleMap] = await Promise.all([
+    ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
+    lookupHandles(ctx.db, [actor]),
   ]);
   const author = profiles.get(actor);
   const profileView = author
     ? views.grainActorDefsProfileView({
         cid: author.cid,
         did: author.did,
-        handle: author.handle ?? author.did,
+        handle: author.handle ?? handleMap.get(author.did) ?? author.did,
         displayName: author.value.displayName,
         avatar: ctx.blobUrl(author.did, author.value.avatar) ?? undefined,
       })
     : views.grainActorDefsProfileView({
         cid: "",
         did: actor,
-        handle: actor,
+        handle: handleMap.get(actor) ?? actor,
       });
 
   // Hydrate external labels

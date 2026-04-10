@@ -2,6 +2,7 @@ import { defineQuery } from "$hatk";
 import { views } from "$hatk";
 import type { GrainActorProfile, Story, Label } from "$hatk";
 import { lookupCrossPosts } from "../hydrate/galleries.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   const { db, ok } = ctx;
@@ -28,22 +29,23 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   if (!row) return ok({});
 
   // Resolve author profile
-  const profiles = await ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [
-    row.did,
+  const [profiles, handleMap] = await Promise.all([
+    ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [row.did]),
+    lookupHandles(db, [row.did]),
   ]);
   const author = profiles.get(row.did);
   const profileView = author
     ? views.grainActorDefsProfileView({
         cid: author.cid,
         did: author.did,
-        handle: author.handle ?? author.did,
+        handle: author.handle ?? handleMap.get(author.did) ?? author.did,
         displayName: author.value.displayName,
         avatar: ctx.blobUrl(author.did, author.value.avatar) ?? undefined,
       })
     : views.grainActorDefsProfileView({
         cid: "",
         did: row.did,
-        handle: row.did,
+        handle: handleMap.get(row.did) ?? row.did,
       });
 
   let blobRef: any;

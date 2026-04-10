@@ -95,14 +95,16 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
   const followersCount = followerCounts.get(actor) || 0;
   const followsCount = followsCounts.get(actor) || 0;
 
+  const repoRows = (await ctx.db.query("SELECT handle FROM _repos WHERE did = $1", [actor])) as {
+    handle: string;
+  }[];
+  const repoHandle = repoRows[0]?.handle;
+
   if (!profile) {
-    const repos = (await ctx.db.query("SELECT handle FROM _repos WHERE did = $1", [actor])) as {
-      handle: string;
-    }[];
     return ok({
       cid: "",
       did: actor,
-      handle: repos[0]?.handle || actor,
+      handle: repoHandle || actor,
       galleryCount,
       followersCount,
       followsCount,
@@ -113,7 +115,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
   return ok({
     cid: profile.cid,
     did: profile.did,
-    handle: profile.handle ?? profile.did,
+    handle: profile.handle ?? repoHandle ?? profile.did,
     displayName: profile.value.displayName,
     description: profile.value.description,
     avatar: blobUrl(profile.did, profile.value.avatar, "avatar"),
