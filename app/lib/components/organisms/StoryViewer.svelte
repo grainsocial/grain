@@ -196,11 +196,12 @@
       return
     }
     lastTapTime = now
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const width = rect.width
     setTimeout(() => {
       if (lastTapTime === 0) return // was consumed by double tap
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      const x = e.clientX - rect.left
-      if (x < rect.width / 3) {
+      if (x < width / 3) {
         prev()
       } else {
         next()
