@@ -185,6 +185,40 @@
     toggleFav()
   }
 
+  let swipeStartX = 0
+  let swipeStartY = 0
+  let swiping = false
+
+  function handlePointerDown(e: PointerEvent) {
+    if ((e.target as HTMLElement).closest('.story-bottom-bar, .contained-sheet-wrapper, dialog')) return
+    swipeStartX = e.clientX
+    swipeStartY = e.clientY
+    swiping = true
+  }
+
+  function handlePointerMove(e: PointerEvent) {
+    if (!swiping) return
+    const dx = e.clientX - swipeStartX
+    const dy = e.clientY - swipeStartY
+    // If vertical movement dominates, cancel swipe detection
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+      swiping = false
+    }
+  }
+
+  function handlePointerUp(e: PointerEvent) {
+    if (!swiping) return
+    swiping = false
+    const dx = e.clientX - swipeStartX
+    if (Math.abs(dx) > 50) {
+      if (dx < 0) next()
+      else prev()
+      // Prevent the tap handler from also firing
+      lastTapTime = 0
+      e.preventDefault()
+    }
+  }
+
   let lastTapTime = 0
   function handleTap(e: MouseEvent) {
     if ((e.target as HTMLElement).closest('dialog')) return
@@ -295,7 +329,7 @@
 
 <div bind:this={wrapper}>
 <div class="story-overlay">
-  <div class="story-container" onclick={handleTap} onkeydown={handleKeydown} role="button" tabindex="0">
+  <div class="story-container" onclick={handleTap} onkeydown={handleKeydown} onpointerdown={handlePointerDown} onpointermove={handlePointerMove} onpointerup={handlePointerUp} role="button" tabindex="0">
     <!-- Progress bars -->
     <div class="progress-bars">
       {#each Array(totalStories) as _, i}
