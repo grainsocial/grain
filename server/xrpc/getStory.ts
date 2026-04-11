@@ -3,11 +3,16 @@ import { views } from "$hatk";
 import type { GrainActorProfile, Story, Label } from "$hatk";
 import { lookupCrossPosts } from "../hydrate/galleries.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { resolveAtUri } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   const { db, ok } = ctx;
-  const storyUri = ctx.params.story;
+  let storyUri = ctx.params.story;
   if (!storyUri) return ok({});
+
+  // Resolve handle in AT URI if needed
+  const resolved = await resolveAtUri(db, storyUri);
+  if (resolved) storyUri = resolved;
 
   const rows = (await db.query(
     `SELECT uri, cid, did, media, aspect_ratio, location, address, created_at

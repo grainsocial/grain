@@ -1,10 +1,15 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
 import type { Gallery } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
+import { resolveAtUri } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getGallery", async (ctx) => {
   const { ok, params, db } = ctx;
-  const { gallery: galleryUri } = params;
+  let { gallery: galleryUri } = params;
+
+  // Resolve handle in AT URI if needed
+  const resolved = await resolveAtUri(db, galleryUri);
+  if (resolved) galleryUri = resolved;
 
   const rows = (await db.query(`SELECT * FROM "social.grain.gallery" WHERE uri = $1`, [
     galleryUri,
