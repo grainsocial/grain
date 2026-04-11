@@ -229,10 +229,10 @@ export const galleryQuery = (galleryUri: string, f?: Fetch) =>
 
 // ─── Gallery Thread (Comments) ──────────────────────────────────────
 
-export const galleryThreadQuery = (galleryUri: string, f?: Fetch) =>
+export const commentThreadQuery = (subjectUri: string, f?: Fetch) =>
   queryOptions({
-    queryKey: ["getGalleryThread", galleryUri],
-    queryFn: () => callXrpc("social.grain.unspecced.getGalleryThread", { gallery: galleryUri }, f),
+    queryKey: ["getCommentThread", subjectUri],
+    queryFn: () => callXrpc("social.grain.unspecced.getCommentThread", { subject: subjectUri }, f),
     staleTime: 30_000,
   });
 

@@ -1,6 +1,7 @@
 import { views } from "$hatk";
 import type { GrainActorProfile, Story, Label, Row, BaseContext } from "$hatk";
 import { HIDE_LABELS } from "../labels/_hidden.ts";
+import { countComments } from "./comments.ts";
 import { lookupCrossPosts } from "./galleries.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
@@ -20,7 +21,19 @@ export type StoryRow = {
  * Resolves the author profile, filters by label moderation, and maps to views.
  */
 export async function hydrateStories(ctx: BaseContext, actor: string, rows: StoryRow[]) {
-  // Resolve author profile
+  const storyUris = rows.map((r) => r.uri);
+
+  // Resolve author profile + fav/comment counts + viewer favs
+  const viewerFavs = new Map<string, string>();
+  if (ctx.viewer?.did && storyUris.length > 0) {
+    const favRows = (await ctx.db.query(
+      `SELECT subject, uri FROM "social.grain.favorite"
+       WHERE did = $1 AND subject IN (${storyUris.map((_, i) => `$${i + 2}`).join(",")})`,
+      [ctx.viewer.did, ...storyUris],
+    )) as { subject: string; uri: string }[];
+    for (const row of favRows) viewerFavs.set(row.subject, row.uri);
+  }
+
   const [profiles, handleMap] = await Promise.all([
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
     lookupHandles(ctx.db, [actor]),
@@ -41,7 +54,6 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
       });
 
   // Hydrate external labels
-  const storyUris = rows.map((r) => r.uri);
   const labelsByUri =
     storyUris.length > 0
       ? ((await ctx.labels(storyUris)) as Map<string, Label[]>)
@@ -74,8 +86,12 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
     return ![...latestByVal.values()].some((l) => HIDE_LABELS.has(l.val) && !l.neg);
   });
 
-  // Cross-post lookup
-  const crossPosts = await lookupCrossPosts(ctx.db, visibleRows, "story");
+  // Comment counts
+  const visibleUris = visibleRows.map((r) => r.uri);
+  const [commentCounts, crossPosts] = await Promise.all([
+    countComments(ctx.db, visibleUris),
+    lookupCrossPosts(ctx.db, visibleRows, "story"),
+  ]);
 
   const stories = visibleRows.map((row) => {
     let blobRef: any;
@@ -127,6 +143,9 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
       createdAt: row.created_at,
       ...(labelsByUri.has(row.uri) ? { labels: labelsByUri.get(row.uri) } : {}),
       ...(crossPosts.has(row.uri) ? { crossPost: { url: crossPosts.get(row.uri)! } } : {}),
+      expired: Date.now() - new Date(row.created_at).getTime() > 24 * 60 * 60 * 1000,
+      commentCount: commentCounts.get(row.uri) ?? 0,
+      ...(viewerFavs.has(row.uri) ? { viewer: { fav: viewerFavs.get(row.uri) } } : {}),
     });
   });
 

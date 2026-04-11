@@ -44,6 +44,8 @@
             "gallery-comment",
             "gallery-comment-mention",
             "gallery-mention",
+            "story-favorite",
+            "story-comment",
             "reply",
             "follow"
           ]
@@ -53,6 +55,8 @@
         "galleryUri": { "type": "string", "format": "at-uri" },
         "galleryTitle": { "type": "string" },
         "galleryThumb": { "type": "string" },
+        "storyUri": { "type": "string", "format": "at-uri" },
+        "storyThumb": { "type": "string" },
         "commentText": { "type": "string" },
         "replyToText": { "type": "string" }
       }

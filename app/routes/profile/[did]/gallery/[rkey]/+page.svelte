@@ -48,7 +48,7 @@
 
     <CommentSheet
       open={commentSheetOpen}
-      galleryUri={gallery.uri}
+      subjectUri={gallery.uri}
       onClose={() => { commentSheetOpen = false }}
     />
   {/if}

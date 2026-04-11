@@ -10,12 +10,14 @@
 
   let {
     open = false,
-    galleryUri,
+    subjectUri,
     onClose,
+    contained = false,
   }: {
     open: boolean
-    galleryUri: string
+    subjectUri: string
     onClose: () => void
+    contained?: boolean
   } = $props()
 
   let comments = $state<CommentView[]>([])
@@ -54,7 +56,7 @@
 
   // Constrain sheet to center column on desktop
   $effect(() => {
-    if (!open || !sheetEl) return
+    if (!open || !sheetEl || contained) return
     const col = sheetEl.closest('main')
     if (!col) return
     function position() {
@@ -69,7 +71,7 @@
 
   // Load comments when sheet opens
   $effect(() => {
-    if (open && galleryUri) {
+    if (open && subjectUri) {
       loadComments()
     }
   })
@@ -78,8 +80,8 @@
     loading = true
     error = null
     try {
-      const res = await callXrpc('social.grain.unspecced.getGalleryThread', {
-        gallery: galleryUri,
+      const res = await callXrpc('social.grain.unspecced.getCommentThread', {
+        subject: subjectUri,
         limit: 20,
       } as any)
       comments = (res as any).comments ?? []
@@ -97,8 +99,8 @@
     if (!cursor || loadingMore) return
     loadingMore = true
     try {
-      const res = await callXrpc('social.grain.unspecced.getGalleryThread', {
-        gallery: galleryUri,
+      const res = await callXrpc('social.grain.unspecced.getCommentThread', {
+        subject: subjectUri,
         limit: 20,
         cursor,
       } as any)
@@ -130,7 +132,7 @@
         collection: 'social.grain.comment',
         record: {
           text,
-          subject: galleryUri,
+          subject: subjectUri,
           ...(facets ? { facets } : {}),
           ...(replyToUri ? { replyTo: replyToUri } : {}),
           createdAt: now,
@@ -200,8 +202,10 @@
 </script>
 
 {#if open}
-  <div class="overlay" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="button" tabindex="-1"></div>
-  <div class="sheet" bind:this={sheetEl}>
+  {#if !contained}
+    <div class="overlay" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="button" tabindex="-1"></div>
+  {/if}
+  <div class="sheet" class:contained bind:this={sheetEl}>
     <div class="sheet-header">
       <span class="sheet-title">Comments ({totalCount})</span>
       <button class="close-btn" onclick={onClose}>
@@ -288,8 +292,20 @@
     display: flex;
     flex-direction: column;
   }
+  .sheet.contained {
+    position: absolute;
+    max-height: 60%;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(12px);
+    z-index: 20;
+  }
+  .sheet.contained .sheet-header,
+  .sheet.contained .input-bar,
+  .sheet.contained .reply-bar {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
   @media (max-width: 600px) {
-    .sheet {
+    .sheet:not(.contained) {
       bottom: calc(50px + env(safe-area-inset-bottom, 0px));
     }
   }

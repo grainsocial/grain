@@ -6,20 +6,12 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
     const subject = record.subject as string
     if (!subject) return
 
-    // Find the gallery author (comment.subject is the gallery URI)
-    const [gallery] = await db.query(
-      `SELECT did AS author FROM "social.grain.gallery" WHERE uri = $1`,
-      [subject],
-    ) as { author: string }[]
-
-    if (!gallery) return
-
     // Look up commenter's profile
     const profiles = await lookup("social.grain.actor.profile", "did", [repo])
     const actor = profiles.get(repo)
     const displayName = (actor?.value as any)?.displayName ?? "Someone"
 
-    // If this is a reply, notify the parent comment author instead
+    // If this is a reply, notify the parent comment author
     if (record.replyTo) {
       const [parent] = await db.query(
         `SELECT did AS author FROM "social.grain.comment" WHERE uri = $1`,
@@ -36,13 +28,36 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
       }
     }
 
-    // Notify the gallery author (unless they're the commenter)
-    if (gallery.author !== repo) {
+    // Check if the subject is a gallery
+    const [gallery] = await db.query(
+      `SELECT did AS author FROM "social.grain.gallery" WHERE uri = $1`,
+      [subject],
+    ) as { author: string }[]
+
+    if (gallery) {
+      if (gallery.author !== repo) {
+        await push.send({
+          did: gallery.author,
+          title: "New comment",
+          body: `${displayName} commented on your gallery`,
+          data: { type: "gallery-comment", uri: subject },
+        })
+      }
+      return
+    }
+
+    // Check if the subject is a story
+    const [story] = await db.query(
+      `SELECT did AS author FROM "social.grain.story" WHERE uri = $1`,
+      [subject],
+    ) as { author: string }[]
+
+    if (story && story.author !== repo) {
       await push.send({
-        did: gallery.author,
+        did: story.author,
         title: "New comment",
-        body: `${displayName} commented on your gallery`,
-        data: { type: "gallery-comment", uri: subject },
+        body: `${displayName} commented on your story`,
+        data: { type: "story-comment", uri: subject },
       })
     }
   }

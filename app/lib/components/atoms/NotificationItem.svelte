@@ -9,6 +9,8 @@
     'gallery-comment': 'commented on your gallery',
     'gallery-comment-mention': 'mentioned you in a comment',
     'gallery-mention': 'mentioned you in a gallery',
+    'story-favorite': 'favorited your story',
+    'story-comment': 'commented on your story',
     'reply': 'replied to your comment',
     'follow': 'followed you',
   }
@@ -18,7 +20,13 @@
   const authorDid = $derived(notif.author?.did ?? '')
   const authorName = $derived(notif.author?.displayName || notif.author?.handle || authorDid.slice(0, 18))
   const authorAvatar = $derived(notif.author?.avatar ?? null)
-  const contentHref = $derived(notif.galleryUri ? `/profile/${notif.galleryUri.split('/')[2]}/gallery/${notif.galleryUri.split('/').pop()}` : `/profile/${authorDid}`)
+  const contentHref = $derived(
+    notif.galleryUri
+      ? `/profile/${notif.galleryUri.split('/')[2]}/gallery/${notif.galleryUri.split('/').pop()}`
+      : notif.storyUri
+        ? `/profile/${notif.storyUri.split('/')[2]}/story/${notif.storyUri.split('/').pop()}`
+        : `/profile/${authorDid}`
+  )
   const profileHref = $derived(`/profile/${authorDid}`)
 </script>
 
@@ -42,8 +50,8 @@
       <div class="notif-gallery-title">{notif.galleryTitle}</div>
     {/if}
   </a>
-  {#if notif.galleryThumb}
-    <a href={contentHref}><img src={notif.galleryThumb} alt="" class="notif-thumb" loading="lazy" /></a>
+  {#if notif.galleryThumb || notif.storyThumb}
+    <a href={contentHref}><img src={notif.galleryThumb ?? notif.storyThumb} alt="" class="notif-thumb" loading="lazy" /></a>
   {/if}
 </div>
 

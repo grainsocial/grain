@@ -5,21 +5,21 @@ import { NOT_ORPHANED } from "../hydrate/comments.ts";
 import { blockFilter } from "../filters/blockMute.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
-export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx) => {
+export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx) => {
   const { ok, params, db, lookup, blobUrl, getRecords, viewer } = ctx;
-  const { gallery, limit = 20, cursor } = params;
+  const { subject, limit = 20, cursor } = params;
 
   const viewerDid = viewer?.did;
 
   // Build block filter — blocked comments are removed entirely
-  const countParams: any[] = [gallery];
+  const countParams: any[] = [subject];
   let countBmParam = "";
   if (viewerDid) {
     countParams.push(viewerDid);
     countBmParam = `AND ${blockFilter("c.did", `$${countParams.length}`)}`;
   }
 
-  // Count total comments for this gallery, excluding orphaned replies
+  // Count total comments for this subject, excluding orphaned replies
   const countRows = (await db.query(
     `SELECT count(*) as cnt FROM "social.grain.comment" c
      WHERE c.subject = $1 AND ${NOT_ORPHANED} ${countBmParam}`,
@@ -28,7 +28,7 @@ export default defineQuery("social.grain.unspecced.getGalleryThread", async (ctx
   const totalCount = countRows[0]?.cnt ?? 0;
 
   // Fetch comments with cursor-based pagination (oldest first), excluding orphaned replies
-  const queryParams: any[] = [gallery];
+  const queryParams: any[] = [subject];
   let query = `SELECT c.uri, c.did, c.cid, c.text, c.facets, c.focus, c.reply_to, c.created_at
     FROM "social.grain.comment" c
     WHERE c.subject = $1 AND ${NOT_ORPHANED}`;

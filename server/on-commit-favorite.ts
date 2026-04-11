@@ -6,21 +6,39 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
     const subject = record.subject as string
     if (!subject) return
 
+    // Check if the subject is a gallery
     const [gallery] = await db.query(
       `SELECT did AS author FROM "social.grain.gallery" WHERE uri = $1`,
       [subject],
     ) as { author: string }[]
 
-    if (!gallery || gallery.author === repo) return
+    if (gallery && gallery.author !== repo) {
+      const profiles = await lookup("social.grain.actor.profile", "did", [repo])
+      const actor = profiles.get(repo)
+      await push.send({
+        did: gallery.author,
+        title: "New favorite",
+        body: `${(actor?.value as any)?.displayName ?? "Someone"} favorited your gallery`,
+        data: { type: "gallery-favorite", uri: subject },
+      })
+      return
+    }
 
-    const profiles = await lookup("social.grain.actor.profile", "did", [repo])
-    const actor = profiles.get(repo)
+    // Check if the subject is a story
+    const [story] = await db.query(
+      `SELECT did AS author FROM "social.grain.story" WHERE uri = $1`,
+      [subject],
+    ) as { author: string }[]
 
-    await push.send({
-      did: gallery.author,
-      title: "New favorite",
-      body: `${(actor?.value as any)?.displayName ?? "Someone"} favorited your gallery`,
-      data: { type: "gallery-favorite", uri: subject },
-    })
+    if (story && story.author !== repo) {
+      const profiles = await lookup("social.grain.actor.profile", "did", [repo])
+      const actor = profiles.get(repo)
+      await push.send({
+        did: story.author,
+        title: "New favorite",
+        body: `${(actor?.value as any)?.displayName ?? "Someone"} favorited your story`,
+        data: { type: "story-favorite", uri: subject },
+      })
+    }
   }
 )

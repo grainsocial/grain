@@ -2,8 +2,13 @@
   import { createQuery } from '@tanstack/svelte-query'
   import { storyQuery } from '$lib/queries'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import CommentSheet from '$lib/components/organisms/CommentSheet.svelte'
+  import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
-  import { MapPin } from 'lucide-svelte'
+  import { MapPin, MessageCircle, Send } from 'lucide-svelte'
+  import { share } from '$lib/utils/share'
+  import { requireAuth } from '$lib/stores'
+  import Toast from '$lib/components/atoms/Toast.svelte'
   import type { StoryView } from '$hatk/client'
 
   let { data } = $props()
@@ -12,6 +17,18 @@
   const storyQ = createQuery(() => storyQuery(storyUri))
   const story = $derived((storyQ.data as StoryView) ?? null)
   const bskyUrl = $derived((story as any)?.crossPost?.url ?? null)
+  const commentCount = $derived(story?.commentCount ?? 0)
+
+  let commentSheetOpen = $state(false)
+  let showToast = $state(false)
+
+  async function handleShare() {
+    const url = `${window.location.origin}/profile/${data.did}/story/${data.rkey}`
+    const result = await share(url)
+    if (result.success && result.method === 'clipboard') {
+      showToast = true
+    }
+  }
 </script>
 
 <OGMeta
@@ -57,8 +74,28 @@
           <span>{story.location.name}</span>
         </div>
       {/if}
+      {#if !story.expired}
+        <div class="engagement">
+          <FavoriteButton galleryUri={story.uri} viewerFav={story.viewer?.fav ?? null} favCount={0} />
+          <button class="stat" type="button" onclick={() => requireAuth() && (commentSheetOpen = true)}>
+            <MessageCircle size={20} />
+            {#if commentCount > 0}<span class="stat-count">{commentCount}</span>{/if}
+          </button>
+          <button class="stat" type="button" onclick={handleShare} aria-label="Share">
+            <Send size={20} />
+          </button>
+        </div>
+      {/if}
       <time class="time">{new Date(story.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</time>
     </div>
+
+    <CommentSheet
+      open={commentSheetOpen}
+      subjectUri={story.uri}
+      onClose={() => { commentSheetOpen = false }}
+    />
+
+    <Toast message="Link copied" bind:visible={showToast} />
   {/if}
 </div>
 
@@ -112,6 +149,26 @@
     color: var(--text-secondary);
     font-size: 13px;
   }
+  .engagement {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+    font-size: 13px;
+    transition: opacity 0.15s;
+  }
+  .stat:hover { opacity: 0.7; }
+  .stat-count { color: var(--text-secondary); }
   .time {
     color: var(--text-muted);
     font-size: 13px;

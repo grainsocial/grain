@@ -27,7 +27,17 @@
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
+        "expired": { "type": "boolean", "description": "Whether the story has passed its 24-hour window." },
+        "commentCount": { "type": "integer" },
+        "viewer": { "type": "ref", "ref": "#viewerState" },
         "crossPost": { "type": "ref", "ref": "social.grain.gallery.defs#crossPostInfo" }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "description": "Metadata about the requesting account's relationship with the story.",
+      "properties": {
+        "fav": { "type": "string", "format": "at-uri" }
       }
     }
   }

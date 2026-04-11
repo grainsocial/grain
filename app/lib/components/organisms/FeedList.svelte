@@ -102,7 +102,7 @@
 
   <CommentSheet
     open={commentSheetOpen}
-    galleryUri={commentGalleryUri}
+    subjectUri={commentGalleryUri}
     onClose={() => { commentSheetOpen = false }}
   />
 

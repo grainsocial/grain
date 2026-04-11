@@ -1,18 +1,18 @@
 {
   "lexicon": 1,
-  "id": "social.grain.unspecced.getGalleryThread",
+  "id": "social.grain.unspecced.getCommentThread",
   "defs": {
     "main": {
       "type": "query",
-      "description": "Get comments for a gallery, sorted oldest-first with author profiles.",
+      "description": "Get comments for a subject (gallery or story), sorted oldest-first with author profiles.",
       "parameters": {
         "type": "params",
-        "required": ["gallery"],
+        "required": ["subject"],
         "properties": {
-          "gallery": {
+          "subject": {
             "type": "string",
             "format": "at-uri",
-            "description": "The gallery URI to fetch comments for."
+            "description": "The subject URI to fetch comments for."
           },
           "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
           "cursor": { "type": "string" }

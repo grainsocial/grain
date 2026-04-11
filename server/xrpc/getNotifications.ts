@@ -1,5 +1,5 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
-import type { GrainActorProfile, Photo, Gallery } from "$hatk";
+import type { GrainActorProfile, Photo, Gallery, Story } from "$hatk";
 import { views } from "$hatk";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
@@ -16,32 +16,42 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
   const favCols =
     select === "count"
       ? "uri"
-      : "uri, did, created_at, 'favorite' as source, subject as gallery_uri, NULL as text, NULL as facets, NULL as reply_to, NULL as focus";
+      : "uri, did, created_at, 'favorite' as source, subject as subject_uri, NULL as text, NULL as facets, NULL as reply_to, NULL as focus";
 
   const commentCols =
     select === "count"
       ? "uri"
-      : "uri, did, created_at, 'comment' as source, subject as gallery_uri, text, facets, reply_to, focus";
+      : "uri, did, created_at, 'comment' as source, subject as subject_uri, text, facets, reply_to, focus";
 
   const replyCols =
     select === "count"
       ? "c.uri"
-      : "c.uri, c.did, c.created_at, 'reply' as source, c.subject as gallery_uri, c.text, c.facets, c.reply_to, c.focus";
+      : "c.uri, c.did, c.created_at, 'reply' as source, c.subject as subject_uri, c.text, c.facets, c.reply_to, c.focus";
 
   const followCols =
     select === "count"
       ? "uri"
-      : "uri, did, created_at, 'follow' as source, NULL as gallery_uri, NULL as text, NULL as facets, NULL as reply_to, NULL as focus";
+      : "uri, did, created_at, 'follow' as source, NULL as subject_uri, NULL as text, NULL as facets, NULL as reply_to, NULL as focus";
 
   const mentionCommentCols =
     select === "count"
       ? "uri"
-      : "uri, did, created_at, 'comment-mention' as source, subject as gallery_uri, text, facets, NULL as reply_to, focus";
+      : "uri, did, created_at, 'comment-mention' as source, subject as subject_uri, text, facets, NULL as reply_to, focus";
 
   const mentionGalleryCols =
     select === "count"
       ? "uri"
-      : "uri, did, created_at, 'gallery-mention' as source, uri as gallery_uri, description as text, facets, NULL as reply_to, NULL as focus";
+      : "uri, did, created_at, 'gallery-mention' as source, uri as subject_uri, description as text, facets, NULL as reply_to, NULL as focus";
+
+  const storyFavCols =
+    select === "count"
+      ? "uri"
+      : "uri, did, created_at, 'story-favorite' as source, subject as subject_uri, NULL as text, NULL as facets, NULL as reply_to, NULL as focus";
+
+  const storyCommentCols =
+    select === "count"
+      ? "uri"
+      : "uri, did, created_at, 'story-comment' as source, subject as subject_uri, text, facets, reply_to, focus";
 
   return `
     SELECT ${favCols} FROM "social.grain.favorite"
@@ -77,6 +87,18 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
 
     SELECT ${mentionGalleryCols} FROM "social.grain.gallery"
     WHERE facets LIKE '%' || $1 || '%' AND did != $1 ${blockMuteNotifFilter()} ${extraFilter}
+
+    UNION ALL
+
+    SELECT ${storyFavCols} FROM "social.grain.favorite"
+    WHERE subject IN (SELECT uri FROM "social.grain.story" WHERE did = $1)
+      AND did != $1 ${blockMuteNotifFilter()} ${extraFilter}
+
+    UNION ALL
+
+    SELECT ${storyCommentCols} FROM "social.grain.comment"
+    WHERE subject IN (SELECT uri FROM "social.grain.story" WHERE did = $1)
+      AND did != $1 AND reply_to IS NULL ${blockMuteNotifFilter()} ${extraFilter}
   `;
 }
 
@@ -124,7 +146,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
     did: string;
     created_at: string;
     source: string;
-    gallery_uri: string | null;
+    subject_uri: string | null;
     text: string | null;
     facets: string | null;
     reply_to: string | null;
@@ -138,6 +160,8 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   // Determine notification reason
   function getReason(row: (typeof items)[0]): string {
     if (row.source === "favorite") return "gallery-favorite";
+    if (row.source === "story-favorite") return "story-favorite";
+    if (row.source === "story-comment") return "story-comment";
     if (row.source === "follow") return "follow";
     if (row.source === "comment-mention") return "gallery-comment-mention";
     if (row.source === "gallery-mention") return "gallery-mention";
@@ -163,11 +187,28 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   // Hydrate author profiles
   const dids = [...new Set(items.map((r) => r.did))];
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
-
   const handleMap = await lookupHandles(db, dids);
 
+  // Separate subject URIs into gallery and story URIs
+  const allSubjectUris = [...new Set(items.map((r) => r.subject_uri).filter(Boolean))] as string[];
+
+  // Look up which subjects are galleries vs stories
+  const galleryUriSet = new Set<string>();
+  const storyUriSet = new Set<string>();
+  if (allSubjectUris.length > 0) {
+    const ph = allSubjectUris.map((_, i) => `$${i + 1}`).join(",");
+    const [galRows, storyRows] = await Promise.all([
+      db.query(`SELECT uri FROM "social.grain.gallery" WHERE uri IN (${ph})`, allSubjectUris) as Promise<{ uri: string }[]>,
+      db.query(`SELECT uri FROM "social.grain.story" WHERE uri IN (${ph})`, allSubjectUris) as Promise<{ uri: string }[]>,
+    ]);
+    for (const r of galRows) galleryUriSet.add(r.uri);
+    for (const r of storyRows) storyUriSet.add(r.uri);
+  }
+
+  const galleryUris = [...galleryUriSet];
+  const storyUris = [...storyUriSet];
+
   // Hydrate galleries for thumbnails
-  const galleryUris = [...new Set(items.map((r) => r.gallery_uri).filter(Boolean))] as string[];
   const galleries =
     galleryUris.length > 0
       ? await getRecords<Gallery>("social.grain.gallery", galleryUris)
@@ -197,6 +238,26 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
       ? await getRecords<Photo>("social.grain.photo", allPhotoUris)
       : new Map();
 
+  // Hydrate story thumbnails
+  const storyThumbs = new Map<string, string>();
+  if (storyUris.length > 0) {
+    const storyRows = (await db.query(
+      `SELECT uri, did, media FROM "social.grain.story"
+       WHERE uri IN (${storyUris.map((_, i) => `$${i + 1}`).join(",")})`,
+      storyUris,
+    )) as Array<{ uri: string; did: string; media: string }>;
+    for (const row of storyRows) {
+      let blobRef: any;
+      try {
+        blobRef = typeof row.media === "string" ? JSON.parse(row.media) : row.media;
+      } catch {
+        blobRef = row.media;
+      }
+      const thumb = blobUrl(row.did, blobRef, "feed_thumbnail");
+      if (thumb) storyThumbs.set(row.uri, thumb);
+    }
+  }
+
   // Hydrate reply-to texts
   const replyToUris = items.map((r) => r.reply_to).filter(Boolean) as string[];
   const replyToComments =
@@ -212,12 +273,18 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
 
   const notifications = items.map((row) => {
     const author = profiles.get(row.did);
-    const gallery = row.gallery_uri ? galleries.get(row.gallery_uri) : null;
-    const photoUri = row.gallery_uri ? firstPhotoByGallery.get(row.gallery_uri) : null;
+    const subjectUri = row.subject_uri;
+    const isGallery = subjectUri ? galleryUriSet.has(subjectUri) : false;
+    const isStory = subjectUri ? storyUriSet.has(subjectUri) : false;
+
+    const gallery = isGallery && subjectUri ? galleries.get(subjectUri) : null;
+    const photoUri = isGallery && subjectUri ? firstPhotoByGallery.get(subjectUri) : null;
     const photo = photoUri ? photos.get(photoUri) : null;
-    const thumb = photo
+    const galleryThumb = photo
       ? (blobUrl(photo.did, photo.value.photo, "feed_thumbnail") ?? undefined)
       : undefined;
+
+    const storyThumb = isStory && subjectUri ? storyThumbs.get(subjectUri) : undefined;
 
     return {
       uri: row.uri,
@@ -236,8 +303,10 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
             did: row.did,
             handle: handleMap.get(row.did) ?? row.did,
           }),
-      ...(gallery ? { galleryUri: row.gallery_uri!, galleryTitle: gallery.value.title } : {}),
-      ...(thumb ? { galleryThumb: thumb } : {}),
+      ...(gallery ? { galleryUri: subjectUri!, galleryTitle: gallery.value.title } : {}),
+      ...(galleryThumb ? { galleryThumb } : {}),
+      ...(isStory && subjectUri ? { storyUri: subjectUri } : {}),
+      ...(storyThumb ? { storyThumb } : {}),
       ...(row.text ? { commentText: row.text } : {}),
       ...(row.reply_to && replyToTextMap.has(row.reply_to)
         ? { replyToText: replyToTextMap.get(row.reply_to) }
