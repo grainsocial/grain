@@ -405,13 +405,6 @@
         {/if}
       </div>
 
-      <!-- Bluesky cross-post link -->
-      {#if bskyUrl}
-        <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky" onclick={(e) => e.stopPropagation()}>
-          <BskyIcon size={16} />
-        </a>
-      {/if}
-
       <!-- Bottom input bar -->
       {#if !isExpired}
       <div class="story-bottom-bar" onclick={(e) => e.stopPropagation()}>
@@ -427,6 +420,11 @@
           <button class="input-placeholder" onclick={() => { if (!requireAuth()) return; paused = true; stopTimer(); commentSheetOpen = true }}>
             Add a comment...
           </button>
+          {#if bskyUrl}
+            <a class="bsky-btn" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky" onclick={(e) => e.stopPropagation()}>
+              <BskyIcon size={20} />
+            </a>
+          {/if}
           <button class="fav-btn" class:faved={isFaved} onclick={() => toggleFav()}>
             <Heart size={24} fill={isFaved ? 'currentColor' : 'none'} />
           </button>
@@ -654,17 +652,13 @@
   }
 
   /* Bluesky link */
-  .bsky-link {
-    position: absolute;
-    bottom: 24px;
-    right: 12px;
+  .bsky-btn {
     display: flex;
     align-items: center;
     color: white;
-    background: rgba(0, 0, 0, 0.4);
-    padding: 6px;
-    border-radius: 50%;
-    backdrop-filter: blur(4px);
+    padding: 0;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
   }
 
   /* Bottom input bar */
