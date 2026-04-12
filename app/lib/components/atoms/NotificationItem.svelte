@@ -91,7 +91,7 @@
         <div class="expanded-authors">
           {#each allAuthors as author (author.did)}
             <a href="/profile/{author.did}" class="expanded-author-row">
-              <Avatar did={author.did} src={author.avatar} name={author.name} size={32} />
+              <Avatar did={author.did} src={author.avatar} name={author.name} size={34} />
               <div class="expanded-author-info">
                 <span class="expanded-author-name">{author.name}</span>
                 <span class="expanded-author-handle">@{author.handle ?? author.did.slice(0, 18)}</span>
@@ -103,7 +103,7 @@
         <div class="grouped-avatars">
           {#each allAuthors.slice(0, 5) as author (author.did)}
             <a href="/profile/{author.did}" class="grouped-avatar-link" onclick={(e) => e.stopPropagation()}>
-              <Avatar did={author.did} src={author.avatar} name={author.name} size={32} />
+              <Avatar did={author.did} src={author.avatar} name={author.name} size={34} />
             </a>
           {/each}
           {#if group.authorCount > 5}
@@ -137,7 +137,7 @@
       {/if}
     </div>
     <a class="notif-avatar" href={profileHref}>
-      <Avatar did={authorDid} src={authorAvatar} name={authorName} size={38} />
+      <Avatar did={authorDid} src={authorAvatar} name={authorName} size={34} />
     </a>
     <a class="notif-body" href={contentHref}>
       <div class="notif-header">
