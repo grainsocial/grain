@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { untrack } from 'svelte'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import { infiniteScroll } from '$lib/actions/infinite-scroll'
   import { notificationsQuery } from '$lib/queries'
   import { markNotificationsSeen } from '$lib/preferences'
   import { viewer as viewerStore } from '$lib/stores'
+  import { groupNotifications, type GroupedNotification } from '$lib/notifications'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import NotificationItem from '$lib/components/atoms/NotificationItem.svelte'
   import Spinner from '$lib/components/atoms/Spinner.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import { callXrpc } from '$hatk/client'
-  import type { NotificationItem as NotifItem } from '$hatk'
 
   const viewerDid = $derived($viewerStore?.did)
   const queryClient = useQueryClient()
@@ -21,22 +21,31 @@
   }))
 
   let loadingMore = $state(false)
-  let allItems: NotifItem[] = $state([])
+  let allItems: any[] = $state([])
   let currentCursor: string | undefined = $state(undefined)
   let hasMore = $state(true)
 
+  let grouped: GroupedNotification[] = $state([])
+
   $effect(() => {
-    if (notifications.data) {
-      allItems = notifications.data.notifications ?? []
-      currentCursor = notifications.data.cursor
-      hasMore = !!notifications.data.cursor
+    const data = notifications.data
+    if (data) {
+      untrack(() => {
+        allItems = data.notifications ?? []
+        grouped = groupNotifications(allItems)
+        currentCursor = data.cursor
+        hasMore = !!data.cursor
+      })
     }
   })
 
-  onMount(async () => {
-    if (viewerDid) {
-      await markNotificationsSeen()
-      queryClient.setQueryData(['unseenNotificationCount', viewerDid], 0)
+  let hasMark = false
+  $effect(() => {
+    if (viewerDid && !hasMark) {
+      hasMark = true
+      markNotificationsSeen().then(() => {
+        queryClient.setQueryData(['unseenNotificationCount', viewerDid], 0)
+      })
     }
   })
 
@@ -49,6 +58,7 @@
         cursor: currentCursor,
       })
       allItems = [...allItems, ...result.notifications]
+      grouped = groupNotifications(allItems)
       currentCursor = result.cursor
       hasMore = !!result.cursor
     } finally {
@@ -63,12 +73,12 @@
 
 {#if notifications.isLoading}
   <div class="center"><Spinner /></div>
-{:else if allItems.length === 0}
+{:else if grouped.length === 0}
   <div class="empty">No notifications yet</div>
 {:else}
   <div class="notification-list">
-    {#each allItems as notif (notif.uri)}
-      <NotificationItem {notif} />
+    {#each grouped as group (group.notification.uri)}
+      <NotificationItem {group} />
     {/each}
     {#if hasMore}
       <div use:infiniteScroll={() => { if (!loadingMore) loadMore() }} class="sentinel">

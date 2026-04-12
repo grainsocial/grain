@@ -108,13 +108,18 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   const viewer = viewerObj.did;
   const { limit = 20, cursor, countOnly } = params;
 
-  // Get lastSeenNotifications from preferences
+  // Get preferences
   const prefRows = (await db.query(
-    `SELECT value FROM _preferences WHERE did = $1 AND key = 'lastSeenNotifications'`,
+    `SELECT key, value FROM _preferences WHERE did = $1 AND key IN ('lastSeenNotifications', 'notificationPrefs')`,
     [viewer],
-  )) as { value: string }[];
-  const rawValue = prefRows[0]?.value ?? null;
-  const lastSeen = rawValue ? JSON.parse(rawValue) : null;
+  )) as { key: string; value: string }[];
+  let lastSeen: string | null = null;
+  let notifPrefs: Record<string, { push: boolean; inApp: boolean; from: string }> | null = null;
+  for (const row of prefRows) {
+    const val = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+    if (row.key === "lastSeenNotifications") lastSeen = val;
+    if (row.key === "notificationPrefs") notifPrefs = val;
+  }
 
   // Count unseen — if no lastSeen, all notifications are unseen
   const timeFilter = lastSeen ? `AND created_at > $2` : "";
@@ -153,9 +158,57 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
     focus: string | null;
   }>;
 
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor = hasMore ? items[items.length - 1]?.created_at : undefined;
+  // Map source to preference category
+  function prefCategory(source: string): string | null {
+    if (source === "favorite" || source === "story-favorite") return "favorites";
+    if (source === "follow") return "follows";
+    if (source === "comment" || source === "reply" || source === "story-comment") return "comments";
+    if (source === "comment-mention" || source === "gallery-mention") return "mentions";
+    return null;
+  }
+
+  // Filter by inApp preference
+  let filtered = rows;
+  if (notifPrefs) {
+    filtered = rows.filter((row) => {
+      const cat = prefCategory(row.source);
+      if (!cat || !notifPrefs![cat]) return true;
+      return notifPrefs![cat].inApp !== false;
+    });
+  }
+
+  // Filter by "from" preference (follows only)
+  let followingSet: Set<string> | null = null;
+  if (notifPrefs) {
+    const needsFollowCheck = filtered.some((row) => {
+      const cat = prefCategory(row.source);
+      return cat && notifPrefs![cat]?.from === "follows";
+    });
+    if (needsFollowCheck) {
+      const followDids = filtered.map((r) => r.did);
+      const uniq = [...new Set(followDids)];
+      if (uniq.length > 0) {
+        const ph = uniq.map((_, i) => `$${i + 2}`).join(",");
+        const followRows = (await db.query(
+          `SELECT subject FROM "social.grain.graph.follow" WHERE did = $1 AND subject IN (${ph})`,
+          [viewer, ...uniq],
+        )) as { subject: string }[];
+        followingSet = new Set(followRows.map((r) => r.subject));
+      }
+    }
+    if (followingSet) {
+      filtered = filtered.filter((row) => {
+        const cat = prefCategory(row.source);
+        if (!cat || notifPrefs![cat]?.from !== "follows") return true;
+        return followingSet!.has(row.did);
+      });
+    }
+  }
+
+  // Use cursor from unfiltered rows to avoid skipping notifications
+  const hasMoreRows = rows.length > limit;
+  const nextCursor = hasMoreRows ? rows[rows.length - 1]?.created_at : undefined;
+  const items = filtered.slice(0, limit);
 
   // Determine notification reason
   function getReason(row: (typeof items)[0]): string {
@@ -253,7 +306,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
       } catch {
         blobRef = row.media;
       }
-      const thumb = blobUrl(row.did, blobRef, "feed_thumbnail");
+      const thumb = blobUrl(row.did, blobRef, "avatar");
       if (thumb) storyThumbs.set(row.uri, thumb);
     }
   }
@@ -281,7 +334,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
     const photoUri = isGallery && subjectUri ? firstPhotoByGallery.get(subjectUri) : null;
     const photo = photoUri ? photos.get(photoUri) : null;
     const galleryThumb = photo
-      ? (blobUrl(photo.did, photo.value.photo, "feed_thumbnail") ?? undefined)
+      ? (blobUrl(photo.did, photo.value.photo, "avatar") ?? undefined)
       : undefined;
 
     const storyThumb = isStory && subjectUri ? storyThumbs.get(subjectUri) : undefined;
@@ -296,6 +349,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
             did: author.did,
             handle: author.handle ?? handleMap.get(author.did) ?? author.did,
             displayName: author.value.displayName,
+            description: author.value.description,
             avatar: blobUrl(author.did, author.value.avatar) ?? undefined,
           })
         : views.grainActorDefsProfileView({

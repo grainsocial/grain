@@ -1,8 +1,14 @@
 <script lang="ts">
   import Avatar from './Avatar.svelte'
+  import { Heart, UserPlus, MessageSquare, AtSign, CornerDownRight, ChevronDown, ChevronUp } from 'lucide-svelte'
   import { relativeTime } from '$lib/utils'
+  import type { GroupedNotification } from '$lib/notifications'
 
-  let { notif }: { notif: any } = $props()
+  let { group }: { group: GroupedNotification } = $props()
+  let expanded = $state(false)
+
+  const notif = $derived(group.notification)
+  const isGrouped = $derived(group.authorCount > 1)
 
   const reasonText: Record<string, string> = {
     'gallery-favorite': 'favorited your gallery',
@@ -15,10 +21,17 @@
     'follow': 'followed you',
   }
 
+  const isFavorite = $derived(notif.reason === 'gallery-favorite' || notif.reason === 'story-favorite')
+  const isFollow = $derived(notif.reason === 'follow')
+  const isComment = $derived(notif.reason === 'gallery-comment' || notif.reason === 'story-comment')
+  const isReply = $derived(notif.reason === 'reply')
+  const isMention = $derived(notif.reason === 'gallery-comment-mention' || notif.reason === 'gallery-mention')
+
   const action = $derived(reasonText[notif.reason] ?? '')
   const timeStr = $derived(relativeTime(notif.createdAt || ''))
   const authorDid = $derived(notif.author?.did ?? '')
   const authorName = $derived(notif.author?.displayName || notif.author?.handle || authorDid.slice(0, 18))
+  const authorHandle = $derived(notif.author?.handle ?? authorDid.slice(0, 18))
   const authorAvatar = $derived(notif.author?.avatar ?? null)
   const contentHref = $derived(
     notif.galleryUri
@@ -28,32 +41,129 @@
         : `/profile/${authorDid}`
   )
   const profileHref = $derived(`/profile/${authorDid}`)
+
+
+  // All unique authors for grouped display
+  const allAuthors = $derived.by(() => {
+    if (!isGrouped) return []
+    const authors = [
+      { did: notif.author?.did, avatar: notif.author?.avatar, name: authorName, handle: notif.author?.handle },
+      ...group.additional.map((n: any) => ({
+        did: n.author?.did,
+        avatar: n.author?.avatar,
+        name: n.author?.displayName || n.author?.handle || n.author?.did?.slice(0, 18),
+        handle: n.author?.handle,
+      })),
+    ]
+    const seen = new Set<string>()
+    return authors.filter((a) => {
+      if (seen.has(a.did)) return false
+      seen.add(a.did)
+      return true
+    })
+  })
+
+  const groupActionText = $derived.by(() => {
+    if (!isGrouped) return ''
+    const othersCount = group.authorCount - 1
+    const others = othersCount === 1 ? '1 other' : `${othersCount} others`
+    return `${authorName} and ${others} ${action}`
+  })
 </script>
 
-<div class="notif" role="group">
-  <a class="notif-avatar" href={profileHref}>
-    <Avatar did={authorDid} src={authorAvatar} name={authorName} size={38} />
-  </a>
-  <a class="notif-body" href={contentHref}>
-    <div class="notif-header">
-      <span class="notif-author">{authorName}</span>
-      <span class="notif-action">{action}</span>
-      <span class="notif-time">{timeStr}</span>
+{#if isGrouped}
+  <!-- Grouped notification -->
+  <div class="notif grouped" role="group">
+    <div class="notif-icon icon-grain">
+      {#if isFavorite}<Heart size={18} fill="currentColor" />
+      {:else if isFollow}<UserPlus size={18} fill="currentColor" />
+      {:else if isComment}<MessageSquare size={16} fill="currentColor" />
+      {:else if isReply}<CornerDownRight size={18} />
+      {:else if isMention}<AtSign size={18} />
+      {/if}
     </div>
-    {#if notif.reason === 'reply' && notif.replyToText}
-      <div class="notif-quote">{notif.replyToText}</div>
+    <div class="notif-body">
+      {#if expanded}
+        <button class="expand-toggle" onclick={() => expanded = false}>
+          <ChevronUp size={14} />
+          <span>Hide</span>
+        </button>
+        <div class="expanded-authors">
+          {#each allAuthors as author (author.did)}
+            <a href="/profile/{author.did}" class="expanded-author-row">
+              <Avatar did={author.did} src={author.avatar} name={author.name} size={32} />
+              <div class="expanded-author-info">
+                <span class="expanded-author-name">{author.name}</span>
+                <span class="expanded-author-handle">@{author.handle ?? author.did.slice(0, 18)}</span>
+              </div>
+            </a>
+          {/each}
+        </div>
+      {:else}
+        <div class="grouped-avatars">
+          {#each allAuthors.slice(0, 5) as author (author.did)}
+            <a href="/profile/{author.did}" class="grouped-avatar-link" onclick={(e) => e.stopPropagation()}>
+              <Avatar did={author.did} src={author.avatar} name={author.name} size={32} />
+            </a>
+          {/each}
+          {#if group.authorCount > 5}
+            <span class="more-count">+{group.authorCount - 5}</span>
+          {/if}
+          <button class="expand-toggle-chevron" onclick={() => expanded = true}>
+            <ChevronDown size={14} />
+          </button>
+        </div>
+      {/if}
+      <a href={contentHref} class="notif-link">
+        <div class="notif-header">
+          <span class="notif-text">{groupActionText}</span>
+          <span class="notif-time">{timeStr}</span>
+        </div>
+        {#if notif.galleryTitle}
+          <div class="notif-gallery-title">{notif.galleryTitle}</div>
+        {/if}
+      </a>
+    </div>
+    {#if !expanded && (notif.galleryThumb || notif.storyThumb)}
+      <a href={contentHref}><img src={notif.galleryThumb ?? notif.storyThumb} alt="" class="notif-thumb" loading="lazy" /></a>
     {/if}
-    {#if notif.commentText}
-      <div class="notif-comment">{notif.commentText}</div>
+  </div>
+{:else}
+  <!-- Single notification -->
+  <div class="notif" role="group">
+    <div class="notif-icon icon-grain">
+      {#if isFavorite}<Heart size={18} fill="currentColor" />
+      {:else if isFollow}<UserPlus size={18} fill="currentColor" />
+      {:else if isComment}<MessageSquare size={16} fill="currentColor" />
+      {:else if isReply}<CornerDownRight size={18} />
+      {:else if isMention}<AtSign size={18} />
+      {/if}
+    </div>
+    <a class="notif-avatar" href={profileHref}>
+      <Avatar did={authorDid} src={authorAvatar} name={authorName} size={38} />
+    </a>
+    <a class="notif-body" href={contentHref}>
+      <div class="notif-header">
+        <span class="notif-author">{authorName}</span>
+        <span class="notif-handle">@{authorHandle}</span>
+        <span class="notif-time">{timeStr}</span>
+      </div>
+      <div class="notif-action">{action}</div>
+      {#if notif.reason === 'reply' && notif.replyToText}
+        <div class="notif-quote">{notif.replyToText}</div>
+      {/if}
+      {#if notif.commentText}
+        <div class="notif-comment">{notif.commentText}</div>
+      {/if}
+      {#if notif.galleryTitle && notif.reason !== 'follow'}
+        <div class="notif-gallery-title">{notif.galleryTitle}</div>
+      {/if}
+    </a>
+    {#if notif.galleryThumb || notif.storyThumb}
+      <a href={contentHref}><img src={notif.galleryThumb ?? notif.storyThumb} alt="" class="notif-thumb" loading="lazy" /></a>
     {/if}
-    {#if notif.galleryTitle && notif.reason !== 'follow'}
-      <div class="notif-gallery-title">{notif.galleryTitle}</div>
-    {/if}
-  </a>
-  {#if notif.galleryThumb || notif.storyThumb}
-    <a href={contentHref}><img src={notif.galleryThumb ?? notif.storyThumb} alt="" class="notif-thumb" loading="lazy" /></a>
-  {/if}
-</div>
+  </div>
+{/if}
 
 <style>
   .notif {
@@ -63,10 +173,20 @@
     border-bottom: 1px solid var(--border);
     color: inherit;
     transition: background 0.12s;
-    align-items: flex-start;
+    align-items: center;
   }
   .notif:hover {
     background: var(--bg-hover);
+  }
+  .notif-icon {
+    flex-shrink: 0;
+    width: 28px;
+    display: flex;
+    justify-content: center;
+    padding-top: 2px;
+  }
+  .icon-grain {
+    color: var(--grain);
   }
   .notif-avatar {
     flex-shrink: 0;
@@ -79,24 +199,40 @@
     color: inherit;
   }
   .notif-header {
+    display: flex;
+    align-items: baseline;
     font-size: 13px;
     line-height: 1.4;
+    min-width: 0;
   }
   .notif-author {
     font-weight: 600;
     color: var(--text-primary);
+    flex-shrink: 0;
   }
   .notif-avatar:hover + .notif-body .notif-author {
     text-decoration: underline;
   }
+  .notif-handle {
+    color: var(--text-muted);
+    margin-left: 6px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .notif-action {
     color: var(--text-secondary);
-    margin-left: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-top: 1px;
   }
   .notif-time {
     color: var(--text-muted);
-    margin-left: 4px;
+    margin-left: 6px;
     font-size: 12px;
+    flex-shrink: 0;
   }
   .notif-quote {
     font-size: 12px;
@@ -123,9 +259,97 @@
   }
   .notif-thumb {
     width: 48px;
-    height: 48px;
-    border-radius: 6px;
-    object-fit: cover;
+    border-radius: 0;
+    object-fit: contain;
     flex-shrink: 0;
+  }
+
+  /* Grouped notification styles */
+  .grouped-avatars {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 6px;
+  }
+  .grouped-avatar-link {
+    margin-right: -4px;
+    text-decoration: none;
+    position: relative;
+  }
+  .grouped-avatar-link:hover {
+    z-index: 1;
+  }
+  .more-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 8px;
+  }
+  .notif-text {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .notif-link {
+    text-decoration: none;
+    color: inherit;
+  }
+  .expand-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .expand-toggle:hover {
+    color: var(--text-secondary);
+  }
+  .expand-toggle-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 8px;
+  }
+  .expand-toggle-chevron:hover {
+    color: var(--text-secondary);
+  }
+  .expanded-authors {
+    display: flex;
+    flex-direction: column;
+    padding: 4px 0;
+  }
+  .expanded-author-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 6px;
+  }
+  .expanded-author-row:hover {
+    background: var(--bg-hover);
+  }
+  .expanded-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .expanded-author-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .expanded-author-handle {
+    font-size: 12px;
+    color: var(--text-muted);
   }
 </style>
