@@ -33,6 +33,7 @@
   const authorName = $derived(notif.author?.displayName || notif.author?.handle || authorDid.slice(0, 18))
   const authorHandle = $derived(notif.author?.handle ?? authorDid.slice(0, 18))
   const authorAvatar = $derived(notif.author?.avatar ?? null)
+  const thumb = $derived(notif.galleryThumb ?? notif.storyThumb ?? null)
   const contentHref = $derived(
     notif.galleryUri
       ? `/profile/${notif.galleryUri.split('/')[2]}/gallery/${notif.galleryUri.split('/').pop()}`
@@ -103,7 +104,7 @@
         <div class="grouped-avatars">
           {#each allAuthors.slice(0, 5) as author (author.did)}
             <a href="/profile/{author.did}" class="grouped-avatar-link" onclick={(e) => e.stopPropagation()}>
-              <Avatar did={author.did} src={author.avatar} name={author.name} size={34} />
+              <Avatar did={author.did} src={author.avatar} name={author.name} size={38} />
             </a>
           {/each}
           {#if group.authorCount > 5}
@@ -115,7 +116,7 @@
         </div>
       {/if}
       <a href={contentHref} class="notif-link">
-        <div class="notif-header">
+        <div class="notif-action-line">
           <span class="notif-text">{groupActionText}</span>
           <span class="notif-time">{timeStr}</span>
         </div>
@@ -124,6 +125,11 @@
         {/if}
       </a>
     </div>
+    {#if thumb}
+      <a href={contentHref} class="notif-thumb-link">
+        <img src={thumb} alt="" class="notif-thumb" loading="lazy" />
+      </a>
+    {/if}
   </div>
 {:else}
   <!-- Single notification -->
@@ -136,51 +142,67 @@
       {:else if isMention}<AtSign size={18} />
       {/if}
     </div>
-    <a class="notif-avatar" href={profileHref}>
-      <Avatar did={authorDid} src={authorAvatar} name={authorName} size={34} />
-    </a>
-    <a class="notif-body" href={contentHref}>
-      <div class="notif-header">
-        <span class="notif-author">{authorName}</span>
-        <span class="notif-handle">@{authorHandle}</span>
-        <span class="notif-time">{timeStr}</span>
-      </div>
-      <div class="notif-action">{action}</div>
-      {#if notif.reason === 'reply' && notif.replyToText}
-        <div class="notif-quote">{notif.replyToText}</div>
-      {/if}
-      {#if notif.commentText}
-        <div class="notif-comment">{notif.commentText}</div>
-      {/if}
-      {#if notif.galleryTitle && notif.reason !== 'follow'}
-        <div class="notif-gallery-title">{notif.galleryTitle}</div>
-      {/if}
-    </a>
+    <div class="notif-content">
+      <a class="notif-avatar" href={profileHref}>
+        <Avatar did={authorDid} src={authorAvatar} name={authorName} size={34} />
+      </a>
+      <a class="notif-body" href={contentHref}>
+        <div class="notif-action-line">
+          <span><span class="notif-author">{authorName}</span> {action}</span>
+          <span class="notif-time">{timeStr}</span>
+        </div>
+        {#if notif.commentText}
+          <div class="notif-comment">{notif.commentText}</div>
+        {/if}
+        {#if notif.reason === 'reply' && notif.replyToText}
+          <div class="notif-quote">{notif.replyToText}</div>
+        {/if}
+        {#if notif.galleryTitle && notif.reason !== 'follow'}
+          <div class="notif-gallery-title">{notif.galleryTitle}</div>
+        {/if}
+      </a>
+    </div>
+    {#if thumb}
+      <a href={contentHref} class="notif-thumb-link">
+        <img src={thumb} alt="" class="notif-thumb" loading="lazy" />
+      </a>
+    {/if}
   </div>
 {/if}
 
 <style>
   .notif {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     padding: 12px 16px;
     border-bottom: 1px solid var(--border);
     color: inherit;
     transition: background 0.12s;
-    align-items: center;
+    align-items: flex-start;
   }
   .notif:hover {
     background: var(--bg-hover);
   }
   .notif-icon {
     flex-shrink: 0;
-    width: 28px;
+    width: 20px;
     display: flex;
     justify-content: center;
-    padding-top: 2px;
+    height: 34px;
+    align-items: center;
+  }
+  .grouped .notif-icon {
+    height: 38px;
   }
   .icon-grain {
     color: var(--grain);
+  }
+  .notif-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
   .notif-avatar {
     flex-shrink: 0;
@@ -192,41 +214,31 @@
     text-decoration: none;
     color: inherit;
   }
-  .notif-header {
-    display: flex;
-    align-items: baseline;
+  .notif-action-line {
     font-size: 13px;
     line-height: 1.4;
-    min-width: 0;
+    color: var(--text-primary);
   }
   .notif-author {
     font-weight: 600;
-    color: var(--text-primary);
-    flex-shrink: 0;
   }
-  .notif-avatar:hover + .notif-body .notif-author {
+  .notif-avatar:hover ~ .notif-body .notif-author {
     text-decoration: underline;
-  }
-  .notif-handle {
-    color: var(--text-muted);
-    margin-left: 6px;
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .notif-action {
-    color: var(--text-secondary);
-    font-size: 13px;
-    line-height: 1.4;
-    margin-top: 1px;
   }
   .notif-time {
     color: var(--text-muted);
-    margin-left: 6px;
     font-size: 12px;
-    flex-shrink: 0;
+    margin-left: 4px;
+  }
+  .notif-comment {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
   }
   .notif-quote {
     font-size: 12px;
@@ -238,18 +250,20 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .notif-comment {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .notif-gallery-title {
     font-size: 12px;
     color: var(--text-muted);
     margin-top: 2px;
+  }
+  .notif-thumb-link {
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .notif-thumb {
+    width: 44px;
+    height: 44px;
+    object-fit: cover;
+    border-radius: 6px;
   }
   /* Grouped notification styles */
   .grouped-avatars {
@@ -259,7 +273,7 @@
     margin-bottom: 6px;
   }
   .grouped-avatar-link {
-    margin-right: -4px;
+    margin-right: -8px;
     text-decoration: none;
     position: relative;
   }
@@ -269,14 +283,12 @@
   .more-count {
     font-size: 12px;
     color: var(--text-muted);
-    margin-left: 8px;
+    margin-left: 12px;
   }
   .notif-text {
-    color: var(--text-secondary);
+    color: var(--text-primary);
     font-size: 13px;
     line-height: 1.4;
-    flex: 1;
-    min-width: 0;
   }
   .notif-link {
     text-decoration: none;
@@ -305,7 +317,7 @@
     color: var(--text-muted);
     cursor: pointer;
     padding: 4px 8px;
-    margin-left: 8px;
+    margin-left: 12px;
   }
   .expand-toggle-chevron:hover {
     color: var(--text-secondary);
