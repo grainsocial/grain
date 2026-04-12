@@ -11,11 +11,10 @@
   import { goto } from '$app/navigation'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
-  // Redirect to first pinned feed if "recent" isn't pinned
+  // Redirect to first pinned feed
   $effect(() => {
     const feeds = $pinnedFeeds
-    const hasRecent = feeds.some((f) => f.id === 'recent')
-    if (!hasRecent && feeds.length > 0) {
+    if (feeds.length > 0 && feeds[0].id !== 'recent') {
       goto(feeds[0].path, { replaceState: true })
     }
   })
