@@ -1,6 +1,6 @@
 <script lang="ts">
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
-  import { UserPen, Shield, ChevronRight } from 'lucide-svelte'
+  import { UserPen, Shield, Bell, ChevronRight } from 'lucide-svelte'
 </script>
 
 <DetailHeader label="Settings" />
@@ -10,6 +10,11 @@
     <a href="/settings/profile" class="settings-row">
       <UserPen size={18} />
       <span class="settings-label">Edit Profile</span>
+      <ChevronRight size={16} class="chevron" />
+    </a>
+    <a href="/settings/notifications" class="settings-row">
+      <Bell size={18} />
+      <span class="settings-label">Notifications</span>
       <ChevronRight size={16} class="chevron" />
     </a>
     <a href="/settings/moderation" class="settings-row">

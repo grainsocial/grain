@@ -1,4 +1,5 @@
 import { defineHook } from "$hatk";
+import { shouldPush } from "./helpers/notifPrefs.ts";
 
 export default defineHook("on-commit", { collections: ["social.grain.favorite"] },
   async ({ action, record, repo, db, lookup, push }) => {
@@ -13,6 +14,7 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
     ) as { author: string }[]
 
     if (gallery && gallery.author !== repo) {
+      if (!(await shouldPush(db, gallery.author, repo, "favorites"))) return
       const profiles = await lookup("social.grain.actor.profile", "did", [repo])
       const actor = profiles.get(repo)
       await push.send({
@@ -31,6 +33,7 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
     ) as { author: string }[]
 
     if (story && story.author !== repo) {
+      if (!(await shouldPush(db, story.author, repo, "favorites"))) return
       const profiles = await lookup("social.grain.actor.profile", "did", [repo])
       const actor = profiles.get(repo)
       await push.send({

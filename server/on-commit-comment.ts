@@ -1,4 +1,5 @@
 import { defineHook } from "$hatk";
+import { shouldPush } from "./helpers/notifPrefs.ts";
 
 export default defineHook("on-commit", { collections: ["social.grain.comment"] },
   async ({ action, record, repo, db, lookup, push }) => {
@@ -19,12 +20,14 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
       ) as { author: string }[]
 
       if (parent && parent.author !== repo) {
-        await push.send({
-          did: parent.author,
-          title: "New reply",
-          body: `${displayName} replied to your comment`,
-          data: { type: "comment-reply", uri: subject },
-        })
+        if (await shouldPush(db, parent.author, repo, "comments")) {
+          await push.send({
+            did: parent.author,
+            title: "New reply",
+            body: `${displayName} replied to your comment`,
+            data: { type: "comment-reply", uri: subject },
+          })
+        }
       }
     }
 
@@ -36,12 +39,14 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
 
     if (gallery) {
       if (gallery.author !== repo) {
-        await push.send({
-          did: gallery.author,
-          title: "New comment",
-          body: `${displayName} commented on your gallery`,
-          data: { type: "gallery-comment", uri: subject },
-        })
+        if (await shouldPush(db, gallery.author, repo, "comments")) {
+          await push.send({
+            did: gallery.author,
+            title: "New comment",
+            body: `${displayName} commented on your gallery`,
+            data: { type: "gallery-comment", uri: subject },
+          })
+        }
       }
       return
     }
@@ -53,12 +58,14 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
     ) as { author: string }[]
 
     if (story && story.author !== repo) {
-      await push.send({
-        did: story.author,
-        title: "New comment",
-        body: `${displayName} commented on your story`,
-        data: { type: "story-comment", uri: subject },
-      })
+      if (await shouldPush(db, story.author, repo, "comments")) {
+        await push.send({
+          did: story.author,
+          title: "New comment",
+          body: `${displayName} commented on your story`,
+          data: { type: "story-comment", uri: subject },
+        })
+      }
     }
   }
 )

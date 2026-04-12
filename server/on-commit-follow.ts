@@ -1,11 +1,14 @@
 import { defineHook } from "$hatk";
+import { shouldPush } from "./helpers/notifPrefs.ts";
 
 export default defineHook("on-commit", { collections: ["social.grain.graph.follow"] },
-  async ({ action, record, repo, lookup, push }) => {
+  async ({ action, record, repo, db, lookup, push }) => {
     if (action !== "create" || !record) return
 
     const subject = record.subject as string
     if (!subject || subject === repo) return
+
+    if (!(await shouldPush(db, subject, repo, "follows"))) return
 
     const profiles = await lookup("social.grain.actor.profile", "did", [repo])
     const actor = profiles.get(repo)
