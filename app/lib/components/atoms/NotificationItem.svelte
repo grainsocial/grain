@@ -104,7 +104,7 @@
         <div class="grouped-avatars">
           {#each allAuthors.slice(0, 5) as author (author.did)}
             <a href="/profile/{author.did}" class="grouped-avatar-link" onclick={(e) => e.stopPropagation()}>
-              <Avatar did={author.did} src={author.avatar} name={author.name} size={38} />
+              <Avatar did={author.did} src={author.avatar} name={author.name} size={34} />
             </a>
           {/each}
           {#if group.authorCount > 5}
@@ -174,7 +174,7 @@
   .notif {
     display: flex;
     gap: 10px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border);
     color: inherit;
     transition: background 0.12s;
@@ -192,7 +192,7 @@
     align-items: center;
   }
   .grouped .notif-icon {
-    height: 38px;
+    height: 34px;
   }
   .icon-grain {
     color: var(--grain);
