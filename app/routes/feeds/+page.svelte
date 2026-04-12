@@ -6,8 +6,6 @@
   import { isAuthenticated } from '$lib/stores'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
-  const coreIds = new Set(DEFAULT_PINNED.map((f) => f.id))
-  const customFeeds = $derived($pinnedFeeds.filter((f) => !coreIds.has(f.id)))
   const pinnedIds = $derived(new Set($pinnedFeeds.map((f) => f.id)))
   const unpinnedDefaults = $derived(DEFAULT_PINNED.filter((f) => !pinnedIds.has(f.id)))
 
@@ -125,22 +123,6 @@
       {/if}
     </a>
   {/each}
-
-  {#if customFeeds.length > 0}
-    <div class="section-label">Pinned</div>
-    {#each customFeeds as feed (feed.id)}
-      {@const Icon = feedIcon(feed)}
-      <a href={feed.path} class="feed-row">
-        <span class="feed-icon">
-          <Icon size={18} />
-        </span>
-        <span class="feed-label">{feed.label}</span>
-        {#if $isAuthenticated}
-          <PinButton {feed} stopPropagation />
-        {/if}
-      </a>
-    {/each}
-  {/if}
 
   {#if unpinnedDefaults.length > 0 && $isAuthenticated}
     <div class="section-label">Feeds</div>

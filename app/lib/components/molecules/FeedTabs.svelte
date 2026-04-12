@@ -1,12 +1,21 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { pinnedFeeds } from '$lib/preferences'
+  import { pinnedFeeds, DEFAULT_PINNED } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
 
   const authOnlyFeeds = new Set(['following', 'foryou'])
-  const tabFeeds = $derived(
-    $isAuthenticated ? $pinnedFeeds : $pinnedFeeds.filter((f) => !authOnlyFeeds.has(f.id))
+  const pinnedIds = $derived(new Set($pinnedFeeds.map((f) => f.id)))
+
+  // Include unpinned default feed if user is currently viewing it
+  const currentUnpinned = $derived(
+    DEFAULT_PINNED.find((f) => !pinnedIds.has(f.id) && page.url.pathname === f.path)
   )
+
+  const tabFeeds = $derived.by(() => {
+    const pinned = $isAuthenticated ? $pinnedFeeds : $pinnedFeeds.filter((f) => !authOnlyFeeds.has(f.id))
+    if (currentUnpinned && $isAuthenticated) return [...pinned, currentUnpinned]
+    return pinned
+  })
 </script>
 
 <div class="center-header">
