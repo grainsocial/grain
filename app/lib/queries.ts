@@ -241,7 +241,7 @@ export const commentThreadQuery = (subjectUri: string, f?: Fetch) =>
 export const notificationsQuery = (viewer: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["notifications", viewer],
-    queryFn: () => callXrpc("social.grain.unspecced.getNotifications", { limit: 20 }, f),
+    queryFn: () => callXrpc("social.grain.unspecced.getNotifications", { limit: 100 }, f),
     staleTime: 60_000,
   });
 

@@ -124,9 +124,6 @@
         {/if}
       </a>
     </div>
-    {#if !expanded && (notif.galleryThumb || notif.storyThumb)}
-      <a href={contentHref}><img src={notif.galleryThumb ?? notif.storyThumb} alt="" class="notif-thumb" loading="lazy" /></a>
-    {/if}
   </div>
 {:else}
   <!-- Single notification -->
@@ -159,9 +156,6 @@
         <div class="notif-gallery-title">{notif.galleryTitle}</div>
       {/if}
     </a>
-    {#if notif.galleryThumb || notif.storyThumb}
-      <a href={contentHref}><img src={notif.galleryThumb ?? notif.storyThumb} alt="" class="notif-thumb" loading="lazy" /></a>
-    {/if}
   </div>
 {/if}
 
@@ -257,13 +251,6 @@
     color: var(--text-muted);
     margin-top: 2px;
   }
-  .notif-thumb {
-    width: 48px;
-    border-radius: 0;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
   /* Grouped notification styles */
   .grouped-avatars {
     display: flex;

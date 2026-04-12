@@ -24,12 +24,14 @@
   let allItems: any[] = $state([])
   let currentCursor: string | undefined = $state(undefined)
   let hasMore = $state(true)
+  let initialized = false
 
   let grouped: GroupedNotification[] = $state([])
 
   $effect(() => {
     const data = notifications.data
-    if (data) {
+    if (data && !initialized) {
+      initialized = true
       untrack(() => {
         allItems = data.notifications ?? []
         grouped = groupNotifications(allItems)
@@ -54,7 +56,7 @@
     loadingMore = true
     try {
       const result = await callXrpc('social.grain.unspecced.getNotifications', {
-        limit: 20,
+        limit: 100,
         cursor: currentCursor,
       })
       allItems = [...allItems, ...result.notifications]
