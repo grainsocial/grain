@@ -275,6 +275,8 @@
     color: var(--text-secondary);
     font-size: 13px;
     line-height: 1.4;
+    flex: 1;
+    min-width: 0;
   }
   .notif-link {
     text-decoration: none;
