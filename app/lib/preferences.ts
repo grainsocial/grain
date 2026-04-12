@@ -83,6 +83,7 @@ export async function unpinFeed(id: string): Promise<boolean> {
   const previous = get(pinnedFeeds);
   const updated = previous.filter((f) => f.id !== id);
   if (updated.length === previous.length) return false;
+  if (updated.length === 0) return false;
   pinnedFeeds.set(updated);
   try {
     await callXrpc("dev.hatk.putPreference", { key: "pinnedFeeds", value: updated });
