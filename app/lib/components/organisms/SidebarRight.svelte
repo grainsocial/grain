@@ -23,11 +23,14 @@
 
   <div class="sidebar-card">
     <div class="sidebar-card-header">Feeds</div>
-    {#each $pinnedFeeds as feed (feed.id)}
+    {#each $pinnedFeeds as feed, i (feed.id)}
+      {@const href = i === 0 ? '/' : feed.path}
       <a
-        href={feed.path}
+        {href}
         class="sidebar-link"
-        class:active={page.url.pathname + page.url.search === feed.path || page.url.pathname === feed.path}
+        class:active={i === 0
+          ? page.url.pathname === '/'
+          : page.url.pathname + page.url.search === feed.path || page.url.pathname === feed.path}
       >
         <span class="sidebar-link-icon"><svelte:component this={feedIcon(feed)} size={16} /></span>
         <span class="sidebar-link-label">{feed.type === 'hashtag' ? feed.label.replace(/^#/, '') : feed.label}</span>

@@ -11,11 +11,15 @@
 
 <div class="center-header">
   <div class="feed-tabs">
-    {#each tabFeeds as feed (feed.id)}
+    {#each tabFeeds as feed, i (feed.id)}
+      {@const href = i === 0 ? '/' : feed.path}
+      {@const isActive = i === 0
+        ? page.url.pathname === '/'
+        : page.url.pathname + page.url.search === feed.path || page.url.pathname === feed.path}
       <a
         class="feed-tab"
-        class:active={page.url.pathname + page.url.search === feed.path || page.url.pathname === feed.path}
-        href={feed.path}
+        class:active={isActive}
+        {href}
       >{feed.label}</a>
     {/each}
   </div>

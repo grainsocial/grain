@@ -10,7 +10,7 @@ export interface PinnedFeed {
 }
 
 export const DEFAULT_PINNED: PinnedFeed[] = [
-  { id: "recent", label: "Recent", type: "feed", path: "/" },
+  { id: "recent", label: "Recent", type: "feed", path: "/feeds/recent" },
   { id: "following", label: "Following", type: "feed", path: "/feeds/following" },
   { id: "foryou", label: "For You", type: "feed", path: "/feeds/for-you" },
 ];
@@ -49,7 +49,9 @@ function isValidFeed(f: unknown): f is PinnedFeed {
 export function loadPreferences(prefs: Record<string, unknown> | null): void {
   if (!prefs) return;
   if (Array.isArray(prefs.pinnedFeeds)) {
-    const valid = prefs.pinnedFeeds.filter(isValidFeed);
+    const valid = prefs.pinnedFeeds.filter(isValidFeed).map((f) =>
+      f.id === "recent" && f.path === "/" ? { ...f, path: "/feeds/recent" } : f
+    );
     if (valid.length > 0) pinnedFeeds.set(valid);
   }
   if (typeof prefs.includeExif === "boolean") includeExif.set(prefs.includeExif);
