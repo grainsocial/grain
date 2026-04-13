@@ -144,6 +144,7 @@
           Share
         </button>
         {#if viewerDid && viewerDid !== did}
+          <div class="menu-divider"></div>
           {#if !blockHide}
             <button class="menu-item" type="button" onclick={handleMute}>
               <VolumeX size={15} />
@@ -388,4 +389,5 @@
   }
   .menu-item:hover { background: var(--bg-hover); }
   .menu-item.danger { color: #f87171; }
+  .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
 </style>
