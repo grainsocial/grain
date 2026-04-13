@@ -103,6 +103,9 @@
       {/each}
     </div>
   </div>
+  <div class="learn-more">
+    <a class="create-account-link" href="https://atmosphereaccount.com/" target="_blank" rel="noopener noreferrer">What is an atmosphere account?</a>
+  </div>
   <div class="input-wrapper">
     <input
       type="text"
@@ -270,6 +273,7 @@
     text-decoration: none;
   }
   .create-account-link:hover { text-decoration: underline; }
+  .learn-more { text-align: center; font-size: 13px; margin-bottom: 16px; }
   .legal-links {
     font-size: 11px;
     color: var(--text-faint);
