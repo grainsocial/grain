@@ -125,6 +125,14 @@
       <div style="margin-top: 6px"><Skeleton width="120px" height="14px" /></div>
     </div>
   </div>
+{:else if profile.data && !profile.data.cid}
+  <DetailHeader label="Not Found" />
+  <div class="not-found">
+    <p>This user doesn't have a Grain profile yet.</p>
+    <a class="bsky-link" href="https://bsky.app/profile/{did}" target="_blank" rel="noopener noreferrer">
+      View on Bluesky <ArrowUpRight size={14} />
+    </a>
+  </div>
 {:else if profile.data}
   {@const p = profile.data}
   <OGMeta title="{p.displayName || p.handle || 'Profile'} (@{p.handle || did}) — Grain" description="{p.handle ? `@${p.handle}` : did} on Grain" image="/og/profile/{did}" />
