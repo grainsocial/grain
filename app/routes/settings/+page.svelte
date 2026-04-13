@@ -40,7 +40,7 @@
     </a>
     <a href="/settings/upload-defaults" class="settings-row">
       <Upload size={18} />
-      <span class="settings-label">Upload Defaults</span>
+      <span class="settings-label">Privacy</span>
       <ChevronRight size={16} class="chevron" />
     </a>
   </div>

@@ -33,9 +33,10 @@
   })
 </script>
 
-<DetailHeader label="Upload Defaults" />
+<DetailHeader label="Privacy" />
 
 <div class="settings-page">
+  <h3 class="section-label">Defaults for new uploads</h3>
   <div class="settings-group">
     <div class="toggle-row">
       <Checkbox bind:checked={localIncludeLocation} label="Include location" />
@@ -49,6 +50,13 @@
 </div>
 
 <style>
+  .section-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
   .settings-page {
     max-width: 600px;
     margin: 0 auto;

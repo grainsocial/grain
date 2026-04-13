@@ -28,7 +28,7 @@
     <p>
       We optionally collect and display EXIF metadata from your photos, including camera make,
       model, and exposure information. You can control whether camera data is included in your
-      uploads via Settings &gt; Upload Defaults. The metadata is stored according to standard AT
+      uploads via Settings &gt; Privacy. The metadata is stored according to standard AT
       Protocol storage mechanisms and is not retained outside the protocol or used for other
       purposes.
     </p>
@@ -43,7 +43,7 @@
     <p>
       Grain can optionally extract GPS coordinates from your photo metadata to display location
       information on your galleries. Location data is opt-in and can be disabled at any time via
-      Settings &gt; Upload Defaults. When enabled, GPS coordinates are converted to an
+      Settings &gt; Privacy. When enabled, GPS coordinates are converted to an
       <a href="https://h3geo.org" target="_blank" rel="noopener noreferrer">H3</a> hexagonal grid
       index and reverse-geocoded to a human-readable place name. The H3 index and place name are
       stored as part of your gallery record on the AT Protocol. Like all content on Grain, location
