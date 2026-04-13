@@ -1,25 +1,165 @@
 <script lang="ts">
-  import { Search, Plus } from 'lucide-svelte'
+  import { Search, Plus, X } from 'lucide-svelte'
   import { page } from '$app/state'
+  import { goto } from '$app/navigation'
   import { pinnedFeeds, feedIcon } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
   import { createQuery } from '@tanstack/svelte-query'
   import { camerasQuery, locationsQuery } from '$lib/queries'
+  import { callXrpc } from '$hatk/client'
+  import Avatar from '../atoms/Avatar.svelte'
 
   const camerasQ = createQuery(() => camerasQuery())
   const locationsQ = createQuery(() => locationsQuery())
+
+  let searchValue = $state('')
+  let suggestions = $state<any[]>([])
+  let activeIndex = $state(-1)
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+  let showSuggestions = $state(false)
+  let hasSearched = $state(false)
+
+  function onInput() {
+    const q = searchValue.trim()
+    if (debounceTimer) clearTimeout(debounceTimer)
+    if (!q || q.length < 2) {
+      suggestions = []
+      showSuggestions = false
+      hasSearched = false
+      return
+    }
+    showSuggestions = true
+    debounceTimer = setTimeout(() => searchActors(q), 200)
+  }
+
+  async function searchActors(q: string) {
+    try {
+      const result = await callXrpc('social.grain.unspecced.searchActorsTypeahead', { q, limit: 8 })
+      suggestions = result.actors || []
+      activeIndex = -1
+      hasSearched = true
+    } catch {
+      hasSearched = true
+    }
+  }
+
+  function submitSearch() {
+    const q = searchValue.trim()
+    if (!q) return
+    suggestions = []
+    showSuggestions = false
+    goto(`/search?q=${encodeURIComponent(q)}`)
+  }
+
+  function selectActor(actor: any) {
+    suggestions = []
+    showSuggestions = false
+    searchValue = ''
+    goto(`/profile/${actor.did}`)
+  }
+
+  function clearSearch() {
+    searchValue = ''
+    suggestions = []
+    showSuggestions = false
+  }
+
+  function onKeydown(e: KeyboardEvent) {
+    const totalItems = suggestions.length + 1 // +1 for "search for" row
+    if (!showSuggestions || totalItems <= 1) {
+      if (e.key === 'Enter') { e.preventDefault(); submitSearch() }
+      return
+    }
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        activeIndex = Math.min(activeIndex + 1, totalItems - 1)
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        activeIndex = Math.max(activeIndex - 1, -1)
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (activeIndex === 0) {
+          submitSearch()
+        } else if (activeIndex > 0) {
+          selectActor(suggestions[activeIndex - 1])
+        } else {
+          submitSearch()
+        }
+        break
+      case 'Escape':
+        e.preventDefault()
+        showSuggestions = false
+        break
+    }
+  }
+
+  function onFocusout() {
+    setTimeout(() => { showSuggestions = false }, 150)
+  }
+
+  function onFocusin() {
+    if (searchValue.trim().length >= 2 && suggestions.length > 0) {
+      showSuggestions = true
+    }
+  }
 </script>
 
 <aside class="sidebar-right">
-  <form action="/search" class="search-wrapper">
+  <div class="search-wrapper">
     <span class="search-icon"><Search size={16} /></span>
     <input
       type="text"
-      name="q"
       class="search-input"
       placeholder="Search..."
+      bind:value={searchValue}
+      oninput={onInput}
+      onkeydown={onKeydown}
+      onfocusout={onFocusout}
+      onfocusin={onFocusin}
+      autocomplete="off"
     />
-  </form>
+    {#if searchValue}
+      <button class="search-clear" type="button" onclick={clearSearch}><X size={14} /></button>
+    {/if}
+    {#if showSuggestions && searchValue.trim() && hasSearched}
+      <div class="suggestions">
+        <button
+          class="suggestion-item search-row"
+          class:active={activeIndex === 0}
+          type="button"
+          onmousedown={(e) => { e.preventDefault(); submitSearch() }}
+        >
+          <span class="suggestion-search-icon"><Search size={22} /></span>
+          <span>{searchValue.trim()}</span>
+        </button>
+        {#each suggestions as actor, i}
+          <button
+            class="suggestion-item"
+            class:active={activeIndex === i + 1}
+            type="button"
+            onmousedown={(e) => { e.preventDefault(); selectActor(actor) }}
+          >
+            <div class="suggestion-avatar">
+              {#if actor.avatar}
+                <img src={actor.avatar} alt="" />
+              {:else}
+                <Avatar did={actor.did} src={null} size={32} />
+              {/if}
+            </div>
+            <div class="suggestion-info">
+              <div class="suggestion-name">{actor.displayName || actor.handle || actor.did?.slice(0, 18)}</div>
+              {#if actor.handle}
+                <div class="suggestion-handle">@{actor.handle}</div>
+              {/if}
+            </div>
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </div>
 
   <div class="sidebar-card">
     <div class="sidebar-card-header">Feeds</div>
@@ -116,6 +256,81 @@
   }
   .search-input::placeholder { color: var(--text-faint); }
   .search-input:focus { border-color: var(--grain); background: var(--bg-root); }
+  .search-clear {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+  }
+  .search-clear:hover { color: var(--text-primary); }
+  .suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    z-index: 100;
+  }
+  .suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    width: 100%;
+    border: none;
+    background: none;
+    cursor: pointer;
+    transition: background 0.1s;
+    text-align: left;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+  .suggestion-item:hover, .suggestion-item.active { background: var(--bg-hover); }
+  .search-row { font-weight: 500; }
+  .suggestion-search-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+  .suggestion-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--bg-elevated);
+  }
+  .suggestion-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .suggestion-info { min-width: 0; flex: 1; }
+  .suggestion-name {
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .suggestion-handle {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   .sidebar-card {
     background: var(--bg-surface);
