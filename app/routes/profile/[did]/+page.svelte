@@ -117,7 +117,6 @@
 {#if profile.isLoading}
   <DetailHeader label={'\u00A0'} />
   <div class="profile-header">
-    <div class="profile-banner-skeleton"><Skeleton width="100%" height="120px" radius="0" /></div>
     <div class="profile-info">
       <div class="top-row">
         <Skeleton circle height="64px" />
@@ -133,36 +132,33 @@
   <DetailHeader label={p.displayName || '\u00A0'} />
 
   <div class="profile-header">
-    <div class="profile-banner"></div>
-    <div class="profile-info">
-      <div class="top-row">
-        <Avatar {did} src={p.avatar ?? null} name={p.displayName} size={64} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
-        <div class="actions">
-          {#if viewerDid && viewerDid !== did}
-            {#if !p.viewer?.blocking && !p.viewer?.blockedBy}
-              <FollowButton {did} viewerFollow={p.viewer?.following ?? null} onCountChange={(d) => (followersOffset += d)} />
-            {/if}
-          {/if}
-          <OverflowMenu>
-            <button class="menu-item" type="button" onclick={handleShare}>
-              <Share size={15} />
-              Share
+    <div class="actions">
+      {#if viewerDid && viewerDid !== did}
+        {#if !p.viewer?.blocking && !p.viewer?.blockedBy}
+          <FollowButton {did} viewerFollow={p.viewer?.following ?? null} onCountChange={(d) => (followersOffset += d)} />
+        {/if}
+      {/if}
+      <OverflowMenu>
+        <button class="menu-item" type="button" onclick={handleShare}>
+          <Share size={15} />
+          Share
+        </button>
+        {#if viewerDid && viewerDid !== did}
+          {#if !blockHide}
+            <button class="menu-item" type="button" onclick={handleMute}>
+              <VolumeX size={15} />
+              {p.viewer?.muted ? 'Unmute' : 'Mute'}
             </button>
-            {#if viewerDid && viewerDid !== did}
-              {#if !blockHide}
-                <button class="menu-item" type="button" onclick={handleMute}>
-                  <VolumeX size={15} />
-                  {p.viewer?.muted ? 'Unmute' : 'Mute'}
-                </button>
-              {/if}
-              <button class="menu-item danger" type="button" onclick={handleBlock}>
-                <Ban size={15} />
-                {p.viewer?.blocking ? 'Unblock' : 'Block'}
-              </button>
-            {/if}
-          </OverflowMenu>
-        </div>
-      </div>
+          {/if}
+          <button class="menu-item danger" type="button" onclick={handleBlock}>
+            <Ban size={15} />
+            {p.viewer?.blocking ? 'Unblock' : 'Block'}
+          </button>
+        {/if}
+      </OverflowMenu>
+    </div>
+    <div class="profile-info">
+      <Avatar {did} src={p.avatar ?? null} name={p.displayName} size={64} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
       <div class="profile-name">{p.displayName || did.slice(0, 18)}</div>
       <div class="handle-row">
         {#if !blockHide && p.viewer?.followedBy}<span class="follows-you">Follows you</span>{/if}
@@ -273,14 +269,9 @@
 
 <style>
   .profile-header { border-bottom: 1px solid var(--border); }
-  .profile-banner-skeleton { line-height: 0; }
-  .profile-banner {
-    height: 120px;
-    background: var(--bg-elevated);
-  }
-  .profile-info { padding: 0 16px 16px; position: relative; }
-  .top-row { display: flex; align-items: flex-start; justify-content: space-between; margin-top: -32px; min-height: 72px; }
-  .actions { display: flex; gap: 8px; align-items: center; margin-top: 40px; }
+  .profile-header { position: relative; }
+  .actions { position: absolute; top: 12px; right: 16px; display: flex; gap: 8px; align-items: center; z-index: 1; }
+  .profile-info { padding: 16px 16px 16px; }
   .profile-name { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin-top: 10px; }
   .handle-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
   .follows-you {
