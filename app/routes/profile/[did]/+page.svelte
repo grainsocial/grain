@@ -8,7 +8,9 @@
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
-  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX } from 'lucide-svelte'
+  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX, Share } from 'lucide-svelte'
+  import { share } from '$lib/utils/share'
+  import Toast from '$lib/components/atoms/Toast.svelte'
   import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
   import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
   import { viewer as viewerStore, requireAuth } from '$lib/stores'
@@ -84,6 +86,16 @@
     }
   }
 
+  let showToast = $state(false)
+
+  async function handleShare() {
+    const url = `${window.location.origin}/profile/${did}`
+    const result = await share(url)
+    if (result.success && result.method === 'clipboard') {
+      showToast = true
+    }
+  }
+
   const blockHide = $derived(!!profile.data?.viewer?.blocking || !!profile.data?.viewer?.blockedBy)
 
   const showGermButton = $derived.by(() => {
@@ -125,12 +137,18 @@
     <div class="profile-info">
       <div class="top-row">
         <Avatar {did} src={p.avatar ?? null} name={p.displayName} size={64} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
-        {#if viewerDid && viewerDid !== did}
-          <div class="actions">
+        <div class="actions">
+          {#if viewerDid && viewerDid !== did}
             {#if !p.viewer?.blocking && !p.viewer?.blockedBy}
               <FollowButton {did} viewerFollow={p.viewer?.following ?? null} onCountChange={(d) => (followersOffset += d)} />
             {/if}
-            <OverflowMenu>
+          {/if}
+          <OverflowMenu>
+            <button class="menu-item" type="button" onclick={handleShare}>
+              <Share size={15} />
+              Share
+            </button>
+            {#if viewerDid && viewerDid !== did}
               {#if !blockHide}
                 <button class="menu-item" type="button" onclick={handleMute}>
                   <VolumeX size={15} />
@@ -141,9 +159,9 @@
                 <Ban size={15} />
                 {p.viewer?.blocking ? 'Unblock' : 'Block'}
               </button>
-            </OverflowMenu>
-          </div>
-        {/if}
+            {/if}
+          </OverflowMenu>
+        </div>
       </div>
       <div class="profile-name">{p.displayName || did.slice(0, 18)}</div>
       <div class="handle-row">
@@ -250,6 +268,8 @@
     <StoryViewer initialDid={did} onclose={() => (showStoryViewer = false)} />
   {/if}
 {/if}
+
+<Toast message="Link copied" bind:visible={showToast} />
 
 <style>
   .profile-header { border-bottom: 1px solid var(--border); }

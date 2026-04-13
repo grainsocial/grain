@@ -13,6 +13,12 @@
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
   let inputEl: HTMLInputElement | undefined = $state()
 
+  const atmoApps = [
+    'bluesky', 'tangled', 'anisota', 'beacon-bits', 'eurosky', 'flashes',
+    'gander', 'germ', 'leaflet', 'northsky', 'offprint', 'pckt', 'plyr',
+    'popfeed', 'blento', 'semble', 'skylight', 'blacksky', 'spark', 'stream-place',
+  ]
+
   $effect(() => {
     if (open && inputEl) inputEl.focus()
   })
@@ -89,8 +95,14 @@
   }
 </script>
 
-<Modal bind:open title="Log in with your internet handle">
-  <p class="subtitle">Enter the domain you use as your identity across the open social web. <a href="https://internethandle.org" target="_blank" rel="noopener noreferrer" class="link">Learn more</a></p>
+<Modal bind:open title="Log in with your atmosphere account">
+  <div class="marquee-wrapper">
+    <div class="marquee-track">
+      {#each [...atmoApps, ...atmoApps] as app}
+        <img src="/atmo/atmo-{app}.{app === 'spark' ? 'png' : 'jpg'}" alt={app} class="marquee-logo" />
+      {/each}
+    </div>
+  </div>
   <div class="input-wrapper">
     <input
       type="text"
@@ -146,8 +158,27 @@
 </Modal>
 
 <style>
-  .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
-  .link { color: var(--grain); }
+  .marquee-wrapper {
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .marquee-track {
+    display: flex;
+    gap: 12px;
+    width: max-content;
+    animation: marquee-scroll 60s linear infinite;
+  }
+  .marquee-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
   .input-wrapper {
     position: relative;
     margin-bottom: 16px;

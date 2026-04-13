@@ -277,6 +277,15 @@
     text-decoration: none;
     position: relative;
   }
+  .grouped-avatar-link :global(img),
+  .grouped-avatar-link :global(.avatar) {
+    box-shadow: 0 0 0 2px var(--bg-root);
+    transition: box-shadow 0.12s;
+  }
+  .notif:hover .grouped-avatar-link :global(img),
+  .notif:hover .grouped-avatar-link :global(.avatar) {
+    box-shadow: 0 0 0 2px var(--bg-hover);
+  }
   .grouped-avatar-link:hover {
     z-index: 1;
   }

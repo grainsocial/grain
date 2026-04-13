@@ -68,5 +68,5 @@
     transition: color 0.15s, border-bottom-color 0.15s, background-color 0.15s;
   }
   .feed-tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
-  .feed-tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 600; }
+  .feed-tab.active { color: var(--text-primary); border-bottom-color: var(--grain); font-weight: 600; }
 </style>
