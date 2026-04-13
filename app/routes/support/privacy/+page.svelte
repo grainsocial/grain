@@ -7,7 +7,7 @@
 <DetailHeader label="Privacy Policy" />
 
 <div class="legal">
-  <p class="updated">Last Updated: June 3, 2025</p>
+  <p class="updated">Last Updated: April 12, 2026</p>
 
   <section>
     <h2>Data Storage and Access</h2>
@@ -26,14 +26,32 @@
   <section>
     <h2>EXIF Metadata</h2>
     <p>
-      We optionally collect and display EXIF metadata from your photos. At upload time, you can
-      choose whether to allow this metadata to be collected. The metadata is stored according to
-      standard AT Protocol storage mechanisms and is not retained outside the protocol or used for
-      other purposes. We do not collect GPS or location data from your photos.
+      We optionally collect and display EXIF metadata from your photos, including camera make,
+      model, and exposure information. You can control whether camera data is included in your
+      uploads via Settings &gt; Upload Defaults. The metadata is stored according to standard AT
+      Protocol storage mechanisms and is not retained outside the protocol or used for other
+      purposes.
     </p>
     <p>
       You can learn more about the types of metadata commonly embedded in photos at
       <a href="https://exiv2.org/tags.html" target="_blank" rel="noopener noreferrer">exiv2.org</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Location Data</h2>
+    <p>
+      Grain can optionally extract GPS coordinates from your photo metadata to display location
+      information on your galleries. Location data is opt-in and can be disabled at any time via
+      Settings &gt; Upload Defaults. When enabled, GPS coordinates are converted to an
+      <a href="https://h3geo.org" target="_blank" rel="noopener noreferrer">H3</a> hexagonal grid
+      index and reverse-geocoded to a human-readable place name. The H3 index and place name are
+      stored as part of your gallery record on the AT Protocol. Like all content on Grain, location
+      data attached to galleries is public.
+    </p>
+    <p>
+      We do not collect or track your device location. Location data is derived solely from photo
+      metadata that you choose to include.
     </p>
   </section>
 
