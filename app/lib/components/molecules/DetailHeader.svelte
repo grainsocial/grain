@@ -1,13 +1,22 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import { ArrowLeft } from 'lucide-svelte'
+  import { goto } from '$app/navigation'
 
   let { label, actions, onback }: { label: string; actions?: Snippet; onback?: () => void } =
     $props()
+
+  function goBack() {
+    if (window.history.length > 1) {
+      history.back()
+    } else {
+      goto('/')
+    }
+  }
 </script>
 
 <div class="detail-header">
-  <button class="detail-back" onclick={onback ?? (() => history.back())}
+  <button class="detail-back" onclick={onback ?? goBack}
     ><ArrowLeft size={18} /></button
   >
   <span class="detail-label">{label}</span>
