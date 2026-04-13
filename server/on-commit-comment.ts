@@ -1,5 +1,6 @@
 import { defineHook } from "$hatk";
 import { shouldPush } from "./helpers/notifPrefs.ts";
+import { getUnseenCount } from "./helpers/unseenCount.ts";
 
 export default defineHook("on-commit", { collections: ["social.grain.comment"] },
   async ({ action, record, repo, db, lookup, push }) => {
@@ -21,11 +22,13 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
 
       if (parent && parent.author !== repo) {
         if (await shouldPush(db, parent.author, repo, "comments")) {
+          const badge = await getUnseenCount(db, parent.author) + 1
           await push.send({
             did: parent.author,
             title: "New reply",
             body: `${displayName} replied to your comment`,
             data: { type: "comment-reply", uri: subject },
+            badge,
           })
         }
       }
@@ -40,11 +43,13 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
     if (gallery) {
       if (gallery.author !== repo) {
         if (await shouldPush(db, gallery.author, repo, "comments")) {
+          const badge = await getUnseenCount(db, gallery.author) + 1
           await push.send({
             did: gallery.author,
             title: "New comment",
             body: `${displayName} commented on your gallery`,
             data: { type: "gallery-comment", uri: subject },
+            badge,
           })
         }
       }
@@ -59,11 +64,13 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
 
     if (story && story.author !== repo) {
       if (await shouldPush(db, story.author, repo, "comments")) {
+        const badge = await getUnseenCount(db, story.author) + 1
         await push.send({
           did: story.author,
           title: "New comment",
           body: `${displayName} commented on your story`,
           data: { type: "story-comment", uri: subject },
+          badge,
         })
       }
     }

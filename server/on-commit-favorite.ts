@@ -1,5 +1,6 @@
 import { defineHook } from "$hatk";
 import { shouldPush } from "./helpers/notifPrefs.ts";
+import { getUnseenCount } from "./helpers/unseenCount.ts";
 
 export default defineHook("on-commit", { collections: ["social.grain.favorite"] },
   async ({ action, record, repo, db, lookup, push }) => {
@@ -17,11 +18,13 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
       if (!(await shouldPush(db, gallery.author, repo, "favorites"))) return
       const profiles = await lookup("social.grain.actor.profile", "did", [repo])
       const actor = profiles.get(repo)
+      const badge = await getUnseenCount(db, gallery.author) + 1
       await push.send({
         did: gallery.author,
         title: "New favorite",
         body: `${(actor?.value as any)?.displayName ?? "Someone"} favorited your gallery`,
         data: { type: "gallery-favorite", uri: subject },
+        badge,
       })
       return
     }
@@ -36,11 +39,13 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
       if (!(await shouldPush(db, story.author, repo, "favorites"))) return
       const profiles = await lookup("social.grain.actor.profile", "did", [repo])
       const actor = profiles.get(repo)
+      const badge = await getUnseenCount(db, story.author) + 1
       await push.send({
         did: story.author,
         title: "New favorite",
         body: `${(actor?.value as any)?.displayName ?? "Someone"} favorited your story`,
         data: { type: "story-favorite", uri: subject },
+        badge,
       })
     }
   }
