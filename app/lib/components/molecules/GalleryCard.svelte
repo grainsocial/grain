@@ -10,7 +10,7 @@
   import ReportButton from './ReportButton.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart } from 'lucide-svelte'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag } from 'lucide-svelte'
   import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
@@ -24,6 +24,7 @@
   const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
   let deleting = $state(false)
+  let reportOpen = $state(false)
   let doFavorite: (() => void) | undefined = $state(undefined)
   let showHeartAnim = $state(false)
 
@@ -170,14 +171,21 @@
         </div>
       </a>
     </ProfilePopover>
-    {#if isOwner}
-      <OverflowMenu>
+    <OverflowMenu horizontal>
+      {#if $isAuthenticated}
+        <button class="menu-item" type="button" onclick={() => (reportOpen = true)}>
+          <Flag size={15} />
+          Report
+        </button>
+      {/if}
+      {#if isOwner}
+        <div class="menu-divider"></div>
         <button class="menu-item delete" type="button" onclick={deleteGallery} disabled={deleting}>
           <Trash2 size={15} />
           Delete gallery
         </button>
-      </OverflowMenu>
-    {/if}
+      {/if}
+    </OverflowMenu>
   </header>
 
   {#if photos.length > 0}
@@ -259,11 +267,10 @@
     <button class="stat" type="button" onclick={handleShare} aria-label="Share">
       <Send size={20} />
     </button>
-    <span class="spacer"></span>
-    {#if $isAuthenticated}
-      <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} />
-    {/if}
   </div>
+  {#if $isAuthenticated}
+    <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} showButton={false} bind:open={reportOpen} />
+  {/if}
 
   <Toast message="Link copied" bind:visible={showToast} />
 
@@ -365,6 +372,7 @@
   .menu-item.delete {
     color: #f87171;
   }
+  .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
   .menu-item:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -543,7 +551,6 @@
     transition: opacity 0.15s;
   }
   .stat:hover { opacity: 0.7; }
-  .spacer { flex: 1; }
   .stat-count { color: var(--text-secondary); }
 
   /* Content */

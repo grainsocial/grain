@@ -10,17 +10,28 @@
     subjectUri,
     subjectCid,
     variant = 'default',
+    showButton = true,
+    open: openProp = $bindable(false),
     onopen,
     onclose,
   }: {
     subjectUri: string
     subjectCid: string
     variant?: 'default' | 'overlay'
+    showButton?: boolean
+    open?: boolean
     onopen?: () => void
     onclose?: () => void
   } = $props()
 
   let open = $state(false)
+
+  $effect(() => {
+    if (openProp && !open) {
+      openModal()
+      openProp = false
+    }
+  })
   let label = $state('')
   let reason = $state('')
   let submitting = $state(false)
@@ -73,6 +84,7 @@
   }
 </script>
 
+{#if showButton}
 <button
   class={variant === 'overlay' ? 'overlay-btn' : 'stat'}
   type="button"
@@ -82,6 +94,7 @@
 >
   <Flag size={variant === 'overlay' ? 20 : 18} />
 </button>
+{/if}
 
 <Modal bind:open title={submitted ? 'Report Submitted' : 'Report Content'}>
   {#if submitted}

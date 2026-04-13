@@ -1,15 +1,15 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { EllipsisVertical } from 'lucide-svelte'
+  import { EllipsisVertical, Ellipsis } from 'lucide-svelte'
 
-  let { children }: { children: Snippet } = $props()
+  let { children, horizontal = false }: { children: Snippet; horizontal?: boolean } = $props()
 
   let open = $state(false)
 </script>
 
 <div class="overflow-menu">
   <button class="overflow-btn" type="button" onclick={(e) => { e.stopPropagation(); open = !open }} aria-label="More options">
-    <EllipsisVertical size={18} />
+    {#if horizontal}<Ellipsis size={18} />{:else}<EllipsisVertical size={18} />{/if}
   </button>
   {#if open}
     <div class="overflow-backdrop" role="button" tabindex="-1" onclick={() => (open = false)} onkeydown={(e) => e.key === 'Escape' && (open = false)}></div>
