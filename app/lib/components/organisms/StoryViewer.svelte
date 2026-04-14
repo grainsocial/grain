@@ -407,7 +407,8 @@
 
       <!-- Bottom input bar -->
       {#if !isExpired}
-      <div class="story-bottom-bar" onclick={(e) => e.stopPropagation()}>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div class="story-bottom-bar" role="presentation" onclick={(e) => e.stopPropagation()}>
         {#if latestComment}
           <div class="latest-comment">
             {#if latestComment.author?.avatar}
@@ -435,7 +436,7 @@
 
     {#if commentSheetOpen && currentStory}
       <div class="contained-sheet-wrapper" onclick={(e) => e.stopPropagation()} role="presentation">
-        <div class="contained-sheet-backdrop" onclick={() => { commentSheetOpen = false; paused = false; startTimer() }} role="button" tabindex="-1"></div>
+        <div class="contained-sheet-backdrop" onclick={() => { commentSheetOpen = false; paused = false; startTimer() }} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { commentSheetOpen = false; paused = false; startTimer() }}} role="button" tabindex="-1"></div>
         <CommentSheet
           open={commentSheetOpen}
           subjectUri={currentStory.uri}
@@ -695,10 +696,6 @@
     height: 24px;
     border-radius: 50%;
     object-fit: cover;
-    flex-shrink: 0;
-  }
-  .comment-author {
-    font-weight: 600;
     flex-shrink: 0;
   }
   .input-row {
