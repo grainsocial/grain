@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ProfilePopover from '../molecules/ProfilePopover.svelte'
+
   type Segment =
     | { type: 'text'; text: string }
     | { type: 'link'; text: string; href: string }
@@ -77,7 +79,7 @@
   const segments = $derived(parse(text))
 </script>
 
-{#each segments as seg}{#if seg.type === 'link'}<a href={seg.href} target="_blank" rel="noopener noreferrer" class="rich-link">{seg.text}</a>{:else if seg.type === 'mention'}<a href="/profile/{seg.handle}" class="rich-mention">{seg.text}</a>{:else if seg.type === 'hashtag'}<a href="/hashtags/{seg.tag}" class="rich-hashtag">{seg.text}</a>{:else}{seg.text}{/if}{/each}
+{#each segments as seg}{#if seg.type === 'link'}<a href={seg.href} target="_blank" rel="noopener noreferrer" class="rich-link">{seg.text}</a>{:else if seg.type === 'mention'}<ProfilePopover did={seg.handle}><a href="/profile/{seg.handle}" class="rich-mention">{seg.text}</a></ProfilePopover>{:else if seg.type === 'hashtag'}<a href="/hashtags/{seg.tag}" class="rich-hashtag">{seg.text}</a>{:else}{seg.text}{/if}{/each}
 
 <style>
   .rich-link, .rich-mention, .rich-hashtag {
