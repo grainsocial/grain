@@ -30,6 +30,10 @@
     return photos[0]?.thumb
   }
 
+  function photoCount(gallery: GalleryView): number {
+    return ((gallery.items ?? []) as PhotoView[]).length
+  }
+
   function rkey(uri: string): string {
     return uri.split('/').pop() ?? ''
   }
@@ -62,6 +66,13 @@
               loading="lazy"
               onload={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}
             />
+          {/if}
+          {#if photoCount(gallery) > 1}
+            <div class="multi-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path transform="matrix(0.807,0,0,0.807,-0.41,18.81)" d="M18.43-20.72L6.67-20.72C4.22-20.72 2.99-19.50 2.99-17.09L2.99-5.24C2.99-2.82 4.22-1.61 6.67-1.61L18.43-1.61C20.88-1.61 22.10-2.81 22.10-5.24L22.10-17.09C22.10-19.51 20.88-20.72 18.43-20.72ZM27.79-11.67C27.79-14.09 26.57-15.29 24.12-15.29L23.71-15.29L23.71-5.24C23.71-1.92 21.76 0 18.43 0L8.67 0L8.67 0.19C8.67 2.60 9.90 3.82 12.35 3.82L24.12 3.82C26.57 3.82 27.79 2.61 27.79 0.19Z" />
+              </svg>
+            </div>
           {/if}
           <div class="overlay">
             <span class="overlay-title">{gallery.title}</span>
@@ -100,6 +111,14 @@
   }
   .cell img:global(.loaded) {
     opacity: 1;
+  }
+  .multi-icon {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    color: #fff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    z-index: 1;
   }
   .overlay {
     position: absolute;
