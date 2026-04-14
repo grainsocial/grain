@@ -1,6 +1,6 @@
 import { defineHook } from "$hatk";
-import { shouldPush } from "./helpers/notifPrefs.ts";
-import { getUnseenCount } from "./helpers/unseenCount.ts";
+import { shouldPush } from "../helpers/notifPrefs.ts";
+import { getUnseenCount } from "../helpers/unseenCount.ts";
 
 export default defineHook("on-commit", { collections: ["social.grain.favorite"] },
   async ({ action, record, repo, db, lookup, push }) => {
