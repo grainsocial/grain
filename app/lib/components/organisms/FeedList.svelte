@@ -15,12 +15,14 @@
     initialItems,
     initialCursor,
     skeleton = false,
+    onStoryTap,
   }: {
     feed: string
     params?: Record<string, string>
     initialItems?: GalleryView[]
     initialCursor?: string
     skeleton?: boolean
+    onStoryTap?: (did: string) => void
   } = $props()
 
   let items: GalleryView[] = $state([])
@@ -94,7 +96,7 @@
   </div>
 {:else}
   {#each items as item, i (`${item.uri}:${i}`)}
-    <GalleryCard gallery={item} onCommentClick={() => openComments(item)} />
+    <GalleryCard gallery={item} onCommentClick={() => openComments(item)} {onStoryTap} />
     {#if i === 4 && $isAuthenticated}
       <SuggestedFollows />
     {/if}

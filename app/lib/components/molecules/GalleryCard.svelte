@@ -17,12 +17,17 @@
   import { isAuthenticated, requireAuth, viewer } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
+  import { storyAuthorsQuery } from '$lib/queries'
   import { EyeOff, AlertTriangle, Info } from 'lucide-svelte'
 
-  let { gallery, onCommentClick }: { gallery: GalleryView; onCommentClick?: () => void } = $props()
+  let { gallery, onCommentClick, onStoryTap }: { gallery: GalleryView; onCommentClick?: () => void; onStoryTap?: (did: string) => void } = $props()
 
   const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
+  const storyAuthors = createQuery(() => storyAuthorsQuery())
+  const creatorHasStory = $derived(
+    storyAuthors.data?.some((a) => a.profile.did === gallery.creator?.did) ?? false
+  )
   let deleting = $state(false)
   let reportOpen = $state(false)
   let doFavorite: (() => void) | undefined = $state(undefined)
@@ -155,7 +160,7 @@
   <header class="card-header">
     <ProfilePopover did={gallery.creator?.did ?? ''}>
       <a href="/profile/{gallery.creator?.did}" class="author-chip">
-        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} size={32} />
+        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} size={32} hasStory={creatorHasStory} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
         <div class="author-info">
           <span class="author-name-row">
             <span class="author-handle">{displayName}</span>

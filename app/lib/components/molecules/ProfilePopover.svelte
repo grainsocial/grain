@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query'
   import type { GrainActorDefsProfileViewDetailed, GetKnownFollowersFollowerItem } from '$hatk/client'
-  import { actorProfileQuery, knownFollowersQuery } from '$lib/queries'
+  import { actorProfileQuery, knownFollowersQuery, storyAuthorsQuery } from '$lib/queries'
   import { viewer } from '$lib/stores'
   import Avatar from '../atoms/Avatar.svelte'
   import FollowButton from './FollowButton.svelte'
@@ -30,6 +30,9 @@
     ...knownFollowersQuery(did, $viewer?.did ?? ''),
     enabled: shouldFetch && !!$viewer?.did && !isOwnProfile,
   }))
+
+  const storyAuthors = createQuery(() => storyAuthorsQuery())
+  const hasStory = $derived(storyAuthors.data?.some((a) => a.profile.did === did) ?? false)
 
   const p = $derived(profile.data as GrainActorDefsProfileViewDetailed | undefined)
   const knownList = $derived(
@@ -73,7 +76,7 @@
     <div class="popover" onmouseenter={handleEnter} onmouseleave={handleLeave}>
       <div class="popover-header">
         <a href="/profile/{p.did}" class="popover-avatar-link">
-          <Avatar did={p.did} src={p.avatar ?? null} size={48} />
+          <Avatar did={p.did} src={p.avatar ?? null} size={48} {hasStory} />
         </a>
         {#if !isOwnProfile && $viewer}
           <FollowButton did={p.did} {viewerFollow} />

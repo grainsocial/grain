@@ -48,9 +48,9 @@
 <PullToRefresh onRefresh={refresh}>
   <StoryStrip onCreateStory={openCreate} onViewStory={openViewer} />
   {#if feed.isLoading}
-    <FeedList feed="recent" skeleton />
+    <FeedList feed="recent" skeleton onStoryTap={openViewer} />
   {:else}
-    <FeedList feed="recent" initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
+    <FeedList feed="recent" initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} onStoryTap={openViewer} />
   {/if}
 </PullToRefresh>
 

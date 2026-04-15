@@ -1,6 +1,6 @@
 <script lang="ts">
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
-  import { UserPen, Shield, Bell, ChevronRight, ExternalLink, User, Upload } from 'lucide-svelte'
+  import { ChevronRight, ExternalLink } from 'lucide-svelte'
   import { viewer } from '$lib/stores'
   import { logout } from '$lib/auth'
   import { resetPreferences } from '$lib/preferences'
@@ -19,27 +19,22 @@
 <div class="settings-page">
   <div class="settings-group">
     <a href="/settings/account" class="settings-row">
-      <User size={18} />
       <span class="settings-label">Account</span>
       <ChevronRight size={16} class="chevron" />
     </a>
     <a href="/settings/profile" class="settings-row">
-      <UserPen size={18} />
       <span class="settings-label">Edit Profile</span>
       <ChevronRight size={16} class="chevron" />
     </a>
     <a href="/settings/notifications" class="settings-row">
-      <Bell size={18} />
       <span class="settings-label">Notifications</span>
       <ChevronRight size={16} class="chevron" />
     </a>
     <a href="/settings/moderation" class="settings-row">
-      <Shield size={18} />
       <span class="settings-label">Moderation</span>
       <ChevronRight size={16} class="chevron" />
     </a>
-    <a href="/settings/upload-defaults" class="settings-row">
-      <Upload size={18} />
+<a href="/settings/upload-defaults" class="settings-row">
       <span class="settings-label">Privacy</span>
       <ChevronRight size={16} class="chevron" />
     </a>

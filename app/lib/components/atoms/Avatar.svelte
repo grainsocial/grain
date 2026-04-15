@@ -23,7 +23,7 @@
   const fallback = $derived(name?.[0]?.toUpperCase() || initials(did))
   let imgError = $state(false)
   $effect(() => { void url; imgError = false })
-  const innerSize = $derived(hasStory ? size - 6 : size)
+  const innerSize = $derived(hasStory ? size - 4 : size)
   const fontSize = $derived(Math.round(innerSize * 0.35))
 </script>
 
@@ -67,8 +67,11 @@
     cursor: pointer;
     border-radius: 50%;
     line-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
-  .avatar-btn:hover { transform: scale(1.08); }
+  .avatar-btn:hover { opacity: 0.85; }
   .avatar-wrap {
     display: inline-flex;
     align-items: center;

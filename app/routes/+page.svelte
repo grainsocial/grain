@@ -70,9 +70,9 @@
   {#if needsActor && !actorDid}
     <div class="empty">Log in to see this feed.</div>
   {:else if feed.isLoading}
-    <FeedList feed={firstFeed} params={needsActor ? { actor: actorDid } : undefined} skeleton />
+    <FeedList feed={firstFeed} params={needsActor ? { actor: actorDid } : undefined} skeleton onStoryTap={openViewer} />
   {:else}
-    <FeedList feed={firstFeed} params={needsActor ? { actor: actorDid } : undefined} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} />
+    <FeedList feed={firstFeed} params={needsActor ? { actor: actorDid } : undefined} initialItems={feed.data?.items ?? []} initialCursor={feed.data?.cursor} onStoryTap={openViewer} />
   {/if}
 </PullToRefresh>
 
