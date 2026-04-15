@@ -1,6 +1,7 @@
 import { defineOG } from "$hatk";
-import type { GrainActorProfile } from "$hatk";
-import { fallbackFonts } from "./fonts.ts";
+import type { GrainActorProfile, Photo } from "$hatk";
+import { allFonts } from "./fonts.ts";
+import { calculateCollageLayout } from "./collage.ts";
 
 export default defineOG("/og/profile/:did", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
@@ -14,58 +15,47 @@ export default defineOG("/og/profile/:did", async (ctx) => {
   const avatarRef = author ? blobUrl(did, author.value.avatar) : null;
   const avatarDataUrl = avatarRef ? await fetchImage(avatarRef) : null;
 
-  // Fetch gallery count and follower/following counts
-  const [galleryCount, followerCount, followingCount] = await Promise.all([
-    db.query(`SELECT count(*) as cnt FROM "social.grain.gallery" WHERE did = $1`, [did]) as Promise<
-      Array<{ cnt: number }>
-    >,
-    db.query(`SELECT count(*) as cnt FROM "social.grain.graph.follow" WHERE subject = $1`, [
-      did,
-    ]) as Promise<Array<{ cnt: number }>>,
-    db.query(`SELECT count(*) as cnt FROM "social.grain.graph.follow" WHERE did = $1`, [
-      did,
-    ]) as Promise<Array<{ cnt: number }>>,
-  ]);
-
-  const galleries = galleryCount[0]?.cnt ?? 0;
-  const followers = followerCount[0]?.cnt ?? 0;
-  const following = followingCount[0]?.cnt ?? 0;
-
-  // Fetch recent gallery thumbnails (up to 4)
+  // Fetch first photo from each of the latest 10 galleries
   const recentRows = (await db.query(
-    `SELECT gi.item, gi.gallery FROM "social.grain.gallery.item" gi
+    `SELECT gi.item, g.uri AS gallery FROM "social.grain.gallery.item" gi
        JOIN "social.grain.gallery" g ON g.uri = gi.gallery
-       WHERE g.did = $1
-       ORDER BY g.created_at DESC, gi.position ASC
-       LIMIT 4`,
+       WHERE g.did = $1 AND gi.position = 0
+       ORDER BY g.created_at DESC
+       LIMIT 10`,
     [did],
   )) as Array<{ item: string; gallery: string }>;
 
-  const thumbs: string[] = [];
+  const imageData: Array<{ url: string; aspectRatio: number }> = [];
   if (recentRows.length > 0) {
     const photoUris = recentRows.map((r) => r.item);
-    const photoRecords = await ctx.getRecords<import("$hatk").Photo>(
-      "social.grain.photo",
-      photoUris,
-    );
+    const photoRecords = await ctx.getRecords<Photo>("social.grain.photo", photoUris);
     for (const uri of photoUris) {
       const rec = photoRecords.get(uri);
       if (!rec) continue;
       const url = blobUrl(rec.did, rec.value.photo, "feed_thumbnail");
       if (!url) continue;
       const dataUrl = await fetchImage(url);
-      if (dataUrl) thumbs.push(dataUrl);
+      if (!dataUrl) continue;
+      const ar = rec.value.aspectRatio
+        ? rec.value.aspectRatio.width / rec.value.aspectRatio.height
+        : 4 / 3;
+      imageData.push({ url: dataUrl, aspectRatio: ar });
     }
   }
 
-  const statStyle = {
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center" as const,
-    gap: "2px",
-  };
-  const statNum = { fontSize: 22, fontWeight: 700, color: "white" };
-  const statLabel = { fontSize: 13, color: "#64748b" };
+  const width = 1200;
+  const height = 630;
+  const titleBarHeight = 100;
+  const collageHeight = height - titleBarHeight;
+  const gap = 12;
+  const padding = 24;
+
+  const placements = calculateCollageLayout(
+    imageData,
+    width - padding * 2,
+    collageHeight - padding * 2,
+    gap,
+  );
 
   return {
     element: {
@@ -73,95 +63,136 @@ export default defineOG("/og/profile/:did", async (ctx) => {
       props: {
         style: {
           display: "flex",
+          flexDirection: "column",
           width: "100%",
           height: "100%",
-          background: "#080b12",
-          color: "white",
-          padding: "40px",
+          backgroundColor: "#ffffff",
+          position: "relative",
         },
         children: [
-          // Left: avatar + info
+          // Collage area
           {
             type: "div",
             props: {
               style: {
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "400px",
-                gap: "16px",
+                width: `${width}px`,
+                height: `${collageHeight}px`,
+                position: "relative",
+                padding: `${padding}px`,
+              },
+              children: placements.map(
+                (p: {
+                  item: { url: string };
+                  x: number;
+                  y: number;
+                  width: number;
+                  height: number;
+                }) => ({
+                  type: "img",
+                  props: {
+                    src: p.item.url,
+                    style: {
+                      position: "absolute",
+                      left: `${p.x + padding}px`,
+                      top: `${p.y + padding}px`,
+                      width: `${p.width}px`,
+                      height: `${p.height}px`,
+                      objectFit: "cover",
+                    },
+                  },
+                }),
+              ),
+            },
+          },
+          // Title bar
+          {
+            type: "div",
+            props: {
+              style: {
+                position: "absolute",
+                bottom: "0",
+                left: "0",
+                right: "0",
+                height: `${titleBarHeight}px`,
+                background: "#ffffff",
+                display: "flex",
+                alignItems: "flex-end",
+                padding: "0 24px 20px 24px",
               },
               children: [
-                ...(avatarDataUrl
-                  ? [
-                      {
-                        type: "img",
-                        props: {
-                          src: avatarDataUrl,
-                          width: 120,
-                          height: 120,
-                          style: { borderRadius: "60px", objectFit: "cover" as const },
-                        },
-                      },
-                    ]
-                  : [
+                {
+                  type: "div",
+                  props: {
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "16px",
+                      width: "100%",
+                    },
+                    children: [
+                      ...(avatarDataUrl
+                        ? [
+                            {
+                              type: "img",
+                              props: {
+                                src: avatarDataUrl,
+                                style: {
+                                  width: "56px",
+                                  height: "56px",
+                                  borderRadius: "28px",
+                                  objectFit: "cover" as const,
+                                },
+                              },
+                            },
+                          ]
+                        : []),
                       {
                         type: "div",
                         props: {
                           style: {
-                            width: "120px",
-                            height: "120px",
-                            borderRadius: "60px",
-                            background: "#1e293b",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px",
+                            flex: "1",
+                            overflow: "hidden",
                           },
-                        },
-                      },
-                    ]),
-                {
-                  type: "div",
-                  props: {
-                    children: displayName,
-                    style: { fontSize: 32, fontWeight: 700, textAlign: "center" as const },
-                  },
-                },
-                {
-                  type: "div",
-                  props: { children: `@${handle}`, style: { fontSize: 18, color: "#94a3b8" } },
-                },
-                {
-                  type: "div",
-                  props: {
-                    style: { display: "flex", gap: "32px", marginTop: "8px" },
-                    children: [
-                      {
-                        type: "div",
-                        props: {
-                          style: statStyle,
                           children: [
-                            { type: "div", props: { style: statNum, children: `${galleries}` } },
-                            { type: "div", props: { style: statLabel, children: "galleries" } },
+                            {
+                              type: "div",
+                              props: {
+                                children: displayName,
+                                style: {
+                                  fontSize: 36,
+                                  fontWeight: 700,
+                                  color: "#171717",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap" as const,
+                                },
+                              },
+                            },
+                            {
+                              type: "div",
+                              props: {
+                                children: `@${handle}`,
+                                style: {
+                                  fontSize: 20,
+                                  color: "#525252",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap" as const,
+                                },
+                              },
+                            },
                           ],
                         },
                       },
                       {
                         type: "div",
                         props: {
-                          style: statStyle,
-                          children: [
-                            { type: "div", props: { style: statNum, children: `${followers}` } },
-                            { type: "div", props: { style: statLabel, children: "followers" } },
-                          ],
-                        },
-                      },
-                      {
-                        type: "div",
-                        props: {
-                          style: statStyle,
-                          children: [
-                            { type: "div", props: { style: statNum, children: `${following}` } },
-                            { type: "div", props: { style: statLabel, children: "following" } },
-                          ],
+                          children: "grain",
+                          style: { fontSize: 32, fontFamily: "Syne", fontWeight: 800, color: "#171717", letterSpacing: "-0.02em" },
                         },
                       },
                     ],
@@ -170,33 +201,10 @@ export default defineOG("/og/profile/:did", async (ctx) => {
               ],
             },
           },
-          // Right: recent photos grid
-          {
-            type: "div",
-            props: {
-              style: {
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "8px",
-                flex: "1",
-                alignContent: "center",
-                justifyContent: "center",
-              },
-              children: thumbs.map((src) => ({
-                type: "img",
-                props: {
-                  src,
-                  width: thumbs.length <= 2 ? 340 : 180,
-                  height: thumbs.length <= 2 ? 340 : 180,
-                  style: { objectFit: "cover", borderRadius: "12px" },
-                },
-              })),
-            },
-          },
         ],
       },
     },
-    options: { fonts: fallbackFonts() },
+    options: { fonts: allFonts() },
     meta: {
       title: `${displayName} (@${handle}) — Grain`,
       description: description || `@${handle} on Grain`,
