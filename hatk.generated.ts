@@ -31,6 +31,7 @@ const declarationLex = {"lexicon":1,"id":"com.germnetwork.declaration","defs":{"
 const addressLex = {"lexicon":1,"id":"community.lexicon.location.address","defs":{"main":{"type":"object","description":"A physical location in the form of a street address.","required":["country"],"properties":{"country":{"type":"string","description":"The ISO 3166 country code. Preferably the 2-letter code.","minLength":2,"maxLength":10},"postalCode":{"type":"string","description":"The postal code of the location."},"region":{"type":"string","description":"The administrative region of the country. For example, a state in the USA."},"locality":{"type":"string","description":"The locality of the region. For example, a city in the USA."},"street":{"type":"string","description":"The street address."},"name":{"type":"string","description":"The name of the location."}}}}} as const
 const geoLex = {"lexicon":1,"id":"community.lexicon.location.geo","defs":{"main":{"type":"object","description":"A physical location in the form of a WGS84 coordinate.","required":["latitude","longitude"],"properties":{"latitude":{"type":"string"},"longitude":{"type":"string"},"altitude":{"type":"string"},"name":{"type":"string","description":"The name of the location."}}}}} as const
 const hthreeLex = {"lexicon":1,"id":"community.lexicon.location.hthree","defs":{"main":{"type":"object","description":"A physical location in the form of a H3 encoded location.","required":["value"],"properties":{"value":{"type":"string","description":"The h3 encoded location."},"name":{"type":"string","description":"The name of the location."}}}}} as const
+const applyWritesLex = {"lexicon":1,"id":"dev.hatk.applyWrites","defs":{"main":{"type":"procedure","description":"Apply multiple record writes in a single atomic PDS transaction.","input":{"encoding":"application/json","schema":{"type":"object","required":["writes"],"properties":{"writes":{"type":"array","items":{"type":"union","refs":["#create","#update","#delete"]}}}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"results":{"type":"array","items":{"type":"union","refs":["#createResult","#updateResult","#deleteResult"]}}}}}},"create":{"type":"object","required":["collection","value"],"properties":{"collection":{"type":"string"},"rkey":{"type":"string"},"value":{"type":"unknown"}}},"update":{"type":"object","required":["collection","rkey","value"],"properties":{"collection":{"type":"string"},"rkey":{"type":"string"},"value":{"type":"unknown"}}},"delete":{"type":"object","required":["collection","rkey"],"properties":{"collection":{"type":"string"},"rkey":{"type":"string"}}},"createResult":{"type":"object","required":["uri","cid"],"properties":{"uri":{"type":"string","format":"at-uri"},"cid":{"type":"string","format":"cid"}}},"updateResult":{"type":"object","required":["uri","cid"],"properties":{"uri":{"type":"string","format":"at-uri"},"cid":{"type":"string","format":"cid"}}},"deleteResult":{"type":"object","properties":{}}}} as const
 const createRecordLex = {"lexicon":1,"id":"dev.hatk.createRecord","defs":{"main":{"type":"procedure","description":"Create a record via the user's PDS.","input":{"encoding":"application/json","schema":{"type":"object","required":["collection","repo","record"],"properties":{"collection":{"type":"string"},"repo":{"type":"string","format":"did"},"record":{"type":"unknown"}}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"uri":{"type":"string","format":"at-uri"},"cid":{"type":"string","format":"cid"}}}}}}} as const
 const createReportLex = {"lexicon":1,"id":"dev.hatk.createReport","defs":{"main":{"type":"procedure","description":"Report an account or record for moderation review.","input":{"encoding":"application/json","schema":{"type":"object","required":["subject","label"],"properties":{"subject":{"type":"union","description":"The account or record being reported.","refs":["#repoRef","com.atproto.repo.strongRef"]},"label":{"type":"string","description":"Label identifier for the report reason."},"reason":{"type":"string","maxLength":2000,"description":"Optional free-text explanation."}}}},"output":{"encoding":"application/json","schema":{"type":"object","required":["id","subject","label","reportedBy","createdAt"],"properties":{"id":{"type":"integer"},"subject":{"type":"unknown"},"label":{"type":"string"},"reason":{"type":"string"},"reportedBy":{"type":"string","format":"did"},"createdAt":{"type":"string","format":"datetime"}}}}},"repoRef":{"type":"object","required":["did"],"properties":{"did":{"type":"string","format":"did"}}}}} as const
 const deleteRecordLex = {"lexicon":1,"id":"dev.hatk.deleteRecord","defs":{"main":{"type":"procedure","description":"Delete a record via the user's PDS.","input":{"encoding":"application/json","schema":{"type":"object","required":["collection","rkey"],"properties":{"collection":{"type":"string"},"rkey":{"type":"string"}}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{}}}}}} as const
@@ -113,6 +114,7 @@ type Registry = {
   'community.lexicon.location.address': typeof addressLex
   'community.lexicon.location.geo': typeof geoLex
   'community.lexicon.location.hthree': typeof hthreeLex
+  'dev.hatk.applyWrites': typeof applyWritesLex
   'dev.hatk.createRecord': typeof createRecordLex
   'dev.hatk.createReport': typeof createReportLex
   'dev.hatk.deleteRecord': typeof deleteRecordLex
@@ -177,6 +179,7 @@ export type Postgate = Prettify<LexRecord<typeof postgateLex, Registry>>
 export type Threadgate = Prettify<LexRecord<typeof threadgateLex, Registry>>
 export type BskyGraphFollow = Prettify<LexRecord<typeof bskyGraphFollowLex, Registry>>
 export type Declaration = Prettify<LexRecord<typeof declarationLex, Registry>>
+export type ApplyWrites = Prettify<LexProcedure<typeof applyWritesLex, Registry>>
 export type CreateReport = Prettify<LexProcedure<typeof createReportLex, Registry>>
 export type DescribeCollections = Prettify<LexQuery<typeof describeCollectionsLex, Registry>>
 export type DescribeFeeds = Prettify<LexQuery<typeof describeFeedsLex, Registry>>
@@ -365,6 +368,12 @@ export type SelfLabel = Prettify<LexDef<typeof atprotoLabelDefsLex, 'selfLabel',
 export type LabelValueDefinition = Prettify<LexDef<typeof atprotoLabelDefsLex, 'labelValueDefinition', Registry>>
 export type LabelValueDefinitionStrings = Prettify<LexDef<typeof atprotoLabelDefsLex, 'labelValueDefinitionStrings', Registry>>
 export type DeclarationMessageMe = Prettify<LexDef<typeof declarationLex, 'messageMe', Registry>>
+export type Create = Prettify<LexDef<typeof applyWritesLex, 'create', Registry>>
+export type Update = Prettify<LexDef<typeof applyWritesLex, 'update', Registry>>
+export type Delete = Prettify<LexDef<typeof applyWritesLex, 'delete', Registry>>
+export type CreateResult = Prettify<LexDef<typeof applyWritesLex, 'createResult', Registry>>
+export type UpdateResult = Prettify<LexDef<typeof applyWritesLex, 'updateResult', Registry>>
+export type DeleteResult = Prettify<LexDef<typeof applyWritesLex, 'deleteResult', Registry>>
 export type RepoRef = Prettify<LexDef<typeof createReportLex, 'repoRef', Registry>>
 export type LabelDefinition = Prettify<LexDef<typeof describeLabelsLex, 'labelDefinition', Registry>>
 export type LabelLocale = Prettify<LexDef<typeof describeLabelsLex, 'labelLocale', Registry>>
@@ -404,6 +413,7 @@ export type ProfileSearchResult = Prettify<LexDef<typeof searchProfilesLex, 'pro
 // ─── XRPC Schema ────────────────────────────────────────────────────
 
 export type XrpcSchema = {
+  'dev.hatk.applyWrites': ApplyWrites
   'dev.hatk.createRecord': CreateRecord
   'dev.hatk.createReport': CreateReport
   'dev.hatk.deleteRecord': DeleteRecord

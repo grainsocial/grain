@@ -92,31 +92,34 @@
       importProgress.current++
       try {
         const createdAt = post.createdAt.toISOString()
-        const photoUris: string[] = []
 
-        // Upload photos
+        // 1. Upload blobs (must be individual calls)
+        const blobs: Array<{ blob: unknown; width: number; height: number }> = []
         for (const photo of post.photos) {
           const base64 = photo.dataUrl.split(',')[1]
           const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-          const blob = new Blob([binary], { type: 'image/jpeg' })
-
-          const uploadResult = await callXrpc('dev.hatk.uploadBlob', blob as any)
-
-          const photoResult = await callXrpc('dev.hatk.createRecord', {
-            collection: 'social.grain.photo',
-            record: {
-              photo: (uploadResult as any).blob,
-              aspectRatio: { width: photo.width, height: photo.height },
-              createdAt,
-            },
-          })
-          photoUris.push((photoResult as any).uri as string)
+          const blobFile = new Blob([binary], { type: 'image/jpeg' })
+          const uploadResult = await callXrpc('dev.hatk.uploadBlob', blobFile as never)
+          const blobRef = (uploadResult as { blob: unknown }).blob
+          blobs.push({ blob: blobRef, width: photo.width, height: photo.height })
         }
 
-        // Create gallery
-        const galleryResult = await callXrpc('dev.hatk.createRecord', {
-          collection: 'social.grain.gallery',
-          record: {
+        // 2. Batch photo + gallery records in one applyWrites
+        const createWrite = (collection: string, value: Record<string, unknown>) => ({
+          $type: 'dev.hatk.applyWrites#create' as const,
+          collection,
+          value,
+        })
+
+        const writes = [
+          ...blobs.map((b) =>
+            createWrite('social.grain.photo', {
+              photo: b.blob,
+              aspectRatio: { width: b.width, height: b.height },
+              createdAt,
+            }),
+          ),
+          createWrite('social.grain.gallery', {
             title: galleryTitle(post.createdAt),
             ...(post.description.trim() ? { description: post.description.trim() } : {}),
             ...(post.labels.length > 0
@@ -128,25 +131,29 @@
                 }
               : {}),
             createdAt,
-          },
-        })
-        const galleryUri = (galleryResult as any).uri as string
+          }),
+        ]
 
-        // Create gallery items
-        for (let i = 0; i < photoUris.length; i++) {
-          await callXrpc('dev.hatk.createRecord', {
-            collection: 'social.grain.gallery.item',
-            record: {
+        const result = await callXrpc('dev.hatk.applyWrites', { writes })
+        const results = (result as { results?: Array<{ uri?: string; cid?: string }> }).results ?? []
+
+        const photoUris = results.slice(0, blobs.length).map((r) => r.uri!)
+        const galleryUri = results[blobs.length]?.uri
+        // 3. Batch gallery items in a second applyWrites
+        if (galleryUri && photoUris.length > 0) {
+          const itemWrites = photoUris.map((photoUri: string, i: number) =>
+            createWrite('social.grain.gallery.item', {
               gallery: galleryUri,
-              item: photoUris[i],
+              item: photoUri,
               position: i,
               createdAt,
-            },
-          })
+            }),
+          )
+          await callXrpc('dev.hatk.applyWrites', { writes: itemWrites })
         }
 
         importedCount++
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`Failed to import post ${post.index}:`, err)
         error = `Failed on post ${importProgress.current} of ${importProgress.total}. ${importedCount} imported successfully.`
         step = 'review'
