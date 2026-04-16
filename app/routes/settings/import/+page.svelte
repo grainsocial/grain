@@ -6,6 +6,7 @@
   import { resizeImage } from '$lib/utils/image-resize'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
+  import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import { LoaderCircle, Check, ImageIcon, X } from 'lucide-svelte'
   import { viewer } from '$lib/stores'
 
@@ -118,6 +119,14 @@
           record: {
             title: galleryTitle(post.createdAt),
             ...(post.description.trim() ? { description: post.description.trim() } : {}),
+            ...(post.labels.length > 0
+              ? {
+                  labels: {
+                    $type: 'com.atproto.label.defs#selfLabels',
+                    values: post.labels.map((val: string) => ({ val })),
+                  },
+                }
+              : {}),
             createdAt,
           },
         })
@@ -209,37 +218,38 @@
 
     <div class="post-list">
       {#each posts as post, i}
-        <button
-          class="post-card"
-          class:deselected={!post.selected}
-          type="button"
-          onclick={() => togglePost(i)}
-        >
-          <div class="post-check">
+        <div class="post-card" class:deselected={!post.selected}>
+          <button class="post-check" type="button" onclick={() => togglePost(i)}>
             {#if post.selected}
               <div class="check-on"><Check size={14} /></div>
             {:else}
               <div class="check-off"></div>
             {/if}
-          </div>
+          </button>
           <div class="post-content">
-            <div class="photo-strip">
-              {#each post.photos as photo}
-                <img class="thumb" src={photo.dataUrl} alt="" />
-              {/each}
+            <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+            <div onclick={() => togglePost(i)} class="post-clickable">
+              <div class="photo-strip">
+                {#each post.photos as photo}
+                  <img class="thumb" src={photo.dataUrl} alt="" />
+                {/each}
+              </div>
+              <div class="post-meta">
+                <span class="post-date">{formatDate(post.createdAt)}</span>
+                <span class="post-photo-count">
+                  <ImageIcon size={12} />
+                  {post.photos.length}
+                </span>
+              </div>
+              {#if post.description}
+                <p class="post-description">{post.description}</p>
+              {/if}
             </div>
-            <div class="post-meta">
-              <span class="post-date">{formatDate(post.createdAt)}</span>
-              <span class="post-photo-count">
-                <ImageIcon size={12} />
-                {post.photos.length}
-              </span>
+            <div class="post-labels" onclick={(e) => e.stopPropagation()}>
+              <ContentWarningPicker bind:selected={posts[i].labels} />
             </div>
-            {#if post.description}
-              <p class="post-description">{post.description}</p>
-            {/if}
           </div>
-        </button>
+        </div>
       {/each}
     </div>
 
@@ -336,7 +346,9 @@
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 46px;
-    background: var(--bg-root);
+    background: rgba(8, 11, 18, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 10;
   }
   .review-summary {
@@ -372,25 +384,31 @@
     display: flex;
     gap: 12px;
     padding: 14px 16px;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
     color: var(--text-primary);
     border-bottom: 1px solid var(--border);
     transition: opacity 0.15s;
-    width: 100%;
-  }
-  .post-card:hover {
-    background: var(--bg-hover);
   }
   .post-card.deselected {
     opacity: 0.4;
   }
+  .post-clickable {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .post-clickable:hover {
+    opacity: 0.8;
+  }
   .post-check {
     flex-shrink: 0;
-    padding-top: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    align-self: flex-start;
+  }
+  .post-labels {
+    margin-top: 4px;
   }
   .check-on {
     width: 22px;

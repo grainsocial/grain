@@ -21,6 +21,7 @@ export interface ParsedPost {
   createdAt: Date
   photos: ParsedPhoto[]
   selected: boolean
+  labels: string[]
 }
 
 export interface ParsedPhoto {
@@ -125,6 +126,7 @@ export async function parseInstagramExport(
       createdAt: new Date(post.creation_timestamp * 1000),
       photos,
       selected: true,
+      labels: [],
     })
   }
 

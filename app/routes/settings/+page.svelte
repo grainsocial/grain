@@ -42,7 +42,7 @@
 
   <div class="settings-group">
     <a href="/settings/import" class="settings-row">
-      <span class="settings-label">Import from Instagram</span>
+      <span class="settings-label">Import from Instagram <span class="beta-badge">Beta</span></span>
       <ChevronRight size={16} class="chevron" />
     </a>
   </div>
@@ -121,6 +121,18 @@
   }
   .settings-row :global(.chevron) {
     color: var(--text-muted);
+  }
+  .beta-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 6px;
   }
   .sign-out .settings-label {
     color: #f87171;
