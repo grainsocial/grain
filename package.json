@@ -17,6 +17,7 @@
     "@sveltejs/kit": "^2.55.0",
     "@tanstack/svelte-query": "^6.1.0",
     "exifr": "^7.1.3",
+    "fflate": "^0.8.2",
     "h3-js": "^4.4.0",
     "lucide-svelte": "^0.576.0"
   },

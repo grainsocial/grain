@@ -41,6 +41,13 @@
   </div>
 
   <div class="settings-group">
+    <a href="/settings/import" class="settings-row">
+      <span class="settings-label">Import from Instagram</span>
+      <ChevronRight size={16} class="chevron" />
+    </a>
+  </div>
+
+  <div class="settings-group">
     <a href="/support/privacy" class="settings-row">
       <span class="settings-label">Privacy Policy</span>
       <ChevronRight size={16} class="chevron" />

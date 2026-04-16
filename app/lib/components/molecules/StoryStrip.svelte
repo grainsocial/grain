@@ -83,8 +83,8 @@
 {/if}
 
 {#if menuOpen}
-  <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-  <div class="own-menu" style="left: {menuX}px; top: {menuY}px;" onclick={(e) => e.stopPropagation()}>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div class="own-menu" role="menu" tabindex="-1" style="left: {menuX}px; top: {menuY}px;" onclick={(e) => e.stopPropagation()}>
     <button class="menu-item" onclick={handleMenuCreate}>Create story</button>
     <button class="menu-item" onclick={handleMenuView}>View your story</button>
   </div>
