@@ -8,7 +8,8 @@
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
-  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX, Share } from 'lucide-svelte'
+  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX, Share, Trash2, X, LoaderCircle } from 'lucide-svelte'
+  import { callXrpc } from '$hatk/client'
   import { share } from '$lib/utils/share'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
@@ -38,6 +39,7 @@
   $effect(() => { void did; void profile.data; followersOffset = 0 })
 
   function setTab(tab: ViewMode) {
+    exitSelectMode()
     const url = new URL(page.url)
     if (tab === 'grid') {
       url.searchParams.delete('tab')
@@ -87,11 +89,63 @@
   }
 
   let showToast = $state(false)
+  let toastMessage = $state('Link copied')
+
+  // Bulk select & delete
+  let selectMode = $state(false)
+  let selectedUris = $state(new Set<string>())
+  let deleting = $state(false)
+  let deleteProgress = $state({ current: 0, total: 0 })
+
+  function toggleSelect(uri: string) {
+    const next = new Set(selectedUris)
+    if (next.has(uri)) next.delete(uri)
+    else next.add(uri)
+    selectedUris = next
+  }
+
+  function exitSelectMode() {
+    selectMode = false
+    selectedUris = new Set()
+  }
+
+  async function bulkDelete() {
+    if (selectedUris.size === 0) return
+    const count = selectedUris.size
+    if (!confirm(`Delete ${count} ${count === 1 ? 'gallery' : 'galleries'}? This cannot be undone.`)) return
+    deleting = true
+    const uris = [...selectedUris]
+    deleteProgress = { current: 0, total: uris.length }
+    let deleted = 0
+    const failed = new Set<string>()
+    for (const uri of uris) {
+      const rkey = uri.split('/').pop()!
+      try {
+        await callXrpc('social.grain.unspecced.deleteGallery', { rkey })
+        deleted++
+      } catch (err) {
+        console.error('Failed to delete gallery:', err)
+        failed.add(uri)
+      }
+      deleteProgress.current++
+    }
+    deleting = false
+    queryClient.invalidateQueries({ queryKey: ['getFeed'] })
+    if (failed.size > 0) {
+      selectedUris = failed
+      toastMessage = `Deleted ${deleted} of ${count}. ${failed.size} failed.`
+    } else {
+      exitSelectMode()
+      toastMessage = `Deleted ${deleted} ${deleted === 1 ? 'gallery' : 'galleries'}`
+    }
+    showToast = true
+  }
 
   async function handleShare() {
     const url = `${window.location.origin}/profile/${did}`
     const result = await share(url)
     if (result.success && result.method === 'clipboard') {
+      toastMessage = 'Link copied'
       showToast = true
     }
   }
@@ -114,6 +168,7 @@
   })
 </script>
 
+<div class="page-wrapper">
 {#if profile.isLoading}
   <DetailHeader label={'\u00A0'} />
   <div class="profile-header">
@@ -234,16 +289,21 @@
 
   {#if !blockHide}
   <div class="view-toggle">
-    <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => setTab('grid')} aria-label="Grid view">
-      <Grid3x3 size={20} />
-    </button>
-    {#if isOwnProfile}
-      <button class="toggle-btn" class:active={viewMode === 'favorites'} onclick={() => setTab('favorites')} aria-label="Favorites">
-        <Heart size={20} />
+    <div class="toggle-tabs">
+      <button class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => setTab('grid')} aria-label="Grid view">
+        <Grid3x3 size={20} />
       </button>
-      <button class="toggle-btn" class:active={viewMode === 'stories'} onclick={() => setTab('stories')} aria-label="Story archive">
-        <Clock size={20} />
-      </button>
+      {#if isOwnProfile}
+        <button class="toggle-btn" class:active={viewMode === 'favorites'} onclick={() => setTab('favorites')} aria-label="Favorites">
+          <Heart size={20} />
+        </button>
+        <button class="toggle-btn" class:active={viewMode === 'stories'} onclick={() => setTab('stories')} aria-label="Story archive">
+          <Clock size={20} />
+        </button>
+      {/if}
+    </div>
+    {#if isOwnProfile && viewMode === 'grid' && !selectMode}
+      <button class="select-text-btn" onclick={() => (selectMode = true)}>Select</button>
     {/if}
   </div>
 
@@ -265,6 +325,9 @@
       hasMore={feed.hasNextPage}
       loadingMore={feed.isFetchingNextPage}
       onLoadMore={() => feed.fetchNextPage()}
+      {selectMode}
+      {selectedUris}
+      onToggle={toggleSelect}
     />
   {/if}
   {/if}
@@ -274,9 +337,34 @@
   {/if}
 {/if}
 
-<Toast message="Link copied" bind:visible={showToast} />
+{#if selectMode}
+  <div class="floating-bar">
+    {#if deleting}
+      <LoaderCircle size={16} class="spin" />
+      <span class="bar-text">Deleting {deleteProgress.current} / {deleteProgress.total}...</span>
+    {:else}
+      <button class="bar-btn cancel" onclick={exitSelectMode}>
+        <X size={16} />
+        Cancel
+      </button>
+      <span class="bar-text">{selectedUris.size} selected</span>
+      <button class="bar-btn delete" onclick={bulkDelete} disabled={selectedUris.size === 0}>
+        <Trash2 size={16} />
+        Delete
+      </button>
+    {/if}
+  </div>
+{/if}
+</div>
+
+<Toast message={toastMessage} bind:visible={showToast} />
 
 <style>
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
   .profile-header { border-bottom: 1px solid var(--border); }
   .profile-header { position: relative; }
   .actions { position: absolute; top: 12px; right: 16px; display: flex; gap: 8px; align-items: center; z-index: 1; }
@@ -325,11 +413,29 @@
   .germ-logo { width: 14px; height: 14px; object-fit: contain; }
   .view-toggle {
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 4px;
     padding: 8px 16px;
     border-bottom: 1px solid var(--border);
+    position: relative;
   }
+  .toggle-tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .select-text-btn {
+    position: absolute;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--grain);
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .select-text-btn:hover { opacity: 0.8; }
   .toggle-btn {
     display: flex;
     align-items: center;
@@ -398,4 +504,47 @@
   .menu-item:hover { background: var(--bg-hover); }
   .menu-item.danger { color: #f87171; }
   .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .floating-bar {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: rgba(8, 11, 18, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+  }
+  .bar-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .bar-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .bar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .bar-btn.cancel {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+  }
+  .bar-btn.delete {
+    background: #dc2626;
+    color: #fff;
+  }
+  .bar-btn:not(:disabled):hover { opacity: 0.85; }
 </style>

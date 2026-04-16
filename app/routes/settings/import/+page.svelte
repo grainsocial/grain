@@ -8,6 +8,7 @@
   import Button from '$lib/components/atoms/Button.svelte'
   import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import { LoaderCircle, Check, ImageIcon, X } from 'lucide-svelte'
+  import SelectCheck from '$lib/components/atoms/SelectCheck.svelte'
   import { viewer } from '$lib/stores'
 
   function galleryTitle(date: Date): string {
@@ -227,11 +228,7 @@
       {#each posts as post, i}
         <div class="post-card" class:deselected={!post.selected}>
           <button class="post-check" type="button" onclick={() => togglePost(i)}>
-            {#if post.selected}
-              <div class="check-on"><Check size={14} /></div>
-            {:else}
-              <div class="check-off"></div>
-            {/if}
+            <SelectCheck checked={post.selected} />
           </button>
           <div class="post-content">
             <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
@@ -416,22 +413,6 @@
   }
   .post-labels {
     margin-top: 4px;
-  }
-  .check-on {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--grain);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .check-off {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
   }
   .post-content {
     flex: 1;

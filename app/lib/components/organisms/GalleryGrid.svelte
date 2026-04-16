@@ -5,6 +5,7 @@
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import { createQuery } from '@tanstack/svelte-query'
   import { Info } from 'lucide-svelte'
+  import SelectCheck from '../atoms/SelectCheck.svelte'
   import { infiniteScroll } from '$lib/actions/infinite-scroll'
 
   const labelDefs = createQuery(() => labelDefsQuery())
@@ -16,6 +17,9 @@
     hasMore = false,
     loadingMore = false,
     onLoadMore,
+    selectMode = false,
+    selectedUris = new Set<string>(),
+    onToggle,
   }: {
     items: GalleryView[]
     loading?: boolean
@@ -23,6 +27,9 @@
     hasMore?: boolean
     loadingMore?: boolean
     onLoadMore?: () => void
+    selectMode?: boolean
+    selectedUris?: Set<string>
+    onToggle?: (uri: string) => void
   } = $props()
 
   function thumb(gallery: GalleryView): string | undefined {
@@ -51,7 +58,14 @@
   <div class="grid">
     {#each items as gallery, i (`${gallery.uri}:${i}`)}
       {@const lr = resolveLabels(gallery.labels, labelDefs.data ?? [])}
-      <a class="cell" href="/profile/{gallery.creator?.did}/gallery/{rkey(gallery.uri)}">
+      <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+      <a
+        class="cell"
+        href={selectMode ? undefined : `/profile/${gallery.creator?.did}/gallery/${rkey(gallery.uri)}`}
+        role={selectMode ? 'button' : undefined}
+        tabindex={selectMode ? 0 : undefined}
+        onclick={selectMode ? (e) => { e.preventDefault(); onToggle?.(gallery.uri) } : undefined}
+      >
         {#if lr.action === 'warn-media' || lr.action === 'warn-content' || lr.action === 'hide'}
           <div class="label-cover">
             <Info size={14} />
@@ -76,6 +90,11 @@
           {/if}
           <div class="overlay">
             <span class="overlay-title">{gallery.title}</span>
+          </div>
+        {/if}
+        {#if selectMode}
+          <div class="select-check">
+            <SelectCheck checked={selectedUris.has(gallery.uri)} onMedia />
           </div>
         {/if}
       </a>
@@ -152,6 +171,13 @@
     color: var(--text-secondary);
     font-size: 11px;
     font-weight: 500;
+  }
+  .select-check {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 2;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
   }
   .sentinel {
     display: flex;
