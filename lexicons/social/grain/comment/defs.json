@@ -42,10 +42,19 @@
           "type": "string",
           "format": "datetime"
         },
+        "favCount": { "type": "integer" },
+        "viewer": { "type": "ref", "ref": "#viewerState" },
         "muted": {
           "type": "boolean",
           "description": "True if the viewer has muted the comment author. Client should show collapsed with option to expand."
         }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "description": "Metadata about the requesting account's relationship with the comment. Only has meaningful content for authed requests.",
+      "properties": {
+        "fav": { "type": "string", "format": "at-uri" }
       }
     }
   }

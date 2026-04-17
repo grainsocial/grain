@@ -53,6 +53,11 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
       ? "uri"
       : "uri, did, created_at, 'story-comment' as source, subject as subject_uri, text, facets, reply_to, focus";
 
+  const commentFavCols =
+    select === "count"
+      ? "uri"
+      : "uri, did, created_at, 'comment-favorite' as source, subject as subject_uri, NULL as text, NULL as facets, NULL as reply_to, NULL as focus";
+
   return `
     SELECT ${favCols} FROM "social.grain.favorite"
     WHERE subject IN (SELECT uri FROM "social.grain.gallery" WHERE did = $1)
@@ -99,6 +104,12 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
     SELECT ${storyCommentCols} FROM "social.grain.comment"
     WHERE subject IN (SELECT uri FROM "social.grain.story" WHERE did = $1)
       AND did != $1 AND reply_to IS NULL ${blockMuteNotifFilter()} ${extraFilter}
+
+    UNION ALL
+
+    SELECT ${commentFavCols} FROM "social.grain.favorite"
+    WHERE subject IN (SELECT uri FROM "social.grain.comment" WHERE did = $1)
+      AND did != $1 ${blockMuteNotifFilter()} ${extraFilter}
   `;
 }
 
@@ -160,7 +171,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
 
   // Map source to preference category
   function prefCategory(source: string): string | null {
-    if (source === "favorite" || source === "story-favorite") return "favorites";
+    if (source === "favorite" || source === "story-favorite" || source === "comment-favorite") return "favorites";
     if (source === "follow") return "follows";
     if (source === "comment" || source === "reply" || source === "story-comment") return "comments";
     if (source === "comment-mention" || source === "gallery-mention") return "mentions";
@@ -214,6 +225,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   function getReason(row: (typeof items)[0]): string {
     if (row.source === "favorite") return "gallery-favorite";
     if (row.source === "story-favorite") return "story-favorite";
+    if (row.source === "comment-favorite") return "comment-favorite";
     if (row.source === "story-comment") return "story-comment";
     if (row.source === "follow") return "follow";
     if (row.source === "comment-mention") return "gallery-comment-mention";
@@ -242,8 +254,23 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
   const handleMap = await lookupHandles(db, dids);
 
-  // Separate subject URIs into gallery and story URIs
-  const allSubjectUris = [...new Set(items.map((r) => r.subject_uri).filter(Boolean))] as string[];
+  // Hydrate comment-favorite notifications — look up the favorited comment's text and parent subject
+  const commentFavUris = items.filter((r) => r.source === "comment-favorite" && r.subject_uri).map((r) => r.subject_uri!);
+  const commentFavMap = new Map<string, { text: string; subject: string }>();
+  if (commentFavUris.length > 0) {
+    const ph = commentFavUris.map((_, i) => `$${i + 1}`).join(",");
+    const commentRows = (await db.query(
+      `SELECT uri, text, subject FROM "social.grain.comment" WHERE uri IN (${ph})`,
+      commentFavUris,
+    )) as Array<{ uri: string; text: string; subject: string }>;
+    for (const row of commentRows) commentFavMap.set(row.uri, { text: row.text, subject: row.subject });
+  }
+
+  // Separate subject URIs into gallery and story URIs (include parent subjects from comment-favorites)
+  const allSubjectUris = [...new Set([
+    ...items.map((r) => r.subject_uri).filter(Boolean) as string[],
+    ...[...commentFavMap.values()].map((c) => c.subject),
+  ])];
 
   // Look up which subjects are galleries vs stories
   const galleryUriSet = new Set<string>();
@@ -326,22 +353,27 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
 
   const notifications = items.map((row) => {
     const author = profiles.get(row.did);
-    const subjectUri = row.subject_uri;
-    const isGallery = subjectUri ? galleryUriSet.has(subjectUri) : false;
-    const isStory = subjectUri ? storyUriSet.has(subjectUri) : false;
+    const reason = getReason(row);
 
-    const gallery = isGallery && subjectUri ? galleries.get(subjectUri) : null;
-    const photoUri = isGallery && subjectUri ? firstPhotoByGallery.get(subjectUri) : null;
+    // For comment-favorites, resolve the parent gallery/story from the comment
+    const commentFavInfo = reason === "comment-favorite" && row.subject_uri ? commentFavMap.get(row.subject_uri) : null;
+    const effectiveSubject = commentFavInfo ? commentFavInfo.subject : row.subject_uri;
+
+    const isGallery = effectiveSubject ? galleryUriSet.has(effectiveSubject) : false;
+    const isStory = effectiveSubject ? storyUriSet.has(effectiveSubject) : false;
+
+    const gallery = isGallery && effectiveSubject ? galleries.get(effectiveSubject) : null;
+    const photoUri = isGallery && effectiveSubject ? firstPhotoByGallery.get(effectiveSubject) : null;
     const photo = photoUri ? photos.get(photoUri) : null;
     const galleryThumb = photo
       ? (blobUrl(photo.did, photo.value.photo, "avatar") ?? undefined)
       : undefined;
 
-    const storyThumb = isStory && subjectUri ? storyThumbs.get(subjectUri) : undefined;
+    const storyThumb = isStory && effectiveSubject ? storyThumbs.get(effectiveSubject) : undefined;
 
     return {
       uri: row.uri,
-      reason: getReason(row),
+      reason,
       createdAt: row.created_at,
       author: author
         ? views.grainActorDefsProfileView({
@@ -357,11 +389,11 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
             did: row.did,
             handle: handleMap.get(row.did) ?? row.did,
           }),
-      ...(gallery ? { galleryUri: subjectUri!, galleryTitle: gallery.value.title } : {}),
+      ...(gallery ? { galleryUri: effectiveSubject!, galleryTitle: gallery.value.title } : {}),
       ...(galleryThumb ? { galleryThumb } : {}),
-      ...(isStory && subjectUri ? { storyUri: subjectUri } : {}),
+      ...(isStory && effectiveSubject ? { storyUri: effectiveSubject } : {}),
       ...(storyThumb ? { storyThumb } : {}),
-      ...(row.text ? { commentText: row.text } : {}),
+      ...(commentFavInfo ? { commentText: commentFavInfo.text } : row.text ? { commentText: row.text } : {}),
       ...(row.reply_to && replyToTextMap.has(row.reply_to)
         ? { replyToText: replyToTextMap.get(row.reply_to) }
         : {}),

@@ -15,13 +15,14 @@
     'gallery-comment': 'commented on your gallery',
     'gallery-comment-mention': 'mentioned you in a comment',
     'gallery-mention': 'mentioned you in a gallery',
+    'comment-favorite': 'favorited your comment',
     'story-favorite': 'favorited your story',
     'story-comment': 'commented on your story',
     'reply': 'replied to your comment',
     'follow': 'followed you',
   }
 
-  const isFavorite = $derived(notif.reason === 'gallery-favorite' || notif.reason === 'story-favorite')
+  const isFavorite = $derived(notif.reason === 'gallery-favorite' || notif.reason === 'story-favorite' || notif.reason === 'comment-favorite')
   const isFollow = $derived(notif.reason === 'follow')
   const isComment = $derived(notif.reason === 'gallery-comment' || notif.reason === 'story-comment')
   const isReply = $derived(notif.reason === 'reply')

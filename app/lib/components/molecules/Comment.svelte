@@ -1,10 +1,12 @@
 <script lang="ts">
   import type { CommentView } from '$hatk/client'
+  import { callXrpc } from '$hatk/client'
+  import { createMutation, useQueryClient } from '@tanstack/svelte-query'
   import Avatar from '../atoms/Avatar.svelte'
   import RichText from '../atoms/RichText.svelte'
   import { relativeTime } from '$lib/utils'
-  import { viewer } from '$lib/stores'
-  import { VolumeX } from 'lucide-svelte'
+  import { viewer, requireAuth } from '$lib/stores'
+  import { VolumeX, Heart } from 'lucide-svelte'
 
   let {
     comment,
@@ -22,6 +24,54 @@
   const timeStr = $derived(relativeTime(comment.createdAt || ''))
   const isReply = $derived(!!comment.replyTo)
   const isMuted = $derived(!!comment.muted && !expanded)
+
+  // Comment favorite state
+  let favOverride: string | null | undefined = $state(undefined)
+  const viewerFav = $derived(comment.viewer?.fav ?? null)
+  const favUri = $derived(favOverride !== undefined ? favOverride : viewerFav)
+  const isFaved = $derived(!!favUri)
+  const originallyFaved = $derived(!!viewerFav)
+  const serverFavCount = $derived(comment.favCount ?? 0)
+  const countOffset = $derived(isFaved === originallyFaved ? 0 : isFaved ? 1 : -1)
+  const displayFavCount = $derived(serverFavCount + countOffset)
+
+  const queryClient = useQueryClient()
+
+  const createFavMut = createMutation(() => ({
+    mutationFn: async () => {
+      return await callXrpc('dev.hatk.createRecord', {
+        collection: 'social.grain.favorite',
+        record: { subject: comment.uri, createdAt: new Date().toISOString() },
+      })
+    },
+    onMutate: () => { favOverride = 'pending' },
+    onSuccess: (data: any) => { favOverride = data.uri ?? null },
+    onError: () => { favOverride = undefined },
+  }))
+
+  const deleteFavMut = createMutation<void, Error, string>(() => ({
+    mutationFn: async (uri) => {
+      const rkey = uri.split('/').pop()!
+      await callXrpc('dev.hatk.deleteRecord', { collection: 'social.grain.favorite', rkey })
+    },
+    onMutate: () => {
+      const prev = favOverride !== undefined ? favOverride : viewerFav
+      favOverride = null
+      return { prev }
+    },
+    onSuccess: () => {},
+    onError: (_err: any, _vars: any, context: any) => { favOverride = context?.prev ?? undefined },
+  }))
+
+  function toggleFav() {
+    if (createFavMut.isPending || deleteFavMut.isPending) return
+    if (!requireAuth()) return
+    if (isFaved && favUri && favUri !== 'pending') {
+      deleteFavMut.mutate(favUri)
+    } else if (!isFaved) {
+      createFavMut.mutate()
+    }
+  }
 </script>
 
 {#if comment.muted && !expanded}
@@ -41,6 +91,9 @@
       </div>
       <div class="meta">
         <span class="time">{timeStr}</span>
+        {#if displayFavCount > 0}
+          <span class="fav-count">{displayFavCount} {displayFavCount === 1 ? 'fav' : 'favs'}</span>
+        {/if}
         {#if onReply}
           <button class="meta-btn" onclick={() => onReply?.(comment.replyTo ?? comment.uri, comment.author?.handle ?? '')}>Reply</button>
         {/if}
@@ -52,6 +105,9 @@
     {#if comment.focus?.thumb}
       <img class="focus-thumb" src={comment.focus.thumb} alt={comment.focus?.alt ?? ''} />
     {/if}
+    <button class="fav-btn" class:faved={isFaved} onclick={toggleFav} title={isFaved ? 'Unfavorite' : 'Favorite'}>
+      <Heart size={16} fill={isFaved ? 'currentColor' : 'none'} />
+    </button>
   </div>
 {/if}
 
@@ -122,4 +178,22 @@
     font-family: inherit;
   }
   .muted-toggle:hover { color: var(--text-secondary); }
+  .fav-btn {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 0 0 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  .fav-btn:hover { color: var(--text-secondary); }
+  .fav-btn.faved { color: #f87171; }
+  .fav-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
 </style>

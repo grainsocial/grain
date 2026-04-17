@@ -47,6 +47,27 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
         data: { type: "story-favorite", uri: subject },
         badge,
       })
+      return
+    }
+
+    // Check if the subject is a comment
+    const [comment] = await db.query(
+      `SELECT did AS author, subject AS comment_subject FROM "social.grain.comment" WHERE uri = $1`,
+      [subject],
+    ) as { author: string; comment_subject: string }[]
+
+    if (comment && comment.author !== repo) {
+      if (!(await shouldPush(db, comment.author, repo, "favorites"))) return
+      const profiles = await lookup("social.grain.actor.profile", "did", [repo])
+      const actor = profiles.get(repo)
+      const badge = await getUnseenCount(db, comment.author) + 1
+      await push.send({
+        did: comment.author,
+        title: "New favorite",
+        body: `${(actor?.value as any)?.displayName ?? "Someone"} favorited your comment`,
+        data: { type: "comment-favorite", uri: subject },
+        badge,
+      })
     }
   }
 )

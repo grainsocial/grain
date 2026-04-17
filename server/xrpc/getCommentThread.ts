@@ -84,6 +84,37 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
   const focusPhotos =
     focusUris.length > 0 ? await getRecords<Photo>("social.grain.photo", focusUris) : new Map();
 
+  // Hydrate comment favorite counts and viewer favorites
+  const commentUris = items.map((r) => r.uri);
+  const [favCounts, viewerFavs] = await Promise.all([
+    commentUris.length > 0
+      ? (
+          db.query(
+            `SELECT subject, COUNT(DISTINCT did) as count FROM "social.grain.favorite"
+             WHERE subject IN (${commentUris.map((_, i) => `$${i + 1}`).join(",")}) GROUP BY subject`,
+            commentUris,
+          ) as Promise<{ subject: string; count: number }[]>
+        ).then((rows) => {
+          const m = new Map<string, number>();
+          for (const r of rows) m.set(r.subject, Number(r.count));
+          return m;
+        })
+      : Promise.resolve(new Map<string, number>()),
+    viewerDid && commentUris.length > 0
+      ? (
+          db.query(
+            `SELECT subject, uri FROM "social.grain.favorite"
+             WHERE did = $1 AND subject IN (${commentUris.map((_, i) => `$${i + 2}`).join(",")})`,
+            [viewerDid, ...commentUris],
+          ) as Promise<{ subject: string; uri: string }[]>
+        ).then((rows) => {
+          const m = new Map<string, string>();
+          for (const r of rows) m.set(r.subject, r.uri);
+          return m;
+        })
+      : Promise.resolve(new Map<string, string>()),
+  ]);
+
   const comments = items.map((row) => {
     const author = profiles.get(row.did);
     const parsedFacets = row.facets ? JSON.parse(row.facets) : undefined;
@@ -123,6 +154,8 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
             }
           : {}),
       }),
+      favCount: favCounts.get(row.uri) ?? 0,
+      ...(viewerFavs.has(row.uri) ? { viewer: { fav: viewerFavs.get(row.uri) } } : {}),
       ...(mutedDids.has(row.did) ? { muted: true } : {}),
     };
   });

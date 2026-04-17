@@ -9,6 +9,7 @@
 const GROUPABLE_REASONS = new Set([
   "gallery-favorite",
   "story-favorite",
+  "comment-favorite",
   "follow",
 ]);
 

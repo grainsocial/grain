@@ -44,6 +44,7 @@
             "gallery-comment",
             "gallery-comment-mention",
             "gallery-mention",
+            "comment-favorite",
             "story-favorite",
             "story-comment",
             "reply",
