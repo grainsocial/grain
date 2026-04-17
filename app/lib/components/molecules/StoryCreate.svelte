@@ -196,6 +196,7 @@
       <div class="divider"></div>
       <div class="bsky-field">
         <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
+        <span class="bsky-hint">Includes location and photo.</span>
       </div>
     {/if}
   </div>
@@ -302,5 +303,11 @@
   }
   .bsky-field {
     padding: 8px 16px 12px;
+  }
+  .bsky-hint {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
   }
 </style>

@@ -3,6 +3,7 @@ import { parseTextToFacets } from "$lib/utils/rich-text";
 
 interface BskyPostOptions {
   url: string;
+  title?: string;
   location?: {
     name: string;
     address?: {
@@ -21,46 +22,47 @@ interface BskyPostOptions {
 }
 
 export async function createBskyPost(options: BskyPostOptions): Promise<void> {
-  const { url, location, description, images } = options;
+  const { url, title, location, description, images } = options;
 
   const graphemeLength = (s: string) => [...new Intl.Segmenter().segment(s)].length;
 
-  const lines: string[] = [];
+  // Build location line (shortened: name, region, country)
+  let locationLine: string | null = null;
   if (location) {
-    lines.push(`📍 ${location.name}`);
-    if (location.address) {
-      const parts: string[] = [];
-      if (location.address.locality) parts.push(location.address.locality);
-      if (location.address.region) parts.push(location.address.region);
-      if (location.address.country) parts.push(location.address.country);
-      if (parts.length > 0) lines.push(parts.join(", "));
-    }
+    const parts = [location.name];
+    if (location.address?.region) parts.push(location.address.region);
+    if (location.address?.country) parts.push(location.address.country);
+    locationLine = `📍 ${parts.join(", ")}`;
   }
 
-  const suffix = `\n\n${url}\n\n#grainsocial`;
-  const prefixText = lines.length > 0 ? lines.join("\n") + "\n" : "";
-  const overhead = graphemeLength(prefixText + suffix);
-  const maxDesc = 300 - overhead;
-
-  if (description?.trim()) {
-    let desc = description.trim();
-    if (graphemeLength(desc) > maxDesc) {
-      const segments = [...new Intl.Segmenter().segment(desc)];
-      desc =
-        segments
-          .slice(0, Math.max(0, maxDesc - 1))
-          .map((s) => s.segment)
-          .join("") + "…";
-    }
-    if (desc) {
-      lines.push("");
-      lines.push(desc);
-    }
+  // Build suffix (location + hashtag + link)
+  const suffixLines: string[] = [];
+  if (locationLine) {
+    suffixLines.push("");
+    suffixLines.push(locationLine);
   }
-  lines.push("");
-  lines.push(url);
-  lines.push("");
-  lines.push("#grainsocial");
+  suffixLines.push("");
+  suffixLines.push(`#GrainSocial ${url}`);
+  const suffix = suffixLines.join("\n");
+
+  const maxContent = 300 - graphemeLength(suffix);
+
+  // Build title + description content
+  let content = "";
+  const t = title?.trim() ?? "";
+  const d = description?.trim() ?? "";
+  if (t && d) content = `${t}, ${d}`;
+  else if (t) content = t;
+  else if (d) content = d;
+
+  if (content && graphemeLength(content) > maxContent) {
+    const segments = [...new Intl.Segmenter().segment(content)];
+    content = segments.slice(0, Math.max(0, maxContent - 1)).map((s) => s.segment).join("") + "…";
+  }
+
+  const lines: string[] = [];
+  if (content) lines.push(content);
+  lines.push(...suffixLines);
 
   const postText = lines.join("\n");
 
