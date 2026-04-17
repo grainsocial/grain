@@ -3,6 +3,7 @@
   import type { GrainActorDefsProfileViewDetailed, GetKnownFollowersFollowerItem } from '$hatk/client'
   import { actorProfileQuery, knownFollowersQuery, storyAuthorsQuery } from '$lib/queries'
   import { viewer } from '$lib/stores'
+  import { compactCount } from '$lib/utils'
   import Avatar from '../atoms/Avatar.svelte'
   import FollowButton from './FollowButton.svelte'
 
@@ -56,11 +57,7 @@
     }, 200)
   }
 
-  function formatCount(n: number): string {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-    return String(n)
-  }
+  const formatCount = compactCount
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->

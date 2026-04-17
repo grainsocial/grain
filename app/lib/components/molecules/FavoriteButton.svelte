@@ -3,6 +3,7 @@
   import { callXrpc } from '$hatk/client'
   import { Heart } from 'lucide-svelte'
   import { requireAuth } from '$lib/stores'
+  import { compactCount } from '$lib/utils'
 
   let {
     galleryUri,
@@ -82,7 +83,7 @@
     onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && favUri && favUri !== 'pending' && deleteFavMut.mutate(favUri)}
   >
     <Heart size={22} fill="currentColor" />
-    {#if displayCount > 0}<span class="stat-count">{displayCount}</span>{/if}
+    {#if displayCount > 0}<span class="stat-count">{compactCount(displayCount)}</span>{/if}
   </button>
 {:else}
   <button
@@ -92,7 +93,7 @@
     onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && !isFaved && createFavMut.mutate()}
   >
     <Heart size={22} />
-    {#if displayCount > 0}<span class="stat-count">{displayCount}</span>{/if}
+    {#if displayCount > 0}<span class="stat-count">{compactCount(displayCount)}</span>{/if}
   </button>
 {/if}
 

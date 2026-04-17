@@ -4,7 +4,7 @@
   import { createMutation, useQueryClient } from '@tanstack/svelte-query'
   import Avatar from '../atoms/Avatar.svelte'
   import RichText from '../atoms/RichText.svelte'
-  import { relativeTime } from '$lib/utils'
+  import { relativeTime, compactCount } from '$lib/utils'
   import { viewer, requireAuth } from '$lib/stores'
   import { VolumeX, Heart } from 'lucide-svelte'
 
@@ -92,7 +92,7 @@
       <div class="meta">
         <span class="time">{timeStr}</span>
         {#if displayFavCount > 0}
-          <span class="fav-count">{displayFavCount} {displayFavCount === 1 ? 'fav' : 'favs'}</span>
+          <span class="fav-count">{compactCount(displayFavCount)} {displayFavCount === 1 ? 'fav' : 'favs'}</span>
         {/if}
         {#if onReply}
           <button class="meta-btn" onclick={() => onReply?.(comment.replyTo ?? comment.uri, comment.author?.handle ?? '')}>Reply</button>
