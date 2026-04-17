@@ -23,6 +23,13 @@ export default defineConfig({
   relay: isProd ? "wss://bsky.network" : "ws://localhost:2583",
   plc: isProd ? "https://plc.directory" : "http://localhost:2582",
   port: 3000,
+  cdn: isProd
+    ? {
+        url: "https://cdn.grain.social",
+        key: process.env.CDN_KEY!,
+        salt: process.env.CDN_SALT!,
+      }
+    : null,
   databaseEngine: "sqlite",
   database: isProd ? "/data/grain.db" : "data/grain.db",
   backfill: {
