@@ -2,10 +2,11 @@ import { defineOG } from "$hatk";
 import type { GrainActorProfile, Photo } from "$hatk";
 import { allFonts } from "./fonts.ts";
 import { calculateCollageLayout } from "./collage.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineOG("/og/profile/:did", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
-  const { did } = params;
+  const did = await resolveHandle(db, params.did) ?? params.did;
 
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did]);
   const author = profiles.get(did);
