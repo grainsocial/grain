@@ -223,7 +223,7 @@
     </div>
     <div class="profile-info">
       <Avatar {did} src={p.avatar ?? null} name={p.displayName} size={64} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
-      <div class="profile-name">{p.displayName || did.slice(0, 18)}</div>
+      <div class="profile-name">{p.displayName || p.handle || did}</div>
       <div class="handle-row">
         {#if !blockHide && p.viewer?.followedBy}<span class="follows-you">Follows you</span>{/if}
         <span class="profile-handle">{p.handle ? `@${p.handle}` : did}</span>
