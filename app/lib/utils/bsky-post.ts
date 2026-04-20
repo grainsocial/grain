@@ -26,12 +26,28 @@ export async function createBskyPost(options: BskyPostOptions): Promise<void> {
 
   const graphemeLength = (s: string) => [...new Intl.Segmenter().segment(s)].length;
 
-  // Build location line (shortened: name, region, country)
+  // Build location line. `location.name` may be either a POI name
+  // ("Blue Bottle Coffee") or a Nominatim-formatted fallback that already
+  // contains locality/state/country ("New York, New York, United States").
+  // We take the first comma-separated chunk as the primary label, then
+  // append locality/region/country while dropping adjacent duplicates —
+  // this keeps useful context for POIs ("Blue Bottle Coffee, Oakland, California, US")
+  // while collapsing duplicates for city fallbacks ("New York, US").
   let locationLine: string | null = null;
   if (location) {
-    const parts = [location.name];
-    if (location.address?.region) parts.push(location.address.region);
-    if (location.address?.country) parts.push(location.address.country);
+    const trimmedName = location.name.trim();
+    const primaryLabel = trimmedName.split(",")[0].trim() || trimmedName;
+    const parts: string[] = [];
+    const appendIfDistinct = (value?: string) => {
+      const v = value?.trim();
+      if (!v) return;
+      if (parts[parts.length - 1]?.toLowerCase() === v.toLowerCase()) return;
+      parts.push(v);
+    };
+    appendIfDistinct(primaryLabel);
+    appendIfDistinct(location.address?.locality);
+    appendIfDistinct(location.address?.region);
+    appendIfDistinct(location.address?.country);
     locationLine = `📍 ${parts.join(", ")}`;
   }
 
@@ -57,7 +73,11 @@ export async function createBskyPost(options: BskyPostOptions): Promise<void> {
 
   if (content && graphemeLength(content) > maxContent) {
     const segments = [...new Intl.Segmenter().segment(content)];
-    content = segments.slice(0, Math.max(0, maxContent - 1)).map((s) => s.segment).join("") + "…";
+    content =
+      segments
+        .slice(0, Math.max(0, maxContent - 1))
+        .map((s) => s.segment)
+        .join("") + "…";
   }
 
   const lines: string[] = [];

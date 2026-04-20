@@ -294,6 +294,7 @@
         const galleryUrl = `${window.location.origin}/profile/${$viewer.did}/gallery/${galleryRkey}`
         await createBskyPost({
           url: galleryUrl,
+          title: title.trim() || undefined,
           location: location ? { name: location.name, address: location.address } : null,
           description: description.trim() || undefined,
           images: photos,
