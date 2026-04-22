@@ -3,6 +3,7 @@ import type { GrainActorProfile, Photo, Gallery, Label } from "$hatk";
 import type { PhotoView, GalleryView, ExifView } from "$hatk";
 import type { BaseContext, Row } from "$hatk";
 import { countComments } from "./comments.ts";
+import { formatStoredLocation } from "../helpers/formatLocation.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 const SCALE = 1_000_000;
@@ -237,6 +238,7 @@ export async function hydrateGalleries(
               name: item.value.location.name,
               value: item.value.location.value,
             },
+            locationDisplay: formatStoredLocation(item.value.location, item.value.address),
             ...(item.value.address ? { address: item.value.address } : {}),
           }
         : {}),

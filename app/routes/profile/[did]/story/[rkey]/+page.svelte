@@ -71,7 +71,7 @@
       {#if story.location}
         <div class="location">
           <MapPin size={14} />
-          <span>{story.location.name}</span>
+          <span>{story.locationDisplay ?? story.location.name ?? ''}</span>
         </div>
       {/if}
       {#if !story.expired}

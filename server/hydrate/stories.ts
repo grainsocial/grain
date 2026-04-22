@@ -2,6 +2,7 @@ import { views } from "$hatk";
 import type { GrainActorProfile, Story, Label, Row, BaseContext } from "$hatk";
 import { HIDE_LABELS } from "../labels/_hidden.ts";
 import { countComments } from "./comments.ts";
+import { formatStoredLocation } from "../helpers/formatLocation.ts";
 import { lookupCrossPosts } from "./galleries.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
@@ -137,6 +138,7 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
       ...(location
         ? {
             location: { name: location.name, value: location.value },
+            locationDisplay: formatStoredLocation(location, address),
             ...(address ? { address } : {}),
           }
         : {}),

@@ -17,6 +17,10 @@
         },
         "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
         "address": { "type": "ref", "ref": "community.lexicon.location.address" },
+        "locationDisplay": {
+          "type": "string",
+          "description": "Formatted location label for display."
+        },
         "facets": {
           "type": "array",
           "description": "Annotations of description text (mentions, URLs, hashtags, etc)",

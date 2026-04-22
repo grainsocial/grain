@@ -361,7 +361,7 @@
               </span>
               {#if currentStory.location}
                 <span class="header-location">
-                  {currentStory.location.name}
+                  {currentStory.locationDisplay ?? currentStory.location.name ?? ''}
                 </span>
               {/if}
             </div>
