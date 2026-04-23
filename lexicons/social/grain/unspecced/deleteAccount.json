@@ -1,0 +1,17 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.deleteAccount",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete the authenticated user's Grain account. Removes all of their Grain records from their PDS and clears supporting server-side state (mutes, preferences, push tokens, OAuth session). Reports and labels are preserved.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    }
+  }
+}
