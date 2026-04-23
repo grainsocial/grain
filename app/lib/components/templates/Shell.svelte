@@ -8,8 +8,10 @@
   import MobileSearch from '../organisms/MobileSearch.svelte'
   import LoginModal from '../organisms/LoginModal.svelte'
   import { loginModalOpen, isAuthenticated } from '$lib/stores'
+  import { page } from '$app/state'
 
   const colLeft = $derived($isAuthenticated ? '78px' : '140px')
+  const wide = $derived(page.url.pathname.startsWith('/zine'))
 
   let { children }: { children: Snippet } = $props()
   let drawerOpen = $state(false)
@@ -18,12 +20,14 @@
 
 <MobileTopBar onHamburger={() => drawerOpen = true} onSearch={() => searchOpen = true} />
 
-<div class="shell" style:--col-left={colLeft}>
+<div class="shell" class:wide style:--col-left={colLeft}>
   <Sidebar />
   <main class="col-center">
     {@render children()}
   </main>
-  <SidebarRight />
+  {#if !wide}
+    <SidebarRight />
+  {/if}
 </div>
 
 <MobileBottomBar onSearch={() => searchOpen = true} />
@@ -40,11 +44,18 @@
     margin: 0 auto;
     min-height: 100vh;
   }
+  .shell.wide {
+    grid-template-columns: var(--col-left) 1fr;
+    max-width: none;
+  }
   .col-center {
     border-right: 1px solid var(--border);
     min-height: 100vh;
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+  .shell.wide .col-center {
+    border-right: none;
   }
 
   @media (max-width: 1060px) {

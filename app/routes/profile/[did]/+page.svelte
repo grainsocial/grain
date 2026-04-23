@@ -255,6 +255,11 @@
               <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM <ArrowUpRight size={14} />
             </a>
           {/if}
+          {#if isOwnProfile}
+            <a class="link-pill" href="/zine/create">
+              Create zine
+            </a>
+          {/if}
         </div>
         {#if (knownFollowers.data?.items ?? []).length > 0}
           {@const known = knownFollowers.data?.items ?? []}
