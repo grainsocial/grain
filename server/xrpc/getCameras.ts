@@ -5,6 +5,14 @@
 // client gets consistent, human-readable names. Rows that collide after
 // normalization are merged (e.g. "RICOH IMAGING COMPANY, LTD. GR III" and
 // a hypothetical "Ricoh GR III" fold into one entry with summed counts).
+//
+// FOLLOW-UPS:
+//   - Results are capped at top 30. The `/cameras` index page uses this
+//     endpoint — if more is ever needed, add an optional `limit` param.
+//   - ~50 records in prod have make="CAMERA" model="CAMERA", likely test
+//     data; they normalize to a single "Camera" row. Harmless, but it's
+//     the one row you might want to filter out if the sidebar ever feels
+//     cluttered.
 
 import { defineQuery } from "$hatk";
 import { cleanCameraName } from "../helpers/cameraName.ts";

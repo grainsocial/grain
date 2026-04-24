@@ -3,6 +3,23 @@
 //
 // Accepts both resolution-10 (venue) and resolution-5 (city) H3 indices.
 // For city-level queries, matches galleries whose venue H3 is a child of the city cell.
+//
+// FOLLOW-UPS (see commit ca49c1b for context):
+//
+//   1. Replace the `name` display-string param with a `/place/[slug]` URL
+//      scheme. The current encoding serialises structured address fields into
+//      a display string, then parses them back out below — this works today
+//      but will break if a locality contains a comma ("Washington, D.C."),
+//      if display names get localised, or if the format evolves. Cleaner
+//      alternative: add `locality`/`region`/`country` to LocationItem in the
+//      lexicon, carry them through the URL + feed param as structured data,
+//      keep `name` purely for display.
+//
+//   2. grain-native still calls this feed with only `location=<h3>` and no
+//      `name` — it falls through to the legacy single-cell path below, so
+//      native users don't benefit from the multi-cell union. Fix lives in
+//      grain-native's FeedEndpoints.swift + LocationFeedView.swift + pinned
+//      feed paths. Additive, non-breaking.
 
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";

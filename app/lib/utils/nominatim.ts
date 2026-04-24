@@ -1,3 +1,12 @@
+// FOLLOW-UP: Nominatim responses also include `osm_type` ("node"|"way"|"relation")
+// and `osm_id` — these form a globally stable, never-reused OSM identity
+// (e.g. `relation:175905` is New York City forever). We currently discard
+// them. Capturing them in `extractAddress` as an `osmId` string would give
+// new gallery records a canonical place ID that's resilient to locality
+// spelling variants. Only worth doing if the country-alias approach stops
+// covering the variants we see in `address.country`, since existing PDS
+// records can't be backfilled and a parallel identity system needs a
+// reconciliation layer. See server/feeds/location.ts comment.
 export interface NominatimResult {
   display_name: string;
   lat: string;

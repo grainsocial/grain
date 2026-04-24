@@ -6,6 +6,14 @@
 // finally to an H3 res-5 cell for records missing address data. This
 // eliminates the old H3-cell-first grouping, which could produce duplicate
 // entries when a city's photos spanned multiple res-5 parent cells.
+//
+// FOLLOW-UPS:
+//   - Results are capped at top 30. The `/locations` index page uses this
+//     same endpoint. If the index needs to show more, add an optional
+//     `limit` param (bounded) rather than lifting the cap unconditionally.
+//   - At time of writing, only 4 records in prod have `location` but no
+//     `address` — they fall to the `location.name` / H3 res-5 fallback
+//     paths below. If that number grows, revisit the ladder.
 
 import { defineQuery } from "$hatk";
 import { getResolution, cellToParent } from "h3-js";
