@@ -56,13 +56,18 @@ describe("formatStoredLocation", () => {
     ).toBe("Kansas City, Missouri, US");
   });
 
-  test("deep Nominatim fallback for a street + district + city", () => {
+  test("deep Nominatim fallback normalises non-ISO country variant", () => {
     expect(
       formatStoredLocation(
         { name: "821 Southeast 14th Avenue, Central Eastside, Buckman, Portland, Multnomah County, Oregon, 97214, United States" },
         { locality: "Portland", region: "Oregon", country: "USA" },
       ),
-    ).toBe("821 Southeast 14th Avenue, Portland, Oregon, USA");
+    ).toBe("821 Southeast 14th Avenue, Portland, Oregon, US");
+  });
+
+  test("primary label equals country — suppresses redundant country tail", () => {
+    expect(formatStoredLocation({ name: "Greece" }, { country: "GR" })).toBe("Greece");
+    expect(formatStoredLocation({ name: "United States" }, { country: "US" })).toBe("United States");
   });
 
   test("name already has state abbrev — doesn't duplicate", () => {

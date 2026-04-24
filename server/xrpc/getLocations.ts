@@ -61,9 +61,29 @@ function computeKey(r: Row): string | null {
   return null;
 }
 
+const regionNames = (() => {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" });
+  } catch {
+    return null;
+  }
+})();
+
 function computeDisplayName(r: Row): string | null {
-  const parts = [r.locality, r.region, r.country].map((s) => s?.trim() || null).filter(Boolean);
-  if (parts.length) return parts.join(", ");
+  const locality = r.locality?.trim() || null;
+  const region = r.region?.trim() || null;
+  const country = normalizeCountry(r.country);
+
+  if (locality || region) {
+    // Multi-part: keep ISO-2 for the country so all rows in a group share
+    // the same display (prevents "Portland, Oregon, USA" vs "...US" split).
+    const parts = [locality, region, country].filter(Boolean);
+    return parts.length ? parts.join(", ") : null;
+  }
+  if (country) {
+    // Country-only: expand to full name since "GR" alone means nothing to users.
+    return regionNames?.of(country) ?? country;
+  }
   return r.name?.trim() || null;
 }
 
