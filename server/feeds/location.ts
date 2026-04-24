@@ -57,12 +57,14 @@ export default defineFeed({
         locality?: string;
         region?: string;
         country?: string;
-        // When true, require the matched record to have region IS NULL.
-        // Used for the [POI, locality, country] 3-part fallback so that
-        // "Seattle, Washington, US" doesn't pull in Washington DC records
-        // (locality=Washington, region=District of Columbia) while still
-        // catching records with no region like "Tokyo Midtown, Minato, JP".
-        regionMustBeNull?: boolean;
+        // Require the record's region to be NULL or equal this string. Used
+        // by the [POI, locality, country] 3-part fallback so that clicking
+        // a NYC POI ("India Street, New York, US") matches NYC records
+        // (region="New York" = parts[-2]), a Tokyo POI ("Tokyo Midtown,
+        // Minato, JP") matches Minato records (region=null), and Seattle
+        // clicks ("Seattle, Washington, US") DON'T pull in Washington DC
+        // (region="District of Columbia", neither null nor "Washington").
+        regionNullOrEqual?: string;
       };
       const interps: Interp[] = [];
       if (parts.length >= 3) {
@@ -71,12 +73,13 @@ export default defineFeed({
         // "Northeast 33rd Drive, Portland, Oregon, US") parse correctly.
         const [locality, region, country] = parts.slice(-3);
         interps.push({ locality, region, country });
-        // Also try [POI, locality, country] for records that legitimately
-        // have no region (common for non-US places and POIs).
+        // Also try [POI, locality, country] for POI-inside-locality cases.
+        // The regionNullOrEqual guard prevents pulling in same-named
+        // localities in unrelated regions.
         interps.push({
           locality: parts[parts.length - 2],
           country: parts[parts.length - 1],
-          regionMustBeNull: true,
+          regionNullOrEqual: parts[parts.length - 2],
         });
       } else if (parts.length === 2) {
         // Ambiguous: could be [locality, country] ("Paris, FR") or
@@ -113,8 +116,11 @@ export default defineFeed({
           matches.push(`UPPER(json_extract(t.address, '$.country')) IN (${placeholders})`);
           params.push(...aliases);
         }
-        if (interp.regionMustBeNull) {
-          matches.push(`json_extract(t.address, '$.region') IS NULL`);
+        if (interp.regionNullOrEqual) {
+          matches.push(
+            `(json_extract(t.address, '$.region') IS NULL OR UPPER(json_extract(t.address, '$.region')) = UPPER($${p++}))`,
+          );
+          params.push(interp.regionNullOrEqual);
         }
         if (matches.length) interpClauses.push(`(${matches.join(" AND ")})`);
       }
