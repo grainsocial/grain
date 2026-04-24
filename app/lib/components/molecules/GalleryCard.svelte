@@ -169,7 +169,7 @@
           </span>
           {#if gallery.location}
             <!-- svelte-ignore node_invalid_placement_ssr -->
-            <a class="location-link" href="/location/{encodeURIComponent(gallery.location.value)}?name={encodeURIComponent(gallery.location.name ?? gallery.location.value)}" onclick={(e) => e.stopPropagation()}>
+            <a class="location-link" href="/location/{encodeURIComponent(gallery.location.value)}?name={encodeURIComponent(gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value)}" onclick={(e) => e.stopPropagation()}>
               {gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value}
             </a>
           {/if}

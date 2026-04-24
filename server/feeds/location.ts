@@ -53,15 +53,42 @@ export default defineFeed({
         .map((s) => s.trim())
         .filter(Boolean);
 
-      type Interp = { locality?: string; region?: string; country?: string };
+      type Interp = {
+        locality?: string;
+        region?: string;
+        country?: string;
+        // When true, require the matched record to have region IS NULL.
+        // Used for the [POI, locality, country] 3-part fallback so that
+        // "Seattle, Washington, US" doesn't pull in Washington DC records
+        // (locality=Washington, region=District of Columbia) while still
+        // catching records with no region like "Tokyo Midtown, Minato, JP".
+        regionMustBeNull?: boolean;
+      };
       const interps: Interp[] = [];
       if (parts.length >= 3) {
-        interps.push({ locality: parts[0], region: parts[1], country: parts[2] });
+        // Take the LAST three parts as [locality, region, country] so displays
+        // with a POI prefix ("The Space Needle, Seattle, Washington, US" or
+        // "Northeast 33rd Drive, Portland, Oregon, US") parse correctly.
+        const [locality, region, country] = parts.slice(-3);
+        interps.push({ locality, region, country });
+        // Also try [POI, locality, country] for records that legitimately
+        // have no region (common for non-US places and POIs).
+        interps.push({
+          locality: parts[parts.length - 2],
+          country: parts[parts.length - 1],
+          regionMustBeNull: true,
+        });
       } else if (parts.length === 2) {
+        // Ambiguous: could be [locality, country] ("Paris, FR") or
+        // [region, country] ("Oregon, US"). Try both; only the right one
+        // matches records.
         interps.push({ locality: parts[0], country: parts[1] });
         interps.push({ region: parts[0], country: parts[1] });
       } else if (parts.length === 1) {
+        // Ambiguous: could be a country ("Greece") or a locality
+        // ("Seattle"). Try both.
         interps.push({ country: parts[0] });
+        interps.push({ locality: parts[0] });
       }
 
       const viewer = ctx.viewer?.did;
@@ -86,6 +113,9 @@ export default defineFeed({
           matches.push(`UPPER(json_extract(t.address, '$.country')) IN (${placeholders})`);
           params.push(...aliases);
         }
+        if (interp.regionMustBeNull) {
+          matches.push(`json_extract(t.address, '$.region') IS NULL`);
+        }
         if (matches.length) interpClauses.push(`(${matches.join(" AND ")})`);
       }
 
@@ -107,7 +137,13 @@ export default defineFeed({
            ${bmFilter}`,
         { orderBy: "t.created_at", params },
       );
-      return ctx.ok({ uris: rows.map((r) => r.uri), cursor });
+
+      // If the name-based query found matches, or we have no H3 to fall back to,
+      // return. Otherwise fall through to the legacy H3 path — at minimum the
+      // user sees the clicked gallery's own cell instead of an empty page.
+      if (rows.length > 0 || !location) {
+        return ctx.ok({ uris: rows.map((r) => r.uri), cursor });
+      }
     }
 
     if (!location) return ctx.ok({ uris: [] });
