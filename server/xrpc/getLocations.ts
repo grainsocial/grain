@@ -1,15 +1,65 @@
-// Returns top locations by gallery count, grouped at region level (stale-while-revalidate, 5min TTL).
+// Returns top locations by gallery count (stale-while-revalidate, 5min TTL).
 //   GET /xrpc/social.grain.unspecced.getLocations
+//
+// Places are identified by their structured address fields when available
+// (normalized country + region + locality), falling back to location.name and
+// finally to an H3 res-5 cell for records missing address data. This
+// eliminates the old H3-cell-first grouping, which could produce duplicate
+// entries when a city's photos spanned multiple res-5 parent cells.
 
 import { defineQuery } from "$hatk";
 import { getResolution, cellToParent } from "h3-js";
+import { normalizeCountry } from "../helpers/country.ts";
 
-type LocationItem = { name: string; h3Index: string; galleryCount: number };
+type LocationItem = {
+  name: string;
+  h3Index: string;
+  galleryCount: number;
+  h3Cells: string[];
+};
 let cache: { data: LocationItem[]; expires: number } | null = null;
 const TTL = 5 * 60 * 1000;
 
+type Row = {
+  name: string | null;
+  h3_index: string | null;
+  locality: string | null;
+  region: string | null;
+  country: string | null;
+};
+
+function computeKey(r: Row): string | null {
+  const locality = r.locality?.trim() || null;
+  const region = r.region?.trim() || null;
+  const country = normalizeCountry(r.country);
+
+  if (locality || region || country) {
+    // Address-based key — lowercased for case-insensitive grouping;
+    // country already canonicalized via normalizeCountry.
+    return `A:${country ?? ""}|${region?.toLowerCase() ?? ""}|${locality?.toLowerCase() ?? ""}`;
+  }
+  if (r.name?.trim()) {
+    return `N:${r.name.trim().toLowerCase()}`;
+  }
+  if (r.h3_index) {
+    try {
+      const res = getResolution(r.h3_index);
+      const parent = res <= 5 ? r.h3_index : cellToParent(r.h3_index, 5);
+      return `H:${parent}`;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function computeDisplayName(r: Row): string | null {
+  const parts = [r.locality, r.region, r.country].map((s) => s?.trim() || null).filter(Boolean);
+  if (parts.length) return parts.join(", ");
+  return r.name?.trim() || null;
+}
+
 async function refresh(db: any) {
-  // Fetch all galleries with locations, then aggregate by region in application code
   const rows = (await db.query(`
     SELECT json_extract(location, '$.name') AS name,
            json_extract(location, '$.value') AS h3_index,
@@ -18,60 +68,61 @@ async function refresh(db: any) {
            json_extract(address, '$.country') AS country
     FROM "social.grain.gallery"
     WHERE location IS NOT NULL
-  `)) as {
-    name: string;
-    h3_index: string;
-    locality: string | null;
-    region: string | null;
-    country: string | null;
-  }[];
+  `)) as Row[];
 
-  // Group by region-level H3 cell, picking the most common locality name
-  const regionMap = new Map<
-    string,
-    { nameCounts: Map<string, number>; h3Index: string; count: number }
-  >();
+  type Group = {
+    nameCounts: Map<string, number>;
+    h3Counts: Map<string, number>;
+    count: number;
+  };
+  const groups = new Map<string, Group>();
+
   for (const row of rows) {
-    if (!row.h3_index) continue;
-    let regionH3: string;
-    try {
-      const res = getResolution(row.h3_index);
-      regionH3 = res <= 5 ? row.h3_index : cellToParent(row.h3_index, 5);
-    } catch {
-      continue;
+    const key = computeKey(row);
+    if (!key) continue;
+    const displayName = computeDisplayName(row);
+    if (!displayName) continue;
+
+    let g = groups.get(key);
+    if (!g) {
+      g = { nameCounts: new Map(), h3Counts: new Map(), count: 0 };
+      groups.set(key, g);
     }
-    const displayName =
-      [row.locality, row.region, row.country].filter(Boolean).join(", ") || row.name;
-    const existing = regionMap.get(regionH3);
-    if (existing) {
-      existing.count++;
-      existing.nameCounts.set(displayName, (existing.nameCounts.get(displayName) ?? 0) + 1);
-    } else {
-      regionMap.set(regionH3, {
-        nameCounts: new Map([[displayName, 1]]),
-        h3Index: regionH3,
-        count: 1,
+    g.count++;
+    g.nameCounts.set(displayName, (g.nameCounts.get(displayName) ?? 0) + 1);
+    if (row.h3_index) {
+      g.h3Counts.set(row.h3_index, (g.h3Counts.get(row.h3_index) ?? 0) + 1);
+    }
+  }
+
+  const data: LocationItem[] = [];
+  for (const g of groups.values()) {
+    let bestName = "";
+    let bestNameCount = 0;
+    for (const [n, c] of g.nameCounts) {
+      if (c > bestNameCount) {
+        bestNameCount = c;
+        bestName = n;
+      }
+    }
+    // Sort cells by count desc — canonical is the densest, full list used for map bbox.
+    const sortedCells = [...g.h3Counts.entries()].sort((a, b) => b[1] - a[1]).map(([h]) => h);
+    const bestH3 = sortedCells[0] ?? "";
+    if (bestName && bestH3) {
+      data.push({
+        name: bestName,
+        h3Index: bestH3,
+        galleryCount: g.count,
+        h3Cells: sortedCells,
       });
     }
   }
 
-  const data = [...regionMap.values()]
-    .map((r) => {
-      let bestName = "";
-      let bestCount = 0;
-      for (const [name, count] of r.nameCounts) {
-        if (count > bestCount) {
-          bestCount = count;
-          bestName = name;
-        }
-      }
-      return { name: bestName, h3Index: r.h3Index, galleryCount: r.count };
-    })
-    .sort((a, b) => b.galleryCount - a.galleryCount || a.name.localeCompare(b.name))
-    .slice(0, 30);
+  data.sort((a, b) => b.galleryCount - a.galleryCount || a.name.localeCompare(b.name));
+  const top = data.slice(0, 30);
 
-  cache = { data, expires: Date.now() + TTL };
-  return data;
+  cache = { data: top, expires: Date.now() + TTL };
+  return top;
 }
 
 export default defineQuery("social.grain.unspecced.getLocations", async (ctx) => {

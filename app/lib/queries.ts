@@ -55,10 +55,15 @@ export const camerasQuery = (f?: Fetch) =>
     staleTime: 5 * 60_000,
   });
 
-export const locationFeedQuery = (location: string, limit = 50, f?: Fetch) =>
+export const locationFeedQuery = (location: string, name?: string, limit = 50, f?: Fetch) =>
   queryOptions({
-    queryKey: ["getFeed", "location", location],
-    queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "location", location, limit }, f),
+    queryKey: ["getFeed", "location", name || location],
+    queryFn: () =>
+      callXrpc(
+        "dev.hatk.getFeed",
+        { feed: "location", location, ...(name ? { name } : {}), limit },
+        f,
+      ),
     staleTime: 60_000,
   });
 

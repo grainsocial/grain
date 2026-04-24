@@ -1,22 +1,40 @@
 // Returns top cameras by photo count (stale-while-revalidate, 5min TTL).
 //   GET /xrpc/social.grain.unspecced.getCameras
+//
+// Normalizes raw EXIF make/model strings before returning them so every
+// client gets consistent, human-readable names. Rows that collide after
+// normalization are merged (e.g. "RICOH IMAGING COMPANY, LTD. GR III" and
+// a hypothetical "Ricoh GR III" fold into one entry with summed counts).
 
 import { defineQuery } from "$hatk";
+import { cleanCameraName } from "../helpers/cameraName.ts";
 
 type Camera = { camera: string; photoCount: number };
 let cache: { data: Camera[]; expires: number } | null = null;
 const TTL = 5 * 60 * 1000;
 
 async function refresh(db: any) {
-  const rows = await db.query(`
+  const rows = (await db.query(`
     SELECT make || ' ' || model AS camera, CAST(COUNT(*) AS INTEGER) AS photo_count
     FROM "social.grain.photo.exif"
     WHERE make IS NOT NULL AND model IS NOT NULL
     GROUP BY make, model
     ORDER BY photo_count DESC, camera ASC
-    LIMIT 30
-  `);
-  const data = rows.map((r: any) => ({ camera: r.camera, photoCount: r.photo_count }));
+  `)) as { camera: string; photo_count: number }[];
+
+  // Merge rows that collide after normalization.
+  const merged = new Map<string, number>();
+  for (const r of rows) {
+    const clean = cleanCameraName(r.camera);
+    if (!clean) continue;
+    merged.set(clean, (merged.get(clean) ?? 0) + r.photo_count);
+  }
+
+  const data: Camera[] = [...merged.entries()]
+    .map(([camera, photoCount]) => ({ camera, photoCount }))
+    .sort((a, b) => b.photoCount - a.photoCount || a.camera.localeCompare(b.camera))
+    .slice(0, 30);
+
   cache = { data, expires: Date.now() + TTL };
   return data;
 }

@@ -9,6 +9,7 @@ import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { getResolution, cellToParent } from "h3-js";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 import { blockMuteFilter } from "../filters/blockMute.ts";
+import { expandCountryAliases } from "../helpers/country.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -17,7 +18,81 @@ export default defineFeed({
   hydrate: hydrateGalleries,
 
   async generate(ctx) {
+    const name = typeof ctx.params.name === "string" ? ctx.params.name.trim() : "";
     const location = ctx.params.location;
+
+    // Name-based query: unions all H3 cells sharing the same display label.
+    // Preferred over H3 when provided, since multiple res-5 cells can carry the
+    // same label (e.g. two res-5 cells both labeled "New York, New York, US").
+    if (name) {
+      // Parse the display name into plausible address interpretations. The
+      // sidebar's display format is `[locality, region, country].filter(Boolean).join(", ")`,
+      // so the last part is always country (when any address is present) and
+      // the position of earlier parts depends on which fields were populated.
+      // A 2-part name like "Paris, FR" is locality+country, while "Oregon, US"
+      // is region+country — so we try both and union the matches.
+      const parts = name
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      type Interp = { locality?: string; region?: string; country?: string };
+      const interps: Interp[] = [];
+      if (parts.length >= 3) {
+        interps.push({ locality: parts[0], region: parts[1], country: parts[2] });
+      } else if (parts.length === 2) {
+        interps.push({ locality: parts[0], country: parts[1] });
+        interps.push({ region: parts[0], country: parts[1] });
+      } else if (parts.length === 1) {
+        interps.push({ country: parts[0] });
+      }
+
+      const viewer = ctx.viewer?.did;
+      const params: any[] = [];
+      let p = 1;
+
+      const interpClauses: string[] = [];
+      for (const interp of interps) {
+        const matches: string[] = [];
+        if (interp.locality) {
+          matches.push(`UPPER(json_extract(t.address, '$.locality')) = UPPER($${p++})`);
+          params.push(interp.locality);
+        }
+        if (interp.region) {
+          matches.push(`UPPER(json_extract(t.address, '$.region')) = UPPER($${p++})`);
+          params.push(interp.region);
+        }
+        if (interp.country) {
+          // Expand "US"/"USA"/etc. all together.
+          const aliases = expandCountryAliases(interp.country);
+          const placeholders = aliases.map(() => `$${p++}`).join(",");
+          matches.push(`UPPER(json_extract(t.address, '$.country')) IN (${placeholders})`);
+          params.push(...aliases);
+        }
+        if (matches.length) interpClauses.push(`(${matches.join(" AND ")})`);
+      }
+
+      // Also match records whose raw location.name equals the requested name —
+      // covers galleries with only a custom location label (no structured address).
+      interpClauses.push(`json_extract(t.location, '$.name') = $${p++}`);
+      params.push(name);
+
+      const bmFilter = viewer ? `AND ${blockMuteFilter("t.did", `$${p++}`)}` : "";
+      if (viewer) params.push(viewer);
+
+      const { rows, cursor } = await ctx.paginate<{ uri: string }>(
+        `SELECT t.uri, t.cid, t.created_at FROM "social.grain.gallery" t
+         LEFT JOIN _repos r ON t.did = r.did
+         WHERE (r.status IS NULL OR r.status != 'takendown')
+           AND (${interpClauses.join(" OR ")})
+           AND ${hideLabelsFilter("t.uri")}
+           AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+           ${bmFilter}`,
+        { orderBy: "t.created_at", params },
+      );
+      return ctx.ok({ uris: rows.map((r) => r.uri), cursor });
+    }
+
     if (!location) return ctx.ok({ uris: [] });
 
     const res = getResolution(location);

@@ -26,8 +26,16 @@
       "required": ["name", "h3Index", "galleryCount"],
       "properties": {
         "name": { "type": "string" },
-        "h3Index": { "type": "string" },
-        "galleryCount": { "type": "integer" }
+        "h3Index": {
+          "type": "string",
+          "description": "Canonical H3 cell for the place (densest cell in the group)."
+        },
+        "galleryCount": { "type": "integer" },
+        "h3Cells": {
+          "type": "array",
+          "description": "All H3 cells whose galleries map to this place. Ordered by gallery count desc.",
+          "items": { "type": "string" }
+        }
       }
     }
   }

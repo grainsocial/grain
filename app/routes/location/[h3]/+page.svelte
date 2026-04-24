@@ -4,7 +4,7 @@
   import PinButton from '$lib/components/atoms/PinButton.svelte'
   import LocationMapBanner from '$lib/components/atoms/LocationMapBanner.svelte'
   import { createQuery } from '@tanstack/svelte-query'
-  import { locationFeedQuery } from '$lib/queries'
+  import { locationFeedQuery, locationsQuery } from '$lib/queries'
   import { isAuthenticated } from '$lib/stores'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
@@ -12,7 +12,14 @@
 
   const h3Index = $derived(data.h3Index)
   const name = $derived(data.name)
-  const feed = createQuery(() => locationFeedQuery(h3Index))
+  const nameParam = $derived(data.nameParam)
+  const feed = createQuery(() => locationFeedQuery(h3Index, nameParam ?? undefined))
+  const locations = createQuery(() => locationsQuery())
+  const h3Cells = $derived(
+    nameParam
+      ? locations.data?.find((l) => l.name === nameParam)?.h3Cells
+      : undefined,
+  )
 </script>
 
 <OGMeta title="{name} - grain" />
@@ -23,13 +30,13 @@
     {/if}
   {/snippet}
 </DetailHeader>
-<LocationMapBanner {h3Index} />
+<LocationMapBanner {h3Index} {h3Cells} />
 {#if feed.isLoading}
   <FeedList feed="location" params={{ location: h3Index }} skeleton />
 {:else}
   <FeedList
     feed="location"
-    params={{ location: h3Index }}
+    params={nameParam ? { location: h3Index, name: nameParam } : { location: h3Index }}
     initialItems={feed.data?.items ?? []}
     initialCursor={feed.data?.cursor}
   />

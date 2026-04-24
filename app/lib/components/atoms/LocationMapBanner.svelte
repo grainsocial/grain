@@ -1,12 +1,39 @@
 <script lang="ts">
   import { cellToLatLng, isValidCell } from 'h3-js'
 
-  let { h3Index }: { h3Index: string } = $props()
+  let { h3Index, h3Cells }: { h3Index: string; h3Cells?: string[] } = $props()
 
-  const valid = $derived(isValidCell(h3Index))
-  const [lat, lng] = $derived(valid ? cellToLatLng(h3Index) : [0, 0])
-  const zoom = 11
-  const maxTile = Math.pow(2, zoom)
+  // If multiple cells are provided, compute the center and a zoom level that
+  // fits the bounding box of their centroids. Falls back to the single-cell
+  // rendering when only h3Index is given.
+  const cells = $derived(
+    (h3Cells?.length ? h3Cells : [h3Index]).filter((c) => c && isValidCell(c)),
+  )
+  const valid = $derived(cells.length > 0)
+
+  const points = $derived(cells.map((c) => cellToLatLng(c)))
+  const lat = $derived(valid ? points.reduce((s, [la]) => s + la, 0) / points.length : 0)
+  const lng = $derived(valid ? points.reduce((s, [, lo]) => s + lo, 0) / points.length : 0)
+
+  // Pick a zoom that keeps the bbox within ~3 tiles wide.
+  const zoom = $derived.by(() => {
+    if (points.length < 2) return 11
+    const lats = points.map((p) => p[0])
+    const lngs = points.map((p) => p[1])
+    const latSpan = Math.max(...lats) - Math.min(...lats)
+    const lngSpan = Math.max(...lngs) - Math.min(...lngs)
+    const maxSpan = Math.max(latSpan, lngSpan)
+    // empirically: each zoom step halves the span shown in three tiles
+    if (maxSpan > 8) return 5
+    if (maxSpan > 4) return 6
+    if (maxSpan > 2) return 7
+    if (maxSpan > 1) return 8
+    if (maxSpan > 0.5) return 9
+    if (maxSpan > 0.2) return 10
+    return 11
+  })
+
+  const maxTile = $derived(Math.pow(2, zoom))
   const tileX = $derived(Math.floor(((lng + 180) / 360) * maxTile))
   const tileY = $derived(
     Math.floor(

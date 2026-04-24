@@ -161,8 +161,8 @@
     {/if}
   </div>
 
-  <div class="sidebar-card">
-    <div class="sidebar-card-header">Feeds</div>
+  <section class="sidebar-section">
+    <h2 class="sidebar-section-header">Feeds</h2>
     {#each $pinnedFeeds as feed, i (feed.id)}
       {@const href = i === 0 ? '/' : feed.path}
       {@const FeedIcon = feedIcon(feed)}
@@ -183,38 +183,42 @@
         <span class="sidebar-link-label">More feeds</span>
       </a>
     {/if}
-  </div>
+  </section>
 
   {#if camerasQ.data?.length}
-    <div class="sidebar-card">
-      <div class="sidebar-card-header">Cameras</div>
-      <div class="camera-grid">
-        {#each (camerasQ.data ?? []).slice(0, 12) as c}
-          <a class="camera-pill" href="/camera/{encodeURIComponent(c.camera)}">{c.camera}</a>
-        {/each}
-      </div>
-    </div>
+    <section class="sidebar-section">
+      <h2 class="sidebar-section-header">Cameras</h2>
+      {#each (camerasQ.data ?? []).slice(0, 7) as c}
+        <a class="sidebar-list-item" href="/camera/{encodeURIComponent(c.camera)}">{c.camera}</a>
+      {/each}
+      {#if (camerasQ.data ?? []).length > 7}
+        <a class="sidebar-see-all" href="/cameras">See all →</a>
+      {/if}
+    </section>
   {/if}
 
   {#if locationsQ.data?.length}
-    <div class="sidebar-card">
-      <div class="sidebar-card-header">Locations</div>
-      <div class="camera-grid">
-        {#each (locationsQ.data ?? []).slice(0, 12) as loc}
-          <a class="camera-pill" href="/location/{encodeURIComponent(loc.h3Index)}?name={encodeURIComponent(loc.name)}">{loc.name}</a>
-        {/each}
-      </div>
-    </div>
+    <section class="sidebar-section">
+      <h2 class="sidebar-section-header">Locations</h2>
+      {#each (locationsQ.data ?? []).slice(0, 7) as loc}
+        <a class="sidebar-list-item" href="/location/{encodeURIComponent(loc.h3Index)}?name={encodeURIComponent(loc.name)}">{loc.name}</a>
+      {/each}
+      {#if (locationsQ.data ?? []).length > 7}
+        <a class="sidebar-see-all" href="/locations">See all →</a>
+      {/if}
+    </section>
   {/if}
 
   <div class="sidebar-footer">
-    <div class="footer-links">
-      <a href="/support/terms">Terms</a>
-      <a href="/support/privacy">Privacy</a>
-      <a href="/support/copyright">Copyright</a>
-      <a href="/support/community-guidelines">Guidelines</a>
-    </div>
-    <span>Powered by <a href="https://atproto.com">AT Protocol</a></span>
+    <a href="/support/terms">Terms</a>
+    <span class="dot">·</span>
+    <a href="/support/privacy">Privacy</a>
+    <span class="dot">·</span>
+    <a href="/support/copyright">Copyright</a>
+    <span class="dot">·</span>
+    <a href="/support/community-guidelines">Guidelines</a>
+    <span class="dot">·</span>
+    <a href="https://atproto.com">AT Protocol</a>
   </div>
 </aside>
 
@@ -245,28 +249,29 @@
   }
   .search-input {
     width: 100%;
-    background: var(--bg-elevated);
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 9px 16px 9px 36px;
+    border-radius: 8px;
+    padding: 8px 36px;
     color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 16px;
+    font-size: 14px;
     outline: none;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s;
   }
   .search-input::placeholder { color: var(--text-faint); }
-  .search-input:focus { border-color: var(--grain); background: var(--bg-root); }
+  .search-input:focus { border-color: var(--grain); }
+  .search-icon { left: 12px; }
   .search-clear {
     position: absolute;
-    right: 10px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 4px;
+    padding: 2px;
     display: flex;
     align-items: center;
   }
@@ -333,28 +338,32 @@
     white-space: nowrap;
   }
 
-  .sidebar-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
+  .sidebar-section {
+    display: flex;
+    flex-direction: column;
   }
-  .sidebar-card-header {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 17px;
-    padding: 12px 16px;
+  .sidebar-section-header {
+    margin: 0 0 6px;
+    padding: 0 4px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
   }
   .sidebar-link {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 16px;
+    padding: 6px 4px;
     font-size: 14px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.12s;
+    transition: color 0.12s;
     text-decoration: none;
     min-width: 0;
+    border-radius: 4px;
   }
   .sidebar-link-label {
     white-space: nowrap;
@@ -362,8 +371,7 @@
     text-overflow: ellipsis;
     min-width: 0;
   }
-  .sidebar-link:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .sidebar-link:last-child { border-radius: 0 0 14px 14px; }
+  .sidebar-link:hover { color: var(--text-primary); }
   .sidebar-link.active { color: var(--grain); font-weight: 600; }
   .sidebar-link.more-feeds { color: var(--grain); font-size: 13px; }
   .sidebar-link-icon {
@@ -374,45 +382,43 @@
     justify-content: center;
   }
 
-  .camera-grid {
+  .sidebar-list-item {
+    display: block;
+    padding: 6px 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.12s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sidebar-list-item:hover { color: var(--text-primary); }
+
+  .sidebar-see-all {
+    display: block;
+    padding: 6px 4px;
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .sidebar-see-all:hover { color: var(--grain); }
+
+  .sidebar-footer {
+    padding: 4px 4px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-faint);
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 16px 14px;
+    align-items: center;
   }
-  .camera-pill {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 4px 12px;
-    border-radius: 14px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-    font-family: var(--font-body);
-    text-decoration: none;
-  }
-  .camera-pill:hover {
-    border-color: var(--grain);
-    color: var(--text-primary);
-  }
-
-  .sidebar-footer {
-    padding: 12px 16px;
-    font-size: 11px;
-    color: var(--text-faint);
-    line-height: 1.8;
-  }
-  .footer-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 10px;
-    margin-bottom: 4px;
-  }
+  .sidebar-footer .dot { color: var(--text-faint); }
   .sidebar-footer a { color: var(--text-muted); text-decoration: none; }
-  .sidebar-footer a:hover { text-decoration: underline; }
+  .sidebar-footer a:hover { color: var(--text-primary); }
 
   @media (max-width: 1060px) { .sidebar-right { display: none; } }
 </style>
