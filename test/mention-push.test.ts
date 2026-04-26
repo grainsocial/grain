@@ -1,0 +1,233 @@
+import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
+
+vi.mock("$hatk", () => ({
+  defineHook: (_event: string, _opts: unknown, handler: any) => handler,
+}));
+
+let commentHook: (ctx: any) => Promise<void>;
+let galleryHook: (ctx: any) => Promise<void>;
+beforeAll(async () => {
+  commentHook = (await import("../server/hooks/on-commit-comment.ts")).default as any;
+  galleryHook = (await import("../server/hooks/on-commit-gallery.ts")).default as any;
+});
+
+const REPO = "did:plc:author";
+const GALLERY_OWNER = "did:plc:gowner";
+const GALLERY_URI = "at://did:plc:gowner/social.grain.gallery/g1";
+const STORY_URI = "at://did:plc:sowner/social.grain.story/s1";
+const COMMENT_URI = "at://did:plc:author/social.grain.comment/c1";
+const PARENT_COMMENT_URI = "at://did:plc:pca/social.grain.comment/p1";
+const PARENT_COMMENT_AUTHOR = "did:plc:pca";
+
+function mention(did: string) {
+  return {
+    index: { byteStart: 0, byteEnd: 5 },
+    features: [{ $type: "app.bsky.richtext.facet#mention", did }],
+  };
+}
+
+type Row = Record<string, unknown>;
+function makeDb(routes: { match: (sql: string, params: unknown[]) => Row[] | null }[]) {
+  return {
+    query: vi.fn(async (sql: string, params: unknown[] = []) => {
+      for (const r of routes) {
+        const out = r.match(sql, params);
+        if (out !== null) return out;
+      }
+      return [];
+    }),
+    run: vi.fn(async () => {}),
+  };
+}
+
+const lookup = vi.fn(async () =>
+  new Map([[REPO, { did: REPO, value: { displayName: "Author" } }]]),
+);
+
+const sendSpy = vi.fn(async () => {});
+const push = { send: sendSpy };
+
+beforeEach(() => {
+  sendSpy.mockClear();
+  lookup.mockClear();
+});
+
+describe("on-commit-comment mention fan-out", () => {
+  it("pushes gallery-comment-mention to mentioned DID on a top-level gallery comment", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') && sql.includes("WHERE uri =") ? [{ author: GALLERY_OWNER }] : null) },
+      { match: (sql) => (sql.includes("_preferences") ? [] : null) },
+      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "hi @bob", facets: [mention("did:plc:bob")] },
+      repo: REPO,
+      uri: COMMENT_URI,
+      db,
+      lookup,
+      push,
+    });
+    const mentionPush = sendSpy.mock.calls.map((c) => c[0]).find((p: any) => p.data?.type === "gallery-comment-mention");
+    expect(mentionPush).toBeDefined();
+    expect(mentionPush.did).toBe("did:plc:bob");
+    expect(mentionPush.data.uri).toBe(GALLERY_URI);
+    expect(mentionPush.data.commentUri).toBe(COMMENT_URI);
+  });
+
+  it("skips self-mention", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "@me", facets: [mention(REPO)] },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
+  });
+
+  it("does not double-notify the gallery owner if they were also mentioned", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "hi @owner", facets: [mention(GALLERY_OWNER)] },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    const types = sendSpy.mock.calls.map((c: any) => c[0].data?.type);
+    expect(types).toContain("gallery-comment");
+    expect(types).not.toContain("gallery-comment-mention");
+  });
+
+  it("does not double-notify the parent comment author if they were also mentioned", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.comment" WHERE uri =') ? [{ author: PARENT_COMMENT_AUTHOR }] : null) },
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: {
+        subject: GALLERY_URI,
+        replyTo: PARENT_COMMENT_URI,
+        text: "@parent",
+        facets: [mention(PARENT_COMMENT_AUTHOR)],
+      },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    const types = sendSpy.mock.calls.map((c: any) => c[0].data?.type);
+    expect(types).toContain("comment-reply");
+    expect(types).not.toContain("gallery-comment-mention");
+  });
+
+  it("sends to nobody when more than 5 distinct mentions remain after dedup", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      { match: () => [] },
+    ]);
+    const facets = ["a","b","c","d","e","f"].map((x) => mention(`did:plc:${x}`));
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "spam", facets },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
+  });
+
+  it("does NOT push mentions for story comments (in-app only)", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [] : null) },
+      { match: (sql) => (sql.includes('FROM "social.grain.story"') ? [{ author: "did:plc:sowner" }] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: STORY_URI, text: "@bob", facets: [mention("did:plc:bob")] },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
+  });
+});
+
+describe("on-commit-gallery mention fan-out", () => {
+  it("pushes gallery-mention on create with a description mention", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      { match: () => [] },
+    ]);
+    await galleryHook({
+      action: "create",
+      record: { title: "Sunset", description: "@bob look", facets: [mention("did:plc:bob")] },
+      repo: REPO, uri: GALLERY_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls).toHaveLength(1);
+    expect(sendSpy.mock.calls[0][0].data).toEqual({ type: "gallery-mention", uri: GALLERY_URI });
+    expect(sendSpy.mock.calls[0][0].did).toBe("did:plc:bob");
+    expect(db.run).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
+      [GALLERY_URI, "did:plc:bob", expect.any(String)],
+    );
+  });
+
+  it("does not re-push mentions already in _mention_pushes (gallery edit)", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes("_mention_pushes") ? [{ recipient_did: "did:plc:bob" }] : null) },
+      { match: () => [] },
+    ]);
+    await galleryHook({
+      action: "create",
+      record: { title: "Sunset", description: "@bob still here", facets: [mention("did:plc:bob")] },
+      repo: REPO, uri: GALLERY_URI, db, lookup, push,
+    });
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
+  it("on edit, only pushes for newly added mentions", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes("_mention_pushes") ? [{ recipient_did: "did:plc:bob" }] : null) },
+      { match: () => [] },
+    ]);
+    await galleryHook({
+      action: "create",
+      record: {
+        title: "Sunset",
+        description: "@bob @alice",
+        facets: [mention("did:plc:bob"), mention("did:plc:alice")],
+      },
+      repo: REPO, uri: GALLERY_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls.map((c: any) => c[0].did)).toEqual(["did:plc:alice"]);
+  });
+
+  it("sends to nobody when more than 5 mentions on a gallery", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      { match: () => [] },
+    ]);
+    const facets = ["a","b","c","d","e","f"].map((x) => mention(`did:plc:${x}`));
+    await galleryHook({
+      action: "create",
+      record: { title: "x", description: "spam", facets },
+      repo: REPO, uri: GALLERY_URI, db, lookup, push,
+    });
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
+  it("skips self-mentions", async () => {
+    const db = makeDb([
+      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      { match: () => [] },
+    ]);
+    await galleryHook({
+      action: "create",
+      record: { title: "x", description: "@me", facets: [mention(REPO)] },
+      repo: REPO, uri: GALLERY_URI, db, lookup, push,
+    });
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+});
