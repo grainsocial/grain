@@ -37,3 +37,23 @@ export async function shouldPush(
 
   return true;
 }
+
+/**
+ * Check whether recipient and actor have a block (either direction) or
+ * recipient has muted actor. Returns true if push should be suppressed.
+ */
+export async function isBlockedOrMuted(
+  db: { query: (sql: string, params?: unknown[]) => Promise<unknown[]> },
+  recipientDid: string,
+  actorDid: string,
+): Promise<boolean> {
+  const rows = (await db.query(
+    `SELECT 1 FROM "social.grain.graph.block"
+       WHERE (did = $1 AND subject = $2) OR (did = $2 AND subject = $1)
+     UNION ALL
+     SELECT 1 FROM _mutes WHERE did = $1 AND subject = $2
+     LIMIT 1`,
+    [recipientDid, actorDid],
+  )) as unknown[];
+  return rows.length > 0;
+}
