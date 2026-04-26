@@ -23,17 +23,6 @@ export default defineHook("on-commit", { collections: ["social.grain.gallery"] }
     if (mentioned.length === 0) return
     if (mentioned.length > MAX_MENTIONS_PER_RECORD) return
 
-    // Filter to DIDs we haven't already pushed for this gallery URI.
-    // Indexer fires action='create' on every edit too, so this prevents
-    // re-notifying pre-existing mentions when the description is edited.
-    const existing = (await db.query(
-      `SELECT recipient_did FROM _mention_pushes WHERE record_uri = $1`,
-      [uri],
-    )) as { recipient_did: string }[]
-    const alreadyPushed = new Set(existing.map((r) => r.recipient_did))
-    const targets = mentioned.filter((d) => !alreadyPushed.has(d))
-    if (targets.length === 0) return
-
     const profiles = await lookup("social.grain.actor.profile", "did", [repo])
     const actor = profiles.get(repo)
     const displayName = (actor?.value as any)?.displayName ?? "Someone"
@@ -41,14 +30,17 @@ export default defineHook("on-commit", { collections: ["social.grain.gallery"] }
     const body = (record as any).title ?? snippet((record as any).description) ?? ""
     const now = new Date().toISOString()
 
-    for (const did of targets) {
-      // Mark as processed before any conditional skip — even if blocked/muted or
-      // pref-disabled — so the same DID isn't reconsidered when state changes
-      // before a future re-index of the same record.
-      await db.run(
-        `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at) VALUES ($1, $2, $3)`,
+    for (const did of mentioned) {
+      // Atomically claim the dedup row. RETURNING is empty when the row
+      // already existed (INSERT OR IGNORE'd), which both guards against a
+      // gallery-edit re-push and races between two near-simultaneous fires
+      // for the same URI (e.g. quick edit lands in the same indexer batch).
+      const claimed = (await db.query(
+        `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at)
+           VALUES ($1, $2, $3) RETURNING recipient_did`,
         [uri, did, now],
-      )
+      )) as unknown[]
+      if (claimed.length === 0) continue
       if (await isBlockedOrMuted(db, did, repo)) continue
       if (!(await shouldPush(db, did, repo, "mentions"))) continue
       const badge = await getUnseenCount(db, did) + 1

@@ -27,7 +27,24 @@ function mention(did: string) {
 }
 
 type Row = Record<string, unknown>;
-function makeDb(routes: { match: (sql: string, params: unknown[]) => Row[] | null }[]) {
+type Route = { match: (sql: string, params: unknown[]) => Row[] | null };
+
+/**
+ * Mock route for the atomic claim `INSERT OR IGNORE ... RETURNING`. Returns []
+ * when the (uri, did) was already in the set (simulating a conflict-suppressed
+ * insert), otherwise returns one row to mimic the new claim.
+ */
+function mentionClaim(alreadyClaimed: Set<string> = new Set()): Route {
+  return {
+    match: (sql, params) => {
+      if (!sql.includes("INSERT OR IGNORE INTO _mention_pushes")) return null;
+      const did = (params as string[])[1];
+      return alreadyClaimed.has(did) ? [] : [{ recipient_did: did }];
+    },
+  };
+}
+
+function makeDb(routes: Route[]) {
   return {
     query: vi.fn(async (sql: string, params: unknown[] = []) => {
       for (const r of routes) {
@@ -56,8 +73,7 @@ describe("on-commit-comment mention fan-out", () => {
   it("pushes gallery-comment-mention to mentioned DID on a top-level gallery comment", async () => {
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') && sql.includes("WHERE uri =") ? [{ author: GALLERY_OWNER }] : null) },
-      { match: (sql) => (sql.includes("_preferences") ? [] : null) },
-      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await commentHook({
@@ -74,7 +90,7 @@ describe("on-commit-comment mention fan-out", () => {
     expect(mentionPush.did).toBe("did:plc:bob");
     expect(mentionPush.data.uri).toBe(GALLERY_URI);
     expect(mentionPush.data.commentUri).toBe(COMMENT_URI);
-    expect(db.run).toHaveBeenCalledWith(
+    expect(db.query).toHaveBeenCalledWith(
       expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
       [COMMENT_URI, "did:plc:bob", expect.any(String)],
     );
@@ -83,6 +99,7 @@ describe("on-commit-comment mention fan-out", () => {
   it("skips self-mention", async () => {
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await commentHook({
@@ -96,6 +113,7 @@ describe("on-commit-comment mention fan-out", () => {
   it("does not double-notify the gallery owner if they were also mentioned", async () => {
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await commentHook({
@@ -112,6 +130,7 @@ describe("on-commit-comment mention fan-out", () => {
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.comment" WHERE uri =') ? [{ author: PARENT_COMMENT_AUTHOR }] : null) },
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await commentHook({
@@ -132,6 +151,7 @@ describe("on-commit-comment mention fan-out", () => {
   it("sends to nobody when more than 5 distinct mentions remain after dedup", async () => {
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     const facets = ["a","b","c","d","e","f"].map((x) => mention(`did:plc:${x}`));
@@ -159,7 +179,7 @@ describe("on-commit-comment mention fan-out", () => {
           return prefsByDid[did] ? [{ value: JSON.stringify(prefsByDid[did]) }] : [];
         }
       },
-      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await commentHook({
@@ -180,11 +200,11 @@ describe("on-commit-comment mention fan-out", () => {
   });
 
   it("does not re-push when the same comment is re-indexed (edit dedup)", async () => {
-    // Regression: comment hook now writes to _mention_pushes after each push
-    // and skips DIDs already present, so an edit cannot re-fire a notification.
+    // Atomic INSERT OR IGNORE ... RETURNING returns no rows when the dedup row
+    // already exists, so an edit re-fire claims nothing and pushes nobody.
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
-      { match: (sql) => (sql.includes("_mention_pushes") ? [{ recipient_did: "did:plc:bob" }] : null) },
+      mentionClaim(new Set(["did:plc:bob"])),
       { match: () => [] },
     ]);
     await commentHook({
@@ -195,14 +215,13 @@ describe("on-commit-comment mention fan-out", () => {
     expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
   });
 
-  it("writes a dedup row for blocked targets too, so unblocking doesn't re-trigger", async () => {
-    // Regression: dedup must be recorded at evaluation time, not at push-success
-    // time, otherwise a recipient skipped by block/mute (or pref) gets pushed
-    // on the next re-index after their state changes.
+  it("blocked target still claims a dedup row, so unblocking doesn't re-trigger", async () => {
+    // Regression: dedup must be claimed at evaluation time, not after push,
+    // otherwise a recipient skipped by block/mute or pref gets pushed on the
+    // next re-index after their state changes.
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
-      // _mention_pushes empty (first commit)
-      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      mentionClaim(),
       // bob has blocked the actor
       { match: (sql, params) => {
           if (!sql.includes("social.grain.graph.block") && !sql.includes("_mutes")) return null;
@@ -217,10 +236,33 @@ describe("on-commit-comment mention fan-out", () => {
       record: { subject: GALLERY_URI, text: "hi @bob", facets: [mention("did:plc:bob")] },
       repo: REPO, uri: COMMENT_URI, db, lookup, push,
     });
-    // No mention push fires (bob blocked actor)
     expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
-    // …but the dedup row is still written so a future re-index won't push.
-    expect(db.run).toHaveBeenCalledWith(
+    expect(db.query).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
+      [COMMENT_URI, "did:plc:bob", expect.any(String)],
+    );
+  });
+
+  it("pref-disabled target still claims a dedup row", async () => {
+    // Same regression as block path, exercised through shouldPush returning false.
+    const prefs = { mentions: { push: false, inApp: true, from: "all" } };
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      mentionClaim(),
+      { match: (sql, params) => {
+          if (!sql.includes("_preferences") || !sql.includes("notificationPrefs")) return null;
+          return (params as string[])[0] === "did:plc:bob" ? [{ value: JSON.stringify(prefs) }] : [];
+        }
+      },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "hi @bob", facets: [mention("did:plc:bob")] },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
+    expect(db.query).toHaveBeenCalledWith(
       expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
       [COMMENT_URI, "did:plc:bob", expect.any(String)],
     );
@@ -256,7 +298,7 @@ describe("on-commit-comment mention fan-out", () => {
 describe("on-commit-gallery mention fan-out", () => {
   it("pushes gallery-mention on create with a description mention", async () => {
     const db = makeDb([
-      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await galleryHook({
@@ -267,7 +309,7 @@ describe("on-commit-gallery mention fan-out", () => {
     expect(sendSpy.mock.calls).toHaveLength(1);
     expect(sendSpy.mock.calls[0][0].data).toEqual({ type: "gallery-mention", uri: GALLERY_URI });
     expect(sendSpy.mock.calls[0][0].did).toBe("did:plc:bob");
-    expect(db.run).toHaveBeenCalledWith(
+    expect(db.query).toHaveBeenCalledWith(
       expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
       [GALLERY_URI, "did:plc:bob", expect.any(String)],
     );
@@ -275,7 +317,7 @@ describe("on-commit-gallery mention fan-out", () => {
 
   it("does not re-push mentions already in _mention_pushes (gallery edit)", async () => {
     const db = makeDb([
-      { match: (sql) => (sql.includes("_mention_pushes") ? [{ recipient_did: "did:plc:bob" }] : null) },
+      mentionClaim(new Set(["did:plc:bob"])),
       { match: () => [] },
     ]);
     await galleryHook({
@@ -288,7 +330,7 @@ describe("on-commit-gallery mention fan-out", () => {
 
   it("on edit, only pushes for newly added mentions", async () => {
     const db = makeDb([
-      { match: (sql) => (sql.includes("_mention_pushes") ? [{ recipient_did: "did:plc:bob" }] : null) },
+      mentionClaim(new Set(["did:plc:bob"])),
       { match: () => [] },
     ]);
     await galleryHook({
@@ -305,7 +347,7 @@ describe("on-commit-gallery mention fan-out", () => {
 
   it("sends to nobody when more than 5 mentions on a gallery", async () => {
     const db = makeDb([
-      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     const facets = ["a","b","c","d","e","f"].map((x) => mention(`did:plc:${x}`));
@@ -319,7 +361,7 @@ describe("on-commit-gallery mention fan-out", () => {
 
   it("skips self-mentions", async () => {
     const db = makeDb([
-      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      mentionClaim(),
       { match: () => [] },
     ]);
     await galleryHook({
