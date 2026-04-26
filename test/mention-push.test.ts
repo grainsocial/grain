@@ -74,6 +74,10 @@ describe("on-commit-comment mention fan-out", () => {
     expect(mentionPush.did).toBe("did:plc:bob");
     expect(mentionPush.data.uri).toBe(GALLERY_URI);
     expect(mentionPush.data.commentUri).toBe(COMMENT_URI);
+    expect(db.run).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
+      [COMMENT_URI, "did:plc:bob", expect.any(String)],
+    );
   });
 
   it("skips self-mention", async () => {
@@ -191,13 +195,44 @@ describe("on-commit-comment mention fan-out", () => {
     expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
   });
 
+  it("writes a dedup row for blocked targets too, so unblocking doesn't re-trigger", async () => {
+    // Regression: dedup must be recorded at evaluation time, not at push-success
+    // time, otherwise a recipient skipped by block/mute (or pref) gets pushed
+    // on the next re-index after their state changes.
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      // _mention_pushes empty (first commit)
+      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      // bob has blocked the actor
+      { match: (sql, params) => {
+          if (!sql.includes("social.grain.graph.block") && !sql.includes("_mutes")) return null;
+          const [recipient, actor] = params as string[];
+          return recipient === "did:plc:bob" && actor === REPO ? [{ "1": 1 }] : [];
+        }
+      },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "hi @bob", facets: [mention("did:plc:bob")] },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    // No mention push fires (bob blocked actor)
+    expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
+    // …but the dedup row is still written so a future re-index won't push.
+    expect(db.run).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT OR IGNORE INTO _mention_pushes"),
+      [COMMENT_URI, "did:plc:bob", expect.any(String)],
+    );
+  });
+
   it("delete action clears _mention_pushes rows for the comment", async () => {
     const db = makeDb([{ match: () => [] }]);
     await commentHook({
       action: "delete", record: null, repo: REPO, uri: COMMENT_URI, db, lookup, push,
     });
     expect(db.run).toHaveBeenCalledWith(
-      expect.stringContaining("DELETE FROM _mention_pushes"),
+      expect.stringMatching(/DELETE FROM _mention_pushes\s+WHERE record_uri = \$1/),
       [COMMENT_URI],
     );
     expect(sendSpy).not.toHaveBeenCalled();
@@ -301,7 +336,7 @@ describe("on-commit-gallery mention fan-out", () => {
       action: "delete", record: null, repo: REPO, uri: GALLERY_URI, db, lookup, push,
     });
     expect(db.run).toHaveBeenCalledWith(
-      expect.stringContaining("DELETE FROM _mention_pushes"),
+      expect.stringMatching(/DELETE FROM _mention_pushes\s+WHERE record_uri = \$1/),
       [GALLERY_URI],
     );
     expect(sendSpy).not.toHaveBeenCalled();

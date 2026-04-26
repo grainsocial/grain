@@ -42,6 +42,13 @@ export default defineHook("on-commit", { collections: ["social.grain.gallery"] }
     const now = new Date().toISOString()
 
     for (const did of targets) {
+      // Mark as processed before any conditional skip — even if blocked/muted or
+      // pref-disabled — so the same DID isn't reconsidered when state changes
+      // before a future re-index of the same record.
+      await db.run(
+        `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at) VALUES ($1, $2, $3)`,
+        [uri, did, now],
+      )
       if (await isBlockedOrMuted(db, did, repo)) continue
       if (!(await shouldPush(db, did, repo, "mentions"))) continue
       const badge = await getUnseenCount(db, did) + 1
@@ -52,10 +59,6 @@ export default defineHook("on-commit", { collections: ["social.grain.gallery"] }
         data: { type: "gallery-mention", uri },
         badge,
       })
-      await db.run(
-        `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at) VALUES ($1, $2, $3)`,
-        [uri, did, now],
-      )
     }
   }
 )

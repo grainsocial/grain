@@ -120,7 +120,10 @@ async function fanOutMentions(args: {
   commentText: string | undefined
   galleryUri: string
   commentUri: string
-  db: { query: (sql: string, params?: unknown[]) => Promise<unknown[]> }
+  db: {
+    query: (sql: string, params?: unknown[]) => Promise<unknown[]>
+    run: (sql: string, params?: unknown[]) => Promise<void>
+  }
   push: { send: (payload: any) => Promise<unknown> }
 }) {
   const { facets, supersededRecipients, actorDid, displayName, commentText, galleryUri, commentUri, db, push } = args
@@ -142,6 +145,13 @@ async function fanOutMentions(args: {
   const now = new Date().toISOString()
 
   for (const did of targets) {
+    // Mark as processed before any conditional skip — even if blocked/muted or
+    // pref-disabled — so the same DID isn't reconsidered when state changes
+    // before a future re-index of the same record.
+    await db.run(
+      `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at) VALUES ($1, $2, $3)`,
+      [commentUri, did, now],
+    )
     if (await isBlockedOrMuted(db, did, actorDid)) continue
     if (!(await shouldPush(db, did, actorDid, "mentions"))) continue
     const badge = await getUnseenCount(db, did) + 1
@@ -152,9 +162,5 @@ async function fanOutMentions(args: {
       data: { type: "gallery-comment-mention", uri: galleryUri, commentUri },
       badge,
     })
-    await db.run(
-      `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at) VALUES ($1, $2, $3)`,
-      [commentUri, did, now],
-    )
   }
 }
