@@ -12,6 +12,11 @@ function snippet(text: string | undefined | null, max = 140): string {
 
 export default defineHook("on-commit", { collections: ["social.grain.gallery"] },
   async ({ action, record, repo, uri, db, lookup, push }) => {
+    if (action === "delete") {
+      // Drop dedup rows so a future re-create of the same rkey can push fresh.
+      await db.run(`DELETE FROM _mention_pushes WHERE record_uri = $1`, [uri])
+      return
+    }
     if (action !== "create" || !record) return
 
     const mentioned = extractMentionDids((record as any).facets).filter((d) => d !== repo)

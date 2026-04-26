@@ -139,6 +139,70 @@ describe("on-commit-comment mention fan-out", () => {
     expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
   });
 
+  it("still fires mention push when parent author has comments-off but mentions-on", async () => {
+    // Regression: previously the supersede set was populated before shouldPush,
+    // so a parent author with the reply push disabled was also denied the
+    // mention push they had explicitly opted in to.
+    const prefsByDid: Record<string, any> = {
+      [PARENT_COMMENT_AUTHOR]: { comments: { push: false, inApp: true, from: "all" } },
+    };
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.comment" WHERE uri =') ? [{ author: PARENT_COMMENT_AUTHOR }] : null) },
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      { match: (sql, params) => {
+          if (!sql.includes("_preferences") || !sql.includes("notificationPrefs")) return null;
+          const did = (params as any[])[0];
+          return prefsByDid[did] ? [{ value: JSON.stringify(prefsByDid[did]) }] : [];
+        }
+      },
+      { match: (sql) => (sql.includes("_mention_pushes") ? [] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: {
+        subject: GALLERY_URI,
+        replyTo: PARENT_COMMENT_URI,
+        text: "@parent",
+        facets: [mention(PARENT_COMMENT_AUTHOR)],
+      },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    const types = sendSpy.mock.calls.map((c: any) => c[0].data?.type);
+    expect(types).not.toContain("comment-reply");      // comments-off honored
+    expect(types).toContain("gallery-comment-mention"); // mention push fires
+    const mentionTarget = sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention");
+    expect(mentionTarget?.[0].did).toBe(PARENT_COMMENT_AUTHOR);
+  });
+
+  it("does not re-push when the same comment is re-indexed (edit dedup)", async () => {
+    // Regression: comment hook now writes to _mention_pushes after each push
+    // and skips DIDs already present, so an edit cannot re-fire a notification.
+    const db = makeDb([
+      { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [{ author: GALLERY_OWNER }] : null) },
+      { match: (sql) => (sql.includes("_mention_pushes") ? [{ recipient_did: "did:plc:bob" }] : null) },
+      { match: () => [] },
+    ]);
+    await commentHook({
+      action: "create",
+      record: { subject: GALLERY_URI, text: "@bob still", facets: [mention("did:plc:bob")] },
+      repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    expect(sendSpy.mock.calls.find((c: any) => c[0].data?.type === "gallery-comment-mention")).toBeUndefined();
+  });
+
+  it("delete action clears _mention_pushes rows for the comment", async () => {
+    const db = makeDb([{ match: () => [] }]);
+    await commentHook({
+      action: "delete", record: null, repo: REPO, uri: COMMENT_URI, db, lookup, push,
+    });
+    expect(db.run).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM _mention_pushes"),
+      [COMMENT_URI],
+    );
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
   it("does NOT push mentions for story comments (in-app only)", async () => {
     const db = makeDb([
       { match: (sql) => (sql.includes('FROM "social.grain.gallery"') ? [] : null) },
@@ -228,6 +292,18 @@ describe("on-commit-gallery mention fan-out", () => {
       record: { title: "x", description: "@me", facets: [mention(REPO)] },
       repo: REPO, uri: GALLERY_URI, db, lookup, push,
     });
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
+
+  it("delete action clears _mention_pushes rows for the gallery", async () => {
+    const db = makeDb([{ match: () => [] }]);
+    await galleryHook({
+      action: "delete", record: null, repo: REPO, uri: GALLERY_URI, db, lookup, push,
+    });
+    expect(db.run).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM _mention_pushes"),
+      [GALLERY_URI],
+    );
     expect(sendSpy).not.toHaveBeenCalled();
   });
 });

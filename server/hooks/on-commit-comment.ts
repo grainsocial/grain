@@ -12,6 +12,11 @@ function snippet(text: string | undefined | null, max = 140): string {
 
 export default defineHook("on-commit", { collections: ["social.grain.comment"] },
   async ({ action, record, repo, db, lookup, push, uri }) => {
+    if (action === "delete") {
+      // Drop dedup rows so a future re-create can fire fresh pushes.
+      await db.run(`DELETE FROM _mention_pushes WHERE record_uri = $1`, [uri])
+      return
+    }
     if (action !== "create" || !record) return
     const subject = record.subject as string
     if (!subject) return
@@ -21,8 +26,10 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
     const actor = profiles.get(repo)
     const displayName = (actor?.value as any)?.displayName ?? "Someone"
 
-    // Track who already received a higher-priority push for this commit, so the
-    // mention fan-out below can suppress duplicates (reply / direct comment supersede mention).
+    // Track who received a higher-priority push for this commit so the mention
+    // fan-out below skips them. Only add to this set when a push *actually*
+    // fired — otherwise a recipient with comments-off + mentions-on would be
+    // silenced for both.
     const supersededRecipients = new Set<string>([repo])
 
     // If this is a reply, notify the parent comment author
@@ -33,8 +40,8 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
       ) as { author: string }[]
 
       if (parent && parent.author !== repo) {
-        supersededRecipients.add(parent.author)
         if (await shouldPush(db, parent.author, repo, "comments")) {
+          supersededRecipients.add(parent.author)
           const badge = await getUnseenCount(db, parent.author) + 1
           await push.send({
             did: parent.author,
@@ -55,8 +62,8 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
 
     if (gallery) {
       if (gallery.author !== repo) {
-        supersededRecipients.add(gallery.author)
         if (await shouldPush(db, gallery.author, repo, "comments")) {
+          supersededRecipients.add(gallery.author)
           const badge = await getUnseenCount(db, gallery.author) + 1
           await push.send({
             did: gallery.author,
@@ -121,9 +128,20 @@ async function fanOutMentions(args: {
   if (mentioned.length === 0) return
   if (mentioned.length > MAX_MENTIONS_PER_RECORD) return
 
-  const body = snippet(commentText) || `${displayName} mentioned you in a comment`
+  // Dedup against _mention_pushes so a comment edit with the same mention
+  // doesn't re-push. Same protection the gallery hook uses.
+  const existing = (await db.query(
+    `SELECT recipient_did FROM _mention_pushes WHERE record_uri = $1`,
+    [commentUri],
+  )) as { recipient_did: string }[]
+  const alreadyPushed = new Set(existing.map((r) => r.recipient_did))
+  const targets = mentioned.filter((d) => !alreadyPushed.has(d))
+  if (targets.length === 0) return
 
-  for (const did of mentioned) {
+  const body = snippet(commentText) || `${displayName} mentioned you in a comment`
+  const now = new Date().toISOString()
+
+  for (const did of targets) {
     if (await isBlockedOrMuted(db, did, actorDid)) continue
     if (!(await shouldPush(db, did, actorDid, "mentions"))) continue
     const badge = await getUnseenCount(db, did) + 1
@@ -134,5 +152,9 @@ async function fanOutMentions(args: {
       data: { type: "gallery-comment-mention", uri: galleryUri, commentUri },
       badge,
     })
+    await db.run(
+      `INSERT OR IGNORE INTO _mention_pushes (record_uri, recipient_did, created_at) VALUES ($1, $2, $3)`,
+      [commentUri, did, now],
+    )
   }
 }
