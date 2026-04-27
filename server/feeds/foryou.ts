@@ -2,6 +2,7 @@ import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 import { blockMuteFilter } from "../filters/blockMute.ts";
+import { galleryFeedTable } from "./_galleryTable.ts";
 
 // ─── Scoring parameters (spacecowboy17's optimized A/B values) ───────
 const HALF_LIFE_HOURS = 6;
@@ -98,9 +99,9 @@ export default defineFeed({
 
     const [candidateRows, likeCounts] = await Promise.all([
       ctx.db.query(
-        `SELECT f.did AS coliker, f.subject AS gallery_uri, t.created_at AS gallery_created_at
+        `SELECT f.did AS coliker, f.subject AS gallery_uri, t.sort_at AS gallery_created_at
          FROM "social.grain.favorite" f
-         JOIN "social.grain.gallery" t ON t.uri = f.subject
+         JOIN ${galleryFeedTable} ON t.uri = f.subject
          LEFT JOIN _repos r ON t.did = r.did
          WHERE f.did IN (${colikerPlaceholders})
            AND f.subject NOT IN (${seedPlaceholders})
@@ -233,17 +234,17 @@ async function coldStartFeed(
 
   const rows = (await ctx.db.query(
     `SELECT t.uri, COUNT(f.did) as fav_count
-     FROM "social.grain.gallery" t
+     FROM ${galleryFeedTable}
      LEFT JOIN "social.grain.favorite" f ON f.subject = t.uri
      LEFT JOIN _repos r ON t.did = r.did
      WHERE (r.status IS NULL OR r.status != 'takendown')
        AND t.did != $1
-       AND t.created_at > $2
+       AND t.sort_at > $2
        AND ${hideLabelsFilter("t.uri")}
        AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
        AND ${blockMuteFilter("t.did", "$1")}
      GROUP BY t.uri
-     ORDER BY fav_count DESC, t.created_at DESC
+     ORDER BY fav_count DESC, t.sort_at DESC
      LIMIT $3 OFFSET $4`,
     [actor, thirtyDaysAgo, limit, offset],
   )) as { uri: string; fav_count: number }[];

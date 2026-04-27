@@ -10,6 +10,7 @@ import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 import { blockMuteFilter } from "../filters/blockMute.ts";
 import { cleanCameraName } from "../helpers/cameraName.ts";
+import { galleryFeedTable } from "./_galleryTable.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -43,7 +44,7 @@ export default defineFeed({
     const bmParams = viewer ? [viewer] : [];
 
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
-      `SELECT t.uri, t.cid, t.created_at FROM "social.grain.gallery" t
+      `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
        LEFT JOIN _repos r ON t.did = r.did
        WHERE (r.status IS NULL OR r.status != 'takendown')
          AND EXISTS (
@@ -54,7 +55,7 @@ export default defineFeed({
          AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
          ${bmFilter}`,
-      { orderBy: "t.created_at", params: [...matchingRaws, ...bmParams] },
+      { orderBy: "t.sort_at", params: [...matchingRaws, ...bmParams] },
     );
 
     return ctx.ok({ uris: rows.map((r) => r.uri), cursor });

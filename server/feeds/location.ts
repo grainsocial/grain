@@ -27,6 +27,7 @@ import { getResolution, cellToParent } from "h3-js";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 import { blockMuteFilter } from "../filters/blockMute.ts";
 import { expandCountryAliases } from "../helpers/country.ts";
+import { galleryFeedTable } from "./_galleryTable.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -134,14 +135,14 @@ export default defineFeed({
       if (viewer) params.push(viewer);
 
       const { rows, cursor } = await ctx.paginate<{ uri: string }>(
-        `SELECT t.uri, t.cid, t.created_at FROM "social.grain.gallery" t
+        `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
          LEFT JOIN _repos r ON t.did = r.did
          WHERE (r.status IS NULL OR r.status != 'takendown')
            AND (${interpClauses.join(" OR ")})
            AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
            ${bmFilter}`,
-        { orderBy: "t.created_at", params },
+        { orderBy: "t.sort_at", params },
       );
 
       // If the name-based query found matches, or we have no H3 to fall back to,
@@ -168,17 +169,17 @@ export default defineFeed({
       const bmFilter = viewer ? `AND ${blockMuteFilter("t.did", "$1")}` : "";
       const bmParams = viewer ? [viewer] : [];
       const allRows = (await ctx.db.query(
-        `SELECT t.uri, t.created_at, json_extract(t.location, '$.value') AS location
-         FROM "social.grain.gallery" t
+        `SELECT t.uri, t.sort_at, json_extract(t.location, '$.value') AS location
+         FROM ${galleryFeedTable}
          LEFT JOIN _repos r ON t.did = r.did
          WHERE (r.status IS NULL OR r.status != 'takendown')
            AND t.location IS NOT NULL
            AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
            ${bmFilter}
-         ORDER BY t.created_at DESC`,
+         ORDER BY t.sort_at DESC`,
         bmParams,
-      )) as { uri: string; created_at: string; location: string }[];
+      )) as { uri: string; sort_at: string; location: string }[];
 
       const filtered = allRows.filter((r) => {
         if (!r.location) return false;
@@ -211,14 +212,14 @@ export default defineFeed({
     const bmFilterVenue = viewer ? `AND ${blockMuteFilter("t.did", "$2")}` : "";
     const bmParamsVenue = viewer ? [viewer] : [];
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
-      `SELECT t.uri, t.cid, t.created_at FROM "social.grain.gallery" t
+      `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
        LEFT JOIN _repos r ON t.did = r.did
        WHERE (r.status IS NULL OR r.status != 'takendown')
          AND json_extract(t.location, '$.value') = $1
          AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
          ${bmFilterVenue}`,
-      { orderBy: "t.created_at", params: [location, ...bmParamsVenue] },
+      { orderBy: "t.sort_at", params: [location, ...bmParamsVenue] },
     );
 
     return ctx.ok({ uris: rows.map((r) => r.uri), cursor });
