@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getGalleryKnownFavorites",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get people the viewer follows who have favorited a given gallery.",
+      "parameters": {
+        "type": "params",
+        "required": ["gallery", "viewer"],
+        "properties": {
+          "gallery": { "type": "string", "format": "at-uri" },
+          "viewer": { "type": "string", "format": "did" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 50, "default": 50 }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getGalleryKnownFavorites#favedByItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "favedByItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    }
+  }
+}
