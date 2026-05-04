@@ -59,7 +59,8 @@
         "storyUri": { "type": "string", "format": "at-uri" },
         "storyThumb": { "type": "string" },
         "commentText": { "type": "string" },
-        "replyToText": { "type": "string" }
+        "replyToText": { "type": "string" },
+        "commentUri": { "type": "string", "format": "at-uri" }
       }
     }
   }

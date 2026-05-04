@@ -397,6 +397,7 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
       ...(row.reply_to && replyToTextMap.has(row.reply_to)
         ? { replyToText: replyToTextMap.get(row.reply_to) }
         : {}),
+      ...(reason === "gallery-comment-mention" ? { commentUri: row.uri } : {}),
     };
   });
 
