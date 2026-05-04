@@ -43,13 +43,17 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
         if (await shouldPush(db, parent.author, repo, "comments")) {
           supersededRecipients.add(parent.author)
           const badge = await getUnseenCount(db, parent.author) + 1
-          await push.send({
-            did: parent.author,
-            title: "New reply",
-            body: `${displayName} replied to your comment`,
-            data: { type: "comment-reply", uri: subject },
-            badge,
-          })
+          try {
+            await push.send({
+              did: parent.author,
+              title: "New reply",
+              body: `${displayName} replied to your comment`,
+              data: { type: "comment-reply", uri: subject },
+              badge,
+            })
+          } catch (err) {
+            console.error(`[on-commit-comment] reply push failed for ${parent.author} (${uri}):`, err)
+          }
         }
       }
     }
@@ -65,13 +69,17 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
         if (await shouldPush(db, gallery.author, repo, "comments")) {
           supersededRecipients.add(gallery.author)
           const badge = await getUnseenCount(db, gallery.author) + 1
-          await push.send({
-            did: gallery.author,
-            title: "New comment",
-            body: `${displayName} commented on your gallery`,
-            data: { type: "gallery-comment", uri: subject },
-            badge,
-          })
+          try {
+            await push.send({
+              did: gallery.author,
+              title: "New comment",
+              body: `${displayName} commented on your gallery`,
+              data: { type: "gallery-comment", uri: subject },
+              badge,
+            })
+          } catch (err) {
+            console.error(`[on-commit-comment] gallery-comment push failed for ${gallery.author} (${uri}):`, err)
+          }
         }
       }
 
@@ -98,13 +106,17 @@ export default defineHook("on-commit", { collections: ["social.grain.comment"] }
     if (story && story.author !== repo) {
       if (await shouldPush(db, story.author, repo, "comments")) {
         const badge = await getUnseenCount(db, story.author) + 1
-        await push.send({
-          did: story.author,
-          title: "New comment",
-          body: `${displayName} commented on your story`,
-          data: { type: "story-comment", uri: subject },
-          badge,
-        })
+        try {
+          await push.send({
+            did: story.author,
+            title: "New comment",
+            body: `${displayName} commented on your story`,
+            data: { type: "story-comment", uri: subject },
+            badge,
+          })
+        } catch (err) {
+          console.error(`[on-commit-comment] story-comment push failed for ${story.author} (${uri}):`, err)
+        }
       }
     }
     // Mentions inside story comments are intentionally not pushed — the iOS client
@@ -147,12 +159,18 @@ async function fanOutMentions(args: {
     if (await isBlockedOrMuted(db, did, actorDid)) continue
     if (!(await shouldPush(db, did, actorDid, "mentions"))) continue
     const badge = await getUnseenCount(db, did) + 1
-    await push.send({
-      did,
-      title: `${displayName} mentioned you in a comment`,
-      body,
-      data: { type: "gallery-comment-mention", uri: galleryUri, commentUri },
-      badge,
-    })
+    // Don't let one bad recipient (APNs error, expired token, transient
+    // network) kill the fan-out for the rest. Dedup row stays claimed.
+    try {
+      await push.send({
+        did,
+        title: `${displayName} mentioned you in a comment`,
+        body,
+        data: { type: "gallery-comment-mention", uri: galleryUri, commentUri },
+        badge,
+      })
+    } catch (err) {
+      console.error(`[on-commit-comment] mention push failed for ${did} (${commentUri}):`, err)
+    }
   }
 }

@@ -44,13 +44,19 @@ export default defineHook("on-commit", { collections: ["social.grain.gallery"] }
       if (await isBlockedOrMuted(db, did, repo)) continue
       if (!(await shouldPush(db, did, repo, "mentions"))) continue
       const badge = await getUnseenCount(db, did) + 1
-      await push.send({
-        did,
-        title,
-        body,
-        data: { type: "gallery-mention", uri },
-        badge,
-      })
+      // Don't let one bad recipient (APNs error, expired token, transient
+      // network) kill the fan-out for the rest. Dedup row stays claimed.
+      try {
+        await push.send({
+          did,
+          title,
+          body,
+          data: { type: "gallery-mention", uri },
+          badge,
+        })
+      } catch (err) {
+        console.error(`[on-commit-gallery] mention push failed for ${did} (${uri}):`, err)
+      }
     }
   }
 )

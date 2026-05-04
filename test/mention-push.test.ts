@@ -383,4 +383,30 @@ describe("on-commit-gallery mention fan-out", () => {
     );
     expect(sendSpy).not.toHaveBeenCalled();
   });
+
+  it("a single failing push.send does not silence the rest of the fan-out", async () => {
+    // Regression: previously an APNs error on one recipient would propagate out
+    // of the hook and the framework's outer catch would bail the whole fan-out,
+    // skipping every recipient after the failed one.
+    const db = makeDb([
+      mentionClaim(),
+      { match: () => [] },
+    ]);
+    const flakySend = vi.fn(async (payload: any) => {
+      if (payload.did === "did:plc:bob") throw new Error("apns: BadDeviceToken");
+    });
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await galleryHook({
+        action: "create",
+        record: { title: "x", description: "@bob @alice @carol", facets: [mention("did:plc:bob"), mention("did:plc:alice"), mention("did:plc:carol")] },
+        repo: REPO, uri: GALLERY_URI, db, lookup,
+        push: { send: flakySend },
+      });
+    } finally {
+      errSpy.mockRestore();
+    }
+    const recipients = flakySend.mock.calls.map((c) => c[0].did);
+    expect(recipients).toEqual(["did:plc:bob", "did:plc:alice", "did:plc:carol"]);
+  });
 });
