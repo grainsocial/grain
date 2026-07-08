@@ -627,7 +627,14 @@
 
   /* Label moderation states */
   .gallery-hidden {
-    padding: 0;
+    padding: 12px;
+  }
+  .gallery-hidden .media-warning-bar {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    transform: none;
   }
   .content-warning {
     display: flex;
