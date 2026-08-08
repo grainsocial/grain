@@ -16,6 +16,13 @@ CREATE TABLE _labels (
   exp TEXT
 );
 
+CREATE TABLE _mention_pushes (
+  record_uri TEXT NOT NULL,
+  recipient_did TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (record_uri, recipient_did)
+);
+
 CREATE TABLE _mutes (
   did TEXT NOT NULL,
   subject TEXT NOT NULL,
