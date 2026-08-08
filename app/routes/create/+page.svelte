@@ -74,6 +74,9 @@
           }
         })
       }
+
+      title = photos.find((p) => p.meta?.title)?.meta?.title ?? ''
+      description = photos.find((p) => p.meta?.description)?.meta?.description ?? ''
     } catch (err) {
       error = 'Failed to process photos. Please try again.'
       console.error(err)
