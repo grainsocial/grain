@@ -117,6 +117,22 @@ describe("getGalleryFavorites", () => {
     expect(body.totalCount).toBe(4);
   });
 
+  test("hides taken-down accounts from everyone, authed or not", async () => {
+    await server.db.run(`UPDATE _repos SET status = 'takendown' WHERE did = $1`, [DAVE]);
+
+    try {
+      const authed = await (await server.fetchAs(ALICE, favoritesPath())).json();
+      expect(authed.items.map((i: any) => i.did)).not.toContain(DAVE);
+      expect(authed.totalCount).toBe(3);
+
+      const anon = await (await server.fetch(favoritesPath())).json();
+      expect(anon.items.map((i: any) => i.did)).not.toContain(DAVE);
+      expect(anon.totalCount).toBe(3);
+    } finally {
+      await server.db.run(`UPDATE _repos SET status = 'active' WHERE did = $1`, [DAVE]);
+    }
+  });
+
   test("hides blocked accounts from the list and the count", async () => {
     await server.db.run(
       `INSERT INTO "social.grain.graph.block" (uri, cid, did, indexed_at, subject, created_at)
@@ -146,6 +162,24 @@ describe("gallery facepile", () => {
     // Alice is the viewer — neither belongs in the facepile.
     expect(gallery.favedByFollowing.map((p: any) => p.did)).toEqual([CAROL, BOB]);
     expect(gallery.favedByFollowing[0].displayName).toBe("Carol Danvers");
+  });
+
+  test("omits taken-down and blocked accounts", async () => {
+    await server.db.run(`UPDATE _repos SET status = 'takendown' WHERE did = $1`, [CAROL]);
+    await server.db.run(
+      `INSERT INTO "social.grain.graph.block" (uri, cid, did, indexed_at, subject, created_at)
+       VALUES ($1, 'cid-b', $2, 'i', $3, '2026-01-01')`,
+      [`at://${BOB}/social.grain.graph.block/1`, BOB, ALICE],
+    );
+
+    try {
+      const gallery = (await (await server.fetchAs(ALICE, galleryPath)).json()).gallery;
+      // Carol is taken down; Bob blocks Alice. Nobody eligible is left.
+      expect(gallery.favedByFollowing).toBeUndefined();
+    } finally {
+      await server.db.run(`UPDATE _repos SET status = 'active' WHERE did = $1`, [CAROL]);
+      await server.db.run(`DELETE FROM "social.grain.graph.block" WHERE did = $1`, [BOB]);
+    }
   });
 
   test("is omitted for viewers who follow none of the favoriters", async () => {

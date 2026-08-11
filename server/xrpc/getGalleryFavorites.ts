@@ -16,23 +16,27 @@ export default defineQuery("social.grain.unspecced.getGalleryFavorites", async (
 
   const offset = cursor ? Number(unpackCursor(cursor)?.primary ?? 0) : 0;
 
+  // Taken-down accounts are hidden from everyone, matching every feed.
   // Blocked accounts (either direction) are hidden from the list and the count.
   // Mutes are not applied — a mute hides someone's content, not the fact that
   // they favorited something.
+  const takedowns = `AND (r.status IS NULL OR r.status != 'takendown')`;
   const blocks = viewer ? `AND ${blockFilter("f.did", "$2")}` : "";
   const blockParams = viewer ? [viewer] : [];
 
   const [rows, countRows] = await Promise.all([
     ctx.db.query(
       `SELECT f.did AS did, f.cid AS cid FROM "social.grain.favorite" f
-       WHERE f.subject = $1 ${blocks}
+       LEFT JOIN _repos r ON r.did = f.did
+       WHERE f.subject = $1 ${takedowns} ${blocks}
        ORDER BY f.created_at DESC
        LIMIT $${blockParams.length + 2} OFFSET $${blockParams.length + 3}`,
       [gallery, ...blockParams, Number(limit) + 1, offset],
     ) as Promise<{ did: string; cid: string }[]>,
     ctx.db.query(
       `SELECT COUNT(DISTINCT f.did) as count FROM "social.grain.favorite" f
-       WHERE f.subject = $1 ${blocks}`,
+       LEFT JOIN _repos r ON r.did = f.did
+       WHERE f.subject = $1 ${takedowns} ${blocks}`,
       [gallery, ...blockParams],
     ) as Promise<{ count: number }[]>,
   ]);

@@ -3,6 +3,7 @@ import type { GrainActorProfile, Photo, Gallery, Label } from "$hatk";
 import type { PhotoView, GalleryView, ExifView } from "$hatk";
 import type { BaseContext, Row } from "$hatk";
 import { countComments } from "./comments.ts";
+import { blockFilter } from "../filters/blockMute.ts";
 import { formatStoredLocation } from "../helpers/formatLocation.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
@@ -116,7 +117,10 @@ export async function hydrateGalleries(
                 ROW_NUMBER() OVER (PARTITION BY f.subject ORDER BY f.created_at DESC) AS rn
          FROM "social.grain.favorite" f
          JOIN "social.grain.graph.follow" fo ON fo.did = $1 AND fo.subject = f.did
+         LEFT JOIN _repos r ON r.did = f.did
          WHERE f.subject IN (${placeholders}) AND f.did <> $1
+           AND (r.status IS NULL OR r.status != 'takendown')
+           AND ${blockFilter("f.did", "$1")}
        ) ranked
        WHERE rn <= ${FACEPILE_LIMIT}`,
       [ctx.viewer.did, ...galleryUris],
