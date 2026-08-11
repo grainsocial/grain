@@ -1,6 +1,7 @@
 import { writable, get } from "svelte/store";
 import { callXrpc } from "$hatk/client";
 import { Images, Users, Camera, MapPin, Hash, Pin, Sparkles } from "lucide-svelte";
+import { applyStoredTheme } from "./theme";
 
 export interface PinnedFeed {
   id: string;
@@ -56,6 +57,7 @@ export function loadPreferences(prefs: Record<string, unknown> | null): void {
   }
   if (typeof prefs.includeExif === "boolean") includeExif.set(prefs.includeExif);
   if (typeof prefs.includeLocation === "boolean") includeLocation.set(prefs.includeLocation);
+  applyStoredTheme(prefs.theme);
 }
 
 export async function setIncludeExif(value: boolean): Promise<void> {

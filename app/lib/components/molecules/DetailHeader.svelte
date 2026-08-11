@@ -31,7 +31,7 @@
   .detail-header {
     display: flex; align-items: center; gap: 12px; padding: 10px 16px; height: 46px;
     position: sticky; top: 0; z-index: 50;
-    background: rgba(8, 11, 18, 0.85); backdrop-filter: blur(16px);
+    background: var(--bg-blur); backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
   }

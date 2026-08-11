@@ -105,7 +105,7 @@
     top: -4px;
     right: -6px;
     background: var(--grain);
-    color: #000;
+    color: var(--on-grain);
     font-size: 9px;
     font-weight: 700;
     min-width: 14px;

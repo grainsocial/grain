@@ -131,9 +131,9 @@
     transition: color 0.15s;
   }
   .stat:hover { opacity: 0.7; }
-  .stat.faved { color: #f87171; }
+  .stat.faved { color: var(--danger); }
   .stat-count { color: var(--text-secondary); }
-  .fav-group.faved .stat-count { color: #f87171; }
+  .fav-group.faved .stat-count { color: var(--danger); }
   .stat-count-link {
     text-decoration: none;
   }

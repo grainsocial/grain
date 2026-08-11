@@ -5,8 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="%sveltekit.assets%/favicon.png" />
     <link rel="manifest" href="%sveltekit.assets%/manifest.json" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#080b12" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <script>
+      // Resolve the theme before first paint so there is no flash of the wrong palette.
+      (function () {
+        try {
+          var pref = localStorage.getItem("grain:theme");
+          if (pref !== "light" && pref !== "dark") pref = "system";
+          var resolved =
+            pref === "system"
+              ? window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark"
+              : pref;
+          document.documentElement.dataset.theme = resolved;
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", resolved === "light" ? "#ffffff" : "#080b12");
+        } catch (e) {}
+      })();
+    </script>
     <link rel="apple-touch-icon" href="%sveltekit.assets%/icon-192.png" />
     <title>grain</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

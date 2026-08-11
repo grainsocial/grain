@@ -26,6 +26,10 @@
       <span class="settings-label">Edit Profile</span>
       <ChevronRight size={16} class="chevron" />
     </a>
+    <a href="/settings/appearance" class="settings-row">
+      <span class="settings-label">Appearance</span>
+      <ChevronRight size={16} class="chevron" />
+    </a>
     <a href="/settings/notifications" class="settings-row">
       <span class="settings-label">Notifications</span>
       <ChevronRight size={16} class="chevron" />
@@ -135,6 +139,6 @@
     margin-left: 6px;
   }
   .sign-out .settings-label {
-    color: #f87171;
+    color: var(--danger);
   }
 </style>

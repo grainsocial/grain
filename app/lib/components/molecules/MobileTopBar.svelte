@@ -45,7 +45,7 @@
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 20px;
-    color: #fff;
+    color: var(--text-primary);
     text-decoration: none;
   }
 

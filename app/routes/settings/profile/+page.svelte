@@ -229,7 +229,7 @@
     cursor: pointer;
     font-family: inherit;
   }
-  .remove-avatar:hover { color: #f87171; }
+  .remove-avatar:hover { color: var(--danger); }
   .form {
     display: flex;
     flex-direction: column;

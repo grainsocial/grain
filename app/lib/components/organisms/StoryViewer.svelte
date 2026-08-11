@@ -328,7 +328,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div bind:this={wrapper}>
-<div class="story-overlay">
+<div class="story-overlay theme-dark">
   <div class="story-container" onclick={handleTap} onkeydown={handleKeydown} onpointerdown={handlePointerDown} onpointermove={handlePointerMove} onpointerup={handlePointerUp} role="button" tabindex="0">
     <!-- Progress bars -->
     <div class="progress-bars">
@@ -612,7 +612,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--bg-elevated, #1a1a1a);
+    background: var(--bg-elevated);
     z-index: 1;
   }
   .media-warning-bar {

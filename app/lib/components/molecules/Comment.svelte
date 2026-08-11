@@ -157,7 +157,7 @@
     font-family: inherit;
   }
   .meta-btn:hover { color: var(--text-primary); }
-  .meta-btn.delete:hover { color: #f87171; }
+  .meta-btn.delete:hover { color: var(--danger); }
   .focus-thumb {
     width: 40px;
     height: 40px;
@@ -190,7 +190,7 @@
     transition: color 0.15s;
   }
   .fav-btn:hover { color: var(--text-secondary); }
-  .fav-btn.faved { color: #f87171; }
+  .fav-btn.faved { color: var(--danger); }
   .fav-count {
     font-size: 12px;
     color: var(--text-muted);

@@ -492,7 +492,7 @@
     transition: background 0.15s;
   }
   .menu-item:hover { background: var(--bg-hover); }
-  .menu-item.danger { color: #f87171; }
+  .menu-item.danger { color: var(--danger); }
   .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
   .floating-bar {
     position: sticky;
@@ -503,7 +503,7 @@
     justify-content: center;
     gap: 16px;
     padding: 12px 16px;
-    background: rgba(8, 11, 18, 0.92);
+    background: var(--bg-blur);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid var(--border);

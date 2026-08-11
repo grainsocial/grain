@@ -134,10 +134,10 @@
     cursor: default;
   }
   .delete .row-label {
-    color: #f87171;
+    color: var(--danger);
   }
   .error {
-    color: #f87171;
+    color: var(--danger);
     font-size: 13px;
     padding: 0 4px;
   }

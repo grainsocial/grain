@@ -41,7 +41,7 @@
     z-index: 50;
     max-width: 100%;
     overflow: hidden;
-    background: rgba(8, 11, 18, 0.85);
+    background: var(--bg-blur);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);

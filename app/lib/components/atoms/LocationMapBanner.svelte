@@ -46,19 +46,25 @@
     return ((x % maxTile) + maxTile) % maxTile
   }
 
-  function tileUrl(x: number, y: number): string {
-    return `https://a.basemaps.cartocdn.com/dark_all/${zoom}/${wrapTile(x)}/${y}@2x.png`
+  // Both basemap flavours are handed to CSS as custom properties and the active
+  // one is picked by the `data-theme` attribute. Swapping an <img src> instead
+  // would not survive hydration — Svelte keeps the server-rendered src.
+  function tileUrl(basemap: string, x: number, y: number): string {
+    return `https://a.basemaps.cartocdn.com/${basemap}/${zoom}/${wrapTile(x)}/${y}@2x.png`
   }
 </script>
 
 {#if valid}
   <div class="map-banner" aria-hidden="true">
     <div class="tile-grid">
-      <img src={tileUrl(tileX - 1, tileY)} alt="" loading="lazy" />
-      <img src={tileUrl(tileX, tileY)} alt="" loading="lazy" />
-      <img src={tileUrl(tileX + 1, tileY)} alt="" loading="lazy" />
+      {#each [-1, 0, 1] as offset}
+        <div
+          class="tile"
+          style:--tile-dark="url('{tileUrl('dark_all', tileX + offset, tileY)}')"
+          style:--tile-light="url('{tileUrl('light_all', tileX + offset, tileY)}')"
+        ></div>
+      {/each}
     </div>
-    <div class="fade"></div>
   </div>
 {/if}
 
@@ -77,17 +83,17 @@
     transform: translate(-50%, -50%);
     filter: saturate(1.8) brightness(1.2);
   }
-  .tile-grid img {
+  /* The dark basemap needs lifting; the light one only needs the saturation. */
+  :global(html[data-theme='light']) .tile-grid {
+    filter: saturate(1.4);
+  }
+  .tile {
     width: 256px;
     height: 256px;
-    display: block;
+    background-image: var(--tile-dark);
+    background-size: 256px 256px;
   }
-  .fade {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 32px;
-    background: linear-gradient(transparent, var(--bg-root));
+  :global(html[data-theme='light']) .tile {
+    background-image: var(--tile-light);
   }
 </style>

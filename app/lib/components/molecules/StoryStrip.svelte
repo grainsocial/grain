@@ -150,7 +150,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid var(--bg);
+    border: 2px solid var(--bg-root);
   }
   .own-story-wrapper {
     position: relative;

@@ -93,7 +93,7 @@
     font-weight: 800;
     font-size: 22px;
     display: block;
-    color: #fff;
+    color: var(--text-primary);
     text-decoration: none;
     letter-spacing: -0.02em;
   }
@@ -148,7 +148,7 @@
     top: -6px;
     right: -8px;
     background: var(--grain);
-    color: #000;
+    color: var(--on-grain);
     font-size: 10px;
     font-weight: 700;
     min-width: 16px;

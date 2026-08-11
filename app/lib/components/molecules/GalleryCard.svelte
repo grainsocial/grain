@@ -409,7 +409,7 @@
     background: var(--bg-hover);
   }
   .menu-item.delete {
-    color: #f87171;
+    color: var(--danger);
   }
   .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
   .menu-item:disabled {
@@ -429,7 +429,7 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    color: #f87171;
+    color: var(--danger);
     animation: heart-pop 0.8s ease-out forwards;
     z-index: 5;
   }

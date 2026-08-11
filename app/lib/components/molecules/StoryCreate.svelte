@@ -248,7 +248,7 @@
     pointer-events: none;
   }
   .error {
-    color: #f87171;
+    color: var(--danger);
     padding: 8px 16px;
     margin: 0;
     text-align: center;

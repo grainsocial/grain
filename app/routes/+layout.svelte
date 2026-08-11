@@ -19,7 +19,10 @@
   import { QueryClientProvider } from '@tanstack/svelte-query'
   import { isAuthenticated, viewer } from '$lib/stores'
   import { loadPreferences } from '$lib/preferences'
+  import { initTheme } from '$lib/theme'
   import { afterNavigate } from '$app/navigation'
+
+  $effect(() => initTheme())
 
   // Clear stale body overflow locks left by overlays (e.g. StoryViewer)
   afterNavigate(() => {

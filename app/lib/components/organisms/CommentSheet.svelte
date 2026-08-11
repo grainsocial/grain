@@ -364,7 +364,7 @@
   .load-more:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .error {
-    color: #f87171;
+    color: var(--danger);
     font-size: 13px;
     text-align: center;
     margin: 0;

@@ -196,7 +196,7 @@
     min-height: 60px;
   }
   .error {
-    color: #f87171;
+    color: var(--danger);
     font-size: 13px;
     margin: 0;
   }

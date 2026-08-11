@@ -283,7 +283,7 @@
   }
 
   .error {
-    color: #f87171;
+    color: var(--danger);
     padding: 12px 16px;
     margin: 0;
     text-align: center;
@@ -350,7 +350,7 @@
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 46px;
-    background: rgba(8, 11, 18, 0.85);
+    background: var(--bg-blur);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     z-index: 10;
@@ -497,7 +497,7 @@
     height: 56px;
     border-radius: 50%;
     background: var(--grain);
-    color: #fff;
+    color: var(--on-grain);
     display: flex;
     align-items: center;
     justify-content: center;
