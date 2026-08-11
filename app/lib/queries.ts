@@ -232,6 +232,18 @@ export const galleryQuery = (galleryUri: string, f?: Fetch) =>
     staleTime: 60_000,
   });
 
+export const galleryFavoritesQuery = (galleryUri: string, viewer?: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["galleryFavorites", galleryUri],
+    queryFn: () =>
+      callXrpc(
+        "social.grain.unspecced.getGalleryFavorites",
+        { gallery: galleryUri, ...(viewer ? { viewer } : {}) },
+        f,
+      ),
+    staleTime: 60_000,
+  });
+
 // ─── Gallery Thread (Comments) ──────────────────────────────────────
 
 export const commentThreadQuery = (subjectUri: string, f?: Fetch) =>

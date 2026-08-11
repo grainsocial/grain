@@ -9,11 +9,14 @@
     galleryUri,
     viewerFav = null,
     favCount = 0,
+    countHref = undefined,
     favorite = $bindable(undefined),
   }: {
     galleryUri: string
     viewerFav?: string | null
     favCount?: number
+    /** When set, the count links here instead of being part of the toggle. */
+    countHref?: string
     favorite?: () => void
   } = $props()
 
@@ -75,33 +78,49 @@
   $effect(() => { favorite = doFavorite })
 </script>
 
-{#if isFaved}
-  <button
-    type="button"
-    class="stat faved"
-    title="Unfavorite"
-    onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && favUri && favUri !== 'pending' && deleteFavMut.mutate(favUri)}
-  >
-    <Heart size={22} fill="currentColor" />
-    {#if displayCount > 0}<span class="stat-count">{compactCount(displayCount)}</span>{/if}
-  </button>
-{:else}
-  <button
-    type="button"
-    class="stat"
-    title="Favorite"
-    onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && !isFaved && createFavMut.mutate()}
-  >
-    <Heart size={22} />
-    {#if displayCount > 0}<span class="stat-count">{compactCount(displayCount)}</span>{/if}
-  </button>
-{/if}
+<span class="fav-group" class:faved={isFaved}>
+  {#if isFaved}
+    <button
+      type="button"
+      class="stat faved"
+      title="Unfavorite"
+      aria-label="Unfavorite"
+      onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && favUri && favUri !== 'pending' && deleteFavMut.mutate(favUri)}
+    >
+      <Heart size={22} fill="currentColor" />
+    </button>
+  {:else}
+    <button
+      type="button"
+      class="stat"
+      title="Favorite"
+      aria-label="Favorite"
+      onclick={() => requireAuth() && !createFavMut.isPending && !deleteFavMut.isPending && !isFaved && createFavMut.mutate()}
+    >
+      <Heart size={22} />
+    </button>
+  {/if}
+  {#if displayCount > 0}
+    {#if countHref}
+      <a class="stat-count stat-count-link" href={countHref} title="See who favorited this">
+        {compactCount(displayCount)}
+      </a>
+    {:else}
+      <span class="stat-count">{compactCount(displayCount)}</span>
+    {/if}
+  {/if}
+</span>
 
 <style>
-  .stat {
+  .fav-group {
     display: flex;
     align-items: center;
     gap: 6px;
+    font-size: 13px;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
     background: none;
     border: none;
     color: var(--text-primary);
@@ -114,5 +133,9 @@
   .stat:hover { opacity: 0.7; }
   .stat.faved { color: #f87171; }
   .stat-count { color: var(--text-secondary); }
-  .stat.faved .stat-count { color: #f87171; }
+  .fav-group.faved .stat-count { color: #f87171; }
+  .stat-count-link {
+    text-decoration: none;
+  }
+  .stat-count-link:hover { text-decoration: underline; }
 </style>

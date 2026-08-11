@@ -5,6 +5,7 @@
   import { viewer } from '$lib/stores'
   import { compactCount } from '$lib/utils'
   import Avatar from '../atoms/Avatar.svelte'
+  import Facepile from '../atoms/Facepile.svelte'
   import FollowButton from './FollowButton.svelte'
 
   let {
@@ -113,11 +114,7 @@
 
       {#if knownList.length > 0}
         <div class="known-followers">
-          <div class="known-avatars">
-            {#each knownList.slice(0, 3) as kf}
-              <Avatar did={kf.did} src={kf.avatar ?? null} size={18} />
-            {/each}
-          </div>
+          <Facepile people={knownList} size={18} overlap={4} />
           <span class="known-text">
             Followed by {knownList.slice(0, 2).map((kf) => kf.displayName || kf.handle).join(', ')}
             {#if knownList.length > 2}
@@ -239,14 +236,6 @@
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px solid var(--border);
-  }
-
-  .known-avatars {
-    display: flex;
-    flex-shrink: 0;
-  }
-  .known-avatars :global(> *:not(:first-child)) {
-    margin-left: -4px;
   }
 
   .known-text {

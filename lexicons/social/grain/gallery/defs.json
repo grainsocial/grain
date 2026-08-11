@@ -39,6 +39,11 @@
           }
         },
         "favCount": { "type": "integer" },
+        "favedByFollowing": {
+          "type": "array",
+          "description": "Profiles of accounts the viewer follows who favorited this gallery. Capped for display — see favCount for the total. Excludes the viewer.",
+          "items": { "type": "ref", "ref": "social.grain.actor.defs#profileView" }
+        },
         "commentCount": { "type": "integer" },
         "labels": {
           "type": "array",

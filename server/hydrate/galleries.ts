@@ -8,6 +8,9 @@ import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 const SCALE = 1_000_000;
 
+/** Max facepile avatars returned per gallery for "favorited by people you follow". */
+const FACEPILE_LIMIT = 3;
+
 interface ExifRow {
   uri: string;
   cid: string;
@@ -88,7 +91,6 @@ export async function hydrateGalleries(
   ctx: BaseContext,
   items: Row<Gallery>[],
 ): Promise<GalleryView[]> {
-  const dids = [...new Set(items.map((item) => item.did).filter(Boolean))];
   const galleryUris = items.map((item) => item.uri);
 
   // Resolve viewer favorites
@@ -101,6 +103,38 @@ export async function hydrateGalleries(
     )) as { subject: string; uri: string }[];
     for (const row of favRows) viewerFavs.set(row.subject, row.uri);
   }
+
+  // Resolve the "favorited by people you follow" facepile. ROW_NUMBER caps the
+  // result at FACEPILE_LIMIT rows *per gallery* — without it a viral gallery
+  // plus a large follow graph returns thousands of rows to render 3 avatars.
+  const favedByFollowing = new Map<string, string[]>();
+  if (ctx.viewer?.did && galleryUris.length > 0) {
+    const placeholders = galleryUris.map((_, i) => `$${i + 2}`).join(",");
+    const rows = (await ctx.db.query(
+      `SELECT subject, did FROM (
+         SELECT f.subject AS subject, f.did AS did,
+                ROW_NUMBER() OVER (PARTITION BY f.subject ORDER BY f.created_at DESC) AS rn
+         FROM "social.grain.favorite" f
+         JOIN "social.grain.graph.follow" fo ON fo.did = $1 AND fo.subject = f.did
+         WHERE f.subject IN (${placeholders}) AND f.did <> $1
+       ) ranked
+       WHERE rn <= ${FACEPILE_LIMIT}`,
+      [ctx.viewer.did, ...galleryUris],
+    )) as { subject: string; did: string }[];
+    for (const row of rows) {
+      const list = favedByFollowing.get(row.subject) ?? [];
+      list.push(row.did);
+      favedByFollowing.set(row.subject, list);
+    }
+  }
+
+  // Creators plus facepile members — one batched profile lookup covers both.
+  const dids = [
+    ...new Set([
+      ...items.map((item) => item.did).filter(Boolean),
+      ...[...favedByFollowing.values()].flat(),
+    ]),
+  ];
 
   const [profiles, handleMap, favCounts, commentCounts, labelsByUri, galleryItemRows, crossPosts] =
     await Promise.all([
@@ -190,6 +224,17 @@ export async function hydrateGalleries(
     const author = profiles.get(item.did);
     const galleryItems = itemsByGallery.get(item.uri) ?? [];
 
+    const facepile = (favedByFollowing.get(item.uri) ?? []).map((did) => {
+      const p = profiles.get(did);
+      return views.grainActorDefsProfileView({
+        cid: p?.cid ?? "",
+        did,
+        handle: p?.handle ?? handleMap.get(did) ?? did,
+        displayName: p?.value.displayName,
+        avatar: p ? (ctx.blobUrl(did, p.value.avatar, "avatar") ?? undefined) : undefined,
+      });
+    });
+
     const photoViews: PhotoView[] = galleryItems
       .map((gi) => {
         const photo = photos.get(gi.photoUri);
@@ -248,6 +293,7 @@ export async function hydrateGalleries(
           }
         : {}),
       ...(labelsByUri.has(item.uri) ? { labels: labelsByUri.get(item.uri) } : {}),
+      ...(facepile.length > 0 ? { favedByFollowing: facepile } : {}),
       ...(viewerFavs.has(item.uri) ? { viewer: { fav: viewerFavs.get(item.uri) } } : {}),
       ...(crossPosts.has(item.uri) ? { crossPost: { url: crossPosts.get(item.uri)! } } : {}),
     });

@@ -2,6 +2,7 @@
   import GalleryGrid from '$lib/components/organisms/GalleryGrid.svelte'
   import Avatar from '$lib/components/atoms/Avatar.svelte'
   import AvatarLightbox from '$lib/components/atoms/AvatarLightbox.svelte'
+  import Facepile from '$lib/components/atoms/Facepile.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
@@ -259,11 +260,7 @@
         {#if (knownFollowers.data?.items ?? []).length > 0}
           {@const known = knownFollowers.data?.items ?? []}
           <a href="/profile/{did}/known-followers" class="known-followers">
-            <div class="known-avatars">
-              {#each known.slice(0, 3) as k (k.did)}
-                <Avatar did={k.did} src={k.avatar ?? null} name={k.displayName} size={20} />
-              {/each}
-            </div>
+            <Facepile people={known} size={20} />
             <span class="known-text">
               Followed by {known.slice(0, 2).map((k) => k.displayName || k.handle).join(', ')}{#if known.length > 2}{' '}and {known.length - 2} other{known.length - 2 !== 1 ? 's' : ''} you follow{/if}
             </span>
@@ -392,13 +389,6 @@
   }
   .known-followers:hover .known-text {
     text-decoration: underline;
-  }
-  .known-avatars {
-    display: flex;
-    flex-shrink: 0;
-  }
-  .known-avatars :global(:not(:first-child)) {
-    margin-left: -6px;
   }
   .known-text {
     font-size: 12px;

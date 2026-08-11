@@ -1,0 +1,49 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getGalleryFavorites",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the accounts that have favorited a gallery, most recent first.",
+      "parameters": {
+        "type": "params",
+        "required": ["gallery"],
+        "properties": {
+          "gallery": { "type": "string", "format": "at-uri" },
+          "viewer": { "type": "string", "format": "did" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "totalCount": { "type": "integer" },
+            "cursor": { "type": "string" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getGalleryFavorites#favoriteItem"
+              }
+            }
+          }
+        }
+      }
+    },
+    "favoriteItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" },
+        "viewer": { "type": "ref", "ref": "social.grain.actor.defs#viewerState" }
+      }
+    }
+  }
+}

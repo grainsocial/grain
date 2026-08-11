@@ -3,6 +3,7 @@
   import { callXrpc } from '$hatk/client'
   import { goto } from '$app/navigation'
   import Avatar from '../atoms/Avatar.svelte'
+  import Facepile from '../atoms/Facepile.svelte'
   import RichText from '../atoms/RichText.svelte'
   import Toast from '../atoms/Toast.svelte'
   import ExifInfo from '../atoms/ExifInfo.svelte'
@@ -62,6 +63,12 @@
   const photos = $derived((gallery.items ?? []) as PhotoView[])
   const favCount = $derived(gallery.favCount ?? 0)
   const commentCount = $derived(gallery.commentCount ?? 0)
+  const galleryRkey = $derived(gallery.uri.split('/').pop())
+  const galleryHref = $derived(`/profile/${gallery.creator?.did}/gallery/${galleryRkey}`)
+  const favedByFollowing = $derived(gallery.favedByFollowing ?? [])
+  const favedByNames = $derived(
+    favedByFollowing.slice(0, 2).map((p) => p.displayName || (p.handle ? `@${p.handle}` : '')),
+  )
 
   function photoRatio(photo: PhotoView): number {
     const ar = photo.aspectRatio
@@ -270,7 +277,13 @@
   {/if}
 
   <div class="engagement">
-    <FavoriteButton galleryUri={gallery.uri} viewerFav={gallery.viewer?.fav ?? null} {favCount} bind:favorite={doFavorite} />
+    <FavoriteButton
+      galleryUri={gallery.uri}
+      viewerFav={gallery.viewer?.fav ?? null}
+      {favCount}
+      countHref="{galleryHref}/favorited-by"
+      bind:favorite={doFavorite}
+    />
     <button class="stat" type="button" onclick={() => requireAuth() && onCommentClick?.()}>
       <MessageCircle size={20} />
       {#if commentCount > 0}<span class="stat-count">{commentCount}</span>{/if}
@@ -279,6 +292,21 @@
       <Send size={20} />
     </button>
   </div>
+
+  {#if favedByFollowing.length > 0}
+    <a class="faved-by" href="{galleryHref}/favorited-by">
+      <Facepile people={favedByFollowing} size={20} />
+      <span class="faved-by-text">
+        {#if favedByNames.length === 1}
+          Favorited by <strong>{favedByNames[0]}</strong>
+        {:else if favedByFollowing.length > 2}
+          Favorited by <strong>{favedByNames[0]}</strong>, <strong>{favedByNames[1]}</strong> and others you follow
+        {:else}
+          Favorited by <strong>{favedByNames[0]}</strong> and <strong>{favedByNames[1]}</strong>
+        {/if}
+      </span>
+    </a>
+  {/if}
   {#if $isAuthenticated}
     <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} showButton={false} bind:open={reportOpen} />
   {/if}
@@ -563,6 +591,27 @@
   }
   .stat:hover { opacity: 0.7; }
   .stat-count { color: var(--text-secondary); }
+
+  /* "Favorited by people you follow" facepile */
+  .faved-by {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .faved-by:hover .faved-by-text {
+    text-decoration: underline;
+  }
+  .faved-by-text {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .faved-by-text strong {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
 
   /* Content */
   .card-content { padding: 0 16px 14px; }
