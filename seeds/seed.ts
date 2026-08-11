@@ -119,19 +119,19 @@ await createRecord(
   alice,
   "app.bsky.graph.follow",
   { subject: bob.did, createdAt: ago(100) },
-  { rkey: "bsky-follow-bob" },
+  { rkey: "3lbskyfolowbb" },
 );
 await createRecord(
   alice,
   "app.bsky.graph.follow",
   { subject: carol.did, createdAt: ago(100) },
-  { rkey: "bsky-follow-carol" },
+  { rkey: "3lbskyfolowcc" },
 );
 await createRecord(
   alice,
   "app.bsky.graph.follow",
   { subject: dave.did, createdAt: ago(100) },
-  { rkey: "bsky-follow-dave" },
+  { rkey: "3lbskyfolowdd" },
 );
 
 // Bob bsky-follows Alice and Carol (but only grain-follows Alice — Carol will be suggested)
@@ -139,13 +139,13 @@ await createRecord(
   bob,
   "app.bsky.graph.follow",
   { subject: alice.did, createdAt: ago(95) },
-  { rkey: "bsky-follow-alice" },
+  { rkey: "3lbskyfolowaa" },
 );
 await createRecord(
   bob,
   "app.bsky.graph.follow",
   { subject: carol.did, createdAt: ago(95) },
-  { rkey: "bsky-follow-carol" },
+  { rkey: "3lbskyfolowcc" },
 );
 
 // Carol bsky-follows Alice, Bob, and Dave
@@ -153,19 +153,19 @@ await createRecord(
   carol,
   "app.bsky.graph.follow",
   { subject: alice.did, createdAt: ago(90) },
-  { rkey: "bsky-follow-alice" },
+  { rkey: "3lbskyfolowaa" },
 );
 await createRecord(
   carol,
   "app.bsky.graph.follow",
   { subject: bob.did, createdAt: ago(90) },
-  { rkey: "bsky-follow-bob" },
+  { rkey: "3lbskyfolowbb" },
 );
 await createRecord(
   carol,
   "app.bsky.graph.follow",
   { subject: dave.did, createdAt: ago(90) },
-  { rkey: "bsky-follow-dave" },
+  { rkey: "3lbskyfolowdd" },
 );
 
 // Upload photos
