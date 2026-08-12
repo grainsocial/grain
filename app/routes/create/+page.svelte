@@ -8,7 +8,7 @@
   import { createBskyPost } from '$lib/utils/bsky-post'
   import { parseTextToFacets } from '$lib/utils/rich-text'
   import { latLonToH3 } from '$lib/utils/h3'
-  import { X, LoaderCircle } from 'lucide-svelte'
+  import { X, LoaderCircle, ImagePlus } from 'lucide-svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
@@ -20,6 +20,7 @@
   import RichTextarea from '$lib/components/atoms/RichTextarea.svelte'
   import LocationInput from '$lib/components/atoms/LocationInput.svelte'
   import Checkbox from '$lib/components/atoms/Checkbox.svelte'
+  import FileDropZone from '$lib/components/atoms/FileDropZone.svelte'
   import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import type { LocationData } from '$lib/components/atoms/LocationInput.svelte'
 
@@ -40,31 +41,48 @@
 
   let fileInput: HTMLInputElement = $state()!
 
+  const MAX_PHOTOS = 10
+
   // ─── Step 1: Photo Selection ────────────────────────────────────────
 
   function openFilePicker() {
     fileInput?.click()
   }
 
-  async function handleFilesSelected(e: Event) {
+  function handleFilesSelected(e: Event) {
     const input = e.target as HTMLInputElement
     const files = Array.from(input.files ?? [])
     input.value = ''
+    addFiles(files)
+  }
+
+  async function addFiles(files: File[]) {
     if (files.length === 0) return
-    if (files.length > 10) {
-      error = 'Maximum 10 photos allowed'
+    const images = files.filter((f) => f.type.startsWith('image/'))
+    if (images.length === 0) {
+      error = 'Only image files can be added'
+      return
+    }
+
+    const remaining = MAX_PHOTOS - photos.length
+    if (images.length > remaining) {
+      error =
+        remaining === 0
+          ? `Maximum ${MAX_PHOTOS} photos allowed`
+          : `You can only add ${remaining} more photo${remaining === 1 ? '' : 's'}`
       return
     }
 
     try {
       processing = true
       error = null
-      photos = await processPhotos(files)
+      const processed = await processPhotos(images)
+      photos = [...photos, ...processed]
       step = 2
 
-      // Auto-suggest location from first photo's GPS
-      const gps = photos.find((p) => p.gps)?.gps
-      if (gps && $includeLocation) {
+      // Auto-suggest location from the first photo with GPS, unless we already have one
+      const gps = processed.find((p) => p.gps)?.gps
+      if (gps && $includeLocation && !location) {
         reverseGeocode(gps.latitude, gps.longitude).then((result) => {
           if (result) {
             const name = formatLocationName(result)
@@ -81,6 +99,10 @@
       processing = false
     }
   }
+
+  // Photos can be dropped while picking (step 1) or reviewing (step 2)
+  const acceptsDrop = $derived(step !== 3 && !processing && photos.length < MAX_PHOTOS)
+  let fileDragging = $state(false)
 
   function removePhoto(index: number) {
     photos = photos.filter((_, i) => i !== index)
@@ -324,6 +346,16 @@
   }
 </script>
 
+<FileDropZone
+  enabled={acceptsDrop}
+  processing={processing && step === 2}
+  overlay={step === 2}
+  hint="{MAX_PHOTOS - photos.length} more allowed"
+  onfiles={addFiles}
+  onreject={(message) => (error = message)}
+  bind:active={fileDragging}
+/>
+
 <OGMeta title="Create - grain" />
 <div class="create-page">
   <DetailHeader
@@ -360,13 +392,22 @@
         onchange={handleFilesSelected}
         style="display:none"
       />
-      <button class="select-btn" onclick={openFilePicker} disabled={processing}>
+      <button
+        class="select-btn"
+        class:drag-over={fileDragging}
+        onclick={openFilePicker}
+        disabled={processing}
+      >
         {#if processing}
           <LoaderCircle size={24} class="spin" />
           <span>Processing photos...</span>
+        {:else if fileDragging}
+          <ImagePlus size={24} />
+          <span>Drop photos to add them</span>
+          <span class="hint">Up to {MAX_PHOTOS} photos</span>
         {:else}
           <span>Select Photos</span>
-          <span class="hint">Up to 10 photos</span>
+          <span class="hint">Or drag and drop — up to {MAX_PHOTOS} photos</span>
         {/if}
       </button>
     </div>
@@ -493,6 +534,11 @@
   }
   .select-btn:hover { border-color: var(--grain); }
   .select-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+  .select-btn.drag-over {
+    border-color: var(--grain);
+    border-style: dashed;
+    color: var(--grain);
+  }
   .hint {
     font-size: 13px;
     font-weight: 400;

@@ -15,6 +15,7 @@
   import LocationInput from '$lib/components/atoms/LocationInput.svelte'
   import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import FileDropZone from '$lib/components/atoms/FileDropZone.svelte'
   import { LoaderCircle, X, ImagePlus, RefreshCw } from 'lucide-svelte'
   import type { LocationData } from '$lib/components/atoms/LocationInput.svelte'
   import { createBskyPost } from '$lib/utils/bsky-post'
@@ -221,14 +222,20 @@
 
   // ─── Photo management ───────────────────────────────────────────────
 
+  let fileDragging = $state(false)
+
   function removeSlot(index: number) {
     slots = slots.filter((_, i) => i !== index)
   }
 
-  async function handleAddFiles(e: Event) {
+  function handleAddFiles(e: Event) {
     const input = e.target as HTMLInputElement
     const files = Array.from(input.files ?? [])
     input.value = ''
+    addFiles(files)
+  }
+
+  async function addFiles(files: File[]) {
     if (!files.length) return
     try {
       processing = true
@@ -423,6 +430,14 @@
 
 <OGMeta title="Edit gallery - grain" />
 
+<FileDropZone
+  enabled={!!gallery && !processing && !saving}
+  {processing}
+  onfiles={addFiles}
+  onreject={(message) => (error = message)}
+  bind:active={fileDragging}
+/>
+
 <DetailHeader label="Edit gallery" onback={() => goto(`/profile/${data.did}/gallery/${data.rkey}`)}>
   {#snippet actions()}
     <Button disabled={!canSave} onclick={save}>
@@ -482,7 +497,13 @@
       </div>
     {/each}
 
-    <button class="add-btn" onclick={() => addFileInput?.click()} disabled={processing}>
+    <button
+      class="add-btn"
+      class:drag-over={fileDragging}
+      onclick={() => addFileInput?.click()}
+      disabled={processing}
+      title="Add photos — or drag and drop"
+    >
       {#if processing}<LoaderCircle size={18} class="spin" />{:else}<ImagePlus size={18} />{/if}
     </button>
   </div>
@@ -647,6 +668,7 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .add-btn:hover:not(:disabled) { border-color: var(--grain); color: var(--grain); }
+  .add-btn.drag-over { border-color: var(--grain); color: var(--grain); }
   .add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* Form */
