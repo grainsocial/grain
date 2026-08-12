@@ -5,21 +5,32 @@ type Fetch = typeof globalThis.fetch;
 
 // ─── Feeds ──────────────────────────────────────────────────────────
 
-export const recentFeedQuery = (limit = 50, f?: Fetch) =>
+/**
+ * Rows per feed page. Keep this as the default for every feed query — the
+ * feed query keys deliberately omit `limit`, so an SSR prefetch and the
+ * component's own `createQuery` share one cache entry. If they disagree on
+ * limit, the larger value silently wins on the first refetch after staleTime.
+ *
+ * Galleries hydrate with all of their photos, so each row is expensive: a
+ * photo-dense feed (e.g. /camera/Ricoh GR II) ran ~900KB at 50.
+ */
+export const FEED_PAGE_SIZE = 30;
+
+export const recentFeedQuery = (limit = FEED_PAGE_SIZE, f?: Fetch) =>
   queryOptions({
     queryKey: ["getFeed", "recent"],
     queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "recent", limit }, f),
     staleTime: 60_000,
   });
 
-export const followingFeedQuery = (did: string, limit = 50, f?: Fetch) =>
+export const followingFeedQuery = (did: string, limit = FEED_PAGE_SIZE, f?: Fetch) =>
   queryOptions({
     queryKey: ["getFeed", "following", did],
     queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "following", actor: did, limit }, f),
     staleTime: 60_000,
   });
 
-export const forYouFeedQuery = (did: string, limit = 50, f?: Fetch) =>
+export const forYouFeedQuery = (did: string, limit = FEED_PAGE_SIZE, f?: Fetch) =>
   queryOptions({
     queryKey: ["getFeed", "foryou", did],
     queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "foryou", actor: did, limit }, f),
@@ -40,7 +51,7 @@ export const actorFeedQuery = (did: string, f?: Fetch) =>
     staleTime: 60_000,
   });
 
-export const cameraFeedQuery = (camera: string, limit = 50, f?: Fetch) =>
+export const cameraFeedQuery = (camera: string, limit = FEED_PAGE_SIZE, f?: Fetch) =>
   queryOptions({
     queryKey: ["getFeed", "camera", camera],
     queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "camera", camera, limit }, f),
@@ -55,7 +66,7 @@ export const camerasQuery = (f?: Fetch) =>
     staleTime: 5 * 60_000,
   });
 
-export const locationFeedQuery = (location: string, name?: string, limit = 50, f?: Fetch) =>
+export const locationFeedQuery = (location: string, name?: string, limit = FEED_PAGE_SIZE, f?: Fetch) =>
   queryOptions({
     queryKey: ["getFeed", "location", name || location],
     queryFn: () =>

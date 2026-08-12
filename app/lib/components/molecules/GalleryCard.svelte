@@ -338,6 +338,10 @@
 <style>
   .gallery-card {
     border-bottom: 1px solid var(--border);
+    /* Skip layout/paint for offscreen cards. `auto` remembers the last measured
+       size, so scroll position stays stable once a card has been rendered. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 640px;
   }
 
   /* Header */

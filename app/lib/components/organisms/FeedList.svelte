@@ -5,6 +5,7 @@
   import SuggestedFollows from './SuggestedFollows.svelte'
   import GalleryCardSkeleton from '../molecules/GalleryCardSkeleton.svelte'
   import { queryFeed } from '$lib/feed'
+  import { FEED_PAGE_SIZE } from '$lib/queries'
   import { isAuthenticated } from '$lib/stores'
   import Spinner from '../atoms/Spinner.svelte'
   import { infiniteScroll } from '$lib/actions/infinite-scroll'
@@ -45,7 +46,7 @@
     loading = true
     error = null
     try {
-      const result = await queryFeed(feed, { limit: '30', ...params })
+      const result = await queryFeed(feed, { limit: String(FEED_PAGE_SIZE), ...params })
       items = result.items ?? []
       cursor = result.cursor
     } catch (e: any) {
@@ -59,7 +60,7 @@
     if (!cursor || loadingMore) return
     loadingMore = true
     try {
-      const result = await queryFeed(feed, { limit: '30', cursor, ...params })
+      const result = await queryFeed(feed, { limit: String(FEED_PAGE_SIZE), cursor, ...params })
       items = [...items, ...(result.items ?? [])]
       cursor = result.cursor
     } finally {

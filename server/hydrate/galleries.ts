@@ -48,7 +48,6 @@ function buildExifView(row: ExifRow): ExifView {
     uri: row.uri,
     cid: row.cid,
     photo: row.photo,
-    record: row,
     createdAt: row.created_at,
     ...(row.date_time_original ? { dateTimeOriginal: row.date_time_original } : {}),
     ...(row.exposure_time ? { exposureTime: formatExposureTime(row.exposure_time) } : {}),
@@ -212,7 +211,9 @@ export async function hydrateGalleries(
     allPhotoUris.length > 0
       ? (
           ctx.db.query(
-            `SELECT * FROM "social.grain.photo.exif"
+            `SELECT uri, cid, photo, created_at, date_time_original, exposure_time, f_number,
+                  flash, focal_length_in35mm_format, i_s_o, lens_make, lens_model, make, model
+           FROM "social.grain.photo.exif"
            WHERE photo IN (${allPhotoUris.map((_, i) => `$${i + 1}`).join(",")})`,
             allPhotoUris,
           ) as Promise<ExifRow[]>
