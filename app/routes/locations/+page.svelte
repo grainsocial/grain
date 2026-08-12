@@ -17,7 +17,16 @@
   {:else if !locations.data?.length}
     <div class="state">No locations yet.</div>
   {:else}
-    {#each locations.data as loc (loc.h3Index)}
+    <!-- Unkeyed on purpose. h3Index does not identify a row: getLocations
+         groups by address (locality/region/country) and then picks each
+         group's densest cell independently, so a state-level group and a
+         city-level group inside it can land on the same cell — in prod,
+         "Washington, US" and "Vancouver, Washington, US" both resolve to
+         8a28f00d8227fff. Both rows are legitimate and must both render, since
+         the location feed keys off `name`, not the cell. A keyed each on
+         h3Index threw each_key_duplicate and blanked the page. Matches
+         SidebarRight and MobileDrawer, which render this list unkeyed. -->
+    {#each locations.data as loc}
       <GallerySectionRow
         kind="location"
         h3={loc.h3Index}

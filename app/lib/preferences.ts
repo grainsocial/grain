@@ -53,7 +53,14 @@ export function loadPreferences(prefs: Record<string, unknown> | null): void {
     const valid = prefs.pinnedFeeds.filter(isValidFeed).map((f) =>
       f.id === "recent" && f.path === "/" ? { ...f, path: "/feeds/recent" } : f
     );
-    if (valid.length > 0) pinnedFeeds.set(valid);
+    // Dedupe by id. pinFeed refuses to add a duplicate, but nothing validates
+    // the stored blob — an older client, the native app, or a racing write
+    // could persist one. Sidebar, MobileDrawer and /feeds all key their
+    // {#each} on feed.id, and the sidebar renders on every page, so a repeat
+    // would throw each_key_duplicate and blank the entire app.
+    const seen = new Set<string>();
+    const unique = valid.filter((f) => (seen.has(f.id) ? false : (seen.add(f.id), true)));
+    if (unique.length > 0) pinnedFeeds.set(unique);
   }
   if (typeof prefs.includeExif === "boolean") includeExif.set(prefs.includeExif);
   if (typeof prefs.includeLocation === "boolean") includeLocation.set(prefs.includeLocation);
