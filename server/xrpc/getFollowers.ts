@@ -12,9 +12,13 @@ export default defineQuery("social.grain.unspecced.getFollowers", async (ctx) =>
       `SELECT did, cid FROM "social.grain.graph.follow" WHERE subject = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
       [actor, Number(limit) + 1, offset],
     ) as Promise<{ did: string; cid: string }[]>,
-    ctx.db.query(`SELECT COUNT(*) as count FROM "social.grain.graph.follow" WHERE subject = $1`, [
-      actor,
-    ]) as Promise<{ count: number }[]>,
+    // DISTINCT: an account can hold more than one follow record for the same
+    // subject, and the raw count would report that account as several
+    // followers. Matches getGalleryFavorites, which already counts DISTINCT.
+    ctx.db.query(
+      `SELECT COUNT(DISTINCT did) as count FROM "social.grain.graph.follow" WHERE subject = $1`,
+      [actor],
+    ) as Promise<{ count: number }[]>,
   ]);
   const totalCount = Number(countRows[0]?.count ?? 0);
 

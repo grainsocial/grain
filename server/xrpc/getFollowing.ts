@@ -12,9 +12,12 @@ export default defineQuery("social.grain.unspecced.getFollowing", async (ctx) =>
       `SELECT subject, cid FROM "social.grain.graph.follow" WHERE did = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
       [actor, Number(limit) + 1, offset],
     ) as Promise<{ subject: string; cid: string }[]>,
-    ctx.db.query(`SELECT COUNT(*) as count FROM "social.grain.graph.follow" WHERE did = $1`, [
-      actor,
-    ]) as Promise<{ count: number }[]>,
+    // DISTINCT: duplicate follow records for the same subject would otherwise
+    // inflate the following count past the number of accounts actually listed.
+    ctx.db.query(
+      `SELECT COUNT(DISTINCT subject) as count FROM "social.grain.graph.follow" WHERE did = $1`,
+      [actor],
+    ) as Promise<{ count: number }[]>,
   ]);
   const totalCount = Number(countRows[0]?.count ?? 0);
 

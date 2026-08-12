@@ -17,12 +17,17 @@ export default defineQuery("social.grain.unspecced.getActorFavorites", async (ct
   const queryParams: (string | number)[] = [actor, limit + 1];
   let cursorClause = "";
   if (cursor) {
-    cursorClause = ` AND f.created_at < $3`;
+    cursorClause = ` HAVING MAX(f.created_at) < $3`;
     queryParams.push(cursor);
   }
 
+  // GROUP BY f.subject: an account can hold more than one favorite record for
+  // the same gallery (verified present in prod — the records are real, they
+  // exist in the users' repos), which would otherwise list that gallery twice.
+  // MAX(created_at) is the sort key so a re-favorite moves the gallery up, and
+  // the cursor compares against the same aggregate.
   const rows = (await db.query(
-    `SELECT f.subject, f.created_at
+    `SELECT f.subject AS subject, MAX(f.created_at) AS created_at
      FROM "social.grain.favorite" f
      JOIN "social.grain.gallery" t ON t.uri = f.subject
      LEFT JOIN _repos r ON t.did = r.did
@@ -30,8 +35,9 @@ export default defineQuery("social.grain.unspecced.getActorFavorites", async (ct
        AND (r.status IS NULL OR r.status != 'takendown')
        AND ${hideLabelsFilter("t.uri")}
        AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
+     GROUP BY f.subject
      ${cursorClause}
-     ORDER BY f.created_at DESC
+     ORDER BY created_at DESC
      LIMIT $2`,
     queryParams,
   )) as { subject: string; created_at: string }[];

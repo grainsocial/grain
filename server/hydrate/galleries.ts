@@ -107,19 +107,31 @@ export async function hydrateGalleries(
   // Resolve the "favorited by people you follow" facepile. ROW_NUMBER caps the
   // result at FACEPILE_LIMIT rows *per gallery* — without it a viral gallery
   // plus a large follow graph returns thousands of rows to render 3 avatars.
+  //
+  // The inner GROUP BY collapses to one row per (subject, did) BEFORE ranking.
+  // Two things duplicate a did for a gallery otherwise: an account can hold
+  // more than one favorite record for the same subject (which is why favCount
+  // counts DISTINCT did), and the follow join fans out when the viewer holds
+  // more than one follow record for that account. Both occur in prod. A
+  // repeated did here renders two avatars keyed alike, and Facepile's keyed
+  // {#each} throws each_key_duplicate, which blanks the whole feed.
   const favedByFollowing = new Map<string, string[]>();
   if (ctx.viewer?.did && galleryUris.length > 0) {
     const placeholders = galleryUris.map((_, i) => `$${i + 2}`).join(",");
     const rows = (await ctx.db.query(
       `SELECT subject, did FROM (
-         SELECT f.subject AS subject, f.did AS did,
-                ROW_NUMBER() OVER (PARTITION BY f.subject ORDER BY f.created_at DESC) AS rn
-         FROM "social.grain.favorite" f
-         JOIN "social.grain.graph.follow" fo ON fo.did = $1 AND fo.subject = f.did
-         LEFT JOIN _repos r ON r.did = f.did
-         WHERE f.subject IN (${placeholders}) AND f.did <> $1
-           AND (r.status IS NULL OR r.status != 'takendown')
-           AND ${blockFilter("f.did", "$1")}
+         SELECT subject, did,
+                ROW_NUMBER() OVER (PARTITION BY subject ORDER BY last_fav_at DESC) AS rn
+         FROM (
+           SELECT f.subject AS subject, f.did AS did, MAX(f.created_at) AS last_fav_at
+           FROM "social.grain.favorite" f
+           JOIN "social.grain.graph.follow" fo ON fo.did = $1 AND fo.subject = f.did
+           LEFT JOIN _repos r ON r.did = f.did
+           WHERE f.subject IN (${placeholders}) AND f.did <> $1
+             AND (r.status IS NULL OR r.status != 'takendown')
+             AND ${blockFilter("f.did", "$1")}
+           GROUP BY f.subject, f.did
+         ) distinct_favers
        ) ranked
        WHERE rn <= ${FACEPILE_LIMIT}`,
       [ctx.viewer.did, ...galleryUris],

@@ -13,10 +13,17 @@
     overlap?: number
     max?: number
   } = $props()
+
+  // Dedupe before the keyed each. A repeated did throws each_key_duplicate,
+  // which unwinds the render of whatever feed this facepile sits in — one bad
+  // row should degrade to one avatar, not a blank page.
+  const unique = $derived(
+    people.filter((p, i) => people.findIndex((q) => q.did === p.did) === i).slice(0, max)
+  )
 </script>
 
 <div class="facepile" style="--facepile-overlap: {overlap}px">
-  {#each people.slice(0, max) as person (person.did)}
+  {#each unique as person (person.did)}
     <Avatar did={person.did} src={person.avatar ?? null} name={person.displayName} {size} />
   {/each}
 </div>
