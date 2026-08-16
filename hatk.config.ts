@@ -21,6 +21,10 @@ const grainScopes = [
 
 export default defineConfig({
   relay: isProd ? "wss://bsky.network" : "ws://localhost:2583",
+  // Jetstream filters server-side, so we stop decoding the whole network to
+  // find social.grain.*. Prod only — the local PDS has no Jetstream in front
+  // of it. `relay` is still required: backfill resolves repos through it.
+  jetstream: isProd ? { url: "wss://jetstream.us-east.bsky.network" } : null,
   plc: isProd ? "https://plc.directory" : "http://localhost:2582",
   port: 3000,
   cdn: isProd
