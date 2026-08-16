@@ -502,7 +502,7 @@
       class:drag-over={fileDragging}
       onclick={() => addFileInput?.click()}
       disabled={processing}
-      title="Add photos — or drag and drop"
+      title="Add photos, or drag and drop"
     >
       {#if processing}<LoaderCircle size={18} class="spin" />{:else}<ImagePlus size={18} />{/if}
     </button>

@@ -407,7 +407,8 @@
           <span class="hint">Up to {MAX_PHOTOS} photos</span>
         {:else}
           <span>Select Photos</span>
-          <span class="hint">Or drag and drop — up to {MAX_PHOTOS} photos</span>
+          <span class="hint hint-desktop">Or drag and drop, up to {MAX_PHOTOS} photos</span>
+          <span class="hint hint-mobile">Up to {MAX_PHOTOS} photos</span>
         {/if}
       </button>
     </div>
@@ -543,6 +544,11 @@
     font-size: 13px;
     font-weight: 400;
     color: var(--text-muted);
+  }
+  .hint-mobile { display: none; }
+  @media (max-width: 600px) {
+    .hint-desktop { display: none; }
+    .hint-mobile { display: block; }
   }
 
   /* Photo strip (step 2) */
