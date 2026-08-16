@@ -12,9 +12,10 @@
 </script>
 
 <script lang="ts">
-  import type { Snippet } from 'svelte'
+  import { onMount, type Snippet } from 'svelte'
   import '../app.css'
   import Shell from '$lib/components/templates/Shell.svelte'
+  import Toast from '$lib/components/atoms/Toast.svelte'
   import '$lib/auth'
   import { QueryClientProvider } from '@tanstack/svelte-query'
   import { isAuthenticated, viewer } from '$lib/stores'
@@ -33,6 +34,32 @@
   })
 
   let { data, children }: { data: any; children: Snippet } = $props()
+
+  // hatk bounces a failed PDS sign-in back here as ?error=... (most often the
+  // user hitting "Deny"). Surface it, then strip the params so a refresh or a
+  // shared link doesn't replay the toast.
+  // Captured during setup, before children mount — /oauth/callback redirects to
+  // '/' on mount, which would otherwise race this read.
+  const landingSearch = typeof window === 'undefined' ? '' : window.location.search
+
+  let authError = $state('')
+  let showAuthError = $state(false)
+
+  onMount(() => {
+    const params = new URLSearchParams(landingSearch)
+    const error = params.get('error')
+    if (!error) return
+
+    authError = error === 'access_denied' ? 'Sign-in canceled' : params.get('error_description') || 'Sign-in failed'
+    showAuthError = true
+
+    // Only rewrite if we're still on the URL we read — /oauth/callback may have
+    // navigated away already, and that URL is its own to manage.
+    if (window.location.search !== landingSearch) return
+    for (const key of ['error', 'error_description', 'state', 'iss']) params.delete(key)
+    const query = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (query ? `?${query}` : ''))
+  })
 
   $effect(() => {
     if (data.preferences) {
@@ -64,3 +91,5 @@
     {@render children()}
   </Shell>
 </QueryClientProvider>
+
+<Toast message={authError} bind:visible={showAuthError} duration={4000} />
