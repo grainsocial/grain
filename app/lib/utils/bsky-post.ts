@@ -6,7 +6,10 @@ interface BskyPostOptions {
   url: string;
   title?: string;
   location?: {
-    name: string;
+    // Optional to match community.lexicon.location.hthree, where only `value`
+    // (the H3 code) is required. formatStoredLocation already handles a
+    // missing name.
+    name?: string;
     address?: {
       locality?: string;
       region?: string;

@@ -46,7 +46,13 @@
       title = gallery.title ?? ''
       description = (gallery as any).record?.description ?? gallery.description ?? ''
       location = gallery.location
-        ? { name: gallery.location.name, h3Index: gallery.location.value, address: (gallery as any).record?.address }
+        ? {
+            // `name` is optional on community.lexicon.location.hthree, so fall
+            // back the way GalleryCard does rather than seeding the input blank.
+            name: gallery.location.name ?? gallery.locationDisplay ?? gallery.location.value,
+            h3Index: gallery.location.value,
+            address: (gallery as any).record?.address,
+          }
         : null
       selectedLabels = (gallery as any).record?.labels?.values?.map((v: any) => v.val) ?? []
       slots = ((gallery.items ?? []) as PhotoView[]).map((view) => ({ kind: 'existing', view }))
@@ -80,8 +86,11 @@
     const doc = await res.json()
     const svc = doc.service?.find((s: any) => s.type === 'AtprotoPersonalDataServer')
     if (!svc?.serviceEndpoint) throw new Error('PDS not found in DID document')
-    pdsUrlCache = svc.serviceEndpoint
-    return pdsUrlCache
+    // Bind before caching: `svc` is `any`, so assigning straight into the
+    // `string | null` cache leaves the return un-narrowed.
+    const endpoint: string = svc.serviceEndpoint
+    pdsUrlCache = endpoint
+    return endpoint
   }
 
   async function fetchPhotoDataUrl(photo: PhotoView): Promise<string> {
