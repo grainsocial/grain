@@ -4,14 +4,18 @@ export function infiniteScroll(node: HTMLElement, onIntersect: () => void) {
   const observer = new IntersectionObserver(
     (entries) => {
       if (entries[0]?.isIntersecting) {
-        onIntersect()
+        onIntersect();
       }
     },
-    { rootMargin: '200px' },
-  )
-  observer.observe(node)
+    { rootMargin: "200px" },
+  );
+  observer.observe(node);
   return {
-    update(newFn: () => void) { onIntersect = newFn },
-    destroy() { observer.disconnect() },
-  }
+    update(newFn: () => void) {
+      onIntersect = newFn;
+    },
+    destroy() {
+      observer.disconnect();
+    },
+  };
 }

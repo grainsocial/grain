@@ -51,9 +51,7 @@ export default defineQuery("social.grain.unspecced.getActorFavorites", async (ct
   );
 
   // Preserve favorite ordering
-  const galleryRows = pageRows
-    .map((r) => recordsMap.get(r.subject))
-    .filter((r) => r != null);
+  const galleryRows = pageRows.map((r) => recordsMap.get(r.subject)).filter((r) => r != null);
 
   const items = await hydrateGalleries(ctx, galleryRows);
 

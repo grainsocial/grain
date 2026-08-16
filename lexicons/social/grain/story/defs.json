@@ -31,7 +31,10 @@
           "type": "array",
           "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "expired": { "type": "boolean", "description": "Whether the story has passed its 24-hour window." },
+        "expired": {
+          "type": "boolean",
+          "description": "Whether the story has passed its 24-hour window."
+        },
         "commentCount": { "type": "integer" },
         "viewer": { "type": "ref", "ref": "#viewerState" },
         "crossPost": { "type": "ref", "ref": "social.grain.gallery.defs#crossPostInfo" }

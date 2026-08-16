@@ -59,7 +59,9 @@ describe("formatStoredLocation", () => {
   test("deep Nominatim fallback normalises non-ISO country variant", () => {
     expect(
       formatStoredLocation(
-        { name: "821 Southeast 14th Avenue, Central Eastside, Buckman, Portland, Multnomah County, Oregon, 97214, United States" },
+        {
+          name: "821 Southeast 14th Avenue, Central Eastside, Buckman, Portland, Multnomah County, Oregon, 97214, United States",
+        },
         { locality: "Portland", region: "Oregon", country: "USA" },
       ),
     ).toBe("821 Southeast 14th Avenue, Portland, Oregon, US");
@@ -67,7 +69,9 @@ describe("formatStoredLocation", () => {
 
   test("primary label equals country — suppresses redundant country tail", () => {
     expect(formatStoredLocation({ name: "Greece" }, { country: "GR" })).toBe("Greece");
-    expect(formatStoredLocation({ name: "United States" }, { country: "US" })).toBe("United States");
+    expect(formatStoredLocation({ name: "United States" }, { country: "US" })).toBe(
+      "United States",
+    );
   });
 
   test("name already has state abbrev — doesn't duplicate", () => {
@@ -80,12 +84,9 @@ describe("formatStoredLocation", () => {
   });
 
   test("legacy hthree record with no address — preserves full name", () => {
-    expect(
-      formatStoredLocation(
-        { name: "Eindhoven, North Brabant, Netherlands" },
-        null,
-      ),
-    ).toBe("Eindhoven, North Brabant, Netherlands");
+    expect(formatStoredLocation({ name: "Eindhoven, North Brabant, Netherlands" }, null)).toBe(
+      "Eindhoven, North Brabant, Netherlands",
+    );
   });
 
   test("empty/null inputs return empty string", () => {
@@ -95,11 +96,8 @@ describe("formatStoredLocation", () => {
   });
 
   test("non-US location with only country — doesn't crash on missing region", () => {
-    expect(
-      formatStoredLocation(
-        { name: "Taipei" },
-        { locality: "Taipei", country: "TW" },
-      ),
-    ).toBe("Taipei, TW");
+    expect(formatStoredLocation({ name: "Taipei" }, { locality: "Taipei", country: "TW" })).toBe(
+      "Taipei, TW",
+    );
   });
 });

@@ -171,7 +171,8 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
 
   // Map source to preference category
   function prefCategory(source: string): string | null {
-    if (source === "favorite" || source === "story-favorite" || source === "comment-favorite") return "favorites";
+    if (source === "favorite" || source === "story-favorite" || source === "comment-favorite")
+      return "favorites";
     if (source === "follow") return "follows";
     if (source === "comment" || source === "reply" || source === "story-comment") return "comments";
     if (source === "comment-mention" || source === "gallery-mention") return "mentions";
@@ -255,7 +256,9 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   const handleMap = await lookupHandles(db, dids);
 
   // Hydrate comment-favorite notifications — look up the favorited comment's text and parent subject
-  const commentFavUris = items.filter((r) => r.source === "comment-favorite" && r.subject_uri).map((r) => r.subject_uri!);
+  const commentFavUris = items
+    .filter((r) => r.source === "comment-favorite" && r.subject_uri)
+    .map((r) => r.subject_uri!);
   const commentFavMap = new Map<string, { text: string; subject: string }>();
   if (commentFavUris.length > 0) {
     const ph = commentFavUris.map((_, i) => `$${i + 1}`).join(",");
@@ -263,14 +266,17 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
       `SELECT uri, text, subject FROM "social.grain.comment" WHERE uri IN (${ph})`,
       commentFavUris,
     )) as Array<{ uri: string; text: string; subject: string }>;
-    for (const row of commentRows) commentFavMap.set(row.uri, { text: row.text, subject: row.subject });
+    for (const row of commentRows)
+      commentFavMap.set(row.uri, { text: row.text, subject: row.subject });
   }
 
   // Separate subject URIs into gallery and story URIs (include parent subjects from comment-favorites)
-  const allSubjectUris = [...new Set([
-    ...items.map((r) => r.subject_uri).filter(Boolean) as string[],
-    ...[...commentFavMap.values()].map((c) => c.subject),
-  ])];
+  const allSubjectUris = [
+    ...new Set([
+      ...(items.map((r) => r.subject_uri).filter(Boolean) as string[]),
+      ...[...commentFavMap.values()].map((c) => c.subject),
+    ]),
+  ];
 
   // Look up which subjects are galleries vs stories
   const galleryUriSet = new Set<string>();
@@ -278,8 +284,14 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
   if (allSubjectUris.length > 0) {
     const ph = allSubjectUris.map((_, i) => `$${i + 1}`).join(",");
     const [galRows, storyRows] = await Promise.all([
-      db.query(`SELECT uri FROM "social.grain.gallery" WHERE uri IN (${ph})`, allSubjectUris) as Promise<{ uri: string }[]>,
-      db.query(`SELECT uri FROM "social.grain.story" WHERE uri IN (${ph})`, allSubjectUris) as Promise<{ uri: string }[]>,
+      db.query(
+        `SELECT uri FROM "social.grain.gallery" WHERE uri IN (${ph})`,
+        allSubjectUris,
+      ) as Promise<{ uri: string }[]>,
+      db.query(
+        `SELECT uri FROM "social.grain.story" WHERE uri IN (${ph})`,
+        allSubjectUris,
+      ) as Promise<{ uri: string }[]>,
     ]);
     for (const r of galRows) galleryUriSet.add(r.uri);
     for (const r of storyRows) storyUriSet.add(r.uri);
@@ -356,14 +368,16 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
     const reason = getReason(row);
 
     // For comment-favorites, resolve the parent gallery/story from the comment
-    const commentFavInfo = reason === "comment-favorite" && row.subject_uri ? commentFavMap.get(row.subject_uri) : null;
+    const commentFavInfo =
+      reason === "comment-favorite" && row.subject_uri ? commentFavMap.get(row.subject_uri) : null;
     const effectiveSubject = commentFavInfo ? commentFavInfo.subject : row.subject_uri;
 
     const isGallery = effectiveSubject ? galleryUriSet.has(effectiveSubject) : false;
     const isStory = effectiveSubject ? storyUriSet.has(effectiveSubject) : false;
 
     const gallery = isGallery && effectiveSubject ? galleries.get(effectiveSubject) : null;
-    const photoUri = isGallery && effectiveSubject ? firstPhotoByGallery.get(effectiveSubject) : null;
+    const photoUri =
+      isGallery && effectiveSubject ? firstPhotoByGallery.get(effectiveSubject) : null;
     const photo = photoUri ? photos.get(photoUri) : null;
     const galleryThumb = photo
       ? (blobUrl(photo.did, photo.value.photo, "avatar") ?? undefined)
@@ -393,7 +407,11 @@ export default defineQuery("social.grain.unspecced.getNotifications", async (ctx
       ...(galleryThumb ? { galleryThumb } : {}),
       ...(isStory && effectiveSubject ? { storyUri: effectiveSubject } : {}),
       ...(storyThumb ? { storyThumb } : {}),
-      ...(commentFavInfo ? { commentText: commentFavInfo.text } : row.text ? { commentText: row.text } : {}),
+      ...(commentFavInfo
+        ? { commentText: commentFavInfo.text }
+        : row.text
+          ? { commentText: row.text }
+          : {}),
       ...(row.reply_to && replyToTextMap.has(row.reply_to)
         ? { replyToText: replyToTextMap.get(row.reply_to) }
         : {}),

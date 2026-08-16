@@ -45,9 +45,7 @@ export function groupNotifications(notifs: any[]): GroupedNotification[] {
         notif.author?.did !== group.notification.author?.did
       ) {
         // Don't add duplicate authors
-        const alreadyHas = group.additional.some(
-          (a: any) => a.author?.did === notif.author?.did,
-        );
+        const alreadyHas = group.additional.some((a: any) => a.author?.did === notif.author?.did);
         if (!alreadyHas) {
           group.additional.push(notif);
           group.authorCount = 1 + group.additional.length;

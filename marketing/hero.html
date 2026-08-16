@@ -1,318 +1,454 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>grain — Share your photography</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=block" rel="stylesheet" />
-<style>
-  :root {
-    --bg-root: #080b12;
-    --bg-surface: #0f1419;
-    --grain: #85a1ff;
-    --text: #e2e8f0;
-    --text-muted: #64748b;
-  }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>grain — Share your photography</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-root: #080b12;
+        --bg-surface: #0f1419;
+        --grain: #85a1ff;
+        --text: #e2e8f0;
+        --text-muted: #64748b;
+      }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
 
-  body {
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-root);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-    min-height: 100vh;
-    background-image:
-      radial-gradient(ellipse 1100px 700px at 90% -10%, rgba(133, 161, 255, 0.10), transparent 60%),
-      radial-gradient(ellipse 800px 600px at 5% 110%, rgba(107, 139, 239, 0.06), transparent 60%);
-  }
+      body {
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg-root);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+        min-height: 100vh;
+        background-image:
+          radial-gradient(
+            ellipse 1100px 700px at 90% -10%,
+            rgba(133, 161, 255, 0.1),
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 800px 600px at 5% 110%,
+            rgba(107, 139, 239, 0.06),
+            transparent 60%
+          );
+      }
 
-  .stage {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 80px 56px 64px;
-    position: relative;
-  }
+      .stage {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 80px 56px 64px;
+        position: relative;
+      }
 
-  /* ─── Gallery card collage ─────────────────── */
+      /* ─── Gallery card collage ─────────────────── */
 
-  .collage {
-    position: relative;
-    height: 660px;
-    z-index: 1;
-  }
+      .collage {
+        position: relative;
+        height: 660px;
+        z-index: 1;
+      }
 
-  .card {
-    position: absolute;
-    background: #ffffff;
-    border-radius: 14px;
-    overflow: hidden;
-    box-shadow:
-      0 36px 72px -16px rgba(0, 0, 0, 0.65),
-      0 8px 22px -8px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.06);
-    color: #171717;
-    transform: rotate(var(--rot, 0deg));
-  }
-  .card-photo {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: #161d27;
-  }
-  .card-foot {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 14px;
-    background: #ffffff;
-  }
-  .card-foot .avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #e5e7eb;
-    flex-shrink: 0;
-  }
-  .card-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-  .card-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: #171717;
-    letter-spacing: -0.005em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-handle {
-    font-size: 11.5px;
-    color: #525252;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-    color: #525252;
-  }
-  .card-actions svg {
-    width: 18px;
-    height: 18px;
-    stroke-width: 2;
-  }
+      .card {
+        position: absolute;
+        background: #ffffff;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow:
+          0 36px 72px -16px rgba(0, 0, 0, 0.65),
+          0 8px 22px -8px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.06);
+        color: #171717;
+        transform: rotate(var(--rot, 0deg));
+      }
+      .card-photo {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #161d27;
+      }
+      .card-foot {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 14px;
+        background: #ffffff;
+      }
+      .card-foot .avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #e5e7eb;
+        flex-shrink: 0;
+      }
+      .card-text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #171717;
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-handle {
+        font-size: 11.5px;
+        color: #525252;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        color: #525252;
+      }
+      .card-actions svg {
+        width: 18px;
+        height: 18px;
+        stroke-width: 2;
+      }
 
-  /* Card placements — spread horizontally so every footer is exposed.
+      /* Card placements — spread horizontally so every footer is exposed.
      Cards may overlap on photos but never on the white attribution footer. */
-  .card-1 {
-    top: 80px;
-    left: 1%;
-    width: 268px;
-    --rot: -7deg;
-    z-index: 1;
-  }
-  .card-1 .card-photo { aspect-ratio: 2/3; }
+      .card-1 {
+        top: 80px;
+        left: 1%;
+        width: 268px;
+        --rot: -7deg;
+        z-index: 1;
+      }
+      .card-1 .card-photo {
+        aspect-ratio: 2/3;
+      }
 
-  .card-2 {
-    top: 0;
-    left: 23%;
-    width: 320px;
-    --rot: 3deg;
-    z-index: 2;
-  }
-  .card-2 .card-photo { aspect-ratio: 4/3; }
+      .card-2 {
+        top: 0;
+        left: 23%;
+        width: 320px;
+        --rot: 3deg;
+        z-index: 2;
+      }
+      .card-2 .card-photo {
+        aspect-ratio: 4/3;
+      }
 
-  .card-3 {
-    top: 64px;
-    left: 49%;
-    width: 280px;
-    --rot: -3deg;
-    z-index: 3;
-  }
-  .card-3 .card-photo { aspect-ratio: 3/4; }
+      .card-3 {
+        top: 64px;
+        left: 49%;
+        width: 280px;
+        --rot: -3deg;
+        z-index: 3;
+      }
+      .card-3 .card-photo {
+        aspect-ratio: 3/4;
+      }
 
-  .card-4 {
-    top: 32px;
-    right: 1%;
-    width: 280px;
-    --rot: 6deg;
-    z-index: 4;
-  }
-  .card-4 .card-photo { aspect-ratio: 3/4; }
+      .card-4 {
+        top: 32px;
+        right: 1%;
+        width: 280px;
+        --rot: 6deg;
+        z-index: 4;
+      }
+      .card-4 .card-photo {
+        aspect-ratio: 3/4;
+      }
 
-  /* ─── Hero text ────────────────────────────── */
+      /* ─── Hero text ────────────────────────────── */
 
-  .hero-text {
-    position: relative;
-    z-index: 2;
-    margin-top: -100px;
-    padding: 60px 4px 0;
-    max-width: 720px;
-  }
-  .hero-text::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -56px;
-    right: -56px;
-    bottom: 0;
-    background: linear-gradient(
-      to bottom,
-      rgba(8, 11, 18, 0) 0%,
-      rgba(8, 11, 18, 0.55) 25%,
-      rgba(8, 11, 18, 0.92) 60%,
-      rgba(8, 11, 18, 1) 100%
-    );
-    z-index: -1;
-    pointer-events: none;
-  }
-  .hero-logo {
-    font-family: "Syne", sans-serif;
-    font-size: 196px;
-    font-weight: 800;
-    letter-spacing: -0.05em;
-    line-height: 0.85;
-    color: var(--text);
-    margin-bottom: 44px;
-  }
-  .hero-tagline {
-    font-size: 38px;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
-    color: var(--text);
-  }
+      .hero-text {
+        position: relative;
+        z-index: 2;
+        margin-top: -100px;
+        padding: 60px 4px 0;
+        max-width: 720px;
+      }
+      .hero-text::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -56px;
+        right: -56px;
+        bottom: 0;
+        background: linear-gradient(
+          to bottom,
+          rgba(8, 11, 18, 0) 0%,
+          rgba(8, 11, 18, 0.55) 25%,
+          rgba(8, 11, 18, 0.92) 60%,
+          rgba(8, 11, 18, 1) 100%
+        );
+        z-index: -1;
+        pointer-events: none;
+      }
+      .hero-logo {
+        font-family: "Syne", sans-serif;
+        font-size: 196px;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        line-height: 0.85;
+        color: var(--text);
+        margin-bottom: 44px;
+      }
+      .hero-tagline {
+        font-size: 38px;
+        font-weight: 600;
+        letter-spacing: -0.025em;
+        line-height: 1.15;
+        color: var(--text);
+      }
 
-  @media (max-width: 1024px) {
-    .stage { padding: 56px 28px 40px; }
-    .collage { height: 540px; }
-    .card-1 { width: 220px; left: 2%; }
-    .card-2 { width: 280px; left: 28%; }
-    .card-3 { width: 230px; right: 2%; }
-    .card-4 { width: 260px; left: 14%; }
-    .hero-logo { font-size: 130px; }
-    .hero-tagline { font-size: 30px; }
-  }
-</style>
-</head>
-<body>
-
-<section class="stage">
-
-  <!-- ─── Gallery card collage ─── -->
-  <div class="collage">
-
-    <!-- Card 1: jctenton — Tokyo, Fujifilm X-T5 -->
-    <div class="card card-1">
-      <img class="card-photo" loading="lazy"
-           src="https://cdn.grain.social/U0hI2MkRNxc6wlGd3f7aG68tJhU9noapwtlMaJoDnL0/feed_fullsize/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreihjefs2r37v5gmekztouy7j67447oeslkm4hlv36sedevq5x5lumi"
-           alt="Donki, Tokyo" />
-      <div class="card-foot">
-        <img class="avatar" src="https://cdn.grain.social/1srn3DX0j4BZLoOudYM_wqs6Tq3tNXWaxcZoZ8s54PQ/avatar/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreigh3pkp7p4ri35na7hwifd34bzjggktj66l3ar7jcfeggrusfgp2m" alt="" />
-        <div class="card-text">
-          <div class="card-title">They have everything at Donki</div>
-          <div class="card-handle">@jctenton.bsky.social</div>
+      @media (max-width: 1024px) {
+        .stage {
+          padding: 56px 28px 40px;
+        }
+        .collage {
+          height: 540px;
+        }
+        .card-1 {
+          width: 220px;
+          left: 2%;
+        }
+        .card-2 {
+          width: 280px;
+          left: 28%;
+        }
+        .card-3 {
+          width: 230px;
+          right: 2%;
+        }
+        .card-4 {
+          width: 260px;
+          left: 14%;
+        }
+        .hero-logo {
+          font-size: 130px;
+        }
+        .hero-tagline {
+          font-size: 30px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="stage">
+      <!-- ─── Gallery card collage ─── -->
+      <div class="collage">
+        <!-- Card 1: jctenton — Tokyo, Fujifilm X-T5 -->
+        <div class="card card-1">
+          <img
+            class="card-photo"
+            loading="lazy"
+            src="https://cdn.grain.social/U0hI2MkRNxc6wlGd3f7aG68tJhU9noapwtlMaJoDnL0/feed_fullsize/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreihjefs2r37v5gmekztouy7j67447oeslkm4hlv36sedevq5x5lumi"
+            alt="Donki, Tokyo"
+          />
+          <div class="card-foot">
+            <img
+              class="avatar"
+              src="https://cdn.grain.social/1srn3DX0j4BZLoOudYM_wqs6Tq3tNXWaxcZoZ8s54PQ/avatar/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreigh3pkp7p4ri35na7hwifd34bzjggktj66l3ar7jcfeggrusfgp2m"
+              alt=""
+            />
+            <div class="card-text">
+              <div class="card-title">They have everything at Donki</div>
+              <div class="card-handle">@jctenton.bsky.social</div>
+            </div>
+            <div class="card-actions">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                />
+              </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+          </div>
         </div>
-        <div class="card-actions">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
+
+        <!-- Card 2: chadtmiller — Yosemite, Sony A7 III (landscape, hero) -->
+        <div class="card card-2">
+          <img
+            class="card-photo"
+            loading="lazy"
+            src="https://cdn.grain.social/s_ap7n-FeCkYciMMZ2E_ljP1-VXb2Zq2Wmy0HXU_LoU/feed_fullsize/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreifgjwnhk2v3t4tuctbx7hrugdjzvj37q6umgpg3ggpmdruei2otiu"
+            alt="El Capitan, Yosemite"
+          />
+          <div class="card-foot">
+            <img
+              class="avatar"
+              src="https://cdn.grain.social/21KJHYjNu7KeL7XHuxS2W3eszDxHaJycMnTnn3oMYGI/avatar/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreicjj6r6ibejlagmf6zhiaje2esnlxqvesigbgegkdmmin2brlyvye"
+              alt=""
+            />
+            <div class="card-text">
+              <div class="card-title">el cap</div>
+              <div class="card-handle">@chadtmiller.com</div>
+            </div>
+            <div class="card-actions">
+              <svg
+                viewBox="0 0 24 24"
+                fill="#ef4444"
+                stroke="#ef4444"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                />
+              </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: oblachek — Venice, Pixel 8 Pro -->
+        <div class="card card-3">
+          <img
+            class="card-photo"
+            loading="lazy"
+            src="https://cdn.grain.social/KsBHYS4KO-8WqPifFgidzr7cNUrMND96N4_U-vro7N8/feed_fullsize/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreie244itqieccvyp4rq7mrto34kj5ltddoszvmklgfvjnw3ttp5r2q"
+            alt="Roberto, Venice"
+          />
+          <div class="card-foot">
+            <img
+              class="avatar"
+              src="https://cdn.grain.social/PbYXcUEB5VmxODXYt_VttIruF_LovCdaZVB4BCV-tNo/avatar/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreigxcoaaohsqclalqvgk24ie5dicnptcaihju4bn3cepawu46bomue"
+              alt=""
+            />
+            <div class="card-text">
+              <div class="card-title">Ciao, Roberto, come stai?</div>
+              <div class="card-handle">@oblachek.eu</div>
+            </div>
+            <div class="card-actions">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                />
+              </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: olivier — Nancy, iPhone 16 Pro -->
+        <div class="card card-4">
+          <img
+            class="card-photo"
+            loading="lazy"
+            src="https://cdn.grain.social/fYS7EMPKJTsyQRAo9bfGHxD48uBDR4ilX5mcMZoBEhA/feed_fullsize/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigiynzsqttojde2gkonezennxdw43zdzxxma5avxkcdspxscxk2vy"
+            alt="Basilique Saint-Epvre, Nancy"
+          />
+          <div class="card-foot">
+            <img
+              class="avatar"
+              src="https://cdn.grain.social/Sugn4cEvvglqiCoAb4c2vNdmG6N_e0dbJrxo2oo0fUo/avatar/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigr2o27dsolhdhw32aptpznpsafimvld62twg7zd5qdc6rv46v6wq"
+              alt=""
+            />
+            <div class="card-text">
+              <div class="card-title">Basilique Saint-Epvre</div>
+              <div class="card-handle">@o.simardcasanova.net</div>
+            </div>
+            <div class="card-actions">
+              <svg
+                viewBox="0 0 24 24"
+                fill="#ef4444"
+                stroke="#ef4444"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                />
+              </svg>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Card 2: chadtmiller — Yosemite, Sony A7 III (landscape, hero) -->
-    <div class="card card-2">
-      <img class="card-photo" loading="lazy"
-           src="https://cdn.grain.social/s_ap7n-FeCkYciMMZ2E_ljP1-VXb2Zq2Wmy0HXU_LoU/feed_fullsize/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreifgjwnhk2v3t4tuctbx7hrugdjzvj37q6umgpg3ggpmdruei2otiu"
-           alt="El Capitan, Yosemite" />
-      <div class="card-foot">
-        <img class="avatar" src="https://cdn.grain.social/21KJHYjNu7KeL7XHuxS2W3eszDxHaJycMnTnn3oMYGI/avatar/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreicjj6r6ibejlagmf6zhiaje2esnlxqvesigbgegkdmmin2brlyvye" alt="" />
-        <div class="card-text">
-          <div class="card-title">el cap</div>
-          <div class="card-handle">@chadtmiller.com</div>
-        </div>
-        <div class="card-actions">
-          <svg viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </div>
+      <!-- ─── Hero text ─── -->
+      <div class="hero-text">
+        <div class="hero-logo">grain</div>
+        <div class="hero-tagline">Share your photography</div>
       </div>
-    </div>
-
-    <!-- Card 3: oblachek — Venice, Pixel 8 Pro -->
-    <div class="card card-3">
-      <img class="card-photo" loading="lazy"
-           src="https://cdn.grain.social/KsBHYS4KO-8WqPifFgidzr7cNUrMND96N4_U-vro7N8/feed_fullsize/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreie244itqieccvyp4rq7mrto34kj5ltddoszvmklgfvjnw3ttp5r2q"
-           alt="Roberto, Venice" />
-      <div class="card-foot">
-        <img class="avatar" src="https://cdn.grain.social/PbYXcUEB5VmxODXYt_VttIruF_LovCdaZVB4BCV-tNo/avatar/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreigxcoaaohsqclalqvgk24ie5dicnptcaihju4bn3cepawu46bomue" alt="" />
-        <div class="card-text">
-          <div class="card-title">Ciao, Roberto, come stai?</div>
-          <div class="card-handle">@oblachek.eu</div>
-        </div>
-        <div class="card-actions">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 4: olivier — Nancy, iPhone 16 Pro -->
-    <div class="card card-4">
-      <img class="card-photo" loading="lazy"
-           src="https://cdn.grain.social/fYS7EMPKJTsyQRAo9bfGHxD48uBDR4ilX5mcMZoBEhA/feed_fullsize/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigiynzsqttojde2gkonezennxdw43zdzxxma5avxkcdspxscxk2vy"
-           alt="Basilique Saint-Epvre, Nancy" />
-      <div class="card-foot">
-        <img class="avatar" src="https://cdn.grain.social/Sugn4cEvvglqiCoAb4c2vNdmG6N_e0dbJrxo2oo0fUo/avatar/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigr2o27dsolhdhw32aptpznpsafimvld62twg7zd5qdc6rv46v6wq" alt="" />
-        <div class="card-text">
-          <div class="card-title">Basilique Saint-Epvre</div>
-          <div class="card-handle">@o.simardcasanova.net</div>
-        </div>
-        <div class="card-actions">
-          <svg viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ─── Hero text ─── -->
-  <div class="hero-text">
-    <div class="hero-logo">grain</div>
-    <div class="hero-tagline">Share your photography</div>
-  </div>
-
-</section>
-
-</body>
+    </section>
+  </body>
 </html>

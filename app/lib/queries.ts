@@ -66,7 +66,12 @@ export const camerasQuery = (f?: Fetch) =>
     staleTime: 5 * 60_000,
   });
 
-export const locationFeedQuery = (location: string, name?: string, limit = FEED_PAGE_SIZE, f?: Fetch) =>
+export const locationFeedQuery = (
+  location: string,
+  name?: string,
+  limit = FEED_PAGE_SIZE,
+  f?: Fetch,
+) =>
   queryOptions({
     queryKey: ["getFeed", "location", name || location],
     queryFn: () =>

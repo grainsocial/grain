@@ -75,12 +75,18 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
             `SELECT uri FROM "social.grain.graph.block" WHERE did = $1 AND subject = $2 LIMIT 1`,
             [actor, viewer],
           ) as Promise<{ uri: string }[]>,
-          ctx.db.query(
-            `SELECT 1 as v FROM _mutes WHERE did = $1 AND subject = $2 LIMIT 1`,
-            [viewer, actor],
-          ) as Promise<{ v: number }[]>,
+          ctx.db.query(`SELECT 1 as v FROM _mutes WHERE did = $1 AND subject = $2 LIMIT 1`, [
+            viewer,
+            actor,
+          ]) as Promise<{ v: number }[]>,
         ]
-      : [Promise.resolve([]), Promise.resolve([]), Promise.resolve([]), Promise.resolve([]), Promise.resolve([])]),
+      : [
+          Promise.resolve([]),
+          Promise.resolve([]),
+          Promise.resolve([]),
+          Promise.resolve([]),
+          Promise.resolve([]),
+        ]),
   ]);
   const viewerFollowing = (viewerFollowingRows as { uri: string }[])[0]?.uri ?? null;
   const followedBy = (followedByRows as { uri: string }[])[0]?.uri ?? null;
@@ -124,11 +130,15 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     followsCount,
     createdAt: profile.value.createdAt,
     messageMe,
-    ...(viewer && viewer !== actor && (viewerFollowing || followedBy || viewerBlocking || blockedBy || viewerMuted)
+    ...(viewer &&
+    viewer !== actor &&
+    (viewerFollowing || followedBy || viewerBlocking || blockedBy || viewerMuted)
       ? {
           viewer: {
             // Hide follow relationships when either party blocks the other
-            ...(!viewerBlocking && !blockedBy && viewerFollowing ? { following: viewerFollowing } : {}),
+            ...(!viewerBlocking && !blockedBy && viewerFollowing
+              ? { following: viewerFollowing }
+              : {}),
             ...(!viewerBlocking && !blockedBy && followedBy ? { followedBy: followedBy } : {}),
             ...(viewerBlocking ? { blocking: viewerBlocking } : {}),
             ...(blockedBy ? { blockedBy: true } : {}),

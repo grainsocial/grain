@@ -4,9 +4,7 @@ export default defineHook("on-login", async (ctx) => {
   const { did, ensureRepo, lookup, db } = ctx;
 
   // Backfill repo in the background — large repos can block the login redirect
-  ensureRepo(did).catch((err) =>
-    console.error(`[on-login] ensureRepo failed for ${did}:`, err)
-  );
+  ensureRepo(did).catch((err) => console.error(`[on-login] ensureRepo failed for ${did}:`, err));
 
   // Check if user already has a populated grain profile
   const grainProfiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did]);
@@ -14,10 +12,9 @@ export default defineHook("on-login", async (ctx) => {
   if (grainProfile?.value.displayName) return;
 
   // Fetch bsky profile directly from the user's PDS (fast, no backfill needed)
-  const rows = await db.query(
-    "SELECT pds_endpoint FROM _oauth_sessions WHERE did = $1",
-    [did]
-  ) as { pds_endpoint: string }[];
+  const rows = (await db.query("SELECT pds_endpoint FROM _oauth_sessions WHERE did = $1", [
+    did,
+  ])) as { pds_endpoint: string }[];
   const pdsEndpoint = rows[0]?.pds_endpoint;
   if (!pdsEndpoint) return;
 

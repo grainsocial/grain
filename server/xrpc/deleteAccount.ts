@@ -31,10 +31,9 @@ export default defineProcedure("social.grain.unspecced.deleteAccount", async (ct
   //    Best-effort: log and continue on per-record failures so a single
   //    stuck record can't block the rest of the deletion.
   for (const collection of GRAIN_COLLECTIONS) {
-    const rows = (await db.query(
-      `SELECT uri FROM "${collection}" WHERE did = $1`,
-      [did],
-    )) as { uri: string }[];
+    const rows = (await db.query(`SELECT uri FROM "${collection}" WHERE did = $1`, [did])) as {
+      uri: string;
+    }[];
     for (const row of rows) {
       const rkey = row.uri.split("/").pop()!;
       try {

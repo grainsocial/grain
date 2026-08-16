@@ -10,7 +10,9 @@ A new hook trigger type that fires after the firehose indexer writes a record to
 
 ```ts
 // server/hooks/on-commit-favorite.ts
-export default defineHook("on-commit", { collections: ["social.grain.favorite"] },
+export default defineHook(
+  "on-commit",
+  { collections: ["social.grain.favorite"] },
   async ({ action, collection, record, repo, uri, db, lookup, push }) => {
     // action: "create" | "delete"
     // collection: NSID that matched
@@ -20,8 +22,8 @@ export default defineHook("on-commit", { collections: ["social.grain.favorite"] 
     // db: { query, run } — raw SQL access
     // lookup: typed record lookup (same as BaseContext)
     // push: push delivery interface
-  }
-)
+  },
+);
 ```
 
 The firehose indexer already processes commits in `flushBuffer()`. After `insertRecord` / `deleteRecord`, it invokes matching `on-commit` hooks filtered by `collections`. Multiple hooks can match the same commit. Hooks run async and non-blocking (same pattern as `runLabelRules`).
@@ -98,24 +100,26 @@ server/hooks/
 ### Example: Favorites
 
 ```ts
-export default defineHook("on-commit", { collections: ["social.grain.favorite"] },
+export default defineHook(
+  "on-commit",
+  { collections: ["social.grain.favorite"] },
   async ({ action, record, repo, db, lookup, push }) => {
-    if (action !== "create") return
+    if (action !== "create") return;
     const [gallery] = await db.query(
       `SELECT did AS author, uri FROM "social.grain.gallery" WHERE uri = $1`,
-      [record.subject]
-    )
-    if (!gallery || gallery.author === repo) return
-    const profiles = await lookup("app.bsky.actor.profile", "did", [repo])
-    const actor = profiles.get(repo)
+      [record.subject],
+    );
+    if (!gallery || gallery.author === repo) return;
+    const profiles = await lookup("app.bsky.actor.profile", "did", [repo]);
+    const actor = profiles.get(repo);
     await push.send({
       did: gallery.author,
       title: "New favorite",
       body: `${actor?.value.displayName ?? "Someone"} favorited your gallery`,
       data: { type: "gallery-favorite", uri: gallery.uri },
-    })
-  }
-)
+    });
+  },
+);
 ```
 
 Comments and follows follow the same pattern. Mentions and replies parse facets or look up parent comment authors but use the same shape.

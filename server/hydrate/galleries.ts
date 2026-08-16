@@ -178,7 +178,12 @@ export async function hydrateGalleries(
           galleryUris,
         )) as { parent_uri: string; val: string }[];
         for (const row of selfLabelRows) {
-          const label: Label = { src: row.parent_uri.split("/")[2], uri: row.parent_uri, val: row.val, cts: new Date().toISOString() };
+          const label: Label = {
+            src: row.parent_uri.split("/")[2],
+            uri: row.parent_uri,
+            val: row.val,
+            cts: new Date().toISOString(),
+          };
           const existing = externalLabels.get(row.parent_uri) ?? [];
           existing.push(label);
           externalLabels.set(row.parent_uri, existing);
@@ -208,10 +213,18 @@ export async function hydrateGalleries(
     ]);
 
   // Group gallery items by gallery URI
-  const itemsByGallery = new Map<string, Array<{ photoUri: string; position: number; itemUri: string; itemCreatedAt: string }>>();
+  const itemsByGallery = new Map<
+    string,
+    Array<{ photoUri: string; position: number; itemUri: string; itemCreatedAt: string }>
+  >();
   for (const row of galleryItemRows) {
     if (!itemsByGallery.has(row.gallery)) itemsByGallery.set(row.gallery, []);
-    itemsByGallery.get(row.gallery)!.push({ photoUri: row.item, position: row.position ?? 0, itemUri: row.uri, itemCreatedAt: row.created_at });
+    itemsByGallery.get(row.gallery)!.push({
+      photoUri: row.item,
+      position: row.position ?? 0,
+      itemUri: row.uri,
+      itemCreatedAt: row.created_at,
+    });
   }
 
   // Fetch all referenced photos + EXIF data

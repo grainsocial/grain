@@ -20,11 +20,7 @@ export async function blockActor(did: string, queryClient: QueryClient) {
   queryClient.invalidateQueries({ queryKey: ["blocks"] });
 }
 
-export async function unblockActor(
-  did: string,
-  blockUri: string,
-  queryClient: QueryClient,
-) {
+export async function unblockActor(did: string, blockUri: string, queryClient: QueryClient) {
   const rkey = blockUri.split("/").pop()!;
   await callXrpc("dev.hatk.deleteRecord", {
     collection: "social.grain.graph.block",

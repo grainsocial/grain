@@ -68,7 +68,12 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
       storyUris,
     )) as { parent_uri: string; val: string }[];
     for (const row of selfLabelRows) {
-      const label: Label = { src: row.parent_uri.split("/")[2], uri: row.parent_uri, val: row.val, cts: new Date().toISOString() };
+      const label: Label = {
+        src: row.parent_uri.split("/")[2],
+        uri: row.parent_uri,
+        val: row.val,
+        cts: new Date().toISOString(),
+      };
       const existing = labelsByUri.get(row.parent_uri) ?? [];
       existing.push(label);
       labelsByUri.set(row.parent_uri, existing);

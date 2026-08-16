@@ -126,7 +126,13 @@ export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
                         type: "div",
                         props: {
                           children: "grain",
-                          style: { fontSize: 16, fontFamily: "Syne", fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "-0.02em" },
+                          style: {
+                            fontSize: 16,
+                            fontFamily: "Syne",
+                            fontWeight: 800,
+                            color: "rgba(255,255,255,0.7)",
+                            letterSpacing: "-0.02em",
+                          },
                         },
                       },
                     ],

@@ -7,9 +7,7 @@ export const load: PageLoad = async ({ params, parent, fetch }) => {
   const rkey = params.rkey;
   const galleryUri = `at://${did}/social.grain.gallery/${rkey}`;
   const { queryClient, viewer } = await parent();
-  const prefetch = queryClient.prefetchQuery(
-    galleryFavoritesQuery(galleryUri, viewer?.did, fetch),
-  );
+  const prefetch = queryClient.prefetchQuery(galleryFavoritesQuery(galleryUri, viewer?.did, fetch));
   if (!browser) await prefetch;
   return { did, rkey, galleryUri };
 };

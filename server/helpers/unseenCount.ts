@@ -23,7 +23,8 @@ export async function getUnseenCount(
   let lastSeen: string | null = null;
   if (prefRows[0]) {
     try {
-      lastSeen = typeof prefRows[0].value === "string" ? JSON.parse(prefRows[0].value) : prefRows[0].value;
+      lastSeen =
+        typeof prefRows[0].value === "string" ? JSON.parse(prefRows[0].value) : prefRows[0].value;
     } catch {}
   }
 

@@ -31,7 +31,7 @@
     staleTime: Infinity,
   }))
 
-  const prefs = $derived({ ...defaultPrefs, ...(prefsQuery.data ?? {}) })
+  const prefs = $derived({ ...defaultPrefs, ...prefsQuery.data })
 
   async function save(updated: Record<string, NotifPref>) {
     const previous = queryClient.getQueryData(['notificationPrefs', viewerDid])

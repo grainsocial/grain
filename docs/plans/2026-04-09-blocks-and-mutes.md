@@ -13,6 +13,7 @@
 ### Task 1: Block Lexicon
 
 **Files:**
+
 - Create: `lexicons/social/grain/graph/block.json`
 
 **Step 1: Create the block record lexicon**
@@ -65,6 +66,7 @@ git commit -m "feat: add social.grain.graph.block lexicon"
 Mutes are server-side state, not records. We need a `_mutes` table and two XRPC procedures.
 
 **Files:**
+
 - Create: `server/xrpc/muteActor.ts`
 - Create: `server/xrpc/unmuteActor.ts`
 - Create: `lexicons/social/grain/graph/muteActor.json`
@@ -160,20 +162,18 @@ export default defineQuery("social.grain.graph.unmuteActor", async (ctx) => {
   const { ok, params, db, viewer } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
-  await db.query(
-    `DELETE FROM _mutes WHERE did = $1 AND subject = $2`,
-    [viewer.did, params.actor],
-  );
+  await db.query(`DELETE FROM _mutes WHERE did = $1 AND subject = $2`, [viewer.did, params.actor]);
 
   return ok({});
 });
 ```
 
-**Step 5: Create the _mutes table**
+**Step 5: Create the \_mutes table**
 
 hatk auto-creates tables for records, but since mutes aren't records we need a migration. Check if hatk has a migration mechanism, or create the table via a startup hook. If neither exists, we can create it via a raw SQL initialization.
 
 The table schema:
+
 ```sql
 CREATE TABLE IF NOT EXISTS _mutes (
   did TEXT NOT NULL,
@@ -202,6 +202,7 @@ git commit -m "feat: add mute/unmute actor XRPC procedures"
 ### Task 3: Extend Viewer State with Block/Mute Info
 
 **Files:**
+
 - Modify: `lexicons/social/grain/actor/defs.json` — add `blocking`, `blockedBy`, `muted` to `viewerState`
 - Modify: `server/xrpc/getActorProfile.ts` — query block/mute relationships
 
@@ -282,6 +283,7 @@ git commit -m "feat: return block/mute status in profile viewer state"
 All feeds should exclude galleries from users the viewer has blocked or muted, and from users who have blocked the viewer.
 
 **Files:**
+
 - Create: `server/filters/blockMute.ts` — shared SQL filter helper
 - Modify: `server/feeds/following.ts`
 - Modify: `server/feeds/recent.ts`
@@ -316,6 +318,7 @@ export function blockMuteFilter(didColumn: string, viewerParam: string): string 
 ```
 
 Three subqueries:
+
 1. Users the viewer has blocked
 2. Users who have blocked the viewer (bidirectional)
 3. Users the viewer has muted
@@ -384,6 +387,7 @@ git commit -m "feat: filter blocked and muted users from all feeds"
 ### Task 5: Filter Notifications by Blocks and Mutes
 
 **Files:**
+
 - Modify: `server/xrpc/getNotifications.ts`
 
 **Step 1: Add block/mute filtering to notification queries**
@@ -410,6 +414,7 @@ git commit -m "feat: filter blocked and muted users from notifications"
 ### Task 6: Block/Mute UI — Profile Menu
 
 **Files:**
+
 - Modify: `app/routes/profile/[did]/+page.svelte` — add OverflowMenu with block/mute options
 - Modify: `app/lib/queries.ts` — add block/mute mutation helpers if needed
 
@@ -434,22 +439,22 @@ Block creates a record (like follow):
 
 ```typescript
 async function handleBlock() {
-  if (!requireAuth()) return
+  if (!requireAuth()) return;
   if (p.viewer?.blocking) {
     // Unblock — delete the record
-    const rkey = p.viewer.blocking.split('/').pop()!
-    await callXrpc('dev.hatk.deleteRecord', {
-      collection: 'social.grain.graph.block',
+    const rkey = p.viewer.blocking.split("/").pop()!;
+    await callXrpc("dev.hatk.deleteRecord", {
+      collection: "social.grain.graph.block",
       rkey,
-    })
+    });
   } else {
     // Block — create the record
-    await callXrpc('dev.hatk.createRecord', {
-      collection: 'social.grain.graph.block',
+    await callXrpc("dev.hatk.createRecord", {
+      collection: "social.grain.graph.block",
       record: { subject: did, createdAt: new Date().toISOString() },
-    })
+    });
   }
-  queryClient.invalidateQueries({ queryKey: ['actorProfile', did] })
+  queryClient.invalidateQueries({ queryKey: ["actorProfile", did] });
 }
 ```
 
@@ -459,13 +464,13 @@ Mute calls the procedure:
 
 ```typescript
 async function handleMute() {
-  if (!requireAuth()) return
+  if (!requireAuth()) return;
   if (p.viewer?.muted) {
-    await callXrpc('social.grain.graph.unmuteActor', { actor: did })
+    await callXrpc("social.grain.graph.unmuteActor", { actor: did });
   } else {
-    await callXrpc('social.grain.graph.muteActor', { actor: did })
+    await callXrpc("social.grain.graph.muteActor", { actor: did });
   }
-  queryClient.invalidateQueries({ queryKey: ['actorProfile', did] })
+  queryClient.invalidateQueries({ queryKey: ["actorProfile", did] });
 }
 ```
 
@@ -500,6 +505,7 @@ git commit -m "feat: add block and mute UI to profile page"
 ### Task 7: Block/Mute Settings Pages
 
 **Files:**
+
 - Create: `app/routes/settings/blocked/+page.svelte` — list of blocked users
 - Create: `app/routes/settings/blocked/+page.ts` — loader
 - Create: `app/routes/settings/muted/+page.svelte` — list of muted users
@@ -583,6 +589,7 @@ git commit -m "feat: add blocked/muted user settings pages"
 ### Task 8: Prevent Interactions When Blocked
 
 **Files:**
+
 - Modify: `server/xrpc/getGalleryThread.ts` (or equivalent gallery detail handler) — check blocks before returning
 - Modify: gallery comment submission handler — reject comments from blocked users
 - Modify: favorite handler — reject favorites from blocked users
@@ -590,6 +597,7 @@ git commit -m "feat: add blocked/muted user settings pages"
 **Step 1: Add block checks to interaction endpoints**
 
 When user A has blocked user B:
+
 - B cannot favorite A's galleries
 - B cannot comment on A's galleries
 - B cannot follow A (and vice versa)
@@ -622,11 +630,13 @@ git commit -m "feat: prevent interactions between blocked users"
 ### Task 9: Seed Data and Manual Testing
 
 **Files:**
+
 - Modify: `seeds/seed.ts` — add block and mute relationships for testing
 
 **Step 1: Add test data**
 
 Add blocks and mutes to the seed:
+
 - Alice blocks Eve (or a new test user)
 - Bob mutes Carol
 - This lets us verify feed filtering and profile states

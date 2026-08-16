@@ -50,9 +50,9 @@ function isValidFeed(f: unknown): f is PinnedFeed {
 export function loadPreferences(prefs: Record<string, unknown> | null): void {
   if (!prefs) return;
   if (Array.isArray(prefs.pinnedFeeds)) {
-    const valid = prefs.pinnedFeeds.filter(isValidFeed).map((f) =>
-      f.id === "recent" && f.path === "/" ? { ...f, path: "/feeds/recent" } : f
-    );
+    const valid = prefs.pinnedFeeds
+      .filter(isValidFeed)
+      .map((f) => (f.id === "recent" && f.path === "/" ? { ...f, path: "/feeds/recent" } : f));
     // Dedupe by id. pinFeed refuses to add a duplicate, but nothing validates
     // the stored blob — an older client, the native app, or a racing write
     // could persist one. Sidebar, MobileDrawer and /feeds all key their

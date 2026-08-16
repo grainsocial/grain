@@ -1,87 +1,105 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>grain — App Store screen</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=block" rel="stylesheet" />
-<style>
-  :root {
-    --bg-root: #080b12;
-    --grain: #85a1ff;
-    --text: #f8fafc;
-    --text-secondary: #a3b3cc;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body {
-    width: 1242px;
-    height: 2688px;
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-root);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-    position: relative;
-    background-image:
-      radial-gradient(ellipse 1100px 800px at 90% -10%, rgba(133, 161, 255, 0.18), transparent 60%),
-      radial-gradient(ellipse 900px 700px at 5% 110%, rgba(107, 139, 239, 0.10), transparent 60%);
-  }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>grain — App Store screen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-root: #080b12;
+        --grain: #85a1ff;
+        --text: #f8fafc;
+        --text-secondary: #a3b3cc;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        width: 1242px;
+        height: 2688px;
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg-root);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+        position: relative;
+        background-image:
+          radial-gradient(
+            ellipse 1100px 800px at 90% -10%,
+            rgba(133, 161, 255, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(ellipse 900px 700px at 5% 110%, rgba(107, 139, 239, 0.1), transparent 60%);
+      }
 
-  .stage {
-    width: 100%;
-    height: 100%;
-    padding: 180px 90px 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    position: relative;
-  }
+      .stage {
+        width: 100%;
+        height: 100%;
+        padding: 180px 90px 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        position: relative;
+      }
 
-  .title {
-    font-size: 100px;
-    font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.05;
-    color: var(--text);
-    margin-bottom: 110px;
-    max-width: 1040px;
-  }
+      .title {
+        font-size: 100px;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        color: var(--text);
+        margin-bottom: 110px;
+        max-width: 1040px;
+      }
 
-  .device-wrap {
-    flex: 1;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    overflow: hidden;
-  }
+      .device-wrap {
+        flex: 1;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        overflow: hidden;
+      }
 
-  .device {
-    width: 940px;
-    height: auto;
-    border-radius: 68px;
-    box-shadow:
-      0 60px 140px -20px rgba(0, 0, 0, 0.7),
-      0 30px 60px -20px rgba(133, 161, 255, 0.20),
-      0 0 0 6px rgba(255, 255, 255, 0.05),
-      0 0 0 8px rgba(0, 0, 0, 0.6);
-    background: #000;
-    object-fit: cover;
-    object-position: top;
-    margin-bottom: -120px;
-  }
-</style>
-</head>
-<body>
-  <section class="stage">
-    <h1 class="title" id="title">Title goes here</h1>
-    <div class="device-wrap">
-      <img class="device" id="device" alt="" />
-    </div>
-  </section>
-</body>
+      .device {
+        width: 940px;
+        height: auto;
+        border-radius: 68px;
+        box-shadow:
+          0 60px 140px -20px rgba(0, 0, 0, 0.7),
+          0 30px 60px -20px rgba(133, 161, 255, 0.2),
+          0 0 0 6px rgba(255, 255, 255, 0.05),
+          0 0 0 8px rgba(0, 0, 0, 0.6);
+        background: #000;
+        object-fit: cover;
+        object-position: top;
+        margin-bottom: -120px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="stage">
+      <h1 class="title" id="title">Title goes here</h1>
+      <div class="device-wrap">
+        <img class="device" id="device" alt="" />
+      </div>
+    </section>
+  </body>
 </html>

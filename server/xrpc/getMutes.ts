@@ -19,11 +19,7 @@ export default defineQuery("social.grain.unspecced.getMutes", async (ctx) => {
   const page = hasMore ? rows.slice(0, Number(limit)) : rows;
   const dids = page.map((r) => r.subject);
 
-  const profiles = await lookup<GrainActorProfile>(
-    "social.grain.actor.profile",
-    "did",
-    dids,
-  );
+  const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids);
 
   const handleRows =
     dids.length > 0

@@ -1,50 +1,62 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<title>grain logo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=block" rel="stylesheet" />
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    background: transparent;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  .logo {
-    width: 512px;
-    height: 512px;
-    border-radius: 112px;
-    background: url("login-bg.jpg") center/cover no-repeat, #1a2238;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .logo::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(180deg, rgba(8,11,18,0) 0%, rgba(8,11,18,0.35) 100%);
-    pointer-events: none;
-  }
-  .wordmark {
-    font-family: "Syne", sans-serif;
-    font-weight: 800;
-    font-size: 116px;
-    letter-spacing: -0.035em;
-    line-height: 1;
-    color: #ffffff;
-    position: relative;
-    z-index: 1;
-    text-shadow: 0 2px 12px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.35);
-  }
-</style>
-</head>
-<body>
-<div class="logo"><span class="wordmark">grain</span></div>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>grain logo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        background: transparent;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .logo {
+        width: 512px;
+        height: 512px;
+        border-radius: 112px;
+        background:
+          url("login-bg.jpg") center/cover no-repeat,
+          #1a2238;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .logo::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(8, 11, 18, 0) 0%, rgba(8, 11, 18, 0.35) 100%);
+        pointer-events: none;
+      }
+      .wordmark {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 116px;
+        letter-spacing: -0.035em;
+        line-height: 1;
+        color: #ffffff;
+        position: relative;
+        z-index: 1;
+        text-shadow:
+          0 2px 12px rgba(0, 0, 0, 0.45),
+          0 1px 2px rgba(0, 0, 0, 0.35);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="logo"><span class="wordmark">grain</span></div>
+  </body>
 </html>

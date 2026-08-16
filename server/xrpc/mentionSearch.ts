@@ -45,7 +45,14 @@ async function searchGalleries(ctx: any, query: string, did: string, limit: numb
   const { db, blobUrl, ok } = ctx;
 
   // If query is empty, show all galleries by this user
-  let galleryRows: { uri: string; cid: string; did: string; title: string; description: string; created_at: string }[];
+  let galleryRows: {
+    uri: string;
+    cid: string;
+    did: string;
+    title: string;
+    description: string;
+    created_at: string;
+  }[];
 
   if (!query.trim()) {
     galleryRows = (await db.query(
@@ -94,9 +101,7 @@ async function searchGalleries(ctx: any, query: string, did: string, limit: numb
 
   const photoUris = [...new Set(firstPhotoUri.values())];
   const photos =
-    photoUris.length > 0
-      ? await ctx.getRecords("social.grain.photo", photoUris)
-      : new Map();
+    photoUris.length > 0 ? await ctx.getRecords("social.grain.photo", photoUris) : new Map();
 
   const results = galleryRows.map((gallery) => {
     const photoUri = firstPhotoUri.get(gallery.uri);

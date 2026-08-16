@@ -30,15 +30,15 @@ Return galleries ordered by favorite count descending, filtered to last 30 days.
 
 ## Default Parameters
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| half_life | 6 | Hours; demotes older posts |
-| smoothing_factor | 0.5 | Boosts multi-path posts |
-| popularity_penalty | 0.3 | Demotes generally popular posts |
-| divisor_power | 1.0 | Divides by co-liker's total likes |
-| corater_decay | 0 | Decay for same co-liker (0=none) |
-| time_shift | 24 | Hours; co-like contribution window |
-| seed_limit | 500 | Max seed favorites |
+| Parameter          | Default | Description                        |
+| ------------------ | ------- | ---------------------------------- |
+| half_life          | 6       | Hours; demotes older posts         |
+| smoothing_factor   | 0.5     | Boosts multi-path posts            |
+| popularity_penalty | 0.3     | Demotes generally popular posts    |
+| divisor_power      | 1.0     | Divides by co-liker's total likes  |
+| corater_decay      | 0       | Decay for same co-liker (0=none)   |
+| time_shift         | 24      | Hours; co-like contribution window |
+| seed_limit         | 500     | Max seed favorites                 |
 
 ## Files
 

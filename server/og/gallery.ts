@@ -230,7 +230,13 @@ export default defineOG("/og/profile/:did/gallery/:rkey", async (ctx) => {
                         type: "div",
                         props: {
                           children: "grain",
-                          style: { fontSize: 32, fontFamily: "Syne", fontWeight: 800, color: "#171717", letterSpacing: "-0.02em" },
+                          style: {
+                            fontSize: 32,
+                            fontFamily: "Syne",
+                            fontWeight: 800,
+                            color: "#171717",
+                            letterSpacing: "-0.02em",
+                          },
                         },
                       },
                     ],
@@ -249,4 +255,3 @@ export default defineOG("/og/profile/:did/gallery/:rkey", async (ctx) => {
     },
   };
 });
-

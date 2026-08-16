@@ -1,264 +1,372 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>grain — banner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Plus+Jakarta+Sans:wght@500;600;700&display=block" rel="stylesheet" />
-<style>
-  :root {
-    --bg-root: #080b12;
-    --bg-surface: #0f1419;
-    --grain: #85a1ff;
-    --text: #e2e8f0;
-    --text-muted: #64748b;
-  }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>grain — banner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@800&family=Plus+Jakarta+Sans:wght@500;600;700&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-root: #080b12;
+        --bg-surface: #0f1419;
+        --grain: #85a1ff;
+        --text: #e2e8f0;
+        --text-muted: #64748b;
+      }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+      }
 
-  body {
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-root);
-    color: var(--text);
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-    width: 1500px;
-    height: 500px;
-    position: relative;
-    background-image:
-      radial-gradient(ellipse 900px 500px at 92% -10%, rgba(133, 161, 255, 0.14), transparent 60%),
-      radial-gradient(ellipse 700px 400px at 4% 110%, rgba(107, 139, 239, 0.08), transparent 60%);
-  }
+      body {
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg-root);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+        width: 1500px;
+        height: 500px;
+        position: relative;
+        background-image:
+          radial-gradient(
+            ellipse 900px 500px at 92% -10%,
+            rgba(133, 161, 255, 0.14),
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 700px 400px at 4% 110%,
+            rgba(107, 139, 239, 0.08),
+            transparent 60%
+          );
+      }
 
-  .stage {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    padding: 36px 60px;
-  }
+      .stage {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        padding: 36px 60px;
+      }
 
-  /* ─── Cards ───────────────────────────────── */
+      /* ─── Cards ───────────────────────────────── */
 
-  .card {
-    position: absolute;
-    background: #ffffff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow:
-      0 28px 56px -14px rgba(0, 0, 0, 0.7),
-      0 6px 18px -6px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.06);
-    color: #171717;
-    transform: rotate(var(--rot, 0deg));
-  }
-  .card-photo {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    background: #161d27;
-  }
-  .card-foot {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 12px;
-    background: #ffffff;
-  }
-  .card-foot .avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #e5e7eb;
-    flex-shrink: 0;
-  }
-  .card-text {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-  .card-title {
-    font-size: 11px;
-    font-weight: 700;
-    color: #171717;
-    letter-spacing: -0.005em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-handle {
-    font-size: 9.5px;
-    color: #525252;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-shrink: 0;
-    color: #525252;
-  }
-  .card-actions svg {
-    width: 14px;
-    height: 14px;
-    stroke-width: 2;
-  }
+      .card {
+        position: absolute;
+        background: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow:
+          0 28px 56px -14px rgba(0, 0, 0, 0.7),
+          0 6px 18px -6px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.06);
+        color: #171717;
+        transform: rotate(var(--rot, 0deg));
+      }
+      .card-photo {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #161d27;
+      }
+      .card-foot {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        background: #ffffff;
+      }
+      .card-foot .avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #e5e7eb;
+        flex-shrink: 0;
+      }
+      .card-text {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
+      .card-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #171717;
+        letter-spacing: -0.005em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-handle {
+        font-size: 9.5px;
+        color: #525252;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        flex-shrink: 0;
+        color: #525252;
+      }
+      .card-actions svg {
+        width: 14px;
+        height: 14px;
+        stroke-width: 2;
+      }
 
-  /* Five cards across, varied Y + rotation, all footers visible */
-  .card-1 {
-    top: 50px;
-    left: 2%;
-    width: 200px;
-    --rot: -7deg;
-    z-index: 1;
-  }
-  .card-1 .card-photo { aspect-ratio: 2/3; }
+      /* Five cards across, varied Y + rotation, all footers visible */
+      .card-1 {
+        top: 50px;
+        left: 2%;
+        width: 200px;
+        --rot: -7deg;
+        z-index: 1;
+      }
+      .card-1 .card-photo {
+        aspect-ratio: 2/3;
+      }
 
-  .card-2 {
-    top: 12px;
-    left: 19%;
-    width: 234px;
-    --rot: 3deg;
-    z-index: 2;
-  }
-  .card-2 .card-photo { aspect-ratio: 4/3; }
+      .card-2 {
+        top: 12px;
+        left: 19%;
+        width: 234px;
+        --rot: 3deg;
+        z-index: 2;
+      }
+      .card-2 .card-photo {
+        aspect-ratio: 4/3;
+      }
 
-  .card-3 {
-    top: 46px;
-    left: 38%;
-    width: 208px;
-    --rot: -3deg;
-    z-index: 3;
-  }
-  .card-3 .card-photo { aspect-ratio: 3/4; }
+      .card-3 {
+        top: 46px;
+        left: 38%;
+        width: 208px;
+        --rot: -3deg;
+        z-index: 3;
+      }
+      .card-3 .card-photo {
+        aspect-ratio: 3/4;
+      }
 
-  .card-4 {
-    top: 22px;
-    left: 56%;
-    width: 200px;
-    --rot: 5deg;
-    z-index: 4;
-  }
-  .card-4 .card-photo { aspect-ratio: 3/4; }
+      .card-4 {
+        top: 22px;
+        left: 56%;
+        width: 200px;
+        --rot: 5deg;
+        z-index: 4;
+      }
+      .card-4 .card-photo {
+        aspect-ratio: 3/4;
+      }
 
-  .card-5 {
-    top: 60px;
-    right: 2%;
-    width: 230px;
-    --rot: -4deg;
-    z-index: 5;
-  }
-  .card-5 .card-photo { aspect-ratio: 4/3; }
-</style>
-</head>
-<body>
-
-<section class="stage">
-
-  <!-- Card 1: jctenton — Tokyo, Fujifilm X-T5 -->
-  <div class="card card-1">
-    <img class="card-photo" loading="lazy"
-         src="https://cdn.grain.social/U0hI2MkRNxc6wlGd3f7aG68tJhU9noapwtlMaJoDnL0/feed_fullsize/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreihjefs2r37v5gmekztouy7j67447oeslkm4hlv36sedevq5x5lumi"
-         alt="Donki, Tokyo" />
-    <div class="card-foot">
-      <img class="avatar" src="https://cdn.grain.social/1srn3DX0j4BZLoOudYM_wqs6Tq3tNXWaxcZoZ8s54PQ/avatar/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreigh3pkp7p4ri35na7hwifd34bzjggktj66l3ar7jcfeggrusfgp2m" alt="" />
-      <div class="card-text">
-        <div class="card-title">They have everything at Donki</div>
-        <div class="card-handle">@jctenton.bsky.social</div>
+      .card-5 {
+        top: 60px;
+        right: 2%;
+        width: 230px;
+        --rot: -4deg;
+        z-index: 5;
+      }
+      .card-5 .card-photo {
+        aspect-ratio: 4/3;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="stage">
+      <!-- Card 1: jctenton — Tokyo, Fujifilm X-T5 -->
+      <div class="card card-1">
+        <img
+          class="card-photo"
+          loading="lazy"
+          src="https://cdn.grain.social/U0hI2MkRNxc6wlGd3f7aG68tJhU9noapwtlMaJoDnL0/feed_fullsize/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreihjefs2r37v5gmekztouy7j67447oeslkm4hlv36sedevq5x5lumi"
+          alt="Donki, Tokyo"
+        />
+        <div class="card-foot">
+          <img
+            class="avatar"
+            src="https://cdn.grain.social/1srn3DX0j4BZLoOudYM_wqs6Tq3tNXWaxcZoZ8s54PQ/avatar/plain/did:plc:jbirfe7p6rieftcr3wuxtlpc/bafkreigh3pkp7p4ri35na7hwifd34bzjggktj66l3ar7jcfeggrusfgp2m"
+            alt=""
+          />
+          <div class="card-text">
+            <div class="card-title">They have everything at Donki</div>
+            <div class="card-handle">@jctenton.bsky.social</div>
+          </div>
+          <div class="card-actions">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="card-actions">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
 
-  <!-- Card 2: chadtmiller — Yosemite, Sony A7 III (heart filled) -->
-  <div class="card card-2">
-    <img class="card-photo" loading="lazy"
-         src="https://cdn.grain.social/s_ap7n-FeCkYciMMZ2E_ljP1-VXb2Zq2Wmy0HXU_LoU/feed_fullsize/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreifgjwnhk2v3t4tuctbx7hrugdjzvj37q6umgpg3ggpmdruei2otiu"
-         alt="El Capitan, Yosemite" />
-    <div class="card-foot">
-      <img class="avatar" src="https://cdn.grain.social/21KJHYjNu7KeL7XHuxS2W3eszDxHaJycMnTnn3oMYGI/avatar/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreicjj6r6ibejlagmf6zhiaje2esnlxqvesigbgegkdmmin2brlyvye" alt="" />
-      <div class="card-text">
-        <div class="card-title">el cap</div>
-        <div class="card-handle">@chadtmiller.com</div>
+      <!-- Card 2: chadtmiller — Yosemite, Sony A7 III (heart filled) -->
+      <div class="card card-2">
+        <img
+          class="card-photo"
+          loading="lazy"
+          src="https://cdn.grain.social/s_ap7n-FeCkYciMMZ2E_ljP1-VXb2Zq2Wmy0HXU_LoU/feed_fullsize/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreifgjwnhk2v3t4tuctbx7hrugdjzvj37q6umgpg3ggpmdruei2otiu"
+          alt="El Capitan, Yosemite"
+        />
+        <div class="card-foot">
+          <img
+            class="avatar"
+            src="https://cdn.grain.social/21KJHYjNu7KeL7XHuxS2W3eszDxHaJycMnTnn3oMYGI/avatar/plain/did:plc:bcgltzqazw5tb6k2g3ttenbj/bafkreicjj6r6ibejlagmf6zhiaje2esnlxqvesigbgegkdmmin2brlyvye"
+            alt=""
+          />
+          <div class="card-text">
+            <div class="card-title">el cap</div>
+            <div class="card-handle">@chadtmiller.com</div>
+          </div>
+          <div class="card-actions">
+            <svg
+              viewBox="0 0 24 24"
+              fill="#ef4444"
+              stroke="#ef4444"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="card-actions">
-        <svg viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
 
-  <!-- Card 3: oblachek — Venice, Pixel 8 Pro -->
-  <div class="card card-3">
-    <img class="card-photo" loading="lazy"
-         src="https://cdn.grain.social/KsBHYS4KO-8WqPifFgidzr7cNUrMND96N4_U-vro7N8/feed_fullsize/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreie244itqieccvyp4rq7mrto34kj5ltddoszvmklgfvjnw3ttp5r2q"
-         alt="Roberto, Venice" />
-    <div class="card-foot">
-      <img class="avatar" src="https://cdn.grain.social/PbYXcUEB5VmxODXYt_VttIruF_LovCdaZVB4BCV-tNo/avatar/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreigxcoaaohsqclalqvgk24ie5dicnptcaihju4bn3cepawu46bomue" alt="" />
-      <div class="card-text">
-        <div class="card-title">Ciao, Roberto, come stai?</div>
-        <div class="card-handle">@oblachek.eu</div>
+      <!-- Card 3: oblachek — Venice, Pixel 8 Pro -->
+      <div class="card card-3">
+        <img
+          class="card-photo"
+          loading="lazy"
+          src="https://cdn.grain.social/KsBHYS4KO-8WqPifFgidzr7cNUrMND96N4_U-vro7N8/feed_fullsize/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreie244itqieccvyp4rq7mrto34kj5ltddoszvmklgfvjnw3ttp5r2q"
+          alt="Roberto, Venice"
+        />
+        <div class="card-foot">
+          <img
+            class="avatar"
+            src="https://cdn.grain.social/PbYXcUEB5VmxODXYt_VttIruF_LovCdaZVB4BCV-tNo/avatar/plain/did:plc:xfd6rbdcmbesdjrumyxdlipp/bafkreigxcoaaohsqclalqvgk24ie5dicnptcaihju4bn3cepawu46bomue"
+            alt=""
+          />
+          <div class="card-text">
+            <div class="card-title">Ciao, Roberto, come stai?</div>
+            <div class="card-handle">@oblachek.eu</div>
+          </div>
+          <div class="card-actions">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="card-actions">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
 
-  <!-- Card 4: olivier — Nancy, iPhone 16 Pro (heart filled) -->
-  <div class="card card-4">
-    <img class="card-photo" loading="lazy"
-         src="https://cdn.grain.social/fYS7EMPKJTsyQRAo9bfGHxD48uBDR4ilX5mcMZoBEhA/feed_fullsize/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigiynzsqttojde2gkonezennxdw43zdzxxma5avxkcdspxscxk2vy"
-         alt="Basilique Saint-Epvre, Nancy" />
-    <div class="card-foot">
-      <img class="avatar" src="https://cdn.grain.social/Sugn4cEvvglqiCoAb4c2vNdmG6N_e0dbJrxo2oo0fUo/avatar/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigr2o27dsolhdhw32aptpznpsafimvld62twg7zd5qdc6rv46v6wq" alt="" />
-      <div class="card-text">
-        <div class="card-title">Basilique Saint-Epvre</div>
-        <div class="card-handle">@o.simardcasanova.net</div>
+      <!-- Card 4: olivier — Nancy, iPhone 16 Pro (heart filled) -->
+      <div class="card card-4">
+        <img
+          class="card-photo"
+          loading="lazy"
+          src="https://cdn.grain.social/fYS7EMPKJTsyQRAo9bfGHxD48uBDR4ilX5mcMZoBEhA/feed_fullsize/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigiynzsqttojde2gkonezennxdw43zdzxxma5avxkcdspxscxk2vy"
+          alt="Basilique Saint-Epvre, Nancy"
+        />
+        <div class="card-foot">
+          <img
+            class="avatar"
+            src="https://cdn.grain.social/Sugn4cEvvglqiCoAb4c2vNdmG6N_e0dbJrxo2oo0fUo/avatar/plain/did:plc:esmiuxk53vmsllayghrq676w/bafkreigr2o27dsolhdhw32aptpznpsafimvld62twg7zd5qdc6rv46v6wq"
+            alt=""
+          />
+          <div class="card-text">
+            <div class="card-title">Basilique Saint-Epvre</div>
+            <div class="card-handle">@o.simardcasanova.net</div>
+          </div>
+          <div class="card-actions">
+            <svg
+              viewBox="0 0 24 24"
+              fill="#ef4444"
+              stroke="#ef4444"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="card-actions">
-        <svg viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
 
-  <!-- Card 5: timtrautmann — Portland, Fujifilm X-T3 -->
-  <div class="card card-5">
-    <img class="card-photo" loading="lazy"
-         src="https://cdn.grain.social/n5KxnOqdc-P5oGxiVJ7fEi4d0AjjromUNdwW86w9Fyg/feed_fullsize/plain/did:plc:z5efhtji4vfiutzqquvx3w7o/bafkreidgoafnmrg2zw6s4jx22gkpl3p4b6vnvso4a7pfsxd2dvudxjnhye"
-         alt="Portland Chinatown" />
-    <div class="card-foot">
-      <img class="avatar" src="https://cdn.grain.social/ISLKG28i9qQKsbUYtWD1c6YrnQ3MTX-faiuNDRfa16I/avatar/plain/did:plc:z5efhtji4vfiutzqquvx3w7o/bafkreigxwsnjzv5najzidvliawlg5ip6jussrbcnlvgzbq7ihfsw7qh4gi" alt="" />
-      <div class="card-text">
-        <div class="card-title">Portland Chinatown Crosswalk</div>
-        <div class="card-handle">@timtrautmann.com</div>
+      <!-- Card 5: timtrautmann — Portland, Fujifilm X-T3 -->
+      <div class="card card-5">
+        <img
+          class="card-photo"
+          loading="lazy"
+          src="https://cdn.grain.social/n5KxnOqdc-P5oGxiVJ7fEi4d0AjjromUNdwW86w9Fyg/feed_fullsize/plain/did:plc:z5efhtji4vfiutzqquvx3w7o/bafkreidgoafnmrg2zw6s4jx22gkpl3p4b6vnvso4a7pfsxd2dvudxjnhye"
+          alt="Portland Chinatown"
+        />
+        <div class="card-foot">
+          <img
+            class="avatar"
+            src="https://cdn.grain.social/ISLKG28i9qQKsbUYtWD1c6YrnQ3MTX-faiuNDRfa16I/avatar/plain/did:plc:z5efhtji4vfiutzqquvx3w7o/bafkreigxwsnjzv5najzidvliawlg5ip6jussrbcnlvgzbq7ihfsw7qh4gi"
+            alt=""
+          />
+          <div class="card-text">
+            <div class="card-title">Portland Chinatown Crosswalk</div>
+            <div class="card-handle">@timtrautmann.com</div>
+          </div>
+          <div class="card-actions">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+          </div>
+        </div>
       </div>
-      <div class="card-actions">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-
-</section>
-
-</body>
+    </section>
+  </body>
 </html>

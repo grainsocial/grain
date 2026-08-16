@@ -6,7 +6,7 @@ import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineOG("/og/profile/:did", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
-  const did = await resolveHandle(db, params.did) ?? params.did;
+  const did = (await resolveHandle(db, params.did)) ?? params.did;
 
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did]);
   const author = profiles.get(did);
@@ -193,7 +193,13 @@ export default defineOG("/og/profile/:did", async (ctx) => {
                         type: "div",
                         props: {
                           children: "grain",
-                          style: { fontSize: 32, fontFamily: "Syne", fontWeight: 800, color: "#171717", letterSpacing: "-0.02em" },
+                          style: {
+                            fontSize: 32,
+                            fontFamily: "Syne",
+                            fontWeight: 800,
+                            color: "#171717",
+                            letterSpacing: "-0.02em",
+                          },
                         },
                       },
                     ],
