@@ -1,7 +1,17 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { callXrpc } from '$hatk/client'
+  import {
+    applyWrites,
+    atUri,
+    createWrite,
+    deleteWrite,
+    nextTid,
+    rkeyOf,
+    updateWrite,
+    uploadPhotoBlobs,
+    type Write,
+  } from '$lib/utils/records'
   import { galleryQuery } from '$lib/queries'
   import type { GalleryView, PhotoView } from '$hatk/client'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
@@ -294,20 +304,32 @@
 
     try {
       const now = new Date().toISOString()
-      const galleryRkey = gallery.uri.split('/').pop()!
+      const galleryRkey = rkeyOf(gallery.uri)
       const did = gallery.creator?.did!
       const originalViews = ((gallery.items ?? []) as PhotoView[])
 
-      // 1. Update gallery record metadata
+      // 1. Upload blobs for added and replaced photos. Raw bytes can't ride
+      //    along in applyWrites, so these stay one request each.
+      const pendingUploads = slots.flatMap((slot, index) => {
+        const processed = slot.kind === 'new' ? slot.processed : slot.replacement
+        return processed ? [{ index, dataUrl: processed.dataUrl }] : []
+      })
+      const uploaded = await uploadPhotoBlobs(pendingUploads.map((p) => p.dataUrl))
+      const blobBySlot = new Map<number, unknown>()
+      pendingUploads.forEach((p, i) => blobBySlot.set(p.index, uploaded[i]))
+
       let facets: any[] | undefined
       if (description.trim()) {
         const parsed = await parseTextToFacets(description.trim())
         if (parsed.facets.length > 0) facets = parsed.facets
       }
-      await callXrpc('dev.hatk.putRecord', {
-        collection: 'social.grain.gallery',
-        rkey: galleryRkey,
-        record: {
+
+      // 2. Collect every record change into a single atomic applyWrites, so a
+      //    save either lands whole or not at all — no more half-reordered
+      //    galleries when a request drops partway through, and a replayed
+      //    request can't add a second copy of a newly added photo.
+      const writes: Write[] = [
+        updateWrite('social.grain.gallery', galleryRkey, {
           title: title.trim(),
           ...(description.trim() ? { description: description.trim() } : {}),
           ...(facets ? { facets } : {}),
@@ -315,84 +337,72 @@
           ...(selectedLabels.length > 0 ? { labels: { $type: 'com.atproto.label.defs#selfLabels', values: selectedLabels.map((val) => ({ val })) } } : {}),
           createdAt: (gallery as any).record?.createdAt ?? now,
           updatedAt: now,
-        },
-      })
+        }),
+      ]
 
-      // 2. Process each slot in its new position order
+      // 3. Walk the slots in their new position order
       const finalPhotoUris: string[] = []
       for (let i = 0; i < slots.length; i++) {
         const slot = slots[i]
 
         if (slot.kind === 'new') {
-          // Upload + createRecord photo + gallery.item
-          const base64 = slot.processed.dataUrl.split(',')[1]
-          const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-          const blob = new Blob([binary], { type: 'image/jpeg' })
-          const uploadResult = await callXrpc('dev.hatk.uploadBlob', blob as any)
+          const photoRkey = nextTid()
+          const photoUri = atUri(did, 'social.grain.photo', photoRkey)
+          finalPhotoUris.push(photoUri)
 
-          const photoResult = await callXrpc('dev.hatk.createRecord', {
-            collection: 'social.grain.photo',
-            record: {
-              photo: (uploadResult as any).blob,
+          writes.push(
+            createWrite('social.grain.photo', photoRkey, {
+              photo: blobBySlot.get(i),
               aspectRatio: { width: slot.processed.width, height: slot.processed.height },
               ...(slot.processed.alt ? { alt: slot.processed.alt } : {}),
               createdAt: now,
-            },
-          })
-          const photoUri = (photoResult as any).uri as string
-          finalPhotoUris.push(photoUri)
+            }),
+          )
 
           if (slot.processed.exif) {
-            await callXrpc('dev.hatk.createRecord', {
-              collection: 'social.grain.photo.exif',
-              record: { photo: photoUri, ...slot.processed.exif, createdAt: now },
-            })
+            writes.push(
+              createWrite('social.grain.photo.exif', nextTid(), {
+                photo: photoUri,
+                ...slot.processed.exif,
+                createdAt: now,
+              }),
+            )
           }
 
-          await callXrpc('dev.hatk.createRecord', {
-            collection: 'social.grain.gallery.item',
-            record: { gallery: gallery.uri, item: photoUri, position: i, createdAt: now },
-          })
+          writes.push(
+            createWrite('social.grain.gallery.item', nextTid(), {
+              gallery: gallery.uri,
+              item: photoUri,
+              position: i,
+              createdAt: now,
+            }),
+          )
         } else {
           // Existing photo
-          const photoRkey = slot.view.uri.split('/').pop()!
-          const itemRkey = (slot.view.gallery as any)?.item?.split('/').pop()
+          const photoRkey = rkeyOf(slot.view.uri)
+          const itemUri = (slot.view.gallery as any)?.item as string | undefined
+          const itemRkey = itemUri ? rkeyOf(itemUri) : undefined
           const originalPosition = (slot.view.gallery as any)?.itemPosition ?? 0
 
           if (slot.replacement) {
-            // Upload + putRecord photo
-            const base64 = slot.replacement.dataUrl.split(',')[1]
-            const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-            const blob = new Blob([binary], { type: 'image/jpeg' })
-            const uploadResult = await callXrpc('dev.hatk.uploadBlob', blob as any)
-
-            const photoResult = await callXrpc('dev.hatk.putRecord', {
-              collection: 'social.grain.photo',
-              rkey: photoRkey,
-              record: {
-                photo: (uploadResult as any).blob,
+            writes.push(
+              updateWrite('social.grain.photo', photoRkey, {
+                photo: blobBySlot.get(i),
                 aspectRatio: { width: slot.replacement.width, height: slot.replacement.height },
                 ...(slot.view.alt ? { alt: slot.view.alt } : {}),
                 createdAt: (slot.view as any).record?.createdAt ?? now,
-              },
-            })
-            const photoUri = (photoResult as any).uri as string
+              }),
+            )
 
             // Update EXIF if extracted
-            const exifRkey = slot.view.exif?.uri?.split('/').pop()
             if (slot.replacement.exif) {
-              if (exifRkey) {
-                await callXrpc('dev.hatk.putRecord', {
-                  collection: 'social.grain.photo.exif',
-                  rkey: exifRkey,
-                  record: { photo: photoUri, ...slot.replacement.exif, createdAt: now },
-                })
-              } else {
-                await callXrpc('dev.hatk.createRecord', {
-                  collection: 'social.grain.photo.exif',
-                  record: { photo: photoUri, ...slot.replacement.exif, createdAt: now },
-                })
-              }
+              const exifRkey = slot.view.exif?.uri ? rkeyOf(slot.view.exif.uri) : undefined
+              const exifValue = { photo: slot.view.uri, ...slot.replacement.exif, createdAt: now }
+              writes.push(
+                exifRkey
+                  ? updateWrite('social.grain.photo.exif', exifRkey, exifValue)
+                  : createWrite('social.grain.photo.exif', nextTid(), exifValue),
+              )
             }
           }
 
@@ -400,32 +410,27 @@
 
           // Update position on gallery.item if it changed
           if (itemRkey && originalPosition !== i) {
-            await callXrpc('dev.hatk.putRecord', {
-              collection: 'social.grain.gallery.item',
-              rkey: itemRkey,
-              record: {
+            writes.push(
+              updateWrite('social.grain.gallery.item', itemRkey, {
                 gallery: gallery.uri,
                 item: slot.view.uri,
                 position: i,
                 createdAt: (slot.view.gallery as any)?.itemCreatedAt ?? now,
-              },
-            })
+              }),
+            )
           }
         }
       }
 
-      // 3. Delete gallery.item records for removed photos
+      // 4. Delete gallery.item records for removed photos
       for (const orig of originalViews) {
         if (!finalPhotoUris.includes(orig.uri)) {
-          const itemRkey = (orig.gallery as any)?.item?.split('/').pop()
-          if (itemRkey) {
-            await callXrpc('dev.hatk.deleteRecord', {
-              collection: 'social.grain.gallery.item',
-              rkey: itemRkey,
-            })
-          }
+          const itemUri = (orig.gallery as any)?.item as string | undefined
+          if (itemUri) writes.push(deleteWrite('social.grain.gallery.item', rkeyOf(itemUri)))
         }
       }
+
+      await applyWrites(writes)
 
       queryClient.invalidateQueries({ queryKey: ['gallery', data.galleryUri] })
       goto(`/profile/${did}/gallery/${galleryRkey}`)

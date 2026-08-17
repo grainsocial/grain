@@ -2,7 +2,14 @@
   import { goto } from '$app/navigation'
   import { onMount } from 'svelte'
   import { useQueryClient } from '@tanstack/svelte-query'
-  import { callXrpc } from '$hatk/client'
+  import {
+    applyWrites,
+    atUri,
+    createWrite,
+    galleryExists,
+    nextTid,
+    uploadPhotoBlobs,
+  } from '$lib/utils/records'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { reverseGeocode, formatLocationName, extractAddress } from '$lib/utils/nominatim'
   import { createBskyPost } from '$lib/utils/bsky-post'
@@ -225,41 +232,14 @@
     error = null
 
     try {
+      const did = $viewer?.did
+      if (!did) throw new Error('You must be signed in to post a gallery.')
+
       const now = new Date().toISOString()
-      const photoUris: string[] = []
 
-      // 1. Upload blobs + create photo records
-      for (const photo of photos) {
-        const base64 = photo.dataUrl.split(',')[1]
-        const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-        const blob = new Blob([binary], { type: 'image/jpeg' })
-
-        const uploadResult = await callXrpc('dev.hatk.uploadBlob', blob as any)
-
-        const photoResult = await callXrpc('dev.hatk.createRecord', {
-          collection: 'social.grain.photo',
-          record: {
-            photo: (uploadResult as any).blob,
-            aspectRatio: { width: photo.width, height: photo.height },
-            ...(photo.alt ? { alt: photo.alt } : {}),
-            createdAt: now,
-          },
-        })
-        const photoUri = (photoResult as any).uri as string
-        photoUris.push(photoUri)
-
-        // Create EXIF record if we extracted metadata and user opted in
-        if (photo.exif && $includeExif) {
-          await callXrpc('dev.hatk.createRecord', {
-            collection: 'social.grain.photo.exif',
-            record: {
-              photo: photoUri,
-              ...photo.exif,
-              createdAt: now,
-            },
-          })
-        }
-      }
+      // 1. Upload blobs. These are the only per-photo requests left — the PDS
+      //    takes raw bytes, so they can't be batched with the records.
+      const blobs = await uploadPhotoBlobs(photos.map((p) => p.dataUrl))
 
       // 2. Parse facets from description
       let facets: any[] | undefined
@@ -268,10 +248,36 @@
         if (parsed.facets.length > 0) facets = parsed.facets
       }
 
-      // 3. Create gallery record
-      const galleryResult = await callXrpc('dev.hatk.createRecord', {
-        collection: 'social.grain.gallery',
-        record: {
+      // 3. Write every record in one atomic applyWrites. Minting the rkeys here
+      //    means we know each URI before the call, so gallery items can point at
+      //    a gallery created in the same transaction — and a replayed request
+      //    collides with itself instead of duplicating photos.
+      const photoRkeys = photos.map(() => nextTid())
+      const galleryRkey = nextTid()
+      const galleryUri = atUri(did, 'social.grain.gallery', galleryRkey)
+      const photoUris = photoRkeys.map((rkey) => atUri(did, 'social.grain.photo', rkey))
+
+      const writes = [
+        ...photos.map((photo, i) =>
+          createWrite('social.grain.photo', photoRkeys[i], {
+            photo: blobs[i],
+            aspectRatio: { width: photo.width, height: photo.height },
+            ...(photo.alt ? { alt: photo.alt } : {}),
+            createdAt: now,
+          }),
+        ),
+        ...photos.flatMap((photo, i) =>
+          photo.exif && $includeExif
+            ? [
+                createWrite('social.grain.photo.exif', nextTid(), {
+                  photo: photoUris[i],
+                  ...photo.exif,
+                  createdAt: now,
+                }),
+              ]
+            : [],
+        ),
+        createWrite('social.grain.gallery', galleryRkey, {
           title: title.trim(),
           ...(description.trim() ? { description: description.trim() } : {}),
           ...(facets ? { facets } : {}),
@@ -293,27 +299,32 @@
               }
             : {}),
           createdAt: now,
-        },
-      })
-      const galleryUri = (galleryResult as any).uri as string
-
-      // 4. Create gallery items
-      for (let i = 0; i < photoUris.length; i++) {
-        await callXrpc('dev.hatk.createRecord', {
-          collection: 'social.grain.gallery.item',
-          record: {
+        }),
+        ...photoUris.map((photoUri, i) =>
+          createWrite('social.grain.gallery.item', nextTid(), {
             gallery: galleryUri,
-            item: photoUris[i],
+            item: photoUri,
             position: i,
             createdAt: now,
-          },
-        })
+          }),
+        ),
+      ]
+
+      try {
+        await applyWrites(writes)
+      } catch (err) {
+        // A replayed request re-sends writes the PDS already committed. Because
+        // the rkeys are fixed, the replay collides on the first duplicate and
+        // the whole transaction is rejected — nothing is written twice, but the
+        // post did go through. Surfacing the error here would send the user
+        // back to press Post again, which mints fresh rkeys and would leave two
+        // galleries behind. So: if the gallery is there, we're done.
+        if (!(await galleryExists(galleryUri))) throw err
       }
 
-      // 5. Create Bluesky post if opted in
-      if (postToBluesky && $viewer) {
-        const galleryRkey = galleryUri.split('/').pop()
-        const galleryUrl = `${window.location.origin}/profile/${$viewer.did}/gallery/${galleryRkey}`
+      // 4. Create Bluesky post if opted in
+      if (postToBluesky) {
+        const galleryUrl = `${window.location.origin}/profile/${did}/gallery/${galleryRkey}`
         await createBskyPost({
           url: galleryUrl,
           title: title.trim() || undefined,

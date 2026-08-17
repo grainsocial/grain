@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { callXrpc } from '$hatk/client'
+  import { applyWrites, atUri, createWrite, nextTid, uploadPhotoBlobs } from '$lib/utils/records'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { parseInstagramExport, type ParsedPost } from '$lib/utils/instagram-import'
   import { resizeImage } from '$lib/utils/image-resize'
@@ -84,6 +84,12 @@
     const selected = posts.filter((p) => p.selected)
     if (selected.length === 0) return
 
+    const did = $viewer?.did
+    if (!did) {
+      error = 'You must be signed in to import.'
+      return
+    }
+
     step = 'importing'
     importProgress = { current: 0, total: selected.length }
     importedCount = 0
@@ -95,32 +101,25 @@
         const createdAt = post.createdAt.toISOString()
 
         // 1. Upload blobs (must be individual calls)
-        const blobs: Array<{ blob: unknown; width: number; height: number }> = []
-        for (const photo of post.photos) {
-          const base64 = photo.dataUrl.split(',')[1]
-          const binary = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
-          const blobFile = new Blob([binary], { type: 'image/jpeg' })
-          const uploadResult = await callXrpc('dev.hatk.uploadBlob', blobFile as never)
-          const blobRef = (uploadResult as { blob: unknown }).blob
-          blobs.push({ blob: blobRef, width: photo.width, height: photo.height })
-        }
+        const blobs = await uploadPhotoBlobs(post.photos.map((p) => p.dataUrl))
 
-        // 2. Batch photo + gallery records in one applyWrites
-        const createWrite = (collection: string, value: Record<string, unknown>) => ({
-          $type: 'dev.hatk.applyWrites#create' as const,
-          collection,
-          value,
-        })
+        // 2. Every record for this post in one atomic applyWrites. Minting the
+        //    rkeys up front means the gallery items can reference a gallery
+        //    created in the same call, so this no longer needs a second round
+        //    trip — and a replayed request can't double-import a post.
+        const photoRkeys = post.photos.map(() => nextTid())
+        const galleryRkey = nextTid()
+        const galleryUri = atUri(did, 'social.grain.gallery', galleryRkey)
 
         const writes = [
-          ...blobs.map((b) =>
-            createWrite('social.grain.photo', {
-              photo: b.blob,
-              aspectRatio: { width: b.width, height: b.height },
+          ...post.photos.map((photo, i) =>
+            createWrite('social.grain.photo', photoRkeys[i], {
+              photo: blobs[i],
+              aspectRatio: { width: photo.width, height: photo.height },
               createdAt,
             }),
           ),
-          createWrite('social.grain.gallery', {
+          createWrite('social.grain.gallery', galleryRkey, {
             title: galleryTitle(post.createdAt),
             ...(post.description.trim() ? { description: post.description.trim() } : {}),
             ...(post.labels.length > 0
@@ -133,25 +132,17 @@
               : {}),
             createdAt,
           }),
-        ]
-
-        const result = await callXrpc('dev.hatk.applyWrites', { writes })
-        const results = (result as { results?: Array<{ uri?: string; cid?: string }> }).results ?? []
-
-        const photoUris = results.slice(0, blobs.length).map((r) => r.uri!)
-        const galleryUri = results[blobs.length]?.uri
-        // 3. Batch gallery items in a second applyWrites
-        if (galleryUri && photoUris.length > 0) {
-          const itemWrites = photoUris.map((photoUri: string, i: number) =>
-            createWrite('social.grain.gallery.item', {
+          ...photoRkeys.map((photoRkey, i) =>
+            createWrite('social.grain.gallery.item', nextTid(), {
               gallery: galleryUri,
-              item: photoUri,
+              item: atUri(did, 'social.grain.photo', photoRkey),
               position: i,
               createdAt,
             }),
-          )
-          await callXrpc('dev.hatk.applyWrites', { writes: itemWrites })
-        }
+          ),
+        ]
+
+        await applyWrites(writes)
 
         importedCount++
       } catch (err: unknown) {
