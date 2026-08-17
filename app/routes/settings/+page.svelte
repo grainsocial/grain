@@ -26,17 +26,21 @@
     accounts = local
 
     // The server knows which accounts this browser may switch into; localStorage
-    // only has the display detail. Prefer the server list where it exists, and
-    // keep the local avatar and display name for each row.
+    // carries the display detail. Merge rather than replace — an account the
+    // server doesn't list yet is still one this browser has used, and dropping
+    // it from the list makes it look like the account was lost. It just takes
+    // the sign-in path instead of the instant switch.
     fetchServerAccounts().then((server) => {
       if (!server) return
       const byDid = new Map(local.map((a) => [a.did, a]))
-      accounts = server.accounts.map((a) => ({
+      const merged = server.accounts.map((a) => ({
         did: a.did,
         handle: a.handle ?? byDid.get(a.did)?.handle ?? null,
         displayName: byDid.get(a.did)?.displayName ?? null,
         avatar: byDid.get(a.did)?.avatar ?? null,
       }))
+      const known = new Set(merged.map((a) => a.did))
+      accounts = [...merged, ...local.filter((a) => !known.has(a.did))]
     })
   })
 
