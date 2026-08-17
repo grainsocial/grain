@@ -5,7 +5,13 @@
   import { loginModalOpen, viewer } from '$lib/stores'
   import { logout } from '$lib/auth'
   import { resetPreferences } from '$lib/preferences'
-  import { forgetAccount, listAccounts, switchAccount, type StoredAccount } from '$lib/accounts'
+  import {
+    fetchServerAccounts,
+    forgetAccount,
+    listAccounts,
+    switchAccount,
+    type StoredAccount,
+  } from '$lib/accounts'
 
   const did = $derived($viewer?.did ?? '')
 
@@ -13,16 +19,31 @@
   let switchingTo = $state('')
 
   $effect(() => {
-    // The layout writes the signed-in viewer into the list as its profile
+    // The layout writes the signed-in viewer into localStorage as its profile
     // resolves, so re-read whenever the viewer changes rather than once on mount.
     void $viewer
-    accounts = listAccounts()
+    const local = listAccounts()
+    accounts = local
+
+    // The server knows which accounts this browser may switch into; localStorage
+    // only has the display detail. Prefer the server list where it exists, and
+    // keep the local avatar and display name for each row.
+    fetchServerAccounts().then((server) => {
+      if (!server) return
+      const byDid = new Map(local.map((a) => [a.did, a]))
+      accounts = server.accounts.map((a) => ({
+        did: a.did,
+        handle: a.handle ?? byDid.get(a.did)?.handle ?? null,
+        displayName: byDid.get(a.did)?.displayName ?? null,
+        avatar: byDid.get(a.did)?.avatar ?? null,
+      }))
+    })
   })
 
-  function doSwitch(account: StoredAccount) {
+  async function doSwitch(account: StoredAccount) {
     if (account.did === did || switchingTo) return
     switchingTo = account.did
-    switchAccount(account)
+    await switchAccount(account)
   }
 
   function doForget(account: StoredAccount) {

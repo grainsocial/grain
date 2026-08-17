@@ -1,10 +1,15 @@
 // Known-account list backing the settings account switcher.
 //
-// The server session is a single HttpOnly cookie holding one DID, so the
-// browser can't hold two live sessions at once. What it can remember is which
-// accounts have signed in on this device; switching re-runs the OAuth login for
-// that handle, which the PDS usually waves straight through because it still
-// has a device session and an existing grant for this client.
+// The server holds an OAuth session per DID, so switching accounts is a
+// server-side operation: `POST /auth/switch` re-issues the session cookie for
+// an account this browser has already signed in as. hatk tracks that set in an
+// encrypted cookie, which `GET /auth/accounts` reads back — the source of
+// truth for what can be switched to.
+//
+// localStorage carries only display detail (avatar, display name) that the
+// server list doesn't have, so rows render fully populated on first paint.
+// On hatk builds without the switch endpoints, everything degrades to the
+// original behaviour: re-run the OAuth login for that handle.
 
 const STORAGE_KEY = "grain:accounts";
 const MAX_ACCOUNTS = 10;
@@ -69,13 +74,64 @@ export function forgetAccount(did: string): void {
   writeAccounts(listAccounts().filter((a) => a.did !== did));
 }
 
+/** An account the server will switch to without a trip to the PDS. */
+export interface ServerAccount {
+  did: string;
+  handle: string;
+  available: boolean;
+}
+
 /**
- * Send the browser through a fresh sign-in for `account`. hatk clears the
- * current session cookie on the way out, so a user who backs out of the PDS
- * page lands signed out — the account stays in the list, one click from
- * signing back in.
+ * Accounts the server recognises for this browser. Returns null when the
+ * endpoint isn't there (older hatk), which is the signal to fall back to
+ * re-login switching rather than to show an empty list.
  */
-export function switchAccount(account: StoredAccount): void {
+export async function fetchServerAccounts(): Promise<{ accounts: ServerAccount[]; active: string | null } | null> {
+  try {
+    const res = await fetch("/auth/accounts", { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const body = await res.json();
+    if (!Array.isArray(body?.accounts)) return null;
+    return { accounts: body.accounts, active: body.active ?? null };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Re-run the OAuth login for an account. hatk clears the session cookie on the
+ * way out to the PDS, so backing out of it lands the user signed out — the
+ * account stays in the list, one click from signing back in.
+ */
+export function loginAsAccount(account: StoredAccount): void {
   const hint = account.handle || account.did;
   window.location.href = `/oauth/login?handle=${encodeURIComponent(hint)}`;
+}
+
+/**
+ * Switch the active account. Asks the server to re-issue the session cookie
+ * from the grant it already holds; only if that isn't possible — no endpoint,
+ * or the stored grant is gone — does the user go back through the PDS.
+ */
+export async function switchAccount(account: StoredAccount): Promise<void> {
+  let switched = false;
+  try {
+    const res = await fetch("/auth/switch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ did: account.did }),
+    });
+    switched = res.ok;
+  } catch {
+    // Network error — fall through to the login redirect.
+  }
+
+  if (switched) {
+    // Full reload rather than a client navigation: the session cookie changed,
+    // so every cached SSR payload and query on the page belongs to the account
+    // we just left.
+    window.location.href = "/";
+    return;
+  }
+  loginAsAccount(account);
 }
