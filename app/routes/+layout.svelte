@@ -19,6 +19,7 @@
   import '$lib/auth'
   import { QueryClientProvider } from '@tanstack/svelte-query'
   import { isAuthenticated, viewer } from '$lib/stores'
+  import { rememberAccount } from '$lib/accounts'
   import { loadPreferences } from '$lib/preferences'
   import { initTheme } from '$lib/theme'
   import { afterNavigate } from '$app/navigation'
@@ -70,6 +71,7 @@
   $effect(() => {
     if (data.viewer) {
       $viewer = { did: data.viewer.did, handle: data.viewer.handle ?? null, displayName: data.viewer.handle ?? data.viewer.did.slice(0, 18), avatar: null }
+      rememberAccount({ did: data.viewer.did, handle: data.viewer.handle ?? null })
       Promise.resolve(data.profile).then((profile) => {
         if (profile) {
           $viewer = {
@@ -78,6 +80,12 @@
             displayName: profile.displayName ?? profile.handle ?? data.viewer.handle ?? data.viewer.did.slice(0, 18),
             avatar: profile.avatar ?? null,
           }
+          rememberAccount({
+            did: data.viewer.did,
+            handle: profile.handle ?? data.viewer.handle ?? null,
+            displayName: profile.displayName ?? null,
+            avatar: profile.avatar ?? null,
+          })
         }
       })
     } else {
