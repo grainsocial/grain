@@ -211,6 +211,31 @@ export const mutesQuery = (f?: Fetch) =>
     staleTime: 60_000,
   });
 
+/**
+ * Whether the viewer's PDS serves permissioned spaces. A property of their
+ * server, so it only changes when that server is redeployed — the server-side
+ * probe caches for an hour and this sits in front of it.
+ */
+export const spaceSupportQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["spaceSupport"],
+    queryFn: () => callXrpc("social.grain.unspecced.getSpaceSupport", {}, f),
+    staleTime: 5 * 60_000,
+  });
+
+/**
+ * A gallery living in a permissioned space. Assembled from member repos on
+ * every request rather than read from the index — there is no index for it —
+ * so this is deliberately not prefetched or held stale.
+ */
+export const privateGalleryQuery = (space: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["privateGallery", space],
+    queryFn: () => callXrpc("social.grain.unspecced.getPrivateGallery", { space }, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
 export const knownFollowersQuery = (did: string, viewer: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["knownFollowers", did, viewer],
