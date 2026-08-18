@@ -122,6 +122,13 @@ CREATE TABLE _repos (
   retry_after INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE _space_support (
+  pds_endpoint TEXT PRIMARY KEY,
+  supported INTEGER NOT NULL,
+  missing TEXT NOT NULL,
+  checked_at TEXT NOT NULL
+);
+
 CREATE TABLE "app.bsky.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,

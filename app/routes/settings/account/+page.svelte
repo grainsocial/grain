@@ -1,13 +1,26 @@
 <script lang="ts">
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
-  import { ExternalLink } from 'lucide-svelte'
+  import { ChevronRight, ExternalLink } from 'lucide-svelte'
   import { viewer } from '$lib/stores'
   import { callXrpc } from '$hatk/client'
+  import { createQuery } from '@tanstack/svelte-query'
+  import { spaceSupportQuery } from '$lib/queries'
   import { logout } from '$lib/auth'
   import { goto } from '$app/navigation'
 
   const did = $derived($viewer?.did ?? '')
   const handle = $derived($viewer?.handle ?? '')
+
+  const spaces = createQuery(() => spaceSupportQuery())
+  const spacesPds = $derived.by(() => {
+    const pds = spaces.data?.pds
+    if (!pds) return ''
+    try {
+      return new URL(pds).host
+    } catch {
+      return pds
+    }
+  })
 
   let deleting = $state(false)
   let deleteError = $state<string | null>(null)
@@ -56,6 +69,27 @@
         <ExternalLink size={14} class="chevron" />
       </a>
     </div>
+
+    <!-- Shown only where it means something. Almost no PDS serves permissioned
+         spaces, and telling everyone else that theirs does not is a line about
+         a feature they have no way to reach. -->
+    {#if spaces.data?.supported}
+      <div class="settings-group">
+        <div class="settings-row">
+          <span class="row-label">Permissioned spaces</span>
+          <span class="row-value">Supported</span>
+        </div>
+        <a href="/private/create" class="settings-row link">
+          <span class="row-label">New private gallery</span>
+          <ChevronRight size={14} class="chevron" />
+        </a>
+        {#if spacesPds}
+          <p class="row-hint">
+            {spacesPds} serves proposal 0016, so private galleries can live on it.
+          </p>
+        {/if}
+      </div>
+    {/if}
 
     <div class="settings-group">
       <button type="button" class="settings-row delete" disabled={deleting} onclick={handleDelete}>
@@ -113,6 +147,13 @@
   .row-value.did {
     font-size: 11px;
     word-break: break-all;
+  }
+  .row-hint {
+    margin: 0;
+    padding: 0 16px 14px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--text-muted);
   }
   .settings-row :global(.chevron) {
     color: var(--text-muted);

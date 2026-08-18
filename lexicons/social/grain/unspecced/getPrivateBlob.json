@@ -1,0 +1,23 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getPrivateBlob",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Serve a blob referenced by a permissioned space, to a viewer the space admits. These cannot go through the CDN: the space serves a blob only to a credential holder, and a CDN is an unauthenticated cache keyed by a public URL.",
+      "parameters": {
+        "type": "params",
+        "required": ["space", "did", "cid"],
+        "properties": {
+          "space": { "type": "string", "description": "Space URI the blob is referenced from." },
+          "did": { "type": "string", "format": "did", "description": "Repo that holds the blob." },
+          "cid": { "type": "string", "format": "cid" }
+        }
+      },
+      "output": { "encoding": "*/*" },
+      "errors": [
+        { "name": "NotAuthorized", "description": "The viewer is not a member of this space." }
+      ]
+    }
+  }
+}

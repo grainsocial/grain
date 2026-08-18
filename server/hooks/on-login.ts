@@ -1,10 +1,18 @@
 import { defineHook, type GrainActorProfile } from "$hatk";
+import { getSpaceSupport, pdsEndpointFor } from "../helpers/spaceSupport.ts";
 
 export default defineHook("on-login", async (ctx) => {
   const { did, ensureRepo, lookup, db } = ctx;
 
   // Backfill repo in the background — large repos can block the login redirect
   ensureRepo(did).catch((err) => console.error(`[on-login] ensureRepo failed for ${did}:`, err));
+
+  // Warm the permissioned-spaces probe so the first page asking about it is
+  // answered from cache. Backgrounded and swallowed: a PDS that never answers
+  // must not hold up a login, and "no answer" is already read as "no spaces".
+  pdsEndpointFor(db, did)
+    .then((pds) => (pds ? getSpaceSupport(db, pds) : null))
+    .catch((err) => console.error(`[on-login] space support probe failed for ${did}:`, err));
 
   // Check if user already has a populated grain profile
   const grainProfiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did]);

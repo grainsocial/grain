@@ -1,0 +1,36 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getSpaceSupport",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Whether the viewer's PDS serves permissioned spaces (proposal 0016). Answered from a cached probe of community.lexicon.service.describe.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["supported", "pds"],
+          "properties": {
+            "supported": {
+              "type": "boolean",
+              "description": "True when the PDS serves every space method grain needs."
+            },
+            "pds": {
+              "type": "string",
+              "description": "The PDS endpoint that was probed."
+            },
+            "checkedAt": {
+              "type": "string",
+              "format": "datetime"
+            },
+            "missing": {
+              "type": "array",
+              "description": "Space methods grain needs that this PDS does not serve. Empty when supported; the full list when the PDS answers no describe at all.",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -46,6 +46,70 @@ services:
       timeout: 5s
       retries: 15
 
+  # Permissioned spaces (proposal 0016) need a PDS that serves them, which the
+  # reference PDS above does not. pds.js does, but hosts exactly one account per
+  # instance — hence two containers rather than two accounts on one. Two is the
+  # minimum that tests anything: a space is one authority and a member whose
+  # repo lives on a different host.
+  #
+  # Neither is on the firehose the appview indexes (`relay` points at the PDS on
+  # 2583), and it does not matter: space writes never reach a firehose at all.
+  # Register the accounts with seeds/pdsjs-accounts.sh once the stack is up.
+  pdsjs-a:
+    image: ${PDSJS_IMAGE:-atcr.io/chadtmiller.com/pds.js:latest}
+    ports:
+      - "2584:2584"
+    # A member's PDS notifies the authority's directly, so each has to reach the
+    # other by the hostname in its DID document — and the appview, on the host,
+    # has to reach both by that same name. `*.localhost` resolves to 127.0.0.1
+    # on macOS, and these entries point it at the host gateway from inside a
+    # container, where plain `localhost` would be the container itself.
+    extra_hosts:
+      - "pdsjs-a.localhost:host-gateway"
+      - "pdsjs-b.localhost:host-gateway"
+    environment:
+      - PDS_HOSTNAME=pdsjs-a.localhost:2584
+      - PORT=2584
+      - PLC_URL=http://plc:2582
+      - JWT_SECRET=dev-jwt-secret-a
+      - PDS_PASSWORD=dev-password
+      - PDS_ENABLE_SPACES=true
+    volumes:
+      - pdsjs_a_data:/data
+    depends_on:
+      plc:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:2584/xrpc/_health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))\""]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  pdsjs-b:
+    image: ${PDSJS_IMAGE:-atcr.io/chadtmiller.com/pds.js:latest}
+    ports:
+      - "2585:2585"
+    extra_hosts:
+      - "pdsjs-a.localhost:host-gateway"
+      - "pdsjs-b.localhost:host-gateway"
+    environment:
+      - PDS_HOSTNAME=pdsjs-b.localhost:2585
+      - PORT=2585
+      - PLC_URL=http://plc:2582
+      - JWT_SECRET=dev-jwt-secret-b
+      - PDS_PASSWORD=dev-password
+      - PDS_ENABLE_SPACES=true
+    volumes:
+      - pdsjs_b_data:/data
+    depends_on:
+      plc:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:2585/xrpc/_health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))\""]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -63,3 +127,5 @@ services:
 volumes:
   pds_data:
   plc_data:
+  pdsjs_a_data:
+  pdsjs_b_data:
