@@ -54,6 +54,42 @@ After modifying lexicons, always run `npx hatk generate types` to update the gen
 - `npm start` — start production server (hatk + SvelteKit via `build/handler.js`)
 - `npm test` — run tests
 
+## Permissioned spaces in dev
+
+Shared galleries run on permissioned data (proposal 0016), which the reference
+PDS on 2583 does not serve. `docker compose` also brings up two pds.js
+instances, on 2584 and 2585, with `PDS_ENABLE_SPACES=true`. Two, because pds.js
+hosts one account per instance and a space is only interesting once a member's
+repo lives on a host the authority does not control.
+
+```sh
+docker compose up -d
+./seeds/pdsjs-accounts.sh   # needs a pds.js checkout; PDSJS_DIR if not ~/code/pds.js
+```
+
+The script prints a DID per account. **Log in with the DID, not the handle** —
+handle resolution goes through the dev relay, which is the PDS on 2583, and it
+has never heard of these accounts.
+
+Both instances are addressed as `pdsjs-a.localhost` / `pdsjs-b.localhost` rather
+than `localhost`. A member's PDS notifies the authority's PDS directly on every
+space write, so both have to reach each other by the hostname in the DID
+document, and `localhost` inside a container is that container. macOS resolves
+`*.localhost` to 127.0.0.1, and `extra_hosts` maps the same names to the host
+gateway inside the containers, so one name works from everywhere.
+
+The image defaults to `atcr.io/chadtmiller.com/pds.js:latest`, which needs
+`docker login atcr.io` (handle + app password). To run a local build instead:
+
+```sh
+docker build -t pds.js:local ~/code/pds.js
+PDSJS_IMAGE=pds.js:local docker compose up -d
+```
+
+Space writes never reach a firehose, so nothing these accounts do in a space is
+indexed by the appview. That is the protocol working as designed, not a dev-env
+limitation — the app assembles a space by reading member repos directly.
+
 ## Railway production debugging
 
 The prod container has `sqlite3` and `duckdb` CLIs. Railway SSH doesn't support piped stdin or shell metacharacters (parentheses, quotes) reliably. Use the base64 script pattern:
