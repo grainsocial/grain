@@ -1,0 +1,56 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getPrivateGallery",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Assemble a gallery that lives in a permissioned space. Read from the repos that hold it at request time — space records never reach a firehose, so none of this is in the index.",
+      "parameters": {
+        "type": "params",
+        "required": ["space"],
+        "properties": {
+          "space": { "type": "string", "description": "Space URI: at://<authority>/space/social.grain.gallery/<skey>" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["space", "authority", "items"],
+          "properties": {
+            "space": { "type": "string" },
+            "authority": { "type": "string", "format": "did" },
+            "viewerIsAuthor": { "type": "boolean" },
+            "gallery": { "type": "ref", "ref": "#privateGallery" },
+            "items": { "type": "array", "items": { "type": "ref", "ref": "#privateItem" } }
+          }
+        }
+      },
+      "errors": [
+        { "name": "NotAuthorized", "description": "The viewer is not a member of this space." }
+      ]
+    },
+    "privateGallery": {
+      "type": "object",
+      "required": ["uri", "title"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "privateItem": {
+      "type": "object",
+      "required": ["uri", "did", "cid", "position"],
+      "properties": {
+        "uri": { "type": "string", "description": "Space URI of the photo record." },
+        "did": { "type": "string", "format": "did", "description": "Repo holding the photo, and its blob." },
+        "cid": { "type": "string", "format": "cid", "description": "Blob CID. Fetch through the space, never the CDN." },
+        "alt": { "type": "string" },
+        "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" },
+        "position": { "type": "integer" }
+      }
+    }
+  }
+}

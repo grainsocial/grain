@@ -19,6 +19,22 @@ const grainScopes = [
   "repo:app.bsky.feed.post?action=create",
 ].join(" ");
 
+// Private galleries live in permissioned spaces (proposal 0016). `authority=*`
+// because a reader's session has to reach a space anchored on somebody else's
+// account; `manage=` because the author's session creates the space itself.
+//
+// Requested only from PDSes that serve spaces — see conditionalScopes below.
+// Almost no PDS does, and a permission nobody can honor has no business on
+// everybody's consent screen.
+const spaceScopes = [
+  "space:social.grain.gallery?authority=*&skey=*",
+  "collection=social.grain.gallery",
+  "collection=social.grain.gallery.item",
+  "collection=social.grain.photo",
+  "action=read&action=create&action=update&action=delete",
+  "manage=create&manage=update&manage=delete",
+].join("&");
+
 export default defineConfig({
   relay: isProd ? "wss://bsky.network" : "ws://localhost:2583",
   // Jetstream filters server-side, so we stop decoding the whole network to
@@ -52,7 +68,13 @@ export default defineConfig({
   },
   oauth: {
     issuer: isProd && prodDomain ? `https://${prodDomain}` : undefined,
-    scopes: grainScopes.split(" "),
+    // Dev asks for the space scopes outright, and has to ask here too: the
+    // server-initiated login builds its request from this list, and it must
+    // match what the loopback client_id encodes or the PDS grants neither.
+    scopes: (isProd ? grainScopes : `${grainScopes} ${spaceScopes}`).split(" "),
+    conditionalScopes: [
+      { whenMethod: "com.atproto.simplespace.createSpace", scopes: [spaceScopes] },
+    ],
     clients: [
       ...(prodDomain
         ? [
@@ -69,9 +91,12 @@ export default defineConfig({
           ]
         : []),
       {
+        // Dev asks for the space scopes outright. Negotiation is skipped for
+        // loopback clients — the scope is encoded in the client_id, which the
+        // token exchange rebuilds from this config, so the two would disagree.
         client_id: "http://127.0.0.1:3000/oauth-client-metadata.json",
         client_name: "grain",
-        scope: grainScopes,
+        scope: `${grainScopes} ${spaceScopes}`,
         redirect_uris: ["http://127.0.0.1:3000/oauth/callback", "http://127.0.0.1:3000/admin"],
       },
       {
