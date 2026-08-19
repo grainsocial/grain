@@ -9,7 +9,10 @@
         "type": "params",
         "required": ["space"],
         "properties": {
-          "space": { "type": "string", "description": "Space URI: at://<authority>/space/social.grain.gallery/<skey>" }
+          "space": {
+            "type": "string",
+            "description": "Space URI: at://<authority>/space/social.grain.gallery/<skey>"
+          }
         }
       },
       "output": {
@@ -45,8 +48,16 @@
       "required": ["uri", "did", "cid", "position"],
       "properties": {
         "uri": { "type": "string", "description": "Space URI of the photo record." },
-        "did": { "type": "string", "format": "did", "description": "Repo holding the photo, and its blob." },
-        "cid": { "type": "string", "format": "cid", "description": "Blob CID. Fetch through the space, never the CDN." },
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "Repo holding the photo, and its blob."
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid",
+          "description": "Blob CID. Fetch through the space, never the CDN."
+        },
         "alt": { "type": "string" },
         "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" },
         "position": { "type": "integer" }

@@ -44,7 +44,10 @@
         }
       },
       "errors": [
-        { "name": "SpacesUnsupported", "description": "The author's PDS does not serve permissioned spaces." }
+        {
+          "name": "SpacesUnsupported",
+          "description": "The author's PDS does not serve permissioned spaces."
+        }
       ]
     },
     "photoInput": {
