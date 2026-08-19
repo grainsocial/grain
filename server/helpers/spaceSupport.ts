@@ -28,8 +28,24 @@ const REQUIRED_METHODS: string[][] = [
   ["com.atproto.space.getBlob"],
 ];
 
-/** Re-probe this often. A PDS gains spaces by redeploying, not by telling us. */
+/**
+ * Re-probe this often. A PDS gains spaces by redeploying, not by telling us.
+ *
+ * A yes and a no are not held for the same length of time, because they do not
+ * go stale in the same direction. A yes that has gone stale costs one failed
+ * call, which says what happened; the operator who turns spaces off is rare and
+ * the app finds out immediately.
+ *
+ * A no is the answer that traps people. An operator enables spaces, and for the
+ * rest of the hour every account on that server is told it has none — with
+ * nothing to do about it, because the thing that would change the answer has
+ * already happened. A no also absorbs every reason a probe can fail to land: a
+ * restart, a timeout, a blip on the way. None of those are evidence about the
+ * server, and none should outlive the minute they happened in. So a no is kept
+ * only long enough to spare the PDS a probe per page load.
+ */
 const CACHE_TTL_MS = 60 * 60 * 1000;
+const NEGATIVE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface SpaceSupport {
   supported: boolean;
@@ -111,7 +127,8 @@ export async function getSpaceSupport(
   const cached = rows[0];
   if (cached && !opts?.force) {
     const age = Date.now() - Date.parse(cached.checked_at);
-    if (Number.isFinite(age) && age < CACHE_TTL_MS) {
+    const ttl = cached.supported ? CACHE_TTL_MS : NEGATIVE_CACHE_TTL_MS;
+    if (Number.isFinite(age) && age < ttl) {
       return {
         supported: !!cached.supported,
         pds: pdsEndpoint,

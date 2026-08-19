@@ -5,6 +5,15 @@
     "main": {
       "type": "query",
       "description": "Whether the viewer's PDS serves permissioned spaces (proposal 0016). Answered from a cached probe of community.lexicon.service.describe.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "description": "Probe the PDS again rather than answering from cache. For a viewer whose server has just gained spaces and does not want to wait for the cached answer to age out."
+          }
+        }
+      },
       "output": {
         "encoding": "application/json",
         "schema": {

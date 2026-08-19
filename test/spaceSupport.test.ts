@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { probeSpaceSupport } from "../server/helpers/spaceSupport.ts";
+import { getSpaceSupport, probeSpaceSupport } from "../server/helpers/spaceSupport.ts";
 
 const PDS = "https://pds.example.com";
 
@@ -127,5 +127,77 @@ describe("probeSpaceSupport", () => {
     stubFetch(new Response("<html>hello</html>", { status: 200 }));
 
     await expect(probeSpaceSupport(PDS)).resolves.toMatchObject({ supported: false });
+  });
+});
+
+/** The one row of _space_support this helper reads and writes, in memory. */
+function fakeDb(row?: { supported: number; missing: string; checked_at: string }) {
+  let stored = row;
+  return {
+    query: async () => (stored ? [{ ...stored }] : []),
+    run: async (_sql: string, params?: unknown[]) => {
+      const [, supported, missing, checkedAt] = params as [string, number, string, string];
+      stored = { supported, missing, checked_at: checkedAt };
+    },
+    get stored() {
+      return stored;
+    },
+  };
+}
+
+const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+const YES = { supported: 1, missing: "[]", checked_at: ago(0) };
+const NO = { supported: 0, missing: '["com.atproto.simplespace.createSpace"]', checked_at: ago(0) };
+
+describe("getSpaceSupport caching", () => {
+  test("a fresh answer is served from cache without probing", async () => {
+    const fetchFn = stubFetch(describeResponse(SPACE_METHODS));
+    const db = fakeDb({ ...YES, checked_at: ago(60 * 1000) });
+
+    await expect(getSpaceSupport(db, PDS)).resolves.toMatchObject({ supported: true });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  test("force probes again even when the cached answer is fresh", async () => {
+    const fetchFn = stubFetch(describeResponse(SPACE_METHODS));
+    const db = fakeDb({ ...NO, checked_at: ago(1000) });
+
+    // The recourse for a viewer whose server has just gained spaces: the thing
+    // that would change the answer has already happened, and without this they
+    // wait out a cache for it.
+    await expect(getSpaceSupport(db, PDS, { force: true })).resolves.toMatchObject({
+      supported: true,
+    });
+    expect(fetchFn).toHaveBeenCalledOnce();
+  });
+
+  test("a no is re-probed long before a yes would be", async () => {
+    // Ten minutes: past the window a no is held for, nowhere near a yes's.
+    const fetchFn = stubFetch(describeResponse(SPACE_METHODS));
+    const db = fakeDb({ ...NO, checked_at: ago(10 * 60 * 1000) });
+
+    await expect(getSpaceSupport(db, PDS)).resolves.toMatchObject({ supported: true });
+    expect(fetchFn).toHaveBeenCalledOnce();
+
+    // And the fresh yes is what gets written back.
+    expect(db.stored?.supported).toBe(1);
+  });
+
+  test("a yes that old is still trusted", async () => {
+    const fetchFn = stubFetch(describeResponse(SPACE_METHODS));
+    const db = fakeDb({ ...YES, checked_at: ago(10 * 60 * 1000) });
+
+    await expect(getSpaceSupport(db, PDS)).resolves.toMatchObject({ supported: true });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  test("a probe that could not reach the server does not outlive the minute it failed in", async () => {
+    // The case that stranded a real account: a restart mid-probe, cached as
+    // though the server had answered and said no.
+    const fetchFn = stubFetch(describeResponse(SPACE_METHODS));
+    const db = fakeDb({ supported: 0, missing: "[]", checked_at: ago(6 * 60 * 1000) });
+
+    await expect(getSpaceSupport(db, PDS)).resolves.toMatchObject({ supported: true });
+    expect(fetchFn).toHaveBeenCalledOnce();
   });
 });

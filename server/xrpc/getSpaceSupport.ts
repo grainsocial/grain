@@ -11,11 +11,14 @@ import { defineQuery, InvalidRequestError } from "$hatk";
 import { getSpaceSupport, pdsEndpointFor } from "../helpers/spaceSupport.ts";
 
 export default defineQuery("social.grain.unspecced.getSpaceSupport", async (ctx) => {
-  const { ok, db, viewer } = ctx;
+  const { ok, db, viewer, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const pds = await pdsEndpointFor(db, viewer.did);
   if (!pds) throw new InvalidRequestError("No PDS session for this account");
 
-  return ok(await getSpaceSupport(db, pds));
+  // A query param arrives as a string, and "false" read plainly is true.
+  const force = params.force === true || params.force === "true";
+
+  return ok(await getSpaceSupport(db, pds, { force }));
 });
