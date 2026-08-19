@@ -1,0 +1,34 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.addSpaceMember",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Share an existing private gallery with another account. Adds them to the space's member list on the author's PDS, which is what the authority consults when it mints a credential.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["space", "did"],
+          "properties": {
+            "space": { "type": "string" },
+            "did": { "type": "string", "format": "did" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did"],
+          "properties": {
+            "did": { "type": "string", "format": "did" }
+          }
+        }
+      },
+      "errors": [
+        { "name": "NotAuthorized", "description": "Only the gallery's author may add members." }
+      ]
+    }
+  }
+}

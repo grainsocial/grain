@@ -235,6 +235,15 @@ export const privateGalleriesQuery = (f?: Fetch) =>
     retry: false,
   });
 
+/** Who a private gallery is shared with. Answerable only for its author. */
+export const spaceMembersQuery = (space: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["spaceMembers", space],
+    queryFn: () => callXrpc("social.grain.unspecced.getSpaceMembers", { space }, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
 /** Private galleries shared with the viewer by someone else. */
 export const sharedGalleriesQuery = (f?: Fetch) =>
   queryOptions({

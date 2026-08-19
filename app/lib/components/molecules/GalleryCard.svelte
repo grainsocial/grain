@@ -21,7 +21,23 @@
   import { storyAuthorsQuery } from '$lib/queries'
   import { EyeOff, AlertTriangle, Info } from 'lucide-svelte'
 
-  let { gallery, onCommentClick, onStoryTap }: { gallery: GalleryView; onCommentClick?: () => void; onStoryTap?: (did: string) => void } = $props()
+  // `privateGallery` strips everything that would write a public record about
+  // this gallery. A favorite, a comment or a report is an ordinary record in
+  // the viewer's public repo naming the gallery's URI, so offering them for a
+  // gallery that lives in a permissioned space would publish its existence to
+  // the network. Delete and edit are wrong for a different reason: they act on
+  // the public repo, where a private gallery has no record at all.
+  let {
+    gallery,
+    onCommentClick,
+    onStoryTap,
+    privateGallery = false,
+  }: {
+    gallery: GalleryView
+    onCommentClick?: () => void
+    onStoryTap?: (did: string) => void
+    privateGallery?: boolean
+  } = $props()
 
   const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
@@ -183,6 +199,7 @@
         </div>
       </a>
     </ProfilePopover>
+    {#if !privateGallery}
     <OverflowMenu horizontal>
       {#if $isAuthenticated}
         <button class="menu-item" type="button" onclick={() => (reportOpen = true)}>
@@ -204,6 +221,7 @@
         </button>
       {/if}
     </OverflowMenu>
+    {/if}
   </header>
 
   {#if photos.length > 0}
@@ -277,6 +295,7 @@
   {/if}
 
   <div class="engagement">
+    {#if !privateGallery}
     <FavoriteButton
       galleryUri={gallery.uri}
       viewerFav={gallery.viewer?.fav ?? null}
@@ -288,12 +307,13 @@
       <MessageCircle size={20} />
       {#if commentCount > 0}<span class="stat-count">{commentCount}</span>{/if}
     </button>
+    {/if}
     <button class="stat" type="button" onclick={handleShare} aria-label="Share">
       <Send size={20} />
     </button>
   </div>
 
-  {#if favedByFollowing.length > 0}
+  {#if favedByFollowing.length > 0 && !privateGallery}
     <a class="faved-by" href="{galleryHref}/favorited-by">
       <Facepile people={favedByFollowing} size={20} />
       <span class="faved-by-text">
