@@ -1,14 +1,22 @@
 <script lang="ts">
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import Button from '$lib/components/atoms/Button.svelte'
+  import Field from '$lib/components/atoms/Field.svelte'
+  import FileDropZone from '$lib/components/atoms/FileDropZone.svelte'
+  import Input from '$lib/components/atoms/Input.svelte'
+  import Textarea from '$lib/components/atoms/Textarea.svelte'
   import { callXrpc } from '$hatk/client'
   import { createQuery } from '@tanstack/svelte-query'
   import { spaceSupportQuery } from '$lib/queries'
   import { viewer } from '$lib/stores'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { nextTid, uploadPhotoBlobs } from '$lib/utils/records'
+  import { ImagePlus, Lock, X } from 'lucide-svelte'
   import { goto } from '$app/navigation'
 
   const MAX_PHOTOS = 25
+  const MAX_TITLE = 100
+  const MAX_DESCRIPTION = 1000
 
   const spaces = createQuery(() => spaceSupportQuery())
 
@@ -35,15 +43,15 @@
     title.trim().length > 0 && photos.length > 0 && badMembers.length === 0 && !publishing,
   )
 
-  async function handleFiles(e: Event) {
-    const input = e.target as HTMLInputElement
-    const files = Array.from(input.files ?? []).filter((f) => f.type.startsWith('image/'))
-    input.value = ''
+  async function addFiles(files: File[]) {
     if (files.length === 0) return
 
     const remaining = MAX_PHOTOS - photos.length
     if (files.length > remaining) {
-      error = `You can only add ${remaining} more photo${remaining === 1 ? '' : 's'}`
+      error =
+        remaining === 0
+          ? `Maximum ${MAX_PHOTOS} photos`
+          : `You can only add ${remaining} more photo${remaining === 1 ? '' : 's'}`
       return
     }
 
@@ -56,6 +64,13 @@
     } finally {
       processing = false
     }
+  }
+
+  function handleFiles(e: Event) {
+    const input = e.target as HTMLInputElement
+    const files = Array.from(input.files ?? []).filter((f) => f.type.startsWith('image/'))
+    input.value = ''
+    addFiles(files)
   }
 
   function removePhoto(index: number) {
@@ -96,20 +111,30 @@
   }
 </script>
 
+<FileDropZone
+  enabled={!publishing && photos.length < MAX_PHOTOS}
+  {processing}
+  hint="{MAX_PHOTOS - photos.length} more allowed"
+  onfiles={addFiles}
+  onreject={(message) => (error = message)}
+/>
+
 <DetailHeader label="New private gallery" />
 
 <div class="page">
+  <p class="lede">
+    <Lock size={13} />
+    <span>
+      This gallery lives in a permissioned space on your PDS. It never reaches the firehose and is
+      never indexed — only the accounts you list can read it.
+    </span>
+  </p>
+
   {#if spaces.isSuccess && !spaces.data?.supported}
-    <p class="notice">
-      Your PDS doesn't serve permissioned spaces, so a private gallery can't live on it. Nothing
-      here will publish.
+    <p class="warning">
+      Your PDS doesn't serve permissioned spaces, so nothing here will publish.
     </p>
   {/if}
-
-  <p class="lede">
-    A private gallery lives in a permissioned space on your PDS. It never reaches the firehose, it
-    is never indexed, and only the accounts you list below can read it.
-  </p>
 
   <input
     type="file"
@@ -121,51 +146,57 @@
     style="display:none"
   />
 
-  <button class="select" onclick={() => fileInput?.click()} disabled={processing || publishing}>
-    {processing ? 'Processing…' : photos.length ? 'Add more photos' : 'Select photos'}
-  </button>
-
   {#if photos.length > 0}
     <div class="thumbs">
       {#each photos as photo, i (photo.dataUrl)}
         <div class="thumb">
           <img src={photo.dataUrl} alt="Photo {i + 1}" />
-          <button class="remove" onclick={() => removePhoto(i)} aria-label="Remove photo">×</button>
+          <button class="remove" onclick={() => removePhoto(i)} aria-label="Remove photo">
+            <X size={12} />
+          </button>
         </div>
       {/each}
     </div>
   {/if}
 
-  <label class="field">
-    <span>Title</span>
-    <input type="text" bind:value={title} maxlength="100" placeholder="Sunday at the coast" />
-  </label>
+  <Button
+    variant="secondary"
+    onclick={() => fileInput?.click()}
+    disabled={processing || publishing || photos.length >= MAX_PHOTOS}
+  >
+    <ImagePlus size={15} />
+    {processing ? 'Processing…' : photos.length ? 'Add more photos' : 'Select photos'}
+  </Button>
 
-  <label class="field">
-    <span>Description</span>
-    <textarea bind:value={description} maxlength="1000" rows="3"></textarea>
-  </label>
+  <Field label="Title" count={title.length} max={MAX_TITLE}>
+    <Input bind:value={title} maxlength={MAX_TITLE} placeholder="Sunday at the coast" />
+  </Field>
 
-  <label class="field">
-    <span>Who can see it</span>
-    <textarea bind:value={memberText} rows="3" placeholder="did:plc:… (one per line)"></textarea>
-  </label>
+  <Field label="Description" count={description.length} max={MAX_DESCRIPTION}>
+    <Textarea bind:value={description} maxlength={MAX_DESCRIPTION} rows={3} />
+  </Field>
+
+  <Field label="Who can see it">
+    <Textarea bind:value={memberText} rows={3} placeholder="did:plc:… (one per line)" />
+  </Field>
 
   {#if badMembers.length > 0}
     <p class="error">Not a DID: {badMembers.join(', ')}</p>
-  {:else if members.length > 0}
-    <p class="hint">{members.length} reader{members.length === 1 ? '' : 's'}, plus you.</p>
   {:else}
-    <p class="hint">Only you, until you add someone.</p>
+    <p class="hint">
+      {members.length
+        ? `${members.length} reader${members.length === 1 ? '' : 's'}, plus you.`
+        : 'Only you, until you add someone.'}
+    </p>
   {/if}
 
   {#if error}
     <p class="error">{error}</p>
   {/if}
 
-  <button class="publish" onclick={publish} disabled={!canPublish}>
+  <Button onclick={publish} disabled={!canPublish}>
     {publishing ? 'Publishing…' : 'Create private gallery'}
-  </button>
+  </Button>
 </div>
 
 <style>
@@ -175,43 +206,29 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
-  .lede,
-  .hint {
+  .lede {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     margin: 0;
     font-size: 13px;
     line-height: 1.45;
     color: var(--text-muted);
   }
-  .notice {
+  .hint {
+    margin: -8px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .warning {
     margin: 0;
     padding: 12px;
     border: 1px solid var(--border);
     border-radius: 10px;
     font-size: 13px;
     color: var(--text-primary);
-  }
-  .select,
-  .publish {
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: none;
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 15px;
-    cursor: pointer;
-  }
-  .publish {
-    background: var(--text-primary);
-    color: var(--bg);
-    border: none;
-  }
-  .select:disabled,
-  .publish:disabled {
-    opacity: 0.5;
-    cursor: default;
   }
   .thumbs {
     display: flex;
@@ -233,38 +250,19 @@
     position: absolute;
     top: -6px;
     right: -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 20px;
     height: 20px;
     border: none;
     border-radius: 50%;
     background: var(--text-primary);
     color: var(--bg);
-    font-size: 14px;
-    line-height: 1;
     cursor: pointer;
   }
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .field span {
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-  .field input,
-  .field textarea {
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: none;
-    color: var(--text-primary);
-    font-family: inherit;
-    font-size: 15px;
-    resize: vertical;
-  }
   .error {
-    margin: 0;
+    margin: -8px 0 0;
     font-size: 13px;
     color: var(--danger);
   }

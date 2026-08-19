@@ -1,5 +1,6 @@
 <script lang="ts">
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import SettingsGroup from '$lib/components/atoms/SettingsGroup.svelte'
   import { ChevronRight, ExternalLink } from 'lucide-svelte'
   import { viewer } from '$lib/stores'
   import { callXrpc } from '$hatk/client'
@@ -74,21 +75,19 @@
          spaces, and telling everyone else that theirs does not is a line about
          a feature they have no way to reach. -->
     {#if spaces.data?.supported}
-      <div class="settings-group">
-        <div class="settings-row">
+      <!-- Unlabelled, like the other groups on this page. -->
+      <SettingsGroup>
+        <div class="settings-row stacked">
           <span class="row-label">Permissioned spaces</span>
-          <span class="row-value">Supported</span>
+          {#if spacesPds}
+            <span class="row-desc">{spacesPds} serves proposal 0016</span>
+          {/if}
         </div>
         <a href="/private/create" class="settings-row link">
-          <span class="row-label">New private gallery</span>
-          <ChevronRight size={14} class="chevron" />
+          <span class="row-label grow">New private gallery</span>
+          <ChevronRight size={16} class="chevron" />
         </a>
-        {#if spacesPds}
-          <p class="row-hint">
-            {spacesPds} serves proposal 0016, so private galleries can live on it.
-          </p>
-        {/if}
-      </div>
+      </SettingsGroup>
     {/if}
 
     <div class="settings-group">
@@ -148,12 +147,22 @@
     font-size: 11px;
     word-break: break-all;
   }
-  .row-hint {
-    margin: 0;
-    padding: 0 16px 14px;
+  /* Label and value sit on one line; a row that carries a description stacks
+     them instead, the way SettingsToggleRow does. */
+  .settings-row.stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .row-desc {
     font-size: 12px;
     line-height: 1.4;
     color: var(--text-muted);
+  }
+  /* Pushes a trailing chevron to the right edge, which .row-value does for
+     rows that have one. */
+  .row-label.grow {
+    flex: 1;
   }
   .settings-row :global(.chevron) {
     color: var(--text-muted);

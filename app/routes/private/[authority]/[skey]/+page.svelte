@@ -26,12 +26,12 @@
 
 <DetailHeader label={gallery.data?.gallery?.title ?? 'Private gallery'} />
 
-<div class="page">
+<div class="detail-page">
   {#if gallery.isLoading}
-    <Skeleton width="200px" height="20px" />
-    <div class="grid">
-      {#each { length: 4 } as _}
-        <Skeleton height="220px" />
+    <div class="head"><Skeleton width="90px" height="22px" /></div>
+    <div class="photos">
+      {#each { length: 3 } as _}
+        <Skeleton height="260px" />
       {/each}
     </div>
   {:else if notAuthorized}
@@ -40,7 +40,7 @@
       existence is only visible to its members.
     </p>
   {:else if gallery.isError}
-    <p class="error">{String(gallery.error)}</p>
+    <p class="empty">{String(gallery.error)}</p>
   {:else if gallery.data}
     <div class="head">
       <span class="badge"><Lock size={12} /> Private</span>
@@ -56,7 +56,7 @@
     {#if gallery.data.items.length === 0}
       <p class="empty">No photos in this gallery yet.</p>
     {:else}
-      <div class="grid">
+      <div class="photos">
         {#each gallery.data.items as item (item.uri)}
           <img
             src={blobSrc(item.did, item.cid)}
@@ -70,15 +70,16 @@
     {/if}
 
     <p class="footnote">
-      Assembled from {gallery.data.authority === page.params.authority ? 'its author’s' : 'member'} repo
-      at request time. Space records never reach the firehose, so none of this is indexed.
+      Assembled from its author's repo at request time. Space records never reach the firehose, so
+      none of this is indexed.
     </p>
   {/if}
 </div>
 
 <style>
-  .page {
-    max-width: 900px;
+  /* 600px, matching the public gallery detail page. */
+  .detail-page {
+    max-width: 600px;
     margin: 0 auto;
     padding: 16px;
     display: flex;
@@ -106,7 +107,7 @@
     color: var(--text-muted);
   }
   .footnote {
-    margin: 8px 0 0;
+    margin: 4px 0 0;
     line-height: 1.45;
   }
   .description {
@@ -115,12 +116,14 @@
     line-height: 1.5;
     color: var(--text-primary);
   }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  /* One column, like a gallery detail page — not the multi-column grid the
+     feed uses for whole galleries. */
+  .photos {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
   }
-  .grid img {
+  .photos img {
     width: 100%;
     height: auto;
     border-radius: 10px;
@@ -128,13 +131,10 @@
   }
   .empty {
     margin: 0;
+    padding: 32px 0;
     font-size: 14px;
     line-height: 1.5;
     color: var(--text-muted);
-  }
-  .error {
-    margin: 0;
-    font-size: 13px;
-    color: var(--danger);
+    text-align: center;
   }
 </style>

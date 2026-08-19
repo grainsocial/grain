@@ -71,11 +71,13 @@ test("publish a private gallery and read it back", async ({ page }) => {
 
   // 4. The photo. Served by grain from the space, never cached anywhere in
   //    between — so the response has to be a real image and say so.
-  const image = page.locator(".grid img").first();
+  // By what the src has to be, not by a layout class — the assertion below is
+  // about the photo coming through the space endpoint, and that shouldn't
+  // break when the page is restyled.
+  const image = page.locator('img[src*="getPrivateBlob"]').first();
   await expect(image).toBeVisible({ timeout: 30_000 });
 
   const src = await image.getAttribute("src");
-  expect(src).toContain("getPrivateBlob");
 
   const response = await page.request.get(src!);
   expect(response.status()).toBe(200);
