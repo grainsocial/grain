@@ -54,9 +54,21 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
 
   // Sequential rather than concurrent: the authority applies these to one
   // member list, and a handful of readers is not worth racing.
+  //
+  // Each member is also recorded here, because nothing else will tell them.
+  // Being added to a space leaves no trace on the member's own PDS, so without
+  // this row a reader can only reach the gallery through a link somebody sent
+  // them. It grants nothing on its own — the read still needs a credential the
+  // authority issues.
   for (const did of members) {
     if (did === viewer.did) continue; // the authority is authorized without being listed
     await pds("com.atproto.simplespace.addMember", { method: "POST", body: { space, did } });
+    await db.run(
+      `INSERT INTO _space_invites (space, member_did, author_did, created_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (space, member_did) DO NOTHING`,
+      [space, did, viewer.did, createdAt],
+    );
   }
 
   // The gallery, its photos and the items joining them, in one commit. A

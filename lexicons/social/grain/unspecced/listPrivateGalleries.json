@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.listPrivateGalleries",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "The viewer's own private galleries, read from the spaces their PDS holds. Authors only: a space tells its members nothing about itself, so an account added to someone else's gallery cannot enumerate it and needs the link.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["galleries"],
+          "properties": {
+            "galleries": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#privateGalleryRef" }
+            }
+          }
+        }
+      }
+    },
+    "privateGalleryRef": {
+      "type": "object",
+      "required": ["space", "skey"],
+      "properties": {
+        "space": { "type": "string", "description": "Space URI the gallery lives in." },
+        "skey": { "type": "string", "description": "Also the gallery record's rkey." },
+        "title": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

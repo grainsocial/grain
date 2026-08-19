@@ -224,6 +224,27 @@ export const spaceSupportQuery = (f?: Fetch) =>
   });
 
 /**
+ * The viewer's own private galleries. Read from their PDS on every call —
+ * there is no index behind this, so it is not held stale for long.
+ */
+export const privateGalleriesQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["privateGalleries"],
+    queryFn: () => callXrpc("social.grain.unspecced.listPrivateGalleries", {}, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
+/** Private galleries shared with the viewer by someone else. */
+export const sharedGalleriesQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["sharedGalleries"],
+    queryFn: () => callXrpc("social.grain.unspecced.listSharedGalleries", {}, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
+/**
  * A gallery living in a permissioned space. Assembled from member repos on
  * every request rather than read from the index — there is no index for it —
  * so this is deliberately not prefetched or held stale.

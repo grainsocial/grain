@@ -91,4 +91,11 @@ test("publish a private gallery and read it back", async ({ page }) => {
       timeout: 15_000,
     })
     .toBeGreaterThan(0);
+
+  // 5. And it is findable again. Nothing indexes a space, so a gallery missing
+  //    from this list is a gallery that only its URL can reach.
+  await page.goto("/settings/account", { waitUntil: "networkidle" });
+  await expect(page.getByRole("link", { name: "Browser test gallery" }).first()).toBeVisible({
+    timeout: 30_000,
+  });
 });

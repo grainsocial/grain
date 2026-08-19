@@ -5,7 +5,7 @@
   import { viewer } from '$lib/stores'
   import { callXrpc } from '$hatk/client'
   import { createQuery } from '@tanstack/svelte-query'
-  import { spaceSupportQuery } from '$lib/queries'
+  import { privateGalleriesQuery, sharedGalleriesQuery, spaceSupportQuery } from '$lib/queries'
   import { logout } from '$lib/auth'
   import { goto } from '$app/navigation'
 
@@ -13,6 +13,19 @@
   const handle = $derived($viewer?.handle ?? '')
 
   const spaces = createQuery(() => spaceSupportQuery())
+  // Only asked once the PDS is known to serve spaces — elsewhere the call is a
+  // guaranteed error, and this sits on a page every account opens.
+  const galleries = createQuery(() => ({
+    ...privateGalleriesQuery(),
+    enabled: spaces.data?.supported === true,
+  }))
+  // Gated the same way: a shared gallery lives on its author's PDS, but the
+  // delegation token that buys a credential for it is minted by the reader's
+  // own, so a reader whose server has no spaces cannot open one either.
+  const shared = createQuery(() => ({
+    ...sharedGalleriesQuery(),
+    enabled: spaces.data?.supported === true,
+  }))
   const spacesPds = $derived.by(() => {
     const pds = spaces.data?.pds
     if (!pds) return ''
@@ -83,11 +96,40 @@
             <span class="row-desc">{spacesPds} serves proposal 0016</span>
           {/if}
         </div>
+        {#each galleries.data?.galleries ?? [] as gallery (gallery.space)}
+          <a
+            href="/private/{encodeURIComponent(did)}/{encodeURIComponent(gallery.skey)}"
+            class="settings-row link"
+          >
+            <span class="row-label grow">{gallery.title || gallery.skey}</span>
+            <ChevronRight size={16} class="chevron" />
+          </a>
+        {/each}
+
         <a href="/private/create" class="settings-row link">
-          <span class="row-label grow">New private gallery</span>
+          <span class="row-label grow new">New private gallery</span>
           <ChevronRight size={16} class="chevron" />
         </a>
       </SettingsGroup>
+
+      {#if (shared.data?.galleries ?? []).length > 0}
+        <SettingsGroup label="Shared with you">
+          {#each shared.data?.galleries ?? [] as gallery (gallery.space)}
+            <a
+              href="/private/{encodeURIComponent(gallery.author)}/{encodeURIComponent(
+                gallery.skey,
+              )}"
+              class="settings-row link"
+            >
+              <span class="row-label grow">{gallery.title || gallery.skey}</span>
+              {#if gallery.authorHandle}
+                <span class="row-desc">@{gallery.authorHandle}</span>
+              {/if}
+              <ChevronRight size={16} class="chevron" />
+            </a>
+          {/each}
+        </SettingsGroup>
+      {/if}
     {/if}
 
     <div class="settings-group">
@@ -163,6 +205,10 @@
      rows that have one. */
   .row-label.grow {
     flex: 1;
+  }
+  /* The action sits below the galleries it makes more of, so it reads as one. */
+  .row-label.new {
+    color: var(--text-muted);
   }
   .settings-row :global(.chevron) {
     color: var(--text-muted);
