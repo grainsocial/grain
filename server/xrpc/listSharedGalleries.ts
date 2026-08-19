@@ -14,6 +14,7 @@
 
 import { defineQuery, InvalidRequestError } from "$hatk";
 import { listSpaceRecords, parseSpaceUri, SpaceError } from "../spaces/client.ts";
+import { throwSpaceError } from "../spaces/errors.ts";
 
 interface InviteRow {
   space: string;
@@ -36,42 +37,49 @@ export default defineQuery("social.grain.unspecced.listSharedGalleries", async (
   )) as InviteRow[];
   if (rows.length === 0) return ok({ galleries: [] });
 
-  const galleries = await Promise.all(
-    rows.map(async (row) => {
-      let skey: string;
-      let authority: string;
-      try {
-        ({ skey, authority } = parseSpaceUri(row.space));
-      } catch {
-        return null;
-      }
+  let galleries;
+  try {
+    galleries = await Promise.all(
+      rows.map(async (row) => {
+        let skey: string;
+        let authority: string;
+        try {
+          ({ skey, authority } = parseSpaceUri(row.space));
+        } catch {
+          return null;
+        }
 
-      try {
-        const records = await listSpaceRecords(
-          pds,
-          viewer.did,
-          row.space,
-          authority,
-          "social.grain.gallery",
-        );
-        const record = records.find((r) => r.rkey === skey) ?? records[0];
-        const value = record?.value as { title?: string; createdAt?: string } | undefined;
+        try {
+          const records = await listSpaceRecords(
+            pds,
+            viewer.did,
+            row.space,
+            authority,
+            "social.grain.gallery",
+          );
+          const record = records.find((r) => r.rkey === skey) ?? records[0];
+          const value = record?.value as { title?: string; createdAt?: string } | undefined;
 
-        return {
-          space: row.space,
-          skey,
-          author: row.author_did,
-          ...(value?.title ? { title: value.title } : {}),
-          ...(value?.createdAt ? { createdAt: value.createdAt } : {}),
-        };
-      } catch (err) {
-        // Removed from the space, or the gallery is gone. Either way it is not
-        // the viewer's to see, and a row we cannot read is not one to show.
-        if (err instanceof SpaceError) return null;
-        throw err;
-      }
-    }),
-  );
+          return {
+            space: row.space,
+            skey,
+            author: row.author_did,
+            ...(value?.title ? { title: value.title } : {}),
+            ...(value?.createdAt ? { createdAt: value.createdAt } : {}),
+          };
+        } catch (err) {
+          // Removed from the space, or the gallery is gone. Either way it is
+          // not the viewer's to see, and a row we cannot read is not one to
+          // show. A dead session is not that — it fails every row, and is
+          // reported rather than rendered as an empty list.
+          if (err instanceof SpaceError && err.status !== 401) return null;
+          throw err;
+        }
+      }),
+    );
+  } catch (err) {
+    return throwSpaceError(err, db, viewer.did);
+  }
 
   const items = galleries.filter((g): g is NonNullable<typeof g> => g !== null);
 

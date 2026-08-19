@@ -126,7 +126,7 @@
     <Lock size={13} />
     <span>
       This gallery lives in a permissioned space on your PDS. It never reaches the firehose and is
-      never indexed — only the accounts you list can read it.
+      never indexed. Only the accounts you list can read it.
     </span>
   </p>
 

@@ -12,13 +12,14 @@
 // browser.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
-import { fetchSpaceBlob, SpaceError } from "../spaces/client.ts";
+import { fetchSpaceBlob } from "../spaces/client.ts";
+import { throwSpaceError } from "../spaces/errors.ts";
 
 /** What we are willing to hand back, whatever the repo claims it is. */
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
 
 export default defineQuery("social.grain.unspecced.getPrivateBlob", async (ctx) => {
-  const { viewer, pds, params } = ctx;
+  const { db, viewer, pds, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const { space, did, cid } = params;
@@ -27,10 +28,7 @@ export default defineQuery("social.grain.unspecced.getPrivateBlob", async (ctx) 
   try {
     upstream = await fetchSpaceBlob(pds, viewer.did, space, did, cid);
   } catch (err) {
-    if (err instanceof SpaceError && (err.status === 403 || err.status === 404)) {
-      throw new InvalidRequestError("Not a member of this space", "NotAuthorized");
-    }
-    throw err;
+    return throwSpaceError(err, db, viewer.did);
   }
 
   // A repo we do not control names the type. Serving it back unchecked would let

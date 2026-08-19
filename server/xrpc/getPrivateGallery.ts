@@ -7,12 +7,12 @@
 // when the author is asking, and through a credential the space's authority
 // issues when anyone else is.
 //
-// FOLLOW-UP: photo bytes still need an endpoint. `cid` is returned so the client
-// knows what to ask for, but com.atproto.space.getBlob answers with bytes and
-// hatk's XRPC layer JSON-encodes every handler result.
+// `cid` rides along per item so the client can ask getPrivateBlob for the bytes;
+// they cannot come from the CDN.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
-import { listSpaceRecords, parseSpaceUri, SpaceError } from "../spaces/client.ts";
+import { listSpaceRecords, parseSpaceUri } from "../spaces/client.ts";
+import { throwSpaceError } from "../spaces/errors.ts";
 
 interface PhotoValue {
   photo?: { ref?: { $link?: string } };
@@ -26,7 +26,7 @@ interface ItemValue {
 }
 
 export default defineQuery("social.grain.unspecced.getPrivateGallery", async (ctx) => {
-  const { ok, viewer, pds, params } = ctx;
+  const { ok, db, viewer, pds, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const space = params.space;
@@ -92,11 +92,6 @@ export default defineQuery("social.grain.unspecced.getPrivateGallery", async (ct
       items: view,
     });
   } catch (err) {
-    // The authority refusing to mint a credential is the space saying no, which
-    // is a 403 about membership rather than a broken request.
-    if (err instanceof SpaceError && (err.status === 403 || err.status === 404)) {
-      throw new InvalidRequestError("Not a member of this space", "NotAuthorized");
-    }
-    throw err;
+    return throwSpaceError(err, db, viewer.did);
   }
 });
