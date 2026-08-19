@@ -26,6 +26,12 @@ const grainScopes = [
 // Requested only from PDSes that serve spaces — see conditionalScopes below.
 // Almost no PDS does, and a permission nobody can honor has no business on
 // everybody's consent screen.
+//
+// Registered on every client all the same. A client metadata document's `scope`
+// is the set the client may ask for, not the set it asks for on any given
+// login, and a PDS that checks the request against it — zds does; bsky.social
+// does not — rejects the whole authorization with `invalid_scope` when
+// conditional scopes widen the request past what the document declares.
 const spaceScopes = [
   "space:social.grain.gallery?authority=*&skey=*",
   "collection=social.grain.gallery",
@@ -81,7 +87,7 @@ export default defineConfig({
             {
               client_id: `https://${prodDomain}/oauth-client-metadata.json`,
               client_name: "grain",
-              scope: grainScopes,
+              scope: `${grainScopes} ${spaceScopes}`,
               redirect_uris: [
                 `https://${prodDomain}/oauth/callback`,
                 `https://${prodDomain}/admin`,
@@ -102,7 +108,7 @@ export default defineConfig({
       {
         client_id: "grain-native://app",
         client_name: "Grain for iOS",
-        scope: grainScopes,
+        scope: `${grainScopes} ${spaceScopes}`,
         redirect_uris: ["grain://oauth/callback"],
       },
     ],

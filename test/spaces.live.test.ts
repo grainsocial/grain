@@ -82,13 +82,18 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
     const skey = `test${Date.now().toString(36)}`;
     space = spaceUri(author.did, skey);
 
+    // The same body createPrivateGallery sends — the one spelling every server
+    // that implements the proposal reads.
     await authorPds("com.atproto.simplespace.createSpace", {
       method: "POST",
       body: {
+        did: author.did,
         type: "social.grain.gallery",
         skey,
-        policy: { $type: "com.atproto.simplespace.defs#memberListPolicy" },
-        appAccess: { $type: "com.atproto.simplespace.defs#open" },
+        config: {
+          policy: "member-list",
+          appAccess: { $type: "com.atproto.simplespace.defs#open" },
+        },
       },
     });
     await authorPds("com.atproto.simplespace.addMember", {
@@ -103,10 +108,13 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
     await authorPds("com.atproto.simplespace.createSpace", {
       method: "POST",
       body: {
+        did: author.did,
         type: "social.grain.gallery",
         skey: closedSkey,
-        policy: { $type: "com.atproto.simplespace.defs#memberListPolicy" },
-        appAccess: { $type: "com.atproto.simplespace.defs#open" },
+        config: {
+          policy: "member-list",
+          appAccess: { $type: "com.atproto.simplespace.defs#open" },
+        },
       },
     });
     await authorPds("com.atproto.space.createRecord", {

@@ -90,6 +90,25 @@ Space writes never reach a firehose, so nothing these accounts do in a space is
 indexed by the appview. That is the protocol working as designed, not a dev-env
 limitation — the app assembles a space by reading member repos directly.
 
+### The second implementation
+
+pds.js is not the only server that serves spaces. [zds](https://tangled.org/zat.dev/zds)
+does too, and it is stricter, so it is the one that finds our assumptions:
+
+- It validates the requested OAuth scope against the `scope` in our published
+  client metadata document. Conditional scopes widen the request past that
+  document unless the extra scopes are registered on the client too — see
+  `spaceScopes` in `hatk.config.ts`.
+- `com.atproto.simplespace.createSpace` requires `did`, and reads `policy` and
+  `appAccess` from a nested `config` with the policy as a bare string.
+- Space reads name the repo `repo`, never `did`. pds.js hosts one account and
+  falls back to it, which hides the difference.
+- `com.atproto.space.listRepos` is credential-only. A session does not work
+  there even for the account that owns the space.
+
+When touching the space client, check a call against both servers' handlers:
+`packages/spaces/src/handlers/` in pds.js, `src/atproto/space.zig` in zds.
+
 ## Railway production debugging
 
 The prod container has `sqlite3` and `duckdb` CLIs. Railway SSH doesn't support piped stdin or shell metacharacters (parentheses, quotes) reliably. Use the base64 script pattern:

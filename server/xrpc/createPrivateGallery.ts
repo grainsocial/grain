@@ -53,13 +53,23 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
   const space = spaceUri(viewer.did, rkey);
   const createdAt = new Date().toISOString();
 
+  // `did` names the authority. pds.js infers it from the session and treats the
+  // field as optional; zds requires it. Sending it satisfies both, and it can
+  // only ever be the caller — nobody anchors a space on somebody else's account.
+  //
+  // The config goes in `config` rather than beside it, with the policy as the
+  // bare string the proposal's `#spaceConfig` uses. That is the one spelling
+  // both servers read: pds.js accepts either shape, zds only this one.
   await pds("com.atproto.simplespace.createSpace", {
     method: "POST",
     body: {
+      did: viewer.did,
       type: GALLERY_SPACE_TYPE,
       skey: rkey,
-      policy: { $type: "com.atproto.simplespace.defs#memberListPolicy" },
-      appAccess: { $type: "com.atproto.simplespace.defs#open" },
+      config: {
+        policy: "member-list",
+        appAccess: { $type: "com.atproto.simplespace.defs#open" },
+      },
     },
   });
 
