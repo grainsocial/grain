@@ -16,18 +16,29 @@
               "description": "Record key for the gallery. Doubles as the space's skey, so one gallery is one space.",
               "maxLength": 64
             },
-            "title": { "type": "string", "maxLength": 100 },
-            "description": { "type": "string", "maxLength": 1000 },
+            "title": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 1000
+            },
             "members": {
               "type": "array",
-              "description": "DIDs allowed to read the gallery. The author always can.",
+              "description": "Handles or DIDs allowed to read the gallery. The author always can.",
               "maxLength": 100,
-              "items": { "type": "string", "format": "did" }
+              "items": {
+                "type": "string"
+              }
             },
             "photos": {
               "type": "array",
               "maxLength": 100,
-              "items": { "type": "ref", "ref": "#photoInput" }
+              "items": {
+                "type": "ref",
+                "ref": "#photoInput"
+              }
             }
           }
         }
@@ -38,8 +49,14 @@
           "type": "object",
           "required": ["space", "uri"],
           "properties": {
-            "space": { "type": "string", "description": "The space URI the gallery lives in." },
-            "uri": { "type": "string", "format": "at-uri" }
+            "space": {
+              "type": "string",
+              "description": "The space URI the gallery lives in."
+            },
+            "uri": {
+              "type": "string",
+              "format": "at-uri"
+            }
           }
         }
       },
@@ -47,6 +64,10 @@
         {
           "name": "SpacesUnsupported",
           "description": "The author's PDS does not serve permissioned spaces."
+        },
+        {
+          "name": "ActorNotFound",
+          "description": "One of the named members could not be resolved."
         }
       ]
     },
@@ -54,9 +75,18 @@
       "type": "object",
       "required": ["photo", "aspectRatio"],
       "properties": {
-        "photo": { "type": "blob", "accept": ["image/*"], "maxSize": 1000000 },
-        "alt": { "type": "string" },
-        "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" }
+        "photo": {
+          "type": "blob",
+          "accept": ["image/*"],
+          "maxSize": 1000000
+        },
+        "alt": {
+          "type": "string"
+        },
+        "aspectRatio": {
+          "type": "ref",
+          "ref": "social.grain.defs#aspectRatio"
+        }
       }
     }
   }

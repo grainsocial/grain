@@ -68,22 +68,49 @@
   //
   // FOLLOW-UP: once callXrpc carries the error name through, split these.
 
-  let newMember = $state('')
+  type Suggestion = { did: string; handle?: string; displayName?: string; avatar?: string }
+
+  let query = $state('')
+  let suggestions = $state<Suggestion[]>([])
   let adding = $state(false)
   let addError = $state<string | null>(null)
+  let searchTimer: ReturnType<typeof setTimeout> | undefined
 
-  async function addMember() {
-    const did = newMember.trim()
-    if (!did || adding) return
-    if (!did.startsWith('did:')) {
-      addError = 'A member is named by DID'
+  // Typeahead runs against grain's index, which has never heard of plenty of
+  // accounts worth sharing with. So the field also takes a handle typed in
+  // full: the server resolves it, asking the viewer's PDS when the index
+  // cannot answer.
+  function search(q: string) {
+    clearTimeout(searchTimer)
+    if (q.trim().length < 2) {
+      suggestions = []
       return
     }
+    searchTimer = setTimeout(async () => {
+      try {
+        const result = await callXrpc('social.grain.unspecced.searchActorsTypeahead', {
+          q: q.trim().replace(/^@/, ''),
+          limit: 5,
+        })
+        suggestions = (result?.actors ?? []) as Suggestion[]
+      } catch {
+        suggestions = []
+      }
+    }, 200)
+  }
+
+  $effect(() => {
+    search(query)
+  })
+
+  async function addMember(actor: string) {
+    if (!actor.trim() || adding) return
     adding = true
     addError = null
     try {
-      await callXrpc('social.grain.unspecced.addSpaceMember', { space, did } as never)
-      newMember = ''
+      await callXrpc('social.grain.unspecced.addSpaceMember', { space, actor } as never)
+      query = ''
+      suggestions = []
       queryClient.invalidateQueries({ queryKey: ['spaceMembers', space] })
     } catch (err) {
       addError = err instanceof Error ? err.message : String(err)
@@ -122,9 +149,19 @@
         <SettingsGroup label="Shared with">
           {#each members.data?.members ?? [] as member (member.did)}
             <div class="member-row">
-              <Avatar did={member.did} src={member.avatar} name={member.displayName ?? member.handle} size={28} />
-              <span class="member-name">
-                {member.displayName || (member.handle ? `@${member.handle}` : member.did)}
+              <Avatar
+                did={member.did}
+                src={member.avatar}
+                name={member.displayName ?? member.handle}
+                size={28}
+              />
+              <span class="member-text">
+                <span class="member-name">
+                  {member.displayName || (member.handle ? `@${member.handle}` : member.did)}
+                </span>
+                {#if member.displayName && member.handle}
+                  <span class="member-handle">@{member.handle}</span>
+                {/if}
               </span>
             </div>
           {/each}
@@ -136,14 +173,46 @@
         </SettingsGroup>
 
         <Field label="Add someone">
-          <Input bind:value={newMember} placeholder="did:plc:…" disabled={adding} />
+          <Input
+            bind:value={query}
+            placeholder="Search by handle, or type one in full"
+            disabled={adding}
+            onkeydown={(e: KeyboardEvent) => e.key === 'Enter' && addMember(query)}
+          />
         </Field>
+
+        {#if suggestions.length > 0}
+          <div class="suggestions">
+            {#each suggestions as actor (actor.did)}
+              <button class="suggestion" type="button" onclick={() => addMember(actor.did)}>
+                <Avatar
+                  did={actor.did}
+                  src={actor.avatar}
+                  name={actor.displayName ?? actor.handle}
+                  size={28}
+                />
+                <span class="member-text">
+                  <span class="member-name">
+                    {actor.displayName || (actor.handle ? `@${actor.handle}` : actor.did)}
+                  </span>
+                  {#if actor.displayName && actor.handle}
+                    <span class="member-handle">@{actor.handle}</span>
+                  {/if}
+                </span>
+              </button>
+            {/each}
+          </div>
+        {/if}
+
         {#if addError}
           <p class="error">{addError}</p>
         {/if}
-        <Button onclick={addMember} disabled={adding || !newMember.trim()}>
-          {adding ? 'Adding…' : 'Share with this account'}
-        </Button>
+
+        {#if query.trim() && suggestions.length === 0}
+          <Button onclick={() => addMember(query)} disabled={adding}>
+            {adding ? 'Adding…' : `Share with ${query.trim()}`}
+          </Button>
+        {/if}
       </div>
     {/if}
   {/if}
@@ -182,9 +251,42 @@
   .member-row:not(:last-child) {
     border-bottom: 1px solid var(--border);
   }
+  .member-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    text-align: left;
+  }
   .member-name {
     font-size: 14px;
     color: var(--text-primary);
+  }
+  .member-handle {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .suggestions {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .suggestion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .suggestion:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+  .suggestion:hover {
+    background: var(--bg-hover);
   }
   .member-name.muted {
     color: var(--text-muted);

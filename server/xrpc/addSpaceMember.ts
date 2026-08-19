@@ -6,6 +6,7 @@
 // The invite row written alongside is only so they can find it without a link.
 
 import { defineProcedure, InvalidRequestError } from "$hatk";
+import { resolveActor } from "../helpers/resolveActor.ts";
 import { parseSpaceUri } from "../spaces/client.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
@@ -13,7 +14,7 @@ export default defineProcedure("social.grain.unspecced.addSpaceMember", async (c
   const { ok, db, viewer, pds, input } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
-  const { space, did } = input;
+  const { space, actor } = input;
 
   let authority: string;
   try {
@@ -24,8 +25,12 @@ export default defineProcedure("social.grain.unspecced.addSpaceMember", async (c
   if (authority !== viewer.did) {
     throw new InvalidRequestError("Only the gallery's author can add members", "NotAuthorized");
   }
-  if (!did.startsWith("did:")) {
-    throw new InvalidRequestError("A member is named by DID");
+  // A handle is what a person knows; the space stores a DID. Resolved through
+  // the index first, then the viewer's PDS, which can resolve a handle grain
+  // has never indexed.
+  const did = await resolveActor(db, pds, actor);
+  if (!did) {
+    throw new InvalidRequestError(`Could not find ${actor}`, "ActorNotFound");
   }
   if (did === viewer.did) {
     throw new InvalidRequestError("You already have access to your own gallery");

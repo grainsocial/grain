@@ -38,7 +38,9 @@
       .map((s) => s.trim())
       .filter(Boolean),
   )
-  const badMembers = $derived(members.filter((m) => !m.startsWith('did:')))
+  // Handles or DIDs; the server resolves either. Only obvious nonsense is
+  // rejected here, since whether a handle exists is not ours to decide.
+  const badMembers = $derived(members.filter((m) => !m.includes('.') && !m.startsWith('did:')))
   const canPublish = $derived(
     title.trim().length > 0 && photos.length > 0 && badMembers.length === 0 && !publishing,
   )
@@ -177,11 +179,11 @@
   </Field>
 
   <Field label="Who can see it">
-    <Textarea bind:value={memberText} rows={3} placeholder="did:plc:… (one per line)" />
+    <Textarea bind:value={memberText} rows={3} placeholder="@handle or did:plc:… (one per line)" />
   </Field>
 
   {#if badMembers.length > 0}
-    <p class="error">Not a DID: {badMembers.join(', ')}</p>
+    <p class="error">Not a handle or DID: {badMembers.join(', ')}</p>
   {:else}
     <p class="hint">
       {members.length

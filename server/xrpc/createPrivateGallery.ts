@@ -12,6 +12,7 @@
 // through the space.
 
 import { defineProcedure, InvalidRequestError } from "$hatk";
+import { resolveActor } from "../helpers/resolveActor.ts";
 import { getSpaceSupport, pdsEndpointFor } from "../helpers/spaceSupport.ts";
 import { GALLERY_SPACE_TYPE, spaceUri } from "../spaces/client.ts";
 
@@ -26,7 +27,7 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const { rkey, title, description } = input;
-  const members = (input.members ?? []) as string[];
+  const memberActors = (input.members ?? []) as string[];
   const photos = (input.photos ?? []) as PhotoInput[];
 
   const endpoint = await pdsEndpointFor(db, viewer.did);
@@ -37,6 +38,16 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
       "Your PDS does not serve permissioned spaces",
       "SpacesUnsupported",
     );
+  }
+
+  // Handles or DIDs: a person shares with @someone, the space stores a DID.
+  // An unresolvable entry stops the gallery being made, rather than quietly
+  // creating one that is shared with fewer people than was asked for.
+  const members: string[] = [];
+  for (const actor of memberActors) {
+    const did = await resolveActor(db, pds, actor);
+    if (!did) throw new InvalidRequestError(`Could not find ${actor}`, "ActorNotFound");
+    members.push(did);
   }
 
   const space = spaceUri(viewer.did, rkey);

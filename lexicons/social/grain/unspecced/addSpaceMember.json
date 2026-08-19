@@ -9,10 +9,15 @@
         "encoding": "application/json",
         "schema": {
           "type": "object",
-          "required": ["space", "did"],
+          "required": ["space", "actor"],
           "properties": {
-            "space": { "type": "string" },
-            "did": { "type": "string", "format": "did" }
+            "space": {
+              "type": "string"
+            },
+            "actor": {
+              "type": "string",
+              "description": "Handle or DID of the account to share with."
+            }
           }
         }
       },
@@ -22,12 +27,22 @@
           "type": "object",
           "required": ["did"],
           "properties": {
-            "did": { "type": "string", "format": "did" }
+            "did": {
+              "type": "string",
+              "format": "did"
+            }
           }
         }
       },
       "errors": [
-        { "name": "NotAuthorized", "description": "Only the gallery's author may add members." }
+        {
+          "name": "NotAuthorized",
+          "description": "Only the gallery's author may add members."
+        },
+        {
+          "name": "ActorNotFound",
+          "description": "The handle could not be resolved."
+        }
       ]
     }
   }
