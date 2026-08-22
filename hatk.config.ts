@@ -71,6 +71,15 @@ export default defineConfig({
       bundleId: "social.grain.grain",
       production: isProd,
     },
+    // Android. The service account is a Firebase key with the Messaging role,
+    // kept alongside the APNs key rather than in the repo; the project id comes
+    // from inside it. Until the file is there, hatk logs the miss and simply
+    // doesn't send to Android — iOS is unaffected.
+    fcm: {
+      keyFile: isProd
+        ? "/data/certs/firebase-service-account.json"
+        : "./certs/firebase-service-account.json",
+    },
   },
   oauth: {
     issuer: isProd && prodDomain ? `https://${prodDomain}` : undefined,
