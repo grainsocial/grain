@@ -1,7 +1,16 @@
 import { defineConfig } from "@hatk/hatk/config";
 
 const isProd = process.env.NODE_ENV === "production";
-const prodDomain = process.env.RAILWAY_PUBLIC_DOMAIN;
+// The public origin this instance serves. It becomes the OAuth issuer and the
+// base of every registered client_id and redirect_uri, so it has to be the real
+// origin rather than anything inferred.
+//
+// RAILWAY_PUBLIC_DOMAIN is the fallback rather than the source: Railway injects
+// it automatically, so reading it directly worked for free there and silently
+// produced `undefined` anywhere else — which empties the client list below and
+// fails OAuth at login rather than at boot. The fallback stays until Railway is
+// decommissioned, so this file is safe to deploy to either host.
+const prodDomain = process.env.APP_DOMAIN ?? process.env.RAILWAY_PUBLIC_DOMAIN;
 
 const grainScopes = [
   "atproto",
