@@ -3,14 +3,9 @@ import { defineConfig } from "@hatk/hatk/config";
 const isProd = process.env.NODE_ENV === "production";
 // The public origin this instance serves. It becomes the OAuth issuer and the
 // base of every registered client_id and redirect_uri, so it has to be the real
-// origin rather than anything inferred.
-//
-// RAILWAY_PUBLIC_DOMAIN is the fallback rather than the source: Railway injects
-// it automatically, so reading it directly worked for free there and silently
-// produced `undefined` anywhere else — which empties the client list below and
-// fails OAuth at login rather than at boot. The fallback stays until Railway is
-// decommissioned, so this file is safe to deploy to either host.
-const prodDomain = process.env.APP_DOMAIN ?? process.env.RAILWAY_PUBLIC_DOMAIN;
+// origin rather than anything inferred — and if it is unset, the client list
+// below is empty and OAuth fails at login rather than at boot.
+const prodDomain = process.env.APP_DOMAIN;
 
 const grainScopes = [
   "atproto",
@@ -56,12 +51,13 @@ export default defineConfig({
   // find social.grain.*. Prod only — the local PDS has no Jetstream in front
   // of it. `relay` is still required: backfill resolves repos through it.
   //
-  // us-west, not us-east: since around 2026-08-19 the us-east name answers 503
-  // ("No server is available", haproxy with no backend) on every path — /status
-  // included — for requests leaving Railway, while the same IP answers 200 from
-  // elsewhere. So it reads as healthy from a laptop and is unreachable from the
-  // one network that matters, which is why this took a while to see. us-west is
-  // what the Jetstream docs use in their own example.
+  // us-west, not us-east. The original reason was Railway-specific: from around
+  // 2026-08-19 the us-east name answered 503 ("No server is available", haproxy
+  // with no backend) on every path for requests leaving Railway, while the same
+  // IP answered 200 from anywhere else — healthy from a laptop, unreachable from
+  // the one network that mattered. That constraint left with Railway, so us-east
+  // may well work from Hetzner now. Nothing is gained by finding out: us-west is
+  // what the Jetstream docs use in their own example, and it works.
   jetstream: isProd ? { url: "wss://jetstream.us-west.bsky.network" } : null,
   plc: isProd ? "https://plc.directory" : "http://localhost:2582",
   port: 3000,

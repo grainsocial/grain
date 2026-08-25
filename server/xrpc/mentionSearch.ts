@@ -2,10 +2,9 @@ import { defineQuery, type GrainActorProfile, type Photo, type Gallery } from "$
 import { hideLabelsFilter } from "../labels/_hidden.ts";
 
 const isProd = process.env.NODE_ENV === "production";
-// See hatk.config.ts — APP_DOMAIN is the origin, with Railway's injected
-// variable as a transitional fallback. Undefined here degrades quietly to
-// localhost URLs in production rather than erroring, which is worse.
-const prodDomain = process.env.APP_DOMAIN ?? process.env.RAILWAY_PUBLIC_DOMAIN;
+// See hatk.config.ts. Undefined here degrades quietly to localhost URLs in
+// production rather than erroring, which is the more dangerous failure.
+const prodDomain = process.env.APP_DOMAIN;
 const baseUrl = isProd && prodDomain ? `https://${prodDomain}` : "http://127.0.0.1:3000";
 
 export default defineQuery("parts.page.mention.search", async (ctx) => {

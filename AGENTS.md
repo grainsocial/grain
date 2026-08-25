@@ -109,43 +109,55 @@ does too, and it is stricter, so it is the one that finds our assumptions:
 When touching the space client, check a call against both servers' handlers:
 `packages/spaces/src/handlers/` in pds.js, `src/atproto/space.zig` in zds.
 
-## Railway production debugging
+## Production debugging
 
-The prod container has `sqlite3` and `duckdb` CLIs. Railway SSH doesn't support piped stdin or shell metacharacters (parentheses, quotes) reliably. Use the base64 script pattern:
+Production is a single Hetzner host, `167.233.237.163`, running the appview,
+the PDS, imgproxy, porxie, Caddy and the pds.js check runner as Docker Compose
+services under `/etc/grain`. Infrastructure lives in `~/code/hetzner-infra`;
+`docs/migration-plan.md` there is the record of how it got that way.
 
-```bash
-# Write a shell script to /tmp
-cat > /tmp/query.sh <<'EOF'
-sqlite3 /data/teal.db "SELECT COUNT(*) FROM [fm.teal.alpha.feed.play];"
-EOF
-
-# Base64 encode and pipe through ssh
-B64=$(base64 < /tmp/query.sh | tr -d '\n')
-railway ssh "sh -c \"echo $B64 | base64 -d | sh\""
+```sh
+ssh root@167.233.237.163
+docker compose -f /etc/grain/docker-compose.yml ps
+docker compose -f /etc/grain/docker-compose.yml logs -f grain
+grain-deploy          # rebuild the appview from GitHub main, restart
 ```
 
-For multi-line SQL or queries with special characters, use heredocs inside the script:
+### Querying the database
 
-```bash
-cat > /tmp/query.sh <<'EOF'
-sqlite3 /data/teal.db <<'EOSQL'
-EXPLAIN QUERY PLAN
-SELECT t.uri FROM [fm.teal.alpha.feed.play] t
-ORDER BY t.played_time DESC LIMIT 50;
-EOSQL
-EOF
+The database is at `/mnt/data/grain/grain.db` on the host, mounted into the
+container as `/data/grain.db`. `sqlite3` and `duckdb` live **inside** the image,
+not on the host, so a query runs in a throwaway container:
+
+```sh
+docker run --rm -v /mnt/data/grain:/data --entrypoint sh grain:current -c '
+  sqlite3 /data/grain.db "SELECT COUNT(*) FROM [social.grain.photo];"
+'
 ```
 
-Use bracket quoting `[table.name]` instead of double quotes for table names inside the script to avoid escaping issues.
+Use `docker run`, not `docker compose run`. The grain service has a `build:`
+context, so compose rebuilds the appview from source before it will give you a
+shell — several minutes to run one query.
 
-Common queries:
+The appview holds a write lock while indexing. A large batch of statements can
+sit behind it indefinitely: pass `-cmd ".timeout 30000"`, keep transactions
+small, and expect a bulk import to take far longer than the row count suggests.
+Table names contain dots, so bracket them: `[social.grain.photo]`.
 
-- List indexes: `sqlite3 /data/teal.db ".indexes"`
-- Query plans: `EXPLAIN QUERY PLAN SELECT ...`
-- Row counts: `SELECT COUNT(*) FROM [table]`
-- Check FTS schema: `SELECT sql FROM sqlite_master WHERE name LIKE '%_fts%'`
+### What the appview cannot rebuild
 
-The database lives at `/data/teal.db` (Railway volume mount). The app dir is `/app` but `node_modules` are pruned for production so `better-sqlite3` is not available for ad-hoc node scripts.
+Everything under a collection name is re-derivable — backfill fetches it from
+the network. The underscore-prefixed tables are not: `_oauth_keys` (change them
+and every session is void), `_oauth_sessions`, `_push_tokens`, `_preferences`,
+`_labels`, `_mutes`, `_reports`, `_space_invites`, `_space_support`, and the
+`status` column of `_repos`, which is where an admin takedown lives.
+
+`_repos` is the trap: the row is mostly backfill bookkeeping that rebuilds
+itself, but `status` is administrator intent that nothing reconstructs. Treating
+the table as derived once silently reinstated three taken-down accounts.
+
+Backups run nightly to `/var/backups/grain` and offsite to Bunny; the PDS blob
+bucket mirrors from R2 to Bunny weekly.
 
 ## Extracting reusable types from lexicons
 
@@ -222,7 +234,7 @@ export default defineSetup(async (ctx) => {
 });
 ```
 
-Setup scripts run on every startup before the server accepts requests. Use `CREATE INDEX IF NOT EXISTS` so they're idempotent. To create an index on prod immediately without redeploying, use the Railway SSH pattern above.
+Setup scripts run on every startup before the server accepts requests. Use `CREATE INDEX IF NOT EXISTS` so they're idempotent. To create an index on prod immediately without redeploying, use the `docker run` pattern above.
 
 ### SQLite datetime comparison gotcha
 
