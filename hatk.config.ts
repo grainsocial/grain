@@ -46,7 +46,14 @@ export default defineConfig({
   // Jetstream filters server-side, so we stop decoding the whole network to
   // find social.grain.*. Prod only — the local PDS has no Jetstream in front
   // of it. `relay` is still required: backfill resolves repos through it.
-  jetstream: isProd ? { url: "wss://jetstream.us-east.bsky.network" } : null,
+  //
+  // us-west, not us-east: since around 2026-08-19 the us-east name answers 503
+  // ("No server is available", haproxy with no backend) on every path — /status
+  // included — for requests leaving Railway, while the same IP answers 200 from
+  // elsewhere. So it reads as healthy from a laptop and is unreachable from the
+  // one network that matters, which is why this took a while to see. us-west is
+  // what the Jetstream docs use in their own example.
+  jetstream: isProd ? { url: "wss://jetstream.us-west.bsky.network" } : null,
   plc: isProd ? "https://plc.directory" : "http://localhost:2582",
   port: 3000,
   cdn: isProd
