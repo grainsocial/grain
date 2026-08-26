@@ -1,0 +1,138 @@
+# Mirrors this repository to the grain.social PDS on every push to main and on
+# every version tag, as the dev.pdsjs.git.repo/grain record that pds.js
+# describes. Stock git reads it at
+# https://grain-pds.chad-53c.workers.dev/git/grain.social/grain.
+#
+# One run pushes one ref: main for a branch push, the tag itself for a tag
+# push. Pushing every tag at once would announce the whole backlog as new refs.
+#
+# Tangled is the source of truth. Nothing pushes the other way, and the mirror
+# only ever fast-forwards to the commit the pipeline runs on.
+#
+# The helper comes from pds.js itself rather than the published package. npm
+# carries 0.1.2, which predates the bundle index the current server writes and
+# reads, and a mirror written by the older helper needs a repack to heal.
+#
+# Repository secrets (settings -> secrets; the identifier is set below, in the
+# open):
+#   GRAIN_PDS_TOKEN    an app password for the grain.social account.
+#
+# A manual run mirrors the commit it starts from, which is how to repair the
+# mirror after a failed run.
+
+when:
+  - event: ["push", "manual"]
+    branch: ["main"]
+  - event: ["push"]
+    tag: ["v*"]
+
+engine: microvm
+image: nixos
+
+virtualisation:
+  docker: true
+
+# Visible to anyone reading the repo, so only non-secret values belong here.
+environment:
+  PDS_IDENTIFIER: "grain.social"
+  MIRROR_REMOTE: "atproto://grain.social/grain"
+  PDSJS_REPO: "https://tangled.org/chadtmiller.com/pds.js"
+
+steps:
+  - name: "Check publish credentials"
+    command: |
+      set -eo pipefail
+
+      # Fail here rather than after the clone, and say which secret is missing.
+      # Guard expansions with ${VAR:-}: `set -u` reports a missing secret as an
+      # unbound variable from inside a later step.
+      if [ -z "${GRAIN_PDS_TOKEN:-}" ]; then
+        echo "GRAIN_PDS_TOKEN unset, so this push would mirror nothing."
+        echo
+        echo "Add it in repository settings - an app password for"
+        echo "${PDS_IDENTIFIER:-the mirroring account}."
+        exit 1
+      fi
+
+      echo "mirroring to $MIRROR_REMOTE"
+
+  - name: "Push to the mirror"
+    command: |
+      set -eo pipefail
+
+      # A tag run mirrors the tag; anything else mirrors main. TAG reaches the
+      # container empty on a branch push, which is what the refspec chooses on.
+      if [ "${TANGLED_REF_TYPE:-}" = "tag" ]; then
+        TAG="${TANGLED_REF_NAME:-}"
+        if [ -z "$TAG" ]; then
+          echo "tag run with no TANGLED_REF_NAME, so there is nothing to push"
+          exit 1
+        fi
+        echo "mirroring tag $TAG"
+      else
+        TAG=""
+        echo "mirroring refs/heads/main"
+      fi
+
+      docker run --rm \
+        -v "$PWD":/workspace \
+        -w /workspace \
+        -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+        -e MIRROR_REMOTE="$MIRROR_REMOTE" \
+        -e PDSJS_REPO="$PDSJS_REPO" \
+        -e ATPROTO_GIT_PASSWORD="$GRAIN_PDS_TOKEN" \
+        -e TAG="$TAG" \
+        node:22-trixie \
+        bash -c '
+          set -eo pipefail
+
+          # The microvm clones the workspace as its own user and this container
+          # is root, so git reads the bind mount as someone elses repository
+          # and refuses every command in it.
+          git config --global --add safe.directory /workspace
+          git config --global --add safe.directory /pdsjs
+
+          # The spindle checkout is one commit deep and git bundle refuses to
+          # run in a shallow repository. The helper bundles the commits between
+          # the mirror head and this one, so they have to be present. The
+          # assignment is what makes a failing rev-parse stop the step: inside
+          # an if condition its exit status is discarded.
+          shallow=$(git rev-parse --is-shallow-repository)
+          if [ "$shallow" = "true" ]; then
+            echo "==> fetch full history"
+            git fetch --unshallow --quiet origin
+          fi
+
+          # A tag checkout can be detached with no local tag ref, and the
+          # refspec names one. Fetching it is cheap when it is already here.
+          if [ -n "${TAG:-}" ]; then
+            git fetch --quiet origin "refs/tags/$TAG:refs/tags/$TAG" || true
+            refspec="refs/tags/$TAG:refs/tags/$TAG"
+          else
+            refspec="HEAD:refs/heads/main"
+          fi
+
+          # The helper is built from pds.js, so the mirror is written by the
+          # same code the server reads it with. pako is the one dependency, so
+          # the filtered install keeps this to seconds. git finds the helper by
+          # name on PATH, as git-remote-atproto. No apostrophes in these
+          # comments: the step body is a single-quoted shell string.
+          echo "==> build the helper from pds.js"
+          git clone --depth 1 --quiet "$PDSJS_REPO" /pdsjs
+          corepack enable
+          (cd /pdsjs && pnpm --filter @pdsjs/git install --frozen-lockfile)
+          ln -s /pdsjs/packages/git/src/cli.js /usr/local/bin/git-remote-atproto
+
+          # A push that loses the record compare-and-swap to a concurrent one
+          # is told to fetch and retry. Each attempt reads the record again, so
+          # the retry swaps against whoever won.
+          for attempt in 1 2 3; do
+            echo "==> push $refspec (attempt $attempt)"
+            if git push "$MIRROR_REMOTE" "$refspec"; then
+              exit 0
+            fi
+            sleep 5
+          done
+
+          exit 1
+        '
