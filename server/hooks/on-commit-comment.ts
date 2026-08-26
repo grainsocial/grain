@@ -1,5 +1,6 @@
 import { defineHook } from "$hatk";
 import { shouldPush } from "../helpers/notifPrefs.ts";
+import { isRecent } from "../helpers/isRecent.ts";
 import { getUnseenCount } from "../helpers/unseenCount.ts";
 
 export default defineHook(
@@ -7,6 +8,9 @@ export default defineHook(
   { collections: ["social.grain.comment"] },
   async ({ action, record, repo, db, lookup, push }) => {
     if (action !== "create" || !record) return;
+
+    // Backfill re-creates a repo's whole history; only notify on fresh records.
+    if (!isRecent(record)) return;
     const subject = record.subject as string;
     if (!subject) return;
 
