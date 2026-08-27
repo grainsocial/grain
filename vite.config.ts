@@ -29,10 +29,7 @@ function remoteXrpc(target: string) {
             headers: { accept: "application/json" },
           });
           res.statusCode = upstream.status;
-          res.setHeader(
-            "content-type",
-            upstream.headers.get("content-type") ?? "application/json",
-          );
+          res.setHeader("content-type", upstream.headers.get("content-type") ?? "application/json");
           res.end(Buffer.from(await upstream.arrayBuffer()));
         } catch {
           next();

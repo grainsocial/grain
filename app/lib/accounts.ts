@@ -86,7 +86,10 @@ export interface ServerAccount {
  * endpoint isn't there (older hatk), which is the signal to fall back to
  * re-login switching rather than to show an empty list.
  */
-export async function fetchServerAccounts(): Promise<{ accounts: ServerAccount[]; active: string | null } | null> {
+export async function fetchServerAccounts(): Promise<{
+  accounts: ServerAccount[];
+  active: string | null;
+} | null> {
   try {
     const res = await fetch("/auth/accounts", { headers: { accept: "application/json" } });
     if (!res.ok) return null;
