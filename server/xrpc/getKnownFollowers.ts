@@ -3,6 +3,7 @@
 
 import { defineQuery, type GrainActorProfile } from "$hatk";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { blockFilter } from "../filters/blockMute.ts";
 
 export default defineQuery("social.grain.unspecced.getKnownFollowers", async (ctx) => {
   const { ok, params, lookup, blobUrl } = ctx;
@@ -10,13 +11,27 @@ export default defineQuery("social.grain.unspecced.getKnownFollowers", async (ct
 
   if (!actor || !viewer || actor === viewer) return ok({ items: [] });
 
-  // Find DIDs that follow `actor` AND are followed by `viewer`
+  // Find DIDs that follow `actor` AND are followed by `viewer`.
+  //
+  // Taken-down accounts are hidden from everyone, matching every feed. Blocked
+  // accounts (either direction) are hidden too — this list is rendered as a
+  // facepile on the profile, and a block should not leave a face behind.
+  // Mutes are not applied, matching getGalleryFavorites: a mute hides someone's
+  // content, not the fact that they follow someone.
+  //
+  // GROUP BY collapses the fan-out from the f2 join, which duplicates a row
+  // whenever the viewer holds more than one follow record for the same account
+  // (this happens in prod). Deduping after LIMIT would silently shrink the page.
   const rows = (await ctx.db.query(
-    `SELECT f1.did
+    `SELECT f1.did AS did
      FROM "social.grain.graph.follow" f1
      JOIN "social.grain.graph.follow" f2 ON f2.did = $2 AND f2.subject = f1.did
+     LEFT JOIN _repos r ON r.did = f1.did
      WHERE f1.subject = $1
-     ORDER BY f1.created_at DESC
+       AND (r.status IS NULL OR r.status != 'takendown')
+       AND ${blockFilter("f1.did", "$2")}
+     GROUP BY f1.did
+     ORDER BY MAX(f1.created_at) DESC
      LIMIT $3`,
     [actor, viewer, Number(limit)],
   )) as { did: string }[];
