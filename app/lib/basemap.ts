@@ -12,3 +12,13 @@ export const BASEMAP_URL =
 /** Required by ODbL wherever the basemap is shown. */
 export const BASEMAP_ATTRIBUTION =
   '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap</a>';
+
+/**
+ * Fonts and icons for the label layers. Static, keyless assets published by
+ * Protomaps alongside the basemap; the archive itself carries no glyphs.
+ * Mirror these into R2 if we ever want zero third-party fetches on this page.
+ */
+export const BASEMAP_GLYPHS =
+  "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf";
+
+export const BASEMAP_SPRITE = "https://protomaps.github.io/basemaps-assets/sprites/v4";

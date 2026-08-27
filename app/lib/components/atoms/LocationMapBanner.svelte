@@ -2,7 +2,7 @@
   import { cellToLatLng, isValidCell } from 'h3-js'
   import { onMount } from 'svelte'
   import type { Map as MapLibreMap } from 'maplibre-gl'
-  import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '$lib/basemap'
+  import { BASEMAP_URL, BASEMAP_GLYPHS, BASEMAP_SPRITE, BASEMAP_ATTRIBUTION } from '$lib/basemap'
 
   let { h3Index, h3Cells }: { h3Index: string; h3Cells?: string[] } = $props()
 
@@ -73,6 +73,11 @@
       const { layers, namedTheme } = await import('protomaps-themes-base')
       return {
         version: 8 as const,
+        // Place and road names are symbol layers, which MapLibre can only draw
+        // with SDF fonts — hence both the `lang` option (without it `layers()`
+        // returns geometry only) and the glyphs endpoint.
+        glyphs: BASEMAP_GLYPHS,
+        sprite: `${BASEMAP_SPRITE}/${theme}`,
         sources: {
           protomaps: {
             type: 'vector' as const,
@@ -80,7 +85,7 @@
             attribution: BASEMAP_ATTRIBUTION,
           },
         },
-        layers: layers('protomaps', namedTheme(theme)),
+        layers: layers('protomaps', namedTheme(theme), { lang: 'en' }),
       }
     }
 
