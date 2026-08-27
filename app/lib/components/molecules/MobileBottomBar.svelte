@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Image, Search, Plus, Bell } from 'lucide-svelte'
+  import { Image, Compass, Plus, Bell } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import { isAuthenticated, loginModalOpen, viewer } from '$lib/stores'
@@ -8,7 +8,6 @@
   import { createQuery } from '@tanstack/svelte-query'
   import { unseenNotificationCountQuery } from '$lib/queries'
 
-  let { onSearch }: { onSearch: () => void } = $props()
 
   const unseenCount = createQuery(() => ({
     ...unseenNotificationCountQuery($viewer?.did ?? ''),
@@ -24,6 +23,13 @@
       onclick={() => goto('/')}
     >
       <Image size={22} />
+    </button>
+    <button
+      class="mobile-tab"
+      class:active={page.url.pathname === '/explore'}
+      onclick={() => goto('/explore')}
+    >
+      <Compass size={22} />
     </button>
     <button
       class="mobile-tab"
@@ -44,9 +50,6 @@
         {/if}
       </span>
     </button>
-    <button class="mobile-tab" onclick={onSearch}>
-      <Search size={22} />
-    </button>
     {#if $viewer}
       <button
         class="mobile-tab"
@@ -65,6 +68,8 @@
 {/if}
 
 <style>
+  /* The login wall carries its own Sign in; two at once is noise. */
+  :global(body.wall-open) .mobile-bottom { display: none; }
   .mobile-bottom {
     display: none;
     position: fixed;

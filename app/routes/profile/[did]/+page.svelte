@@ -19,6 +19,11 @@
   import { blockActor, unblockActor, muteActor, unmuteActor } from '$lib/mutations'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryArchive from '$lib/components/molecules/StoryArchive.svelte'
+  import LoginWall from '$lib/components/organisms/LoginWall.svelte'
+
+  // Gate signed-out visitors behind a sign-in prompt after they scroll a way
+  // into a profile. Off for now.
+  const LOGIN_WALL = false
   import { page } from '$app/state'
   import { goto } from '$app/navigation'
 
@@ -171,14 +176,14 @@
 
 <div class="page-wrapper">
 {#if profile.isLoading}
-  <DetailHeader label={'\u00A0'} />
+  <div class="mobile-back"><DetailHeader label={'\u00A0'} /></div>
   <div class="profile-header">
     <div class="profile-info">
-      <div class="top-row">
-        <Skeleton circle height="64px" />
+      <div class="avatar-col"><Skeleton circle height="100%" /></div>
+      <div class="meta-col">
+        <div><Skeleton width="200px" height="26px" /></div>
+        <div style="margin-top: 8px"><Skeleton width="140px" height="14px" /></div>
       </div>
-      <div style="margin-top: 10px"><Skeleton width="160px" height="22px" /></div>
-      <div style="margin-top: 6px"><Skeleton width="120px" height="14px" /></div>
     </div>
   </div>
 {:else if profile.data && !profile.data.cid}
@@ -193,7 +198,7 @@
   {@const p = profile.data}
   <OGMeta title="{p.displayName || p.handle || 'Profile'} (@{p.handle || did}) — Grain" description="{p.handle ? `@${p.handle}` : did} on Grain" image="/og/profile/{did}" />
 
-  <DetailHeader label={p.displayName || '\u00A0'} />
+  <div class="mobile-back"><DetailHeader label={p.displayName || '\u00A0'} /></div>
 
   <div class="profile-header">
     <div class="actions">
@@ -223,7 +228,10 @@
       </OverflowMenu>
     </div>
     <div class="profile-info">
-      <Avatar {did} src={p.avatar ?? null} name={p.displayName} size={64} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
+      <div class="avatar-col">
+        <Avatar {did} src={p.avatar ?? null} name={p.displayName} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
+      </div>
+      <div class="meta-col">
       <div class="profile-name">{p.displayName || p.handle || did}</div>
       <div class="handle-row">
         {#if !blockHide && p.viewer?.followedBy}<span class="follows-you">Follows you</span>{/if}
@@ -247,16 +255,13 @@
         {#if p.description}
           <div class="bio"><RichText text={p.description} /></div>
         {/if}
-        <div class="links-row">
-          <a class="link-pill" href="https://bsky.app/profile/{p.handle || did}" target="_blank" rel="noopener noreferrer">
-            Bluesky <ArrowUpRight size={14} />
-          </a>
-          {#if showGermButton && germUrl}
+        {#if showGermButton && germUrl}
+          <div class="links-row">
             <a class="link-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
               <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM <ArrowUpRight size={14} />
             </a>
-          {/if}
-        </div>
+          </div>
+        {/if}
         {#if (knownFollowers.data?.items ?? []).length > 0}
           {@const known = knownFollowers.data?.items ?? []}
           <a href="/profile/{did}/known-followers" class="known-followers">
@@ -267,6 +272,7 @@
           </a>
         {/if}
       {/if}
+      </div>
     </div>
   </div>
 {/if}
@@ -330,8 +336,18 @@
   {/if}
 
   {#if showStoryViewer}
-    <StoryViewer initialDid={did} onclose={() => (showStoryViewer = false)} />
+    <StoryViewer initialDid={did} singleAuthor onclose={() => (showStoryViewer = false)} />
   {/if}
+{/if}
+
+<!-- Built and working, but off for now: flip LOGIN_WALL to true to re-enable. -->
+{#if LOGIN_WALL && !viewerDid && profile.data?.cid}
+  <LoginWall
+    {did}
+    avatar={profile.data.avatar ?? null}
+    name={profile.data.displayName ?? null}
+    handle={profile.data.handle ?? null}
+  />
 {/if}
 
 {#if selectMode}
@@ -357,15 +373,55 @@
 <Toast message={toastMessage} bind:visible={showToast} />
 
 <style>
+  /* Phones have no left nav, so the profile keeps its back header. Above 600px
+     the nav or the public top bar is the way out and this is just noise. */
+  .mobile-back { display: none; }
+  @media (max-width: 600px) {
+    .mobile-back { display: block; }
+  }
   .page-wrapper {
     display: flex;
     flex-direction: column;
     min-height: 100%;
   }
-  .profile-header { border-bottom: 1px solid var(--border); }
   .profile-header { position: relative; }
   .actions { position: absolute; top: 12px; right: 16px; display: flex; gap: 8px; align-items: center; z-index: 1; }
-  .profile-info { padding: 16px 16px 16px; }
+  /* Phones: the avatar sits alone on the top row, then display name, handle,
+     bio run full width, and the counts get their own centred band.
+     `display: contents` on .meta-col lifts its children into this grid so one
+     DOM serves both layouts. */
+  .profile-info {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 14px;
+    padding: 16px;
+  }
+  .avatar-col { grid-column: 1; grid-row: 1; display: grid; place-items: center; --avatar-size: 88px; }
+  .meta-col { display: contents; }
+  .handle-row { grid-column: 1 / -1; }
+  .profile-name,
+  .bio,
+  .links-row,
+  .block-alert,
+  .stat-row,
+  .known-followers { grid-column: 1 / -1; }
+  .profile-name { margin-top: 14px; }
+  .stat-row { order: 1; }
+  .known-followers { order: 2; }
+
+  @media (min-width: 700px) {
+    .avatar-col { --avatar-size: 150px; }
+    /* Desktop keeps the single right-hand column: .meta-col becomes a normal
+       block again, so the placement rules above stop applying. */
+    .profile-info {
+      grid-template-columns: 290px minmax(0, 1fr);
+      column-gap: 16px;
+      padding: 34px 16px 26px;
+    }
+    .meta-col { display: block; min-width: 0; padding-top: 6px; }
+    .profile-name { margin-top: 0; }
+  }
   .profile-name { font-family: var(--font-display); font-weight: 700; font-size: 20px; margin-top: 10px; }
   .handle-row { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
   .follows-you {
@@ -373,7 +429,33 @@
     padding: 2px 6px; border-radius: 4px;
   }
   .profile-handle { font-size: 13px; color: var(--text-muted); font-family: monospace; word-break: break-all; }
-  .stat-row { display: flex; gap: 16px; margin-top: 10px; font-size: 13px; color: var(--text-secondary); }
+  .stat-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+    margin-top: 18px;
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .stat-row > :global(*) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .stat-row :global(strong) { font-size: 16px; }
+
+  @media (min-width: 700px) {
+    .stat-row {
+      justify-content: flex-start;
+      gap: 16px;
+      margin-top: 10px;
+      padding: 0;
+    }
+    .stat-row > :global(*) { flex-direction: row; gap: 4px; }
+    .stat-row :global(strong) { font-size: inherit; }
+  }
   .stat-row strong { color: var(--text-primary); font-weight: 600; }
   .stat-link { text-decoration: none; color: inherit; }
   .stat-link:hover { text-decoration: underline; }
@@ -396,7 +478,7 @@
   }
   .link-pill {
     display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px;
-    border-radius: 20px; background: var(--bg-elevated); border: 1px solid var(--border);
+    border-radius: 20px; background: var(--bg-surface);
     font-size: 13px; font-weight: 500; color: var(--text-secondary); transition: all 0.12s;
   }
   .link-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -406,12 +488,11 @@
     align-items: center;
     justify-content: center;
     padding: 8px 16px;
-    border-bottom: 1px solid var(--border);
     position: relative;
   }
   .toggle-tabs {
     display: flex;
-    gap: 4px;
+    gap: 6px;
   }
   .select-text-btn {
     position: absolute;
@@ -430,29 +511,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px 16px;
+    padding: 9px 18px;
+    border-radius: 999px;
     background: none;
     border: none;
     color: var(--text-muted);
     cursor: pointer;
-    position: relative;
-    transition: color 0.15s;
+    transition: color 0.15s, background-color 0.15s, box-shadow 0.15s;
   }
-  .toggle-btn::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 28px;
-    height: 2.5px;
-    border-radius: 2px;
-    background: transparent;
-    transition: background 0.15s;
+  .toggle-btn:hover { color: var(--text-secondary); background: var(--bg-hover); }
+  .toggle-btn.active {
+    color: var(--text-primary);
+    background: var(--bg-surface);
   }
-  .toggle-btn:hover { color: var(--text-secondary); }
-  .toggle-btn.active { color: var(--text-primary); }
-  .toggle-btn.active::after { background: var(--grain); }
   .not-found { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .bsky-link {
     display: inline-flex;

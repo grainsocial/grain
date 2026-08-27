@@ -1,7 +1,7 @@
 <script lang="ts">
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import Avatar from '$lib/components/atoms/Avatar.svelte'
-  import { Check, ChevronRight, ExternalLink, Plus, X } from 'lucide-svelte'
+  import { Check, Plus, X } from 'lucide-svelte'
   import { loginModalOpen, viewer } from '$lib/stores'
   import { logout } from '$lib/auth'
   import { resetPreferences } from '$lib/preferences'
@@ -64,7 +64,7 @@
   }
 </script>
 
-<DetailHeader label="Settings" />
+<DetailHeader label="Accounts" />
 
 <div class="settings-page">
   <div class="settings-group">
@@ -101,63 +101,6 @@
       <Plus size={16} class="chevron" />
       <span class="settings-label">Add another account</span>
     </button>
-  </div>
-
-  <div class="settings-group">
-    <a href="/settings/account" class="settings-row">
-      <span class="settings-label">Account</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/settings/profile" class="settings-row">
-      <span class="settings-label">Edit Profile</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/settings/appearance" class="settings-row">
-      <span class="settings-label">Appearance</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/settings/notifications" class="settings-row">
-      <span class="settings-label">Notifications</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/settings/moderation" class="settings-row">
-      <span class="settings-label">Moderation</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-<a href="/settings/upload-defaults" class="settings-row">
-      <span class="settings-label">Privacy</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-  </div>
-
-  <div class="settings-group">
-    <a href="/settings/import" class="settings-row">
-      <span class="settings-label">Import from Instagram <span class="beta-badge">Beta</span></span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-  </div>
-
-  <div class="settings-group">
-    <a href="/support/privacy" class="settings-row">
-      <span class="settings-label">Privacy Policy</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/support/terms" class="settings-row">
-      <span class="settings-label">Terms of Service</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/support/copyright" class="settings-row">
-      <span class="settings-label">Copyright Policy</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="/support/community-guidelines" class="settings-row">
-      <span class="settings-label">Community Guidelines</span>
-      <ChevronRight size={16} class="chevron" />
-    </a>
-    <a href="https://atproto.com" target="_blank" rel="noopener" class="settings-row">
-      <span class="settings-label">AT Protocol</span>
-      <ExternalLink size={14} class="chevron" />
-    </a>
   </div>
 
   {#if did}
@@ -211,18 +154,6 @@
   }
   .settings-row :global(.chevron) {
     color: var(--text-muted);
-  }
-  .beta-badge {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: var(--bg-hover);
-    color: var(--text-muted);
-    padding: 2px 6px;
-    border-radius: 4px;
-    vertical-align: middle;
-    margin-left: 6px;
   }
   .sign-out .settings-label {
     color: var(--danger);

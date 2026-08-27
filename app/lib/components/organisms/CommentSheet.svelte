@@ -250,7 +250,7 @@
 
     <div class="input-bar">
       {#if $viewer}
-        <Avatar did={$viewer.did} src={$viewer.avatar} size={28} />
+        <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={28} />
       {/if}
       <div class="input-wrapper">
         <input

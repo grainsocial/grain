@@ -56,7 +56,7 @@
   {:else}
     {#each people.data?.items ?? [] as person (person.did)}
       <a href="/profile/{person.did}" class="profile-result">
-        <Avatar did={person.did} src={person.avatar ?? null} size={40} />
+        <Avatar did={person.did} src={person.avatar ?? null} name={person.displayName ?? person.handle} size={40} />
         <div class="profile-result-info">
           <div class="profile-result-name">{person.displayName || (person.handle ? `@${person.handle}` : truncDid(person.did))}</div>
           {#if person.handle}<div class="profile-result-handle">@{person.handle}</div>{/if}

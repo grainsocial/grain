@@ -25,7 +25,7 @@
          8a28f00d8227fff. Both rows are legitimate and must both render, since
          the location feed keys off `name`, not the cell. A keyed each on
          h3Index threw each_key_duplicate and blanked the page. Matches
-         SidebarRight and MobileDrawer, which render this list unkeyed. -->
+         MobileDrawer, which renders this list unkeyed. -->
     {#each locations.data as loc}
       <GallerySectionRow
         kind="location"

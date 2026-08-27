@@ -1,17 +1,12 @@
 <script lang="ts">
-  import { Settings, LayoutList } from 'lucide-svelte'
+  import { Home, Search, Compass, Bell, Plus, User, Settings } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { isAuthenticated, viewer } from '$lib/stores'
-  import Avatar from '../atoms/Avatar.svelte'
   import Button from '../atoms/Button.svelte'
-  import { pinnedFeeds, feedIcon, resetPreferences } from '$lib/preferences'
+  import { resetPreferences } from '$lib/preferences'
   import { logout } from '$lib/auth'
   import LoginModal from './LoginModal.svelte'
-  import { createQuery } from '@tanstack/svelte-query'
-  import { camerasQuery, locationsQuery } from '$lib/queries'
 
-  const camerasQ = createQuery(() => camerasQuery())
-  const locationsQ = createQuery(() => locationsQuery())
 
   let { open = $bindable(false) }: { open: boolean } = $props()
   let loginOpen = $state(false)
@@ -45,53 +40,45 @@
     </div>
   {/if}
 
-  {#each $pinnedFeeds as feed, i (feed.id)}
-    {@const Icon = feedIcon(feed)}
-    <button class="drawer-link" onclick={() => nav(i === 0 ? '/' : feed.path)}>
-      <span class="drawer-link-icon"><Icon size={18} /></span> {feed.type === 'hashtag' ? feed.label.replace(/^#/, '') : feed.label}
-    </button>
-  {/each}
-
   {#if $isAuthenticated}
-    <button class="drawer-link" onclick={() => nav('/feeds')}>
-      <span class="drawer-link-icon"><LayoutList size={18} /></span> More feeds
+    <!-- Same destinations as the desktop nav, in the same order. -->
+    <button class="drawer-link" onclick={() => nav('/')}>
+      <span class="drawer-link-icon"><Home size={18} /></span> Home
     </button>
-  {/if}
-
-  {#if $isAuthenticated}
+    <button class="drawer-link" onclick={() => nav('/search')}>
+      <span class="drawer-link-icon"><Search size={18} /></span> Search
+    </button>
+    <button class="drawer-link" onclick={() => nav('/explore')}>
+      <span class="drawer-link-icon"><Compass size={18} /></span> Explore
+    </button>
+    <button class="drawer-link" onclick={() => nav('/notifications')}>
+      <span class="drawer-link-icon"><Bell size={18} /></span> Notifications
+    </button>
+    <button class="drawer-link" onclick={() => nav('/create')}>
+      <span class="drawer-link-icon"><Plus size={18} /></span> Create
+    </button>
+    {#if $viewer}
+      {@const viewerDid = $viewer.did}
+      <button class="drawer-link" onclick={() => nav(`/profile/${viewerDid}`)}>
+        <span class="drawer-link-icon"><User size={18} /></span> Profile
+      </button>
+    {/if}
     <button class="drawer-link" onclick={() => nav('/settings')}>
       <span class="drawer-link-icon"><Settings size={18} /></span> Settings
     </button>
   {/if}
 
-  {#if camerasQ.data?.length}
-    <div class="drawer-cameras">
-      <div class="drawer-cameras-header">Cameras</div>
-      <div class="camera-grid">
-        {#each (camerasQ.data ?? []).slice(0, 12) as c}
-          <button class="camera-pill" onclick={() => nav(`/camera/${encodeURIComponent(c.camera)}`)}>{c.camera}</button>
-        {/each}
-      </div>
-    </div>
-  {/if}
+  <div class="drawer-footer">
+    <a href="/support/terms" onclick={() => (open = false)}>Terms</a>
+    <a href="/support/privacy" onclick={() => (open = false)}>Privacy</a>
+    <a href="/support/copyright" onclick={() => (open = false)}>Copyright</a>
+    <a href="/support/community-guidelines" onclick={() => (open = false)}>Guidelines</a>
+    <a href="https://atproto.com" target="_blank" rel="noopener noreferrer">AT Protocol</a>
+  </div>
 
-  {#if locationsQ.data?.length}
-    <div class="drawer-cameras">
-      <div class="drawer-cameras-header">Locations</div>
-      <div class="camera-grid">
-        {#each (locationsQ.data ?? []).slice(0, 12) as loc}
-          <button class="camera-pill" onclick={() => nav(`/location/${encodeURIComponent(loc.h3Index)}?name=${encodeURIComponent(loc.name)}`)}>{loc.name}</button>
-        {/each}
-      </div>
-    </div>
-  {/if}
 
   <div class="drawer-auth">
     {#if $isAuthenticated && $viewer}
-      <div class="drawer-auth-info">
-        <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={32} />
-        <span class="drawer-handle">{$viewer.handle || $viewer.displayName}</span>
-      </div>
       <Button variant="secondary" onclick={() => { open = false; doLogout() }}>Sign Out</Button>
     {/if}
   </div>
@@ -168,41 +155,6 @@
     align-items: center;
     justify-content: center;
   }
-  .drawer-cameras {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-  }
-  .drawer-cameras-header {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 14px;
-    padding: 0 8px 10px;
-    color: var(--text-secondary);
-  }
-  .camera-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 0 8px;
-  }
-  .camera-pill {
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    padding: 4px 12px;
-    border-radius: 14px;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-    font-family: var(--font-body);
-  }
-  .camera-pill:hover {
-    border-color: var(--grain);
-    color: var(--text-primary);
-  }
   .drawer-sign-in {
     padding: 0 8px 12px;
     border-bottom: 1px solid var(--border);
@@ -216,18 +168,18 @@
     padding-top: 16px;
     border-top: 1px solid var(--border);
   }
-  .drawer-auth-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-  }
-  .drawer-handle {
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
   .drawer-auth :global(.btn) {
     width: 100%;
     margin-top: 8px;
   }
+  .drawer-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 16px 18px 8px;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .drawer-footer a { color: var(--text-faint); text-decoration: none; }
+  .drawer-footer a:hover { color: var(--text-secondary); }
 </style>

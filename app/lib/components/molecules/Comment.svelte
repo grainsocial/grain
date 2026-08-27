@@ -83,7 +83,7 @@
   </div>
 {:else}
   <div class="comment" class:reply={isReply}>
-    <Avatar did={comment.author?.did ?? ''} src={comment.author?.avatar ?? null} size={28} />
+    <Avatar did={comment.author?.did ?? ''} src={comment.author?.avatar ?? null} name={comment.author?.displayName ?? comment.author?.handle} size={28} />
     <div class="content">
       <div class="text-line">
         <a href="/profile/{comment.author?.did}" class="handle">{comment.author?.handle ?? comment.author?.did}</a>

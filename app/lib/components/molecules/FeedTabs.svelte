@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { Plus } from 'lucide-svelte'
   import { page } from '$app/state'
   import { pinnedFeeds, DEFAULT_PINNED } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
@@ -31,6 +32,13 @@
         {href}
       >{feed.label}</a>
     {/each}
+    {#if $isAuthenticated}
+      <!-- The right rail used to carry "More feeds"; with it gone this is the
+           only route to /feeds, and it belongs beside the feeds anyway. -->
+      <a class="feed-tab more-feeds" href="/feeds" title="More feeds">
+        <Plus size={15} />
+      </a>
+    {/if}
   </div>
 </div>
 
@@ -44,29 +52,44 @@
     background: var(--bg-blur);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border);
   }
   .feed-tabs {
     display: flex;
+    gap: 6px;
+    padding: 10px 0;
     overflow-x: auto;
     scrollbar-width: none;
   }
   .feed-tabs::-webkit-scrollbar { display: none; }
   .feed-tab {
-    flex: 1 0 0;
-    min-width: max-content;
-    padding: 12px 16px;
+    flex: 0 0 auto;
+    padding: 9px 18px;
+    border-radius: 999px;
     text-align: center;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
     text-decoration: none;
-    border-bottom: 2px solid transparent;
     background: none;
     font-family: inherit;
-    transition: color 0.15s, border-bottom-color 0.15s, background-color 0.15s;
+    transition: color 0.15s, background-color 0.15s, box-shadow 0.15s;
   }
   .feed-tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
-  .feed-tab.active { color: var(--text-primary); border-bottom-color: var(--grain); font-weight: 600; }
+  .more-feeds {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 12px;
+    color: var(--text-muted);
+  }
+  .feed-tab.active {
+    color: var(--text-primary);
+    background: var(--bg-surface);
+  }
+
+  /* On a phone the container edge is the screen edge. Inset the whole card —
+     photo included — so everything stays on one line but nothing touches it. */
+  @media (max-width: 600px) {
+    .feed-tabs { padding-left: 12px; padding-right: 12px; }
+  }
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query'
   import { Plus } from 'lucide-svelte'
+  import Avatar from '../atoms/Avatar.svelte'
   import { storyAuthorsQuery } from '$lib/queries'
   import { isAuthenticated, viewer } from '$lib/stores'
 
@@ -55,27 +56,29 @@
     {#if $isAuthenticated}
       <div class="own-story-wrapper">
         <button class="story-circle" bind:this={menuAnchor} onclick={(e) => { e.stopPropagation(); handleOwnTap() }}>
-          <div class="avatar-wrapper" class:ring={!!ownAuthor}>
-            {#if viewerAvatar}
-              <img src={viewerAvatar} alt="Your story" />
-            {:else}
-              <div class="avatar-placeholder"></div>
-            {/if}
-            <div class="plus-badge"><Plus size={12} strokeWidth={3} /></div>
-          </div>
+          <span class="avatar-slot">
+            <Avatar
+              did={viewerDid ?? ''}
+              src={viewerAvatar}
+              name={$viewer?.displayName || $viewer?.handle}
+              size={68}
+              hasStory={!!ownAuthor}
+            />
+            <span class="plus-badge"><Plus size={12} strokeWidth={3} /></span>
+          </span>
           <span class="label">Your story</span>
         </button>
       </div>
     {/if}
     {#each otherAuthors as author (author.profile.did)}
       <button class="story-circle" onclick={() => onViewStory(author.profile.did)}>
-        <div class="avatar-wrapper ring">
-          {#if author.profile.avatar}
-            <img src={author.profile.avatar} alt={author.profile.displayName ?? author.profile.handle} />
-          {:else}
-            <div class="avatar-placeholder"></div>
-          {/if}
-        </div>
+        <Avatar
+          did={author.profile.did}
+          src={author.profile.avatar ?? null}
+          name={author.profile.displayName ?? author.profile.handle}
+          size={68}
+          hasStory
+        />
         <span class="label">{author.profile.displayName ?? author.profile.handle}</span>
       </button>
     {/each}
@@ -94,9 +97,9 @@
   .story-strip {
     display: flex;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 12px 0;
     overflow-x: auto;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
     scrollbar-width: none;
   }
   .story-strip::-webkit-scrollbar { display: none; }
@@ -111,32 +114,9 @@
     padding: 0;
     flex-shrink: 0;
   }
-  .avatar-wrapper {
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    overflow: visible;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-elevated);
+  .avatar-slot {
     position: relative;
-  }
-  .avatar-wrapper.ring {
-    background: linear-gradient(135deg, #c97cf8, var(--grain), #5bf0d6);
-    padding: 2px;
-  }
-  .avatar-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-  .avatar-placeholder {
-    width: 100%;
-    height: 100%;
-    background: var(--bg-hover);
-    border-radius: 50%;
+    display: inline-flex;
   }
   .plus-badge {
     position: absolute;
@@ -185,12 +165,16 @@
     background: var(--bg-hover);
   }
   .label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text-secondary);
-    max-width: 64px;
+    max-width: 76px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     font-family: var(--font-body);
+  }
+
+  @media (max-width: 600px) {
+    .story-strip { padding-left: 12px; padding-right: 12px; }
   }
 </style>

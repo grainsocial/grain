@@ -62,7 +62,7 @@
   }
 </script>
 
-<DetailHeader label="Account" />
+<DetailHeader label="Identity & data" />
 
 <div class="settings-page">
   <div class="settings-group">

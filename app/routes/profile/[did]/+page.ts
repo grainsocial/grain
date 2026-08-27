@@ -10,5 +10,5 @@ export const load: PageLoad = async ({ params, parent, fetch }) => {
     queryClient.prefetchInfiniteQuery(actorFeedQuery(did, fetch)),
   ]);
   if (!browser) await prefetch;
-  return { did };
+  return { did, wide: true, full: !viewer };
 };

@@ -34,7 +34,7 @@
   })
 </script>
 
-<DetailHeader label="Privacy" />
+<DetailHeader label="Upload defaults" />
 
 <div class="settings-page">
   <SettingsGroup label="Defaults for new uploads">

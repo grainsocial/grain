@@ -27,11 +27,21 @@
   $effect(() => initTheme())
 
   // Clear stale body overflow locks left by overlays (e.g. StoryViewer)
-  afterNavigate(() => {
+  afterNavigate(({ from, to, type }) => {
     if (document.body.style.overflow === 'hidden') {
       document.body.style.overflow = ''
       document.documentElement.style.overflow = ''
     }
+
+    // Below 600px main.col-center is a fixed, self-scrolling pane that survives
+    // navigation, so its scrollTop carries over and a new page opens partway
+    // down. SvelteKit only manages window scroll, so reset it here.
+    // - popstate is left alone: the snapshot above restores it.
+    // - same pathname is left alone: that is a tab or filter change using
+    //   noScroll, not a new page.
+    if (type === 'popstate') return
+    if (from && to && from.url.pathname === to.url.pathname) return
+    document.querySelector('main.col-center')?.scrollTo(0, 0)
   })
 
   let { data, children }: { data: any; children: Snippet } = $props()

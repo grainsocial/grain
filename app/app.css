@@ -10,8 +10,8 @@
    swaps it. The inline script in app.html sets that attribute before first paint
    (resolving "system" against prefers-color-scheme), so there is no flash. */
 :root {
-  --col-left: 78px;
-  --col-right: 320px;
+  --shell-max: 1180px;
+  --col-left: 245px;
   --col-center: minmax(0, 600px);
   --font-display: "Syne", sans-serif;
   --font-body: "Plus Jakarta Sans", -apple-system, sans-serif;
@@ -38,8 +38,8 @@
   --on-grain: #080b12;
   --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-faint: #475569;
+  --text-muted: #7c8ba1;
+  --text-faint: #64748b;
   --danger: #f87171;
   --danger-bg: #1c1117;
 }
@@ -61,8 +61,8 @@
   --on-grain: #ffffff;
   --text-primary: #0d1424;
   --text-secondary: #4a5568;
-  --text-muted: #6b7688;
-  --text-faint: #98a2b3;
+  --text-muted: #5f6a79;
+  --text-faint: #6b7688;
   --danger: #dc2626;
   --danger-bg: #fef2f2;
 }

@@ -183,7 +183,7 @@
   <header class="card-header">
     <ProfilePopover did={gallery.creator?.did ?? ''}>
       <a href="/profile/{gallery.creator?.did}" class="author-chip">
-        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} size={32} hasStory={creatorHasStory} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
+        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} name={displayName} size={40} hasStory={creatorHasStory} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
         <div class="author-info">
           <span class="author-name-row">
             <span class="author-handle">{displayName}</span>
@@ -357,7 +357,7 @@
 
 <style>
   .gallery-card {
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
     /* Skip layout/paint for offscreen cards. `auto` remembers the last measured
        size, so scroll position stays stable once a card has been rendered. */
     content-visibility: auto;
@@ -365,7 +365,7 @@
   }
 
   /* Header */
-  .card-header { padding: 12px 16px; display: flex; align-items: center; }
+  .card-header { padding: 12px 0; display: flex; align-items: center; }
   .author-chip {
     display: flex;
     align-items: center;
@@ -389,13 +389,13 @@
   }
   .author-handle {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .author-subtext {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
@@ -403,7 +403,7 @@
     flex-shrink: 1;
   }
   .header-time {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     white-space: nowrap;
     flex-shrink: 0;
@@ -598,7 +598,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px 16px;
+    padding: 10px 0;
   }
   .stat {
     display: flex;
@@ -621,7 +621,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 16px 10px;
+    padding: 0 0 10px;
     text-decoration: none;
     color: inherit;
   }
@@ -638,7 +638,7 @@
   }
 
   /* Content */
-  .card-content { padding: 0 16px 14px; }
+  .card-content { padding: 0 0 14px; }
   .title-link {
     text-decoration: none;
     color: inherit;
@@ -648,11 +648,11 @@
   }
   .title {
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     margin: 0 0 4px;
   }
   .description {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
     margin: 0 0 4px;
     white-space: pre-wrap;
@@ -682,7 +682,7 @@
     color: var(--text-secondary);
   }
   .location-link {
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     text-decoration: none;
     white-space: nowrap;
@@ -810,5 +810,15 @@
     border-radius: 10px;
     padding: 2px 8px;
     margin-top: 4px;
+  }
+
+  /* On a phone the container edge is the screen edge, so text gets a gutter.
+     The carousel breaks back out of it and stays edge to edge. */
+  @media (max-width: 600px) {
+    .gallery-card { padding-left: 12px; padding-right: 12px; }
+    .carousel-host {
+      margin-left: -12px;
+      margin-right: -12px;
+    }
   }
 </style>

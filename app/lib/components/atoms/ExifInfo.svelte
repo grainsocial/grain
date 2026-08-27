@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { ExifView } from '$hatk/client'
   import { Camera, Aperture } from 'lucide-svelte'
+  import { cleanCameraName } from '$lib/utils/cameraName'
 
   let { exif }: { exif: ExifView } = $props()
 
   const cameraName = $derived(
-    [exif.make, exif.model].filter(Boolean).join(' ')
+    cleanCameraName([exif.make, exif.model].filter(Boolean).join(' '))
   )
   const lensName = $derived(
     exif.lensModel || [exif.lensMake, exif.lensModel].filter(Boolean).join(' ')
@@ -22,7 +23,10 @@
     {#if cameraName}
       <div class="exif-row">
         <Camera size={14} />
-        <span>{cameraName}</span>
+        <!-- The raw make+model string. The camera feed normalizes whatever it
+             is given (server/feeds/camera.ts), so this resolves to the same
+             page as the cleaned name shown on /explore and /cameras. -->
+        <a class="camera-link" href="/camera/{encodeURIComponent(cameraName)}">{cameraName}</a>
       </div>
     {/if}
     {#if lensName}
@@ -42,14 +46,22 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 10px 16px;
-    font-size: 12px;
+    padding: 10px 0;
+    font-size: 13px;
     color: var(--text-muted);
   }
   .exif-row {
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+  .camera-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .camera-link:hover {
+    color: var(--grain);
   }
   .exif-settings {
     font-variant-numeric: tabular-nums;

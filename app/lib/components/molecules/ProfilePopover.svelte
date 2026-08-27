@@ -74,7 +74,7 @@
     <div class="popover" onmouseenter={handleEnter} onmouseleave={handleLeave}>
       <div class="popover-header">
         <a href="/profile/{p.did}" class="popover-avatar-link">
-          <Avatar did={p.did} src={p.avatar ?? null} size={48} {hasStory} />
+          <Avatar did={p.did} src={p.avatar ?? null} name={p.displayName ?? p.handle} size={48} {hasStory} />
         </a>
         {#if !isOwnProfile && $viewer}
           <FollowButton did={p.did} {viewerFollow} />

@@ -14,17 +14,20 @@
   } = $props()
 </script>
 
-<a href="/profile/{profile.did}" class="profile-card">
-  <Avatar did={profile.did} src={profile.avatar ?? null} size={40} />
+<div class="profile-card">
+  <Avatar did={profile.did} src={profile.avatar ?? null} name={profile.displayName ?? profile.handle} size={40} />
   <div class="profile-card-info">
-    <div class="profile-card-name">{profile.displayName || (profile.handle ? `@${profile.handle}` : truncDid(profile.did))}</div>
+    <a href="/profile/{profile.did}" class="profile-card-name"
+      >{profile.displayName || (profile.handle ? `@${profile.handle}` : truncDid(profile.did))}</a
+    >
     {#if profile.handle}<div class="profile-card-handle">@{profile.handle}</div>{/if}
     {#if profile.description}<div class="profile-card-bio"><RichText text={profile.description} /></div>{/if}
   </div>
-</a>
+</div>
 
 <style>
   .profile-card {
+    position: relative;
     display: flex;
     gap: 12px;
     padding: 12px 16px;
@@ -35,9 +38,23 @@
   }
   .profile-card:hover { background: var(--bg-hover); }
   .profile-card-info { flex: 1; min-width: 0; }
-  .profile-card-name { font-weight: 600; font-size: 15px; }
+  .profile-card-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: inherit;
+    text-decoration: none;
+  }
+  /* Stretched link: covers the card so the whole row is clickable, without
+     making the card itself an anchor. */
+  .profile-card-name::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
   .profile-card-handle { font-size: 13px; color: var(--text-muted); }
+  /* Sits above the stretched link so its own links stay clickable. */
   .profile-card-bio {
+    position: relative;
     font-size: 13px;
     color: var(--text-secondary);
     margin-top: 4px;

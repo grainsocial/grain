@@ -68,14 +68,14 @@
 
 <style>
   .suggested-strip {
-    border-bottom: 1px solid var(--border);
-    padding: 16px 0;
+    padding: 6px 0 14px;
+    margin-bottom: 32px;
   }
   .strip-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px 12px;
+    padding: 0 0 12px;
   }
   .strip-title {
     font-weight: 600;
@@ -86,16 +86,11 @@
     gap: 12px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 16px;
+    scroll-padding-inline: 0;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
   .strip-scroll::-webkit-scrollbar { display: none; }
-  .strip-scroll::before,
-  .strip-scroll::after {
-    content: '';
-    flex: 0 0 16px;
-  }
   .suggestion-card {
     flex: 0 0 170px;
     scroll-snap-align: start;
@@ -104,7 +99,7 @@
     align-items: center;
     gap: 8px;
     padding: 16px 12px 12px;
-    border: 1px solid var(--border);
+    background: var(--bg-surface);
     border-radius: 12px;
     position: relative;
     text-align: center;
@@ -155,5 +150,9 @@
     overflow: hidden;
     line-height: 1.3;
     min-height: 31px;
+  }
+
+  @media (max-width: 600px) {
+    .suggested-strip { padding-left: 12px; padding-right: 12px; }
   }
 </style>

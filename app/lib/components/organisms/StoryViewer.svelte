@@ -15,17 +15,22 @@
     initialDid,
     onclose,
     singleStory,
+    singleAuthor = false,
   }: {
     initialDid: string
     onclose: () => void
     singleStory?: { uri: string } | null
+    /** Stay on `initialDid` instead of continuing into other people's stories.
+        Opening from a profile means "watch this person", not "start here". */
+    singleAuthor?: boolean
   } = $props()
 
   const queryClient = useQueryClient()
 
   // Reactively read author list from cache; fall back to just the initialDid
-  const storyAuthors = createQuery(() => storyAuthorsQuery())
+  const storyAuthors = createQuery(() => ({ ...storyAuthorsQuery(), enabled: !singleAuthor }))
   const authorDids = $derived.by(() => {
+    if (singleAuthor) return [initialDid]
     const authors = storyAuthors.data
     return authors && authors.length > 0
       ? authors.map((a: any) => a.profile.did)
