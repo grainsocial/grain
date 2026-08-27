@@ -1,5 +1,8 @@
 <script lang="ts">
   import { cellToLatLng, isValidCell } from 'h3-js'
+  import { onMount } from 'svelte'
+  import type { Map as MapLibreMap } from 'maplibre-gl'
+  import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '$lib/basemap'
 
   let { h3Index, h3Cells }: { h3Index: string; h3Cells?: string[] } = $props()
 
@@ -33,38 +36,99 @@
     return 11
   })
 
-  const maxTile = $derived(Math.pow(2, zoom))
-  const tileX = $derived(Math.floor(((lng + 180) / 360) * maxTile))
-  const tileY = $derived(
-    Math.floor(
-      ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) *
-        maxTile,
-    ),
-  )
+  let container: HTMLDivElement | undefined = $state()
+  let map: MapLibreMap | null = $state(null)
 
-  function wrapTile(x: number): number {
-    return ((x % maxTile) + maxTile) % maxTile
-  }
+  // h3Cells arrives from an async query, so the centre and zoom change after
+  // mount. Follow them rather than capturing whatever they happened to be when
+  // the map finished loading.
+  $effect(() => {
+    if (!map || !valid) return
+    map.jumpTo({ center: [lng, lat], zoom })
+  })
 
-  // Both basemap flavours are handed to CSS as custom properties and the active
-  // one is picked by the `data-theme` attribute. Swapping an <img src> instead
-  // would not survive hydration — Svelte keeps the server-rendered src.
-  function tileUrl(basemap: string, x: number, y: number): string {
-    return `https://a.basemaps.cartocdn.com/${basemap}/${zoom}/${wrapTile(x)}/${y}@2x.png`
-  }
+  onMount(() => {
+    if (!valid || !container) return
+
+    let disposed = false
+
+    // `data-theme` on <html> is the source of truth for the active theme (see
+    // lib/theme.ts) — map layers cannot read CSS variables, so watch it.
+    const resolveTheme = (): 'light' | 'dark' =>
+      document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'
+    let theme = resolveTheme()
+
+    const observer = new MutationObserver(() => {
+      const next = resolveTheme()
+      if (next === theme) return
+      theme = next
+      buildStyle().then((s) => map?.setStyle(s))
+    })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    })
+
+    async function buildStyle() {
+      const { layers, namedTheme } = await import('protomaps-themes-base')
+      return {
+        version: 8 as const,
+        sources: {
+          protomaps: {
+            type: 'vector' as const,
+            url: `pmtiles://${BASEMAP_URL}`,
+            attribution: BASEMAP_ATTRIBUTION,
+          },
+        },
+        layers: layers('protomaps', namedTheme(theme)),
+      }
+    }
+
+    // Loaded on demand: this is the only route with a map, and maplibre is far
+    // too large to sit in the shared bundle for a decorative strip.
+    ;(async () => {
+      const [maplibre, { Protocol }, style] = await Promise.all([
+        import('maplibre-gl'),
+        import('pmtiles'),
+        buildStyle(),
+      ])
+      if (disposed || !container) return
+
+      const protocol = new Protocol()
+      maplibre.addProtocol('pmtiles', protocol.tile)
+
+      const instance = new maplibre.Map({
+        container,
+        style,
+        center: [lng, lat],
+        zoom,
+        // Decorative: no panning, zooming, keyboard focus or controls.
+        interactive: false,
+        attributionControl: false,
+      })
+      map = instance
+    })()
+
+    return () => {
+      disposed = true
+      observer.disconnect()
+      map?.remove()
+      map = null
+    }
+  })
 </script>
 
 {#if valid}
-  <div class="map-banner" aria-hidden="true">
-    <div class="tile-grid">
-      {#each [-1, 0, 1] as offset}
-        <div
-          class="tile"
-          style:--tile-dark="url('{tileUrl('dark_all', tileX + offset, tileY)}')"
-          style:--tile-light="url('{tileUrl('light_all', tileX + offset, tileY)}')"
-        ></div>
-      {/each}
-    </div>
+  <div class="map-banner">
+    <div class="map-canvas" bind:this={container} aria-hidden="true"></div>
+    <!-- ODbL requires attribution wherever the basemap is shown. Rendered
+         outside the map so it survives the decorative aria-hidden. -->
+    <a
+      class="attribution"
+      href="https://www.openstreetmap.org/copyright"
+      target="_blank"
+      rel="noreferrer">© OpenStreetMap</a
+    >
   </div>
 {/if}
 
@@ -73,27 +137,26 @@
     position: relative;
     height: 120px;
     overflow: hidden;
-    border-bottom: 1px solid var(--border);
+    background: var(--bg-surface);
   }
-  .tile-grid {
-    display: flex;
+  .map-canvas {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    filter: saturate(1.8) brightness(1.2);
+    inset: 0;
   }
-  /* The dark basemap needs lifting; the light one only needs the saturation. */
-  :global(html[data-theme='light']) .tile-grid {
-    filter: saturate(1.4);
+  .attribution {
+    position: absolute;
+    right: 6px;
+    bottom: 4px;
+    z-index: 1;
+    font-size: 10px;
+    line-height: 1;
+    padding: 3px 6px;
+    border-radius: 4px;
+    color: var(--text-muted);
+    background: var(--bg-blur);
+    text-decoration: none;
   }
-  .tile {
-    width: 256px;
-    height: 256px;
-    background-image: var(--tile-dark);
-    background-size: 256px 256px;
-  }
-  :global(html[data-theme='light']) .tile {
-    background-image: var(--tile-light);
+  .attribution:hover {
+    color: var(--text-primary);
   }
 </style>
