@@ -73,7 +73,11 @@ export function expandCountryAliases(raw: string): string[] {
   for (const [alias, c] of Object.entries(COUNTRY_ALIASES)) {
     if (c === canon) set.add(alias);
   }
-  const fullName = regionNames?.of(canon);
-  if (fullName) set.add(fullName.toUpperCase());
+  try {
+    const fullName = regionNames?.of(canon);
+    if (fullName) set.add(fullName.toUpperCase());
+  } catch {
+    // Not a region code — the canonical string alone is all we can offer.
+  }
   return [...set];
 }

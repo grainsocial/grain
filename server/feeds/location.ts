@@ -101,29 +101,50 @@ export default defineFeed({
 
       const interpClauses: string[] = [];
       for (const interp of interps) {
+        // Staged locally: an interpretation that turns out to be unsatisfiable
+        // must not leave its bind values behind, or every later placeholder
+        // number would refer to the wrong parameter.
         const matches: string[] = [];
+        const staged: any[] = [];
+        let next = p;
+        let usable = true;
+
         if (interp.locality) {
-          matches.push(`UPPER(json_extract(t.address, '$.locality')) = UPPER($${p++})`);
-          params.push(interp.locality);
+          matches.push(`UPPER(json_extract(t.address, '$.locality')) = UPPER($${next++})`);
+          staged.push(interp.locality);
         }
         if (interp.region) {
-          matches.push(`UPPER(json_extract(t.address, '$.region')) = UPPER($${p++})`);
-          params.push(interp.region);
+          matches.push(`UPPER(json_extract(t.address, '$.region')) = UPPER($${next++})`);
+          staged.push(interp.region);
         }
         if (interp.country) {
-          // Expand "US"/"USA"/etc. all together.
+          // Expand "US"/"USA"/etc. all together. A single-word display name is
+          // tried as a country first ("Greece"), so this is routinely handed
+          // something that is not one ("Waldport") and gets back no aliases.
+          // Emitting `IN ()` is a SQLite syntax error that fails the entire
+          // query — including the sibling locality interpretation that would
+          // have matched — so drop this interpretation instead.
           const aliases = expandCountryAliases(interp.country);
-          const placeholders = aliases.map(() => `$${p++}`).join(",");
-          matches.push(`UPPER(json_extract(t.address, '$.country')) IN (${placeholders})`);
-          params.push(...aliases);
+          if (aliases.length === 0) {
+            usable = false;
+          } else {
+            const placeholders = aliases.map(() => `$${next++}`).join(",");
+            matches.push(`UPPER(json_extract(t.address, '$.country')) IN (${placeholders})`);
+            staged.push(...aliases);
+          }
         }
         if (interp.regionNullOrEqual) {
           matches.push(
-            `(json_extract(t.address, '$.region') IS NULL OR UPPER(json_extract(t.address, '$.region')) = UPPER($${p++}))`,
+            `(json_extract(t.address, '$.region') IS NULL OR UPPER(json_extract(t.address, '$.region')) = UPPER($${next++}))`,
           );
-          params.push(interp.regionNullOrEqual);
+          staged.push(interp.regionNullOrEqual);
         }
-        if (matches.length) interpClauses.push(`(${matches.join(" AND ")})`);
+
+        if (usable && matches.length) {
+          interpClauses.push(`(${matches.join(" AND ")})`);
+          params.push(...staged);
+          p = next;
+        }
       }
 
       // Also match records whose raw location.name equals the requested name —

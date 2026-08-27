@@ -4,51 +4,16 @@ import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { resolveAtUri } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getGallery", async (ctx) => {
-  const { ok, params, db } = ctx;
+  const { ok, params, db, getRecords } = ctx;
   let { gallery: galleryUri } = params;
 
   // Resolve handle in AT URI if needed
   const resolved = await resolveAtUri(db, galleryUri);
   if (resolved) galleryUri = resolved;
 
-  const rows = (await db.query(`SELECT * FROM "social.grain.gallery" WHERE uri = $1`, [
-    galleryUri,
-  ])) as Array<{
-    uri: string;
-    did: string;
-    cid: string;
-    handle: string | null;
-    indexed_at: string | null;
-    title: string;
-    description: string | null;
-    facets: string | null;
-    labels: string | null;
-    location: string | null;
-    updated_at: string | null;
-    created_at: string;
-  }>;
-
-  const row = rows[0];
-  if (!row) throw new InvalidRequestError("Gallery not found");
-
-  const record = {
-    title: row.title,
-    description: row.description ?? undefined,
-    facets: row.facets ? JSON.parse(row.facets) : undefined,
-    labels: row.labels ? JSON.parse(row.labels) : undefined,
-    location: row.location ? JSON.parse(row.location) : undefined,
-    updatedAt: row.updated_at ?? undefined,
-    createdAt: row.created_at,
-  };
-
-  const galleryRow = {
-    uri: row.uri,
-    did: row.did,
-    cid: row.cid,
-    handle: row.handle ?? undefined,
-    indexed_at: row.indexed_at ?? undefined,
-    value: record as Gallery,
-  };
+  const recordsMap = await getRecords<Gallery>("social.grain.gallery", [galleryUri]);
+  const galleryRow = recordsMap.get(galleryUri);
+  if (!galleryRow) throw new InvalidRequestError("Gallery not found");
 
   const [galleryView] = await hydrateGalleries(ctx, [galleryRow]);
 
