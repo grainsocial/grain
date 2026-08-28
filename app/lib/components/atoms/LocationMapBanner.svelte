@@ -4,7 +4,11 @@
   import type { Map as MapLibreMap } from 'maplibre-gl'
   import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '$lib/basemap'
 
-  let { h3Index, h3Cells }: { h3Index: string; h3Cells?: string[] } = $props()
+  let {
+    h3Index,
+    h3Cells,
+    height = 120,
+  }: { h3Index: string; h3Cells?: string[]; height?: number } = $props()
 
   // If multiple cells are provided, compute the center and a zoom level that
   // fits the bounding box of their centroids. Falls back to the single-cell
@@ -123,7 +127,7 @@
 </script>
 
 {#if valid}
-  <div class="map-banner">
+  <div class="map-banner" style:height="{height}px">
     <div class="map-canvas" bind:this={container} aria-hidden="true"></div>
     <!-- ODbL requires attribution wherever the basemap is shown. Rendered
          outside the map so it survives the decorative aria-hidden. -->
@@ -139,7 +143,6 @@
 <style>
   .map-banner {
     position: relative;
-    height: 120px;
     overflow: hidden;
     background: var(--bg-surface);
   }

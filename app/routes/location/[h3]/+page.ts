@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import { FEED_PAGE_SIZE, locationFeedQuery, locationsQuery } from "$lib/queries";
+import { locationFeedInfiniteQuery, locationsQuery } from "$lib/queries";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ url, params, parent, fetch }) => {
@@ -8,12 +8,12 @@ export const load: PageLoad = async ({ url, params, parent, fetch }) => {
   const name = nameParam ?? h3Index;
   const { queryClient } = await parent();
   const prefetch = Promise.all([
-    queryClient.prefetchQuery(
-      locationFeedQuery(h3Index, nameParam ?? undefined, FEED_PAGE_SIZE, fetch),
+    queryClient.prefetchInfiniteQuery(
+      locationFeedInfiniteQuery(h3Index, nameParam ?? undefined, fetch),
     ),
     // Prefetch locations so the map banner can render the full cell set.
     queryClient.prefetchQuery(locationsQuery(fetch)),
   ]);
   if (!browser) await prefetch;
-  return { h3Index, name, nameParam };
+  return { h3Index, name, nameParam, wide: true };
 };

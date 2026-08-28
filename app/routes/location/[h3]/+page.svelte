@@ -1,43 +1,140 @@
 <script lang="ts">
-  import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
-  import FeedList from '$lib/components/organisms/FeedList.svelte'
+  import GalleryGrid from '$lib/components/organisms/GalleryGrid.svelte'
   import PinButton from '$lib/components/atoms/PinButton.svelte'
   import LocationMapBanner from '$lib/components/atoms/LocationMapBanner.svelte'
-  import { createQuery } from '@tanstack/svelte-query'
-  import { locationFeedQuery, locationsQuery } from '$lib/queries'
-  import { isAuthenticated } from '$lib/stores'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import { ArrowLeft } from 'lucide-svelte'
+  import { createInfiniteQuery, createQuery } from '@tanstack/svelte-query'
+  import { locationFeedInfiniteQuery, locationsQuery } from '$lib/queries'
+  import { isAuthenticated } from '$lib/stores'
+  import { goto } from '$app/navigation'
 
   let { data } = $props()
 
   const h3Index = $derived(data.h3Index)
   const name = $derived(data.name)
   const nameParam = $derived(data.nameParam)
-  const feed = createQuery(() => locationFeedQuery(h3Index, nameParam ?? undefined))
+
+  const feed = createInfiniteQuery(() => locationFeedInfiniteQuery(h3Index, nameParam ?? undefined))
+  const items = $derived(feed.data?.pages.flatMap((p) => p.items ?? []) ?? [])
+
   const locations = createQuery(() => locationsQuery())
   const h3Cells = $derived(
     nameParam
       ? locations.data?.find((l) => l.name === nameParam)?.h3Cells
       : undefined,
   )
+
+  function back() {
+    if (window.history.length > 1) history.back()
+    else goto('/')
+  }
 </script>
 
 <OGMeta title="{name} - grain" />
-<DetailHeader label={name}>
-  {#snippet actions()}
+
+<div class="place">
+  <header class="hero">
+    <LocationMapBanner {h3Index} {h3Cells} height={260} />
+    <!-- Fades the map into the page rather than ending it on a hard edge, and
+         gives the title something to sit on in either theme. -->
+    <div class="scrim"></div>
+
+    <button class="hero-back" type="button" onclick={back} aria-label="Back">
+      <ArrowLeft size={20} />
+    </button>
+
     {#if $isAuthenticated}
-      <PinButton feed={{ id: `location:${h3Index}`, label: name, type: 'location', path: `/location/${encodeURIComponent(h3Index)}?name=${encodeURIComponent(name)}` }} />
+      <div class="hero-pin">
+        <PinButton
+          feed={{
+            id: `location:${h3Index}`,
+            label: name,
+            type: 'location',
+            path: `/location/${encodeURIComponent(h3Index)}?name=${encodeURIComponent(name)}`,
+          }}
+        />
+      </div>
     {/if}
-  {/snippet}
-</DetailHeader>
-<LocationMapBanner {h3Index} {h3Cells} />
-{#if feed.isLoading}
-  <FeedList feed="location" params={{ location: h3Index }} skeleton />
-{:else}
-  <FeedList
-    feed="location"
-    params={nameParam ? { location: h3Index, name: nameParam } : { location: h3Index }}
-    initialItems={feed.data?.items ?? []}
-    initialCursor={feed.data?.cursor}
+
+    <div class="hero-foot">
+      <h1>{name}</h1>
+    </div>
+  </header>
+
+  <GalleryGrid
+    {items}
+    loading={feed.isLoading}
+    emptyText="No galleries here yet."
+    hasMore={feed.hasNextPage}
+    loadingMore={feed.isFetchingNextPage}
+    onLoadMore={() => feed.fetchNextPage()}
   />
-{/if}
+</div>
+
+<style>
+  .place {
+    padding: 0 0 32px;
+  }
+  /* Breathing room between the hero and the first row of photos. */
+  .place :global(.grid) {
+    margin-top: 14px;
+  }
+  .hero {
+    position: relative;
+    isolation: isolate;
+  }
+  .scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.25) 0%,
+      transparent 35%,
+      var(--bg-root) 100%
+    );
+  }
+  .hero-back {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: var(--bg-blur);
+    backdrop-filter: blur(8px);
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .hero-pin {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  .hero-foot {
+    position: absolute;
+    left: 16px;
+    right: 130px;
+    bottom: 22px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    margin: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 600px) {
+    h1 { font-size: 24px; }
+    .hero-foot { right: 16px; bottom: 30px; }
+  }
+</style>

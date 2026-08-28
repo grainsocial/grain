@@ -83,6 +83,30 @@ export const locationFeedQuery = (
     staleTime: 60_000,
   });
 
+/**
+ * Paged variant for the location page's grid. The plain query above still backs
+ * the card feed and the SSR prefetch.
+ */
+export const locationFeedInfiniteQuery = (location: string, name?: string, f?: Fetch) =>
+  infiniteQueryOptions({
+    queryKey: ["getFeed", "location", "infinite", name || location],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      callXrpc(
+        "dev.hatk.getFeed",
+        {
+          feed: "location",
+          location,
+          ...(name ? { name } : {}),
+          limit: FEED_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        },
+        f,
+      ),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
+    staleTime: 60_000,
+  });
+
 export const locationsQuery = (f?: Fetch) =>
   queryOptions({
     queryKey: ["locations"],
