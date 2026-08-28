@@ -333,12 +333,57 @@
 .media-obscured .carousel {
     visibility: hidden;
   }
+  /* Paging chrome would otherwise draw over the warning and let you step
+     through media the label says to hide. */
+  .media-obscured .nav-arrow,
+  .media-obscured .dots {
+    display: none;
+  }
 .media-obscured::before {
     content: '';
     position: absolute;
     inset: 0;
     background: var(--bg-elevated);
     z-index: 1;
+  }
+  /* These live here rather than in GalleryCard because the markup does: the
+     card's copies are scoped to the card, so they never reached this overlay
+     and the Show button sat under the obscuring layer, unclickable. */
+  .media-warning-bar {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    right: 12px;
+    transform: translateY(-50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .media-warning-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .media-warning-show {
+    background: none;
+    border: none;
+    color: var(--grain);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-body);
+    padding: 0;
+  }
+  .media-warning-show:hover {
+    opacity: 0.8;
   }
 
   /* Height-capped mode: the slide is sized by the cap and the photo is
