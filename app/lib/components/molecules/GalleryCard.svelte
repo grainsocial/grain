@@ -7,6 +7,7 @@
   import RichText from '../atoms/RichText.svelte'
   import Toast from '../atoms/Toast.svelte'
   import ExifInfo from '../atoms/ExifInfo.svelte'
+  import GalleryMedia from './GalleryMedia.svelte'
   import FavoriteButton from './FavoriteButton.svelte'
   import ReportButton from './ReportButton.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
@@ -48,7 +49,6 @@
   let deleting = $state(false)
   let reportOpen = $state(false)
   let doFavorite: (() => void) | undefined = $state(undefined)
-  let showHeartAnim = $state(false)
 
   async function deleteGallery() {
     if (deleting) return
@@ -68,7 +68,6 @@
     }
   }
 
-  const isDesktop = browser ? window.matchMedia('(min-width: 768px)').matches : false
 
   const displayName = $derived(
     gallery.creator?.displayName || (gallery.creator?.handle ? `@${gallery.creator.handle}` : gallery.creator?.did?.slice(0, 18) + '\u2026')
@@ -86,11 +85,6 @@
     favedByFollowing.slice(0, 2).map((p) => p.displayName || (p.handle ? `@${p.handle}` : '')),
   )
 
-  function photoRatio(photo: PhotoView): number {
-    const ar = photo.aspectRatio
-    if (!ar) return 1
-    return ar.width / ar.height
-  }
 
   let showToast = $state(false)
 
@@ -103,22 +97,12 @@
     }
   }
 
-  const hasPortrait = $derived(photos.some((p) => photoRatio(p) < 1))
-  const ratios = $derived(photos.map(photoRatio))
-  const needsFixedHeight = $derived(
-    photos.length > 1 && new Set(ratios.map((r) => r.toFixed(2))).size > 1
-  )
-  const minRatio = $derived(
-    photos.length > 0 ? Math.max(Math.min(...ratios), hasPortrait ? 0.56 : Math.min(...ratios)) : 1
-  )
 
   const labelDefs = createQuery(() => labelDefsQuery())
   const labelResult = $derived(resolveLabels(gallery.labels, labelDefs.data ?? []))
   let revealed = $state(false)
 
   let currentIndex = $state(0)
-  let carouselEl: HTMLDivElement | undefined = $state(undefined)
-  let activeAltIndex: number | null = $state(null)
   let descriptionExpanded = $state(false)
   let descriptionClamped = $state(false)
   let descriptionEl: HTMLParagraphElement | undefined = $state(undefined)
@@ -130,41 +114,9 @@
   })
   const currentExif = $derived(photos[currentIndex]?.exif as ExifView | undefined)
 
-  function onScroll() {
-    if (!carouselEl) return
-    const idx = Math.round(carouselEl.scrollLeft / carouselEl.offsetWidth)
-    if (idx !== currentIndex) {
-      currentIndex = idx
-      activeAltIndex = null
-    }
-  }
 
-  function goTo(index: number) {
-    if (!carouselEl) return
-    const slides = carouselEl.querySelectorAll('.slide')
-    slides[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
-  }
 
-  function dotClass(index: number): string {
-    const distance = Math.abs(index - currentIndex)
-    if (index === currentIndex) return 'dot active'
-    if (distance === 1) return 'dot'
-    if (distance === 2) return 'dot small'
-    return 'dot tiny'
-  }
 
-  const visibleDots = $derived.by(() => {
-    const total = photos.length
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i)
-    const maxVisible = 5
-    let start = Math.max(0, currentIndex - 2)
-    let end = start + maxVisible
-    if (end > total) {
-      end = total
-      start = end - maxVisible
-    }
-    return Array.from({ length: end - start }, (_, i) => start + i)
-  })
 </script>
 
 {#if (labelResult.action === 'hide' || labelResult.action === 'warn-content') && !revealed}
@@ -224,75 +176,14 @@
     {/if}
   </header>
 
-  {#if photos.length > 0}
-    <div class="carousel-host" class:media-obscured={labelResult.action === 'warn-media' && !revealed}>
-      {#if labelResult.action === 'warn-media' && !revealed}
-        <div class="media-warning-bar">
-          <div class="media-warning-left">
-            <Info size={16} />
-            <span>{labelResult.name}</span>
-          </div>
-          <button class="media-warning-show" onclick={() => (revealed = true)}>Show</button>
-        </div>
-      {/if}
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="carousel"
-        bind:this={carouselEl}
-        onscroll={onScroll}
-        ondblclick={() => { doFavorite?.(); showHeartAnim = true; setTimeout(() => (showHeartAnim = false), 800) }}
-        style={needsFixedHeight ? `aspect-ratio: ${minRatio};` : ''}
-      >
-        {#each photos as photo, i}
-          <div class="slide" class:centered={needsFixedHeight}>
-            <div class="grain-image">
-              <svg class="spacer" viewBox="0 0 1 {1 / Math.max(photoRatio(photo), needsFixedHeight ? minRatio : photoRatio(photo))}"></svg>
-              <img
-                src={Math.abs(i - currentIndex) <= 1 ? (isDesktop ? photo.fullsize : photo.thumb) : ''}
-                alt={photo.alt ?? ''}
-                decoding="async"
-                loading="lazy"
-                onload={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}
-              />
-            </div>
-            {#if photo.alt}
-              <button class="alt-badge" onclick={() => (activeAltIndex = i)}>ALT</button>
-            {/if}
-            {#if activeAltIndex === i}
-              <button class="alt-overlay" onclick={() => (activeAltIndex = null)}>
-                {photo.alt}
-              </button>
-            {/if}
-          </div>
-        {/each}
-      </div>
-
-      {#if photos.length > 1 && currentIndex > 0}
-        <button class="nav-arrow nav-left" onclick={() => goTo(currentIndex - 1)} aria-label="Previous">
-          <ChevronLeft size={14} />
-        </button>
-      {/if}
-      {#if photos.length > 1 && currentIndex < photos.length - 1}
-        <button class="nav-arrow nav-right" onclick={() => goTo(currentIndex + 1)} aria-label="Next">
-          <ChevronRight size={14} />
-        </button>
-      {/if}
-
-      {#if photos.length > 1}
-        <div class="dots">
-          {#each visibleDots as i}
-            <span class={dotClass(i)}></span>
-          {/each}
-        </div>
-      {/if}
-
-      {#if showHeartAnim}
-        <div class="heart-anim">
-          <Heart size={64} fill="currentColor" />
-        </div>
-      {/if}
-    </div>
-  {/if}
+  <GalleryMedia
+    {photos}
+    bind:currentIndex
+    obscured={labelResult.action === 'warn-media' && !revealed}
+    warnLabel={labelResult.name}
+    onShow={() => (revealed = true)}
+    onDoubleTap={() => doFavorite?.()}
+  />
 
   <div class="engagement">
     {#if !privateGallery}
@@ -356,17 +247,16 @@
 {/if}
 
 <style>
-  .gallery-card {
+.gallery-card {
     margin-bottom: 32px;
     /* Skip layout/paint for offscreen cards. `auto` remembers the last measured
        size, so scroll position stays stable once a card has been rendered. */
     content-visibility: auto;
     contain-intrinsic-size: auto 640px;
   }
-
-  /* Header */
+/* Header */
   .card-header { padding: 12px 0; display: flex; align-items: center; }
-  .author-chip {
+.author-chip {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -375,26 +265,26 @@
     min-width: 0;
     overflow: hidden;
   }
-  .author-info {
+.author-info {
     display: flex;
     flex-direction: column;
     min-width: 0;
     overflow: hidden;
   }
-  .author-name-row {
+.author-name-row {
     display: flex;
     align-items: center;
     gap: 4px;
     min-width: 0;
   }
-  .author-handle {
+.author-handle {
     font-weight: 600;
     font-size: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .author-subtext {
+.author-subtext {
     font-size: 13px;
     color: var(--text-muted);
     white-space: nowrap;
@@ -402,18 +292,16 @@
     text-overflow: ellipsis;
     flex-shrink: 1;
   }
-  .header-time {
+.header-time {
     font-size: 13px;
     color: var(--text-muted);
     white-space: nowrap;
     flex-shrink: 0;
   }
-
-  .card-header :global(.overflow-menu) {
+.card-header :global(.overflow-menu) {
     margin-left: auto;
   }
-
-  /* Menu items (inside OverflowMenu) */
+/* Menu items (inside OverflowMenu) */
   .menu-item {
     display: flex;
     align-items: center;
@@ -429,178 +317,25 @@
     border-radius: 6px;
     transition: background 0.15s;
   }
-  .menu-item:hover {
+.menu-item:hover {
     background: var(--bg-hover);
   }
-  .menu-item.delete {
+.menu-item.delete {
     color: var(--danger);
   }
-  .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
-  .menu-item:disabled {
+.menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+.menu-item:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-
-  /* Carousel — matches grain-next's grain-image-carousel */
-  .carousel-host {
-    display: block;
-    position: relative;
-  }
-  .heart-anim {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    color: var(--danger);
-    animation: heart-pop 0.8s ease-out forwards;
-    z-index: 5;
-  }
-  @keyframes heart-pop {
-    0% { opacity: 0; transform: scale(0); }
-    15% { opacity: 1; transform: scale(1.2); }
-    30% { transform: scale(0.95); }
-    45% { transform: scale(1); }
-    70% { opacity: 1; }
-    100% { opacity: 0; transform: scale(1); }
-  }
-  .carousel {
-    display: flex;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  .carousel::-webkit-scrollbar { display: none; }
-
-  .slide {
-    flex: 0 0 100%;
-    scroll-snap-align: start;
-    position: relative;
-  }
-  .slide.centered {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .slide.centered .grain-image {
-    width: 100%;
-  }
-
-  /* grain-image equivalent — SVG spacer + absolute img */
-  .grain-image {
-    display: block;
-    position: relative;
-    overflow: hidden;
-    background: var(--bg-elevated);
-  }
-  .spacer {
-    display: block;
-    width: 100%;
-  }
-  .grain-image img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  .grain-image img:global(.loaded) {
-    opacity: 1;
-  }
-
-  /* Alt text */
-  .alt-badge {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: none;
-    background: rgba(0, 0, 0, 0.65);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    z-index: 2;
-  }
-  .alt-badge:hover { background: rgba(0, 0, 0, 0.85); }
-  .alt-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    color: #fff;
-    padding: 16px;
-    font-size: 14px;
-    line-height: 1.5;
-    overflow-y: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-    z-index: 3;
-    font-family: inherit;
-  }
-
-  /* Nav arrows */
-  .nav-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255, 255, 255, 0.75);
-    color: rgba(0, 0, 0, 0.7);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    z-index: 1;
-    transition: background 0.15s;
-  }
-  .nav-arrow:hover { background: rgba(255, 255, 255, 0.95); }
-  .nav-left { left: 8px; }
-  .nav-right { right: 8px; }
-
-  /* Dots */
-  .dots {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 5px;
-  }
-  .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    transition: opacity 0.2s, width 0.2s, height 0.2s;
-  }
-  .dot.active { background: #fff; opacity: 1; }
-  .dot.small { width: 4px; height: 4px; opacity: 0.3; }
-  .dot.tiny { width: 3px; height: 3px; opacity: 0.2; }
-
-  /* Engagement */
+/* Engagement */
   .engagement {
     display: flex;
     align-items: center;
     gap: 16px;
     padding: 10px 0;
   }
-  .stat {
+.stat {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -613,10 +348,9 @@
     font-size: 13px;
     transition: opacity 0.15s;
   }
-  .stat:hover { opacity: 0.7; }
-  .stat-count { color: var(--text-secondary); }
-
-  /* "Favorited by people you follow" facepile */
+.stat:hover { opacity: 0.7; }
+.stat-count { color: var(--text-secondary); }
+/* "Favorited by people you follow" facepile */
   .faved-by {
     display: flex;
     align-items: center;
@@ -625,33 +359,32 @@
     text-decoration: none;
     color: inherit;
   }
-  .faved-by:hover .faved-by-text {
+.faved-by:hover .faved-by-text {
     text-decoration: underline;
   }
-  .faved-by-text {
+.faved-by-text {
     font-size: 12px;
     color: var(--text-muted);
   }
-  .faved-by-text strong {
+.faved-by-text strong {
     color: var(--text-secondary);
     font-weight: 600;
   }
-
-  /* Content */
+/* Content */
   .card-content { padding: 0 0 14px; }
-  .title-link {
+.title-link {
     text-decoration: none;
     color: inherit;
   }
-  .title-link:hover .title {
+.title-link:hover .title {
     text-decoration: underline;
   }
-  .title {
+.title {
     font-weight: 600;
     font-size: 16px;
     margin: 0 0 4px;
   }
-  .description {
+.description {
     font-size: 14px;
     color: var(--text-secondary);
     margin: 0 0 4px;
@@ -662,13 +395,13 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .description.expanded {
+.description.expanded {
     display: block;
     -webkit-line-clamp: unset;
     line-clamp: unset;
     overflow: visible;
   }
-  .more-btn {
+.more-btn {
     background: none;
     border: none;
     padding: 0;
@@ -678,10 +411,10 @@
     color: var(--text-muted);
     cursor: pointer;
   }
-  .more-btn:hover {
+.more-btn:hover {
     color: var(--text-secondary);
   }
-  .location-link {
+.location-link {
     font-size: 13px;
     color: var(--text-muted);
     text-decoration: none;
@@ -689,81 +422,21 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .location-link:hover {
+.location-link:hover {
     color: var(--grain);
   }
-  .timestamp {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-  }
-
-  /* Label moderation states */
+/* Label moderation states */
   .gallery-hidden {
     padding: 12px;
   }
-  .gallery-hidden .media-warning-bar {
+.gallery-hidden .media-warning-bar {
     position: relative;
     top: auto;
     left: auto;
     right: auto;
     transform: none;
   }
-  .content-warning {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 16px;
-    color: var(--text-muted);
-    font-size: 13px;
-  }
-  .content-warning-full {
-    flex-direction: column;
-    text-align: center;
-    padding: 32px 16px;
-    gap: 6px;
-  }
-  .cw-label {
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-  .cw-text {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-muted);
-  }
-  .cw-reveal {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 6px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-family: var(--font-body);
-    margin-left: auto;
-    transition: all 0.15s;
-  }
-  .cw-reveal:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-  .media-obscured {
-    position: relative;
-  }
-  .media-obscured .carousel {
-    visibility: hidden;
-  }
-  .media-obscured::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--bg-elevated);
-    z-index: 1;
-  }
-  .media-warning-bar {
+.media-warning-bar {
     position: absolute;
     top: 50%;
     left: 12px;
@@ -778,7 +451,7 @@
     border-radius: 8px;
     border: 1px solid var(--border);
   }
-  .media-warning-left {
+.media-warning-left {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -786,7 +459,7 @@
     font-size: 14px;
     font-weight: 500;
   }
-  .media-warning-show {
+.media-warning-show {
     background: none;
     border: none;
     color: var(--grain);
@@ -796,10 +469,10 @@
     font-family: var(--font-body);
     padding: 0;
   }
-  .media-warning-show:hover {
+.media-warning-show:hover {
     opacity: 0.8;
   }
-  .label-badge {
+.label-badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -811,14 +484,9 @@
     padding: 2px 8px;
     margin-top: 4px;
   }
-
-  /* On a phone the container edge is the screen edge, so text gets a gutter.
+/* On a phone the container edge is the screen edge, so text gets a gutter.
      The carousel breaks back out of it and stays edge to edge. */
   @media (max-width: 600px) {
     .gallery-card { padding-left: 12px; padding-right: 12px; }
-    .carousel-host {
-      margin-left: -12px;
-      margin-right: -12px;
-    }
   }
 </style>
