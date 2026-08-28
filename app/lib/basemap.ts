@@ -6,8 +6,7 @@
  * terms that can change underneath us. CARTO's keyless basemaps, which this
  * replaced, began serving tiles watermarked "API KEY REQUIRED".
  */
-export const BASEMAP_URL =
-  "https://pub-7f23adbee2034af39a148047268ea83c.r2.dev/planet.pmtiles";
+export const BASEMAP_URL = "https://pub-7f23adbee2034af39a148047268ea83c.r2.dev/planet.pmtiles";
 
 /** Required by ODbL wherever the basemap is shown. */
 export const BASEMAP_ATTRIBUTION =
