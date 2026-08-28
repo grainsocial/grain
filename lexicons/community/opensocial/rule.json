@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "community.opensocial.rule",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "One community rule, with a stable URI a moderation action can cite.",
+      "record": {
+        "type": "object",
+        "required": ["title", "createdAt"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxGraphemes": 100,
+            "maxLength": 1000
+          },
+          "text": {
+            "type": "string",
+            "maxGraphemes": 2000,
+            "maxLength": 20000
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

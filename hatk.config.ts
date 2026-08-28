@@ -33,6 +33,11 @@ const grainScopes = [
   // as the group answers (item, the group's repo).
   "repo:social.grain.group.submission",
   "repo:social.grain.group.item",
+  "repo:social.grain.group.decline",
+  // Joining and leaving a group is a call to its community host, made with
+  // service auth the member's PDS mints for that host — any host, hence `*`.
+  "rpc:community.opensocial.requestJoin?aud=*",
+  "rpc:community.opensocial.leaveCommunity?aud=*",
   // Both actions, not just create: the gallery cross-post is written with
   // com.atproto.repo.putRecord so a resumed publish overwrites its own post
   // instead of posting twice, and putRecord asserts create *and* update.

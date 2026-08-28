@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group.decline",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A group turning a submission down. Written into the group's repo by whoever is acting as it; the submission leaves the queue for good and stays in the member's repo as their own record. Delete this to reconsider.",
+      "record": {
+        "type": "object",
+        "required": ["submission", "gallery", "createdAt"],
+        "properties": {
+          "submission": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "gallery": {
+            "type": "string",
+            "format": "at-uri"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

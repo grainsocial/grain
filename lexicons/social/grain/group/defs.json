@@ -39,6 +39,22 @@
         "viewer": {
           "type": "ref",
           "ref": "#viewerState"
+        },
+        "memberCount": {
+          "type": "integer",
+          "description": "Members, as the community publicly attests (community.opensocial.member records)."
+        },
+        "joinPolicy": {
+          "type": "string",
+          "knownValues": ["open", "request", "invite"],
+          "description": "How to get in, from the community's public profile."
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "#rule"
+          }
         }
       }
     },
@@ -53,6 +69,10 @@
           "type": "ref",
           "ref": "#submissionState",
           "description": "The viewer's standing for the gallery named in the request, if one was."
+        },
+        "member": {
+          "type": "boolean",
+          "description": "The viewer is on the group's public roster."
         }
       }
     },
@@ -67,7 +87,7 @@
         },
         "status": {
           "type": "string",
-          "knownValues": ["pending", "accepted"]
+          "knownValues": ["pending", "accepted", "declined"]
         },
         "item": {
           "type": "string",
@@ -120,6 +140,22 @@
         "createdAt": {
           "type": "string",
           "format": "datetime"
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": ["uri", "title"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "title": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
         }
       }
     }

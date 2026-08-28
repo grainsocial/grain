@@ -278,6 +278,38 @@ CREATE TABLE "community.opensocial.declaration" (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE "community.opensocial.member" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  member TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE "community.opensocial.profile" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  description TEXT,
+  avatar TEXT,
+  banner TEXT,
+  join_policy TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE "community.opensocial.rule" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  title TEXT NOT NULL,
+  text TEXT,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE "social.grain.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
@@ -358,6 +390,16 @@ CREATE TABLE "social.grain.graph.follow" (
   did TEXT NOT NULL,
   indexed_at TEXT NOT NULL,
   subject TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE "social.grain.group.decline" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  submission TEXT NOT NULL,
+  gallery TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 

@@ -1,0 +1,62 @@
+{
+  "lexicon": 1,
+  "id": "community.opensocial.profile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "description": "The community's profile. Written by the community authority into the about space.",
+      "record": {
+        "type": "object",
+        "required": ["displayName", "joinPolicy", "createdAt"],
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxGraphemes": 64,
+            "maxLength": 640
+          },
+          "description": {
+            "type": "string",
+            "maxGraphemes": 300,
+            "maxLength": 3000
+          },
+          "avatar": {
+            "type": "blob",
+            "accept": ["image/png", "image/jpeg"],
+            "maxSize": 1000000
+          },
+          "banner": {
+            "type": "blob",
+            "accept": ["image/png", "image/jpeg"],
+            "maxSize": 1000000
+          },
+          "joinPolicy": {
+            "type": "string",
+            "knownValues": [
+              "community.opensocial.profile#open",
+              "community.opensocial.profile#request",
+              "community.opensocial.profile#invite"
+            ],
+            "description": "How new members get in: anyone may join, requests are reviewed, or invite only."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    },
+    "open": {
+      "type": "token",
+      "description": "Anyone may join by calling requestJoin; admitted immediately."
+    },
+    "request": {
+      "type": "token",
+      "description": "requestJoin creates a pending request that a member with the admit action reviews."
+    },
+    "invite": {
+      "type": "token",
+      "description": "Only holders of an outstanding invite may join."
+    }
+  }
+}

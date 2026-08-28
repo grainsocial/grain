@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.leaveGroup",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Leave a group: community.opensocial.leaveCommunity on its host, with service auth from the viewer's PDS.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["group"],
+          "properties": {
+            "group": {
+              "type": "string",
+              "format": "did"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    }
+  }
+}

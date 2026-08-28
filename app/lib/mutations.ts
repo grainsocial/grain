@@ -88,3 +88,30 @@ export async function removeFromPool(itemUri: string, queryClient: QueryClient) 
   await callXrpc("dev.hatk.deleteRecord", { collection: "social.grain.group.item", rkey });
   invalidateGroups(queryClient);
 }
+
+/** Decline = the group's "no", as its own record. The submission stays the member's. */
+export async function declineSubmission(
+  gallery: string,
+  submissionUri: string,
+  queryClient: QueryClient,
+) {
+  await callXrpc("dev.hatk.createRecord", {
+    collection: "social.grain.group.decline",
+    record: { gallery, submission: submissionUri, createdAt: new Date().toISOString() },
+  });
+  invalidateGroups(queryClient);
+}
+
+export async function joinGroup(
+  group: string,
+  queryClient: QueryClient,
+): Promise<"admitted" | "pending"> {
+  const r = await callXrpc("social.grain.unspecced.joinGroup", { group });
+  invalidateGroups(queryClient);
+  return r.status === "admitted" ? "admitted" : "pending";
+}
+
+export async function leaveGroup(group: string, queryClient: QueryClient) {
+  await callXrpc("social.grain.unspecced.leaveGroup", { group });
+  invalidateGroups(queryClient);
+}
