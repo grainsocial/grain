@@ -54,8 +54,14 @@
 </div>
 
 <style>
+  /* No horizontal padding here: the grid runs edge to edge, so the inset
+     belongs to the text above it rather than to the page. Matches /location. */
   .explore {
-    padding: 8px 16px 32px;
+    padding: 8px 0 32px;
+  }
+  .title,
+  .chip-group {
+    padding-inline: 16px;
   }
   .title {
     font-family: var(--font-display);
