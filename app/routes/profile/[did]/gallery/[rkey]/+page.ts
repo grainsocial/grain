@@ -9,5 +9,5 @@ export const load: PageLoad = async ({ params, parent, fetch }) => {
   const { queryClient } = await parent();
   const prefetch = queryClient.prefetchQuery(galleryQuery(galleryUri, fetch));
   if (!browser) await prefetch;
-  return { did, rkey, galleryUri };
+  return { did, rkey, galleryUri, wide: true };
 };

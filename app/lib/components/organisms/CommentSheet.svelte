@@ -13,11 +13,22 @@
     subjectUri,
     onClose,
     contained = false,
+    inline = false,
+    before,
+    footer,
   }: {
     open: boolean
     subjectUri: string
     onClose: () => void
+    /** Absolute panel over the story viewer's own dark surface. */
     contained?: boolean
+    /** Sits in normal flow as a column of the page — no overlay, no close. */
+    inline?: boolean
+    /** Rendered at the top of the scroll area, so a caption scrolls with the
+        comments instead of competing with them for the column's height. */
+    before?: import('svelte').Snippet
+    /** Rendered just above the composer, for pinned actions. */
+    footer?: import('svelte').Snippet
   } = $props()
 
   let comments = $state<CommentView[]>([])
@@ -202,18 +213,26 @@
 </script>
 
 {#if open}
-  {#if !contained}
+  {#if !contained && !inline}
     <div class="overlay" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="button" tabindex="-1"></div>
   {/if}
-  <div class="sheet" class:contained bind:this={sheetEl}>
-    <div class="sheet-header">
-      <span class="sheet-title">Comments ({totalCount})</span>
-      <button class="close-btn" onclick={onClose}>
-        <X size={20} />
-      </button>
-    </div>
+  <div class="sheet" class:contained class:inline bind:this={sheetEl}>
+    <!-- The split view reads top-to-bottom as author -> caption -> comments,
+         so a "Comments (n)" bar between the caption and the thread only pushes
+         the two apart. The sheet and contained modes still need the title. -->
+    {#if !inline}
+      <div class="sheet-header">
+        <span class="sheet-title">Comments ({totalCount})</span>
+        <button class="close-btn" onclick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+    {/if}
 
     <div class="comment-list">
+      {#if before}
+        <div class="list-before">{@render before()}</div>
+      {/if}
       {#if cursor}
         <button class="load-more" onclick={loadMore} disabled={loadingMore}>
           {#if loadingMore}
@@ -239,6 +258,12 @@
       <p class="error">{error}</p>
     {/if}
 
+    {#if footer}
+      <div class="list-footer">{@render footer()}</div>
+    {/if}
+
+    <!-- Directly above the composer it applies to. Rendered before the actions
+         row, the reply context was separated from its own input by the heart. -->
     {#if replyToHandle}
       <div class="reply-bar">
         <span>Replying to @{replyToHandle}</span>
@@ -247,7 +272,6 @@
         </button>
       </div>
     {/if}
-
     <div class="input-bar">
       {#if $viewer}
         <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={28} />
@@ -291,6 +315,55 @@
     z-index: 201;
     display: flex;
     flex-direction: column;
+  }
+  /* Inline: part of the page rather than over it, so it takes the theme's own
+     surface and stretches to whatever height the column gives it. */
+  .sheet.inline {
+    position: static;
+    max-height: none;
+    /* Not height:100% — the column sizes itself from its content now, so a
+       percentage has no definite parent to resolve against and the sheet grows
+       to fit every comment instead of scrolling them. Flex sizing shrinks
+       against the column's clamped height. */
+    flex: 1 1 0;
+    min-height: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    z-index: auto;
+  }
+  .sheet.inline .input-bar,
+  .sheet.inline .reply-bar {
+    padding-left: 0;
+    padding-right: 0;
+    /* No side padding here to inset a tint against, so the fill ran edge to
+       edge with the text flush against it. Plain text suits the flat column;
+       the bottom sheet keeps its tint. */
+    background: none;
+    padding-bottom: 4px;
+  }
+  .sheet.inline .input-bar {
+    padding-bottom: 16px;
+  }
+  .list-before { padding-bottom: 4px; }
+  /* The bottom padding is load-bearing: without it the actions row sits
+     directly on the composer's border-top and reads as crowded. */
+  .list-footer { padding: 10px 0 12px; }
+  .sheet.inline .comment-list {
+    flex: 1;
+    /* Never collapse to a slit: the thread is the point of the column, so it
+       claims a floor and the sidebar grows to accommodate it. */
+    min-height: 140px;
+    /* The actions row and composer are siblings of this list, not children, so
+       its side padding indented the caption and comments away from them. */
+    padding-left: 0;
+    padding-right: 0;
+  }
+  /* 16px is the largest text in a column where the comments it writes are 14px.
+     Deliberately not applied to the bottom sheet: sub-16px inputs make iOS zoom
+     on focus, and the inline sheet is desktop-only. */
+  .sheet.inline .input-wrapper input {
+    font-size: 14px;
   }
   .sheet.contained {
     position: absolute;
@@ -380,6 +453,11 @@
     font-size: 13px;
     color: var(--text-secondary);
     border-top: 1px solid var(--border);
+  }
+  /* Now adjacent to the composer, so only one of the two draws the rule that
+     separates the thread from the input. */
+  .reply-bar + .input-bar {
+    border-top: none;
   }
   .cancel-reply {
     background: none;
