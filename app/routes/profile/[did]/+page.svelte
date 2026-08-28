@@ -9,7 +9,7 @@
   import FollowButton from '$lib/components/molecules/FollowButton.svelte'
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
-  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX, Share, Trash2, X, LoaderCircle } from 'lucide-svelte'
+  import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX, Share, Trash2, X, LoaderCircle, UsersRound } from 'lucide-svelte'
   import { callXrpc } from '$hatk/client'
   import { share } from '$lib/utils/share'
   import Toast from '$lib/components/atoms/Toast.svelte'
@@ -264,7 +264,7 @@
           <div class="links-row">
             {#if group.data}
               <a class="link-pill group-pill" href="/group/{did}">
-                <span class="g-badge">g</span> Group · {group.data.poolCount ?? 0} in the pool
+                <UsersRound size={14} /> Group · {group.data.poolCount ?? 0} in the pool
               </a>
             {/if}
             {#if showGermButton && germUrl}
@@ -496,10 +496,6 @@
   .link-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
   .germ-logo { width: 14px; height: 14px; object-fit: contain; }
   .group-pill { border-color: var(--grain); color: var(--text-primary); }
-  .g-badge {
-    display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
-    border-radius: 4px; background: var(--grain); color: var(--on-grain); font-size: 9px; font-weight: 800;
-  }
   .view-toggle {
     display: flex;
     align-items: center;

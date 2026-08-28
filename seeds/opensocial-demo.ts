@@ -97,6 +97,30 @@ await gallery(
   90,
 );
 await gallery(
+  mia,
+  "film-cafe",
+  "Film café",
+  "Half a roll, one table.",
+  [{ file: "film-cafe.jpg", alt: "A café table on expired film", ratio: [4, 3] }],
+  30,
+);
+await gallery(
+  mia,
+  "coast-ride",
+  "Coast ride",
+  "Pescadero and back before the fog.",
+  [{ file: "film-portrait.jpg", alt: "A rider at the turnaround, on film", ratio: [3, 4] }],
+  20,
+);
+await gallery(
+  mia,
+  "deer",
+  "The deer again",
+  "Same clearing, same deer, better light.",
+  [{ file: "wildlife.jpg", alt: "A deer at the edge of the clearing", ratio: [4, 3] }],
+  10,
+);
+await gallery(
   fay,
   "forest-trail",
   "Forest trail",

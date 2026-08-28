@@ -11,7 +11,12 @@
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import { ArrowLeft, AlertTriangle, Info, MapPin } from 'lucide-svelte'
+  import { ArrowLeft, AlertTriangle, Info, MapPin, UsersRound, CircleMinus } from 'lucide-svelte'
+  import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
+  import GroupPicker from '$lib/components/organisms/GroupPicker.svelte'
+  import { viewer } from '$lib/stores'
+  import { removeFromPool } from '$lib/mutations'
+  import { useQueryClient } from '@tanstack/svelte-query'
   import { goto } from '$app/navigation'
   import { relativeTime } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
@@ -24,6 +29,23 @@
   const galleryUri = $derived(data.galleryUri)
   const galleryQ = createQuery(() => galleryQuery(galleryUri))
   const gallery = $derived((galleryQ.data as GalleryView) ?? null)
+  // Groups: the owner may offer this gallery to a group; whoever is signed in
+  // as the pooling group may take it back out. Same menu the feed card has.
+  const queryClient = useQueryClient()
+  const isOwner = $derived(!!gallery && $viewer?.did === gallery.creator?.did)
+  const actingForPool = $derived(!!gallery?.group && $viewer?.did === gallery.group.did)
+  let groupPickerOpen = $state(false)
+  let removing = $state(false)
+  async function handleRemoveFromPool() {
+    if (!gallery?.group || removing) return
+    if (!confirm(`Remove this gallery from ${gallery.group.displayName ?? gallery.group.handle}'s pool?`)) return
+    removing = true
+    try {
+      await removeFromPool(gallery.group.item, queryClient)
+    } finally {
+      removing = false
+    }
+  }
   const bskyUrl = $derived((gallery as any)?.crossPost?.url ?? null)
 
   // Same fallback chain the card uses, so a gallery reads the same place name
@@ -211,6 +233,24 @@
             <BskyIcon />
           </a>
         {/if}
+        {#if isOwner || actingForPool}
+          <span class="menu-slot">
+            <OverflowMenu>
+              {#if isOwner}
+                <button class="menu-item" type="button" onclick={() => (groupPickerOpen = true)}>
+                  <UsersRound size={15} />
+                  Add to a group
+                </button>
+              {/if}
+              {#if actingForPool}
+                <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
+                  <CircleMinus size={15} />
+                  Remove from pool
+                </button>
+              {/if}
+            </OverflowMenu>
+          </span>
+        {/if}
       </div>
 
       <!-- The location is a sibling of the author link rather than nested in
@@ -230,6 +270,10 @@
               {gallery.creator?.handle ? `@${gallery.creator.handle}` : ''}
               {#if gallery.createdAt}· {relativeTime(gallery.createdAt)}{/if}
             </span>
+            {#if gallery.group}
+              <!-- svelte-ignore node_invalid_placement_ssr -->
+              <a class="group-link" href="/group/{gallery.group.did}" onclick={(e) => e.stopPropagation()}>in <b>{gallery.group.displayName ?? gallery.group.handle}</b></a>
+            {/if}
           </span>
         </a>
         {#if locationHref && locationLabel}
@@ -239,6 +283,9 @@
           </a>
         {/if}
       </div>
+      {#if isOwner}
+        <GroupPicker bind:open={groupPickerOpen} galleryUri={gallery.uri} />
+      {/if}
 
       <div class="thread">
         <CommentSheet open={isSplit} inline subjectUri={gallery.uri} onClose={() => {}}>
@@ -344,8 +391,10 @@
   .meta-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 4px;
   }
+  /* Back stays left; whatever follows (Bluesky link, the ⋯ menu) sits right. */
+  .meta-top > :nth-child(2) { margin-left: auto; }
   .icon-btn {
     display: flex;
     align-items: center;
@@ -361,6 +410,16 @@
   }
   .icon-btn:hover { background: var(--bg-hover); }
   .bsky-link { color: var(--text-muted); display: flex; padding: 4px; }
+  .menu-slot { margin-left: auto; display: flex; }
+  .menu-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px;
+    border: none; background: none; color: var(--text-primary); font-size: 13px; font-family: inherit;
+    cursor: pointer; border-radius: 6px; transition: background 0.15s; white-space: nowrap;
+  }
+  .menu-item:hover { background: var(--bg-hover); }
+  .group-link { font-size: 13px; color: var(--text-muted); text-decoration: none; }
+  .group-link b { color: var(--grain); font-weight: 600; }
+  .group-link:hover b { text-decoration: underline; }
   .bsky-link:hover { color: #0085ff; }
 
   .author {

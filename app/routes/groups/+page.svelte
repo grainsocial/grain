@@ -4,6 +4,7 @@
   import Avatar from '$lib/components/atoms/Avatar.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import { createQuery } from '@tanstack/svelte-query'
+  import { UsersRound } from 'lucide-svelte'
   import { groupsQuery } from '$lib/queries'
 
   // The "places worth browsing" surface: every account that declared itself a
@@ -28,7 +29,7 @@
       <a class="row" href="/group/{group.did}">
         <span class="av"><Avatar did={group.did} src={group.avatar ?? null} name={group.displayName ?? group.handle} size={48} /></span>
         <span class="t">
-          <b>{group.displayName ?? group.handle} <span class="badge">g</span></b>
+          <b>{group.displayName ?? group.handle} <span class="group-mark"><UsersRound size={14} /></span></b>
           <span class="meta">{group.poolCount ?? 0} in the pool · @{group.handle}</span>
           {#if group.description}<span class="desc">{group.description}</span>{/if}
         </span>
@@ -47,10 +48,7 @@
   .av :global(img), .av :global(.avatar) { border-radius: 14px; }
   .t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .t b { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; }
-  .badge {
-    display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
-    border-radius: 4px; background: var(--grain); color: var(--on-grain); font-size: 10px; font-weight: 800;
-  }
+  .group-mark { display: inline-flex; color: var(--grain); flex: none; }
   .meta { font-size: 13px; color: var(--text-muted); }
   .desc { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .empty { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; }
