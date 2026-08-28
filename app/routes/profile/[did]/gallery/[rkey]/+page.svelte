@@ -11,9 +11,10 @@
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import { ArrowLeft } from 'lucide-svelte'
+  import { ArrowLeft, AlertTriangle, Info } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { relativeTime } from '$lib/utils'
+  import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
 
   let { data } = $props()
@@ -31,6 +32,21 @@
   let doFavorite: (() => void) | undefined = $state(undefined)
 
   let commentSheetOpen = $state(false)
+
+  // The card carried moderation itself; the split renders the media directly,
+  // so it has to resolve the same labels. Four outcomes: hide the media behind
+  // a warning, blur it, badge it, or nothing.
+  const labelDefs = createQuery(() => labelDefsQuery())
+  const labelResult = $derived(resolveLabels(gallery?.labels, labelDefs.data ?? []))
+  let revealed = $state(false)
+  const mediaHidden = $derived(
+    (labelResult.action === 'hide' || labelResult.action === 'warn-content') && !revealed,
+  )
+  // Re-hide when navigating to another gallery, so a reveal cannot carry over.
+  $effect(() => {
+    void galleryUri
+    revealed = false
+  })
 
   // Even with the floor above, a caption like a bare URL plus a hashtag block
   // runs 250px and buries the comments. Clamp it and let the reader opt in.
@@ -148,13 +164,28 @@
     style:--row-h="{Math.min(mediaMax, Math.max(fit?.h ?? 0, SIDEBAR_MIN_H))}px"
   >
     <div class="media">
-      <GalleryMedia
-        {photos}
-        bind:currentIndex
-        bind:renderedRatio={mediaRatio}
-        maxHeight={fit?.h ?? mediaMax}
-        onDoubleTap={() => doFavorite?.()}
-      />
+      {#if mediaHidden}
+        <div class="media-hidden" style:height="{fit?.h ?? 420}px">
+          <div class="warning">
+            <Info size={16} />
+            <span>{labelResult.name}</span>
+          </div>
+          <button class="warning-show" type="button" onclick={() => (revealed = true)}>
+            Show
+          </button>
+        </div>
+      {:else}
+        <GalleryMedia
+          {photos}
+          bind:currentIndex
+          bind:renderedRatio={mediaRatio}
+          maxHeight={fit?.h ?? mediaMax}
+          obscured={labelResult.action === 'warn-media' && !revealed}
+          warnLabel={labelResult.name}
+          onShow={() => (revealed = true)}
+          onDoubleTap={() => doFavorite?.()}
+        />
+      {/if}
     </div>
 
     <aside class="meta">
@@ -203,6 +234,9 @@
                   more
                 </button>
               {/if}
+            {/if}
+            {#if labelResult.action === 'badge'}
+              <span class="label-badge"><AlertTriangle size={12} /> {labelResult.name}</span>
             {/if}
             {#if currentExif}
               <div class="exif"><ExifInfo exif={currentExif} /></div>
@@ -330,6 +364,50 @@
     white-space: pre-wrap;
   }
   .exif { font-size: 13px; }
+
+  /* Mirrors the card's treatment: the warning stands in for the media rather
+     than sitting over it, so a hidden gallery shows nothing of the photo. */
+  .media-hidden {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+  }
+  .warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .warning-show {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--grain);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .warning-show:hover { text-decoration: underline; }
+  .label-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+  }
   /* Stacked, this is as tall as the caption and pushes the thread off the
      bottom. The sidebar has the width to run it inline. */
   .exif :global(.exif-info) {
