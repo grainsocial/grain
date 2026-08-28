@@ -13,7 +13,9 @@
   import ReportButton from './ReportButton.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag, Pencil } from 'lucide-svelte'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag, Pencil, UsersRound, CircleMinus } from 'lucide-svelte'
+  import GroupPicker from '../organisms/GroupPicker.svelte'
+  import { removeFromPool } from '$lib/mutations'
   import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
@@ -53,6 +55,20 @@
   )
   let deleting = $state(false)
   let reportOpen = $state(false)
+  let groupPickerOpen = $state(false)
+  // Signed in as the group whose pool this is — the one viewer who may take it out.
+  const actingForPool = $derived(!!gallery.group && $viewer?.did === gallery.group.did)
+  let removing = $state(false)
+  async function handleRemoveFromPool() {
+    if (!gallery.group || removing) return
+    if (!confirm(`Remove this gallery from ${gallery.group.displayName ?? gallery.group.handle}'s pool?`)) return
+    removing = true
+    try {
+      await removeFromPool(gallery.group.item, queryClient)
+    } finally {
+      removing = false
+    }
+  }
   let doFavorite: (() => void) | undefined = $state(undefined)
 
   async function deleteGallery() {
@@ -147,11 +163,22 @@
             {#if handle}<span class="author-subtext">{handle}</span>{/if}
             <span class="header-time">· {timeStr}</span>
           </span>
-          {#if gallery.location}
-            <!-- svelte-ignore node_invalid_placement_ssr -->
-            <a class="location-link" href="/location/{encodeURIComponent(gallery.location.value)}?name={encodeURIComponent(gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value)}" onclick={(e) => e.stopPropagation()}>
-              {gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value}
-            </a>
+          {#if gallery.group || gallery.location}
+            <span class="sub-row">
+              {#if gallery.group}
+                <!-- svelte-ignore node_invalid_placement_ssr -->
+                <a class="group-link" href="/group/{gallery.group.did}" onclick={(e) => e.stopPropagation()}>
+                  in <b>{gallery.group.displayName ?? gallery.group.handle}</b>
+                </a>
+              {/if}
+              {#if gallery.group && gallery.location}<span class="sub-sep">·</span>{/if}
+              {#if gallery.location}
+                <!-- svelte-ignore node_invalid_placement_ssr -->
+                <a class="location-link" href="/location/{encodeURIComponent(gallery.location.value)}?name={encodeURIComponent(gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value)}" onclick={(e) => e.stopPropagation()}>
+                  {gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value}
+                </a>
+              {/if}
+            </span>
           {/if}
         </div>
       </a>
@@ -164,8 +191,19 @@
           Report
         </button>
       {/if}
+      {#if actingForPool}
+        <div class="menu-divider"></div>
+        <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
+          <CircleMinus size={15} />
+          Remove from pool
+        </button>
+      {/if}
       {#if isOwner}
         <div class="menu-divider"></div>
+        <button class="menu-item" type="button" onclick={() => (groupPickerOpen = true)}>
+          <UsersRound size={15} />
+          Add to a group
+        </button>
         {#if $viewer?.did === 'did:plc:bcgltzqazw5tb6k2g3ttenbj'}
           <a class="menu-item" href="/profile/{gallery.creator?.did}/gallery/{gallery.uri.split('/').pop()}/edit">
             <Pencil size={15} />
@@ -225,6 +263,9 @@
   {/if}
   {#if $isAuthenticated}
     <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} showButton={false} bind:open={reportOpen} />
+  {/if}
+  {#if isOwner && !privateGallery}
+    <GroupPicker bind:open={groupPickerOpen} galleryUri={gallery.uri} />
   {/if}
 
   <Toast message="Link copied" bind:visible={showToast} />
@@ -303,7 +344,26 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-.card-header :global(.overflow-menu) {
+  .sub-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .sub-sep { flex-shrink: 0; }
+  .group-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .group-link b { color: var(--grain); font-weight: 600; }
+  .group-link:hover b { text-decoration: underline; }
+
+  .card-header :global(.overflow-menu) {
     margin-left: auto;
   }
 /* Menu items (inside OverflowMenu) */

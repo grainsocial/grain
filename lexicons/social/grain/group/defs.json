@@ -1,0 +1,127 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group.defs",
+  "defs": {
+    "groupView": {
+      "type": "object",
+      "required": ["did", "handle"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "handle": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "avatar": {
+          "type": "string",
+          "format": "uri"
+        },
+        "poolCount": {
+          "type": "integer",
+          "description": "Galleries in the pool."
+        },
+        "pendingCount": {
+          "type": "integer",
+          "description": "Submissions awaiting review. Only present for a viewer acting as the group."
+        },
+        "lastActivityAt": {
+          "type": "string",
+          "format": "datetime",
+          "description": "When the pool last changed."
+        },
+        "viewer": {
+          "type": "ref",
+          "ref": "#viewerState"
+        }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "properties": {
+        "acting": {
+          "type": "boolean",
+          "description": "The viewer is signed in as this group, so may accept and remove."
+        },
+        "submission": {
+          "type": "ref",
+          "ref": "#submissionState",
+          "description": "The viewer's standing for the gallery named in the request, if one was."
+        }
+      }
+    },
+    "submissionState": {
+      "type": "object",
+      "required": ["uri", "status"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The submission record."
+        },
+        "status": {
+          "type": "string",
+          "knownValues": ["pending", "accepted"]
+        },
+        "item": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The group's item record, once accepted."
+        }
+      }
+    },
+    "groupRef": {
+      "type": "object",
+      "required": ["did", "handle", "item"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "handle": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "item": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "The social.grain.group.item that pools this gallery."
+        }
+      }
+    },
+    "submissionView": {
+      "type": "object",
+      "required": ["uri", "cid", "group", "gallery", "createdAt"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "group": {
+          "type": "string",
+          "format": "did"
+        },
+        "gallery": {
+          "type": "ref",
+          "ref": "social.grain.gallery.defs#galleryView"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        }
+      }
+    }
+  }
+}

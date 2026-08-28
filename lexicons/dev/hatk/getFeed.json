@@ -15,7 +15,8 @@
           "actor": { "type": "string", "format": "did", "description": "Filter by actor DID" },
           "camera": { "type": "string", "description": "Filter by camera make and model" },
           "location": { "type": "string", "description": "Filter by H3 cell index" },
-          "tag": { "type": "string", "description": "Filter by hashtag" }
+          "tag": { "type": "string", "description": "Filter by hashtag" },
+          "group": { "type": "string", "format": "did", "description": "Filter by group DID" }
         }
       },
       "output": {
@@ -25,9 +26,14 @@
           "properties": {
             "items": {
               "type": "array",
-              "items": { "type": "ref", "ref": "social.grain.gallery.defs#galleryView" }
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.gallery.defs#galleryView"
+              }
             },
-            "cursor": { "type": "string" }
+            "cursor": {
+              "type": "string"
+            }
           }
         }
       }

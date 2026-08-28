@@ -14,7 +14,7 @@
   import { share } from '$lib/utils/share'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery } from '$lib/queries'
+  import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery, groupQuery } from '$lib/queries'
   import { viewer as viewerStore, requireAuth } from '$lib/stores'
   import { blockActor, unblockActor, muteActor, unmuteActor } from '$lib/mutations'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
@@ -70,6 +70,8 @@
   const storyViewed = $derived(
     !isOwnProfile && hasStory && (stories.data?.every((s) => s.viewer?.viewed) ?? false)
   )
+  // A community shows up as an ordinary author; this is the one pointer to its group face.
+  const group = createQuery(() => ({ ...groupQuery(did), retry: false }))
   const knownFollowers = createQuery(() => ({
     ...knownFollowersQuery(did, viewerDid ?? ''),
     enabled: !!viewerDid && viewerDid !== did,
@@ -258,11 +260,18 @@
         {#if p.description}
           <div class="bio"><RichText text={p.description} /></div>
         {/if}
-        {#if showGermButton && germUrl}
+        {#if group.data || (showGermButton && germUrl)}
           <div class="links-row">
+            {#if group.data}
+              <a class="link-pill group-pill" href="/group/{did}">
+                <span class="g-badge">g</span> Group · {group.data.poolCount ?? 0} in the pool
+              </a>
+            {/if}
+            {#if showGermButton && germUrl}
             <a class="link-pill" href={germUrl} target="_blank" rel="noopener noreferrer">
               <img src="/germ-logo.png" alt="" class="germ-logo" /> Germ DM <ArrowUpRight size={14} />
             </a>
+            {/if}
           </div>
         {/if}
         {#if (knownFollowers.data?.items ?? []).length > 0}
@@ -486,6 +495,11 @@
   }
   .link-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
   .germ-logo { width: 14px; height: 14px; object-fit: contain; }
+  .group-pill { border-color: var(--grain); color: var(--text-primary); }
+  .g-badge {
+    display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;
+    border-radius: 4px; background: var(--grain); color: var(--on-grain); font-size: 9px; font-weight: 800;
+  }
   .view-toggle {
     display: flex;
     align-items: center;

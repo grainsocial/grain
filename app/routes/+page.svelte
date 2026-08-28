@@ -6,13 +6,13 @@
   import PullToRefresh from '$lib/components/molecules/PullToRefresh.svelte'
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryCreate from '$lib/components/molecules/StoryCreate.svelte'
-  import { recentFeedQuery, followingFeedQuery, forYouFeedQuery } from '$lib/queries'
+  import { recentFeedQuery, followingFeedQuery, forYouFeedQuery, groupsFeedQuery } from '$lib/queries'
   import { pinnedFeeds } from '$lib/preferences'
   import { viewer } from '$lib/stores'
   import { goto } from '$app/navigation'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
-  const CORE_FEEDS = new Set(['recent', 'following', 'foryou'])
+  const CORE_FEEDS = new Set(['recent', 'following', 'foryou', 'groups'])
   const first = $derived($pinnedFeeds[0])
   const firstFeed = $derived(first?.id ?? 'recent')
   const needsActor = $derived(firstFeed === 'following' || firstFeed === 'foryou')
@@ -29,6 +29,7 @@
   const feed = createQuery(() => {
     if (firstFeed === 'following') return followingFeedQuery(actorDid)
     if (firstFeed === 'foryou') return forYouFeedQuery(actorDid)
+    if (firstFeed === 'groups') return groupsFeedQuery()
     return recentFeedQuery()
   })
 

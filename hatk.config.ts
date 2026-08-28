@@ -6,6 +6,15 @@ const isProd = process.env.NODE_ENV === "production";
 // origin rather than anything inferred — and if it is unset, the client list
 // below is empty and OAuth fails at login rather than at boot.
 const prodDomain = process.env.APP_DOMAIN;
+// Dev listens wherever PORT says (default 3000). The loopback client_id and
+// redirect URIs encode the origin, so they follow it.
+const devPort = Number(process.env.PORT ?? 3000);
+const devOrigin = `http://127.0.0.1:${devPort}`;
+// Dev asks for the space scopes outright (see spaceScopes). Against a network
+// whose PDS cannot dereference a `social.grain.gallery` space declaration —
+// the opensocial dev stack, for one — the whole login fails with
+// invalid_scope, so GRAIN_SPACE_SCOPES=0 leaves them out.
+const devSpaceScopes = process.env.GRAIN_SPACE_SCOPES !== "0";
 
 const grainScopes = [
   "atproto",
@@ -20,6 +29,10 @@ const grainScopes = [
   "repo:social.grain.comment",
   "repo:social.grain.story",
   "repo:social.grain.graph.block",
+  // Groups: a member offers a gallery (submission, their repo); whoever acts
+  // as the group answers (item, the group's repo).
+  "repo:social.grain.group.submission",
+  "repo:social.grain.group.item",
   // Both actions, not just create: the gallery cross-post is written with
   // com.atproto.repo.putRecord so a resumed publish overwrites its own post
   // instead of posting twice, and putRecord asserts create *and* update.
@@ -70,7 +83,7 @@ export default defineConfig({
   // what the Jetstream docs use in their own example, and it works.
   jetstream: isProd ? { url: "wss://jetstream.us-west.bsky.network" } : null,
   plc: isProd ? "https://plc.directory" : "http://localhost:2582",
-  port: 3000,
+  port: devPort,
   cdn: isProd
     ? {
         url: "https://cdn.grain.social",
@@ -108,7 +121,7 @@ export default defineConfig({
     // Dev asks for the space scopes outright, and has to ask here too: the
     // server-initiated login builds its request from this list, and it must
     // match what the loopback client_id encodes or the PDS grants neither.
-    scopes: (isProd ? grainScopes : `${grainScopes} ${spaceScopes}`).split(" "),
+    scopes: (isProd || !devSpaceScopes ? grainScopes : `${grainScopes} ${spaceScopes}`).split(" "),
     conditionalScopes: [
       { whenMethod: "com.atproto.simplespace.createSpace", scopes: [spaceScopes] },
     ],
@@ -131,10 +144,12 @@ export default defineConfig({
         // Dev asks for the space scopes outright. Negotiation is skipped for
         // loopback clients — the scope is encoded in the client_id, which the
         // token exchange rebuilds from this config, so the two would disagree.
-        client_id: "http://127.0.0.1:3000/oauth-client-metadata.json",
+        client_id: `${devOrigin}/oauth-client-metadata.json`,
         client_name: "grain",
-        scope: `${grainScopes} ${legacyScopes} ${spaceScopes}`,
-        redirect_uris: ["http://127.0.0.1:3000/oauth/callback", "http://127.0.0.1:3000/admin"],
+        scope: devSpaceScopes
+          ? `${grainScopes} ${legacyScopes} ${spaceScopes}`
+          : `${grainScopes} ${legacyScopes}`,
+        redirect_uris: [`${devOrigin}/oauth/callback`, `${devOrigin}/admin`],
       },
       {
         client_id: "grain-native://app",

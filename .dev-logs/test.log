@@ -1,0 +1,39 @@
+
+> test
+> vp test
+
+[1m[7m[34m RUN [39m[27m[22m [90m/Users/chad/.herdr/worktrees/grain/groups[39m
+
+{"ts":"2026-08-28T17:31:16.283Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":1,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.285Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":3}
+{"ts":"2026-08-28T17:31:16.295Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":1,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.295Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.298Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.298Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.301Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":2},"limit":2,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.301Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.305Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":2,"cursor":"Mjo6Y2lkLWZhdi1kaWQ6cGxjOmRhdmU"},"cursor":"Mjo6Y2lkLWZhdi1kaWQ6cGxjOmRhdmU","limit":2,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.305Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.309Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20}
+{"ts":"2026-08-28T17:31:16.309Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.312Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.312Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.315Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20}
+{"ts":"2026-08-28T17:31:16.315Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":0}
+{"ts":"2026-08-28T17:31:16.318Z","module":"xrpc","op":"social.grain.unspecced.getGalleryFavorites","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1","limit":50},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.318Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGalleryFavorites","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.322Z","module":"xrpc","op":"social.grain.unspecced.getGallery","duration_ms":1,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1"},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.322Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGallery","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.325Z","module":"xrpc","op":"social.grain.unspecced.getGallery","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1"},"limit":20,"viewer":"did:plc:alice"}
+{"ts":"2026-08-28T17:31:16.325Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGallery","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.328Z","module":"xrpc","op":"social.grain.unspecced.getGallery","duration_ms":1,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1"},"limit":20,"viewer":"did:plc:dave"}
+{"ts":"2026-08-28T17:31:16.328Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGallery","duration_ms":1}
+{"ts":"2026-08-28T17:31:16.330Z","module":"xrpc","op":"social.grain.unspecced.getGallery","duration_ms":0,"params":{"gallery":"at://did:plc:alice/social.grain.gallery/g1"},"limit":20}
+{"ts":"2026-08-28T17:31:16.330Z","module":"server","op":"request","method":"GET","path":"/xrpc/social.grain.unspecced.getGallery","duration_ms":1}
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (5)[39m
+[2m      Tests [22m [1m[32m41 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (46)[39m
+[2m   Start at [22m 10:31:15
+[2m   Duration [22m 1.01s[2m (transform 672ms, setup 0ms, import 586ms, tests 491ms, environment 2ms)[22m
+
+exit 0

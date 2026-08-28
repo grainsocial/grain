@@ -6,17 +6,35 @@
       "type": "object",
       "required": ["uri", "cid", "creator", "record", "indexedAt"],
       "properties": {
-        "uri": { "type": "string", "format": "at-uri" },
-        "cid": { "type": "string", "format": "cid" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
         "cameras": {
           "type": "array",
           "description": "List of camera make and models used in this gallery derived from EXIF data.",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
         },
-        "location": { "type": "ref", "ref": "community.lexicon.location.hthree" },
-        "address": { "type": "ref", "ref": "community.lexicon.location.address" },
+        "location": {
+          "type": "ref",
+          "ref": "community.lexicon.location.hthree"
+        },
+        "address": {
+          "type": "ref",
+          "ref": "community.lexicon.location.address"
+        },
         "locationDisplay": {
           "type": "string",
           "description": "Formatted location label for display."
@@ -24,13 +42,18 @@
         "facets": {
           "type": "array",
           "description": "Annotations of description text (mentions, URLs, hashtags, etc)",
-          "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+          "items": {
+            "type": "ref",
+            "ref": "app.bsky.richtext.facet"
+          }
         },
         "creator": {
           "type": "ref",
           "ref": "social.grain.actor.defs#profileView"
         },
-        "record": { "type": "unknown" },
+        "record": {
+          "type": "unknown"
+        },
         "items": {
           "type": "array",
           "items": {
@@ -38,21 +61,48 @@
             "refs": ["social.grain.photo.defs#photoView"]
           }
         },
-        "favCount": { "type": "integer" },
+        "favCount": {
+          "type": "integer"
+        },
         "favedByFollowing": {
           "type": "array",
-          "description": "Profiles of accounts the viewer follows who favorited this gallery. Capped for display — see favCount for the total. Excludes the viewer.",
-          "items": { "type": "ref", "ref": "social.grain.actor.defs#profileView" }
+          "description": "Profiles of accounts the viewer follows who favorited this gallery. Capped for display \u2014 see favCount for the total. Excludes the viewer.",
+          "items": {
+            "type": "ref",
+            "ref": "social.grain.actor.defs#profileView"
+          }
         },
-        "commentCount": { "type": "integer" },
+        "commentCount": {
+          "type": "integer"
+        },
         "labels": {
           "type": "array",
-          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
+          "items": {
+            "type": "ref",
+            "ref": "com.atproto.label.defs#label"
+          }
         },
-        "createdAt": { "type": "string", "format": "datetime" },
-        "indexedAt": { "type": "string", "format": "datetime" },
-        "viewer": { "type": "ref", "ref": "#viewerState" },
-        "crossPost": { "type": "ref", "ref": "#crossPostInfo" }
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "indexedAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "viewer": {
+          "type": "ref",
+          "ref": "#viewerState"
+        },
+        "crossPost": {
+          "type": "ref",
+          "ref": "#crossPostInfo"
+        },
+        "group": {
+          "type": "ref",
+          "ref": "social.grain.group.defs#groupRef",
+          "description": "The group whose pool this gallery is in, if any."
+        }
       }
     },
     "crossPostInfo": {
@@ -70,7 +120,10 @@
       "type": "object",
       "description": "Metadata about the requesting account's relationship with the subject content. Only has meaningful content for authed requests.",
       "properties": {
-        "fav": { "type": "string", "format": "at-uri" }
+        "fav": {
+          "type": "string",
+          "format": "at-uri"
+        }
       }
     }
   }

@@ -420,3 +420,54 @@ export const unseenNotificationCountQuery = (viewer: string, f?: Fetch) =>
       ),
     staleTime: 60_000,
   });
+
+// ─── Groups ─────────────────────────────────────────────────────────
+
+export const groupQuery = (actor: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["group", actor],
+    queryFn: () => callXrpc("social.grain.unspecced.getGroup", { actor }, f),
+    staleTime: 30_000,
+  });
+
+/** Every group; with `gallery`, each carries the viewer's standing for it. */
+export const groupsQuery = (gallery?: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["groups", gallery ?? ""],
+    queryFn: () =>
+      callXrpc("social.grain.unspecced.listGroups", gallery ? { gallery } : undefined, f).then(
+        (r) => r?.groups ?? [],
+      ),
+    staleTime: 30_000,
+  });
+
+export const groupFeedQuery = (did: string, f?: Fetch) =>
+  infiniteQueryOptions({
+    queryKey: ["getFeed", "group", did],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      callXrpc(
+        "dev.hatk.getFeed",
+        { feed: "group", group: did, limit: 30, ...(pageParam ? { cursor: pageParam } : {}) },
+        f,
+      ),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
+    staleTime: 60_000,
+  });
+
+export const groupsFeedQuery = (limit = FEED_PAGE_SIZE, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["getFeed", "groups"],
+    queryFn: () => callXrpc("dev.hatk.getFeed", { feed: "groups", limit }, f),
+    staleTime: 60_000,
+  });
+
+export const groupSubmissionsQuery = (group: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["groupSubmissions", group],
+    queryFn: () =>
+      callXrpc("social.grain.unspecced.getGroupSubmissions", { group }, f).then(
+        (r) => r?.submissions ?? [],
+      ),
+    staleTime: 15_000,
+  });

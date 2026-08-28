@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Home, ImagePlus, Settings, Bell, Search, LogOut, Compass } from 'lucide-svelte'
+  import { Home, ImagePlus, Settings, Bell, Search, LogOut, Compass, UsersRound } from 'lucide-svelte'
   import Avatar from '../atoms/Avatar.svelte'
   import Button from '../atoms/Button.svelte'
   import LoginModal from './LoginModal.svelte'
@@ -71,6 +71,10 @@
           {/if}
         </span>
         <span class="nav-label">Notifications</span>
+      </a>
+      <a href="/groups" class="nav-item" class:active={page.url.pathname === '/groups' || page.url.pathname.startsWith('/group/')}>
+        <UsersRound size={24} />
+        <span class="nav-label">Groups</span>
       </a>
       {#if $viewer}
         <a href="/profile/{$viewer.did}" class="nav-item" class:active={page.url.pathname === `/profile/${$viewer.did}`}>

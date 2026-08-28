@@ -41,3 +41,50 @@ export async function unmuteActor(did: string, queryClient: QueryClient) {
   invalidateFeedsAndProfile(did, queryClient);
   queryClient.invalidateQueries({ queryKey: ["mutes"] });
 }
+
+// ─── Groups ─────────────────────────────────────────────────────────
+//
+// Two records, two repos. A submission is the member's (their repo, public);
+// an item is the group's (written while signed in as it). Nothing here talks
+// to the community host — the host is where the group is *run*, Grain is
+// where it lives.
+
+function invalidateGroups(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: ["groups"] });
+  queryClient.invalidateQueries({ queryKey: ["group"] });
+  queryClient.invalidateQueries({ queryKey: ["groupSubmissions"] });
+  queryClient.invalidateQueries({ queryKey: ["getFeed"] });
+}
+
+export async function submitToGroup(group: string, gallery: string, queryClient: QueryClient) {
+  await callXrpc("dev.hatk.createRecord", {
+    collection: "social.grain.group.submission",
+    record: { group, gallery, createdAt: new Date().toISOString() },
+  });
+  invalidateGroups(queryClient);
+}
+
+export async function withdrawSubmission(submissionUri: string, queryClient: QueryClient) {
+  const rkey = submissionUri.split("/").pop()!;
+  await callXrpc("dev.hatk.deleteRecord", { collection: "social.grain.group.submission", rkey });
+  invalidateGroups(queryClient);
+}
+
+/** Accept = write one item into the group's repo. Only works signed in as the group. */
+export async function acceptSubmission(
+  gallery: string,
+  submissionUri: string,
+  queryClient: QueryClient,
+) {
+  await callXrpc("dev.hatk.createRecord", {
+    collection: "social.grain.group.item",
+    record: { gallery, submission: submissionUri, createdAt: new Date().toISOString() },
+  });
+  invalidateGroups(queryClient);
+}
+
+export async function removeFromPool(itemUri: string, queryClient: QueryClient) {
+  const rkey = itemUri.split("/").pop()!;
+  await callXrpc("dev.hatk.deleteRecord", { collection: "social.grain.group.item", rkey });
+  invalidateGroups(queryClient);
+}

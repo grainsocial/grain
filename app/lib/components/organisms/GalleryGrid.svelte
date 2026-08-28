@@ -7,6 +7,7 @@
   import { Info } from 'lucide-svelte'
   import SelectCheck from '../atoms/SelectCheck.svelte'
   import { infiniteScroll } from '$lib/actions/infinite-scroll'
+  import Avatar from '../atoms/Avatar.svelte'
 
   const labelDefs = createQuery(() => labelDefsQuery())
 
@@ -20,6 +21,7 @@
     selectMode = false,
     selectedUris = new Set<string>(),
     onToggle,
+    showAuthor = false,
   }: {
     items: GalleryView[]
     loading?: boolean
@@ -30,6 +32,8 @@
     selectMode?: boolean
     selectedUris?: Set<string>
     onToggle?: (uri: string) => void
+    /** Tiles carry the author's face — for grids that are many people's work, like a group pool. */
+    showAuthor?: boolean
   } = $props()
 
   function thumb(gallery: GalleryView): string | undefined {
@@ -91,6 +95,12 @@
           <div class="overlay">
             <span class="overlay-title">{gallery.title}</span>
           </div>
+          {#if showAuthor && gallery.creator}
+            <div class="who">
+              <Avatar did={gallery.creator.did} src={gallery.creator.avatar ?? null} name={gallery.creator.displayName ?? gallery.creator.handle} size={20} />
+              <span>{gallery.creator.displayName || gallery.creator.handle}</span>
+            </div>
+          {/if}
         {/if}
         {#if selectMode}
           <div class="select-check">
@@ -108,6 +118,20 @@
 {/if}
 
 <style>
+  .who {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+  }
+  .who :global(img), .who :global(.avatar) { border: 1.5px solid #fff; }
   .grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

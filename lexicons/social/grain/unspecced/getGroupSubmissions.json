@@ -1,0 +1,48 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getGroupSubmissions",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Submissions to a group that no item has answered yet \u2014 the review queue.",
+      "parameters": {
+        "type": "params",
+        "required": ["group"],
+        "properties": {
+          "group": {
+            "type": "string",
+            "format": "did"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 30
+          },
+          "cursor": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["submissions"],
+          "properties": {
+            "submissions": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.group.defs#submissionView"
+              }
+            },
+            "cursor": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

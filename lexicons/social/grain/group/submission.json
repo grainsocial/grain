@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group.submission",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A member offering one of their own galleries to a group's pool. Lives in the member's repo; the group answers with a social.grain.group.item.",
+      "record": {
+        "type": "object",
+        "required": ["group", "gallery", "createdAt"],
+        "properties": {
+          "group": {
+            "type": "string",
+            "format": "did",
+            "description": "The group (a community DID)."
+          },
+          "gallery": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "One of the submitter's galleries."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

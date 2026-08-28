@@ -269,6 +269,15 @@ CREATE TABLE "com.germnetwork.declaration" (
   continuity_proofs TEXT
 );
 
+CREATE TABLE "community.opensocial.declaration" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  about TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE "social.grain.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
@@ -349,6 +358,26 @@ CREATE TABLE "social.grain.graph.follow" (
   did TEXT NOT NULL,
   indexed_at TEXT NOT NULL,
   subject TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE "social.grain.group.item" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  gallery TEXT NOT NULL,
+  submission TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE "social.grain.group.submission" (
+  uri TEXT PRIMARY KEY,
+  cid TEXT,
+  did TEXT NOT NULL,
+  indexed_at TEXT NOT NULL,
+  group TEXT NOT NULL,
+  gallery TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 

@@ -40,7 +40,7 @@ function remoteXrpc(target: string) {
 }
 
 export default defineConfig({
-  plugins: [...(apiProxy ? [remoteXrpc(apiProxy)] : []), hatk(), sveltekit()],
+  plugins: [...(apiProxy ? [remoteXrpc(apiProxy)] : []), hatk({ port: Number(process.env.PORT ?? 3000) }), sveltekit()],
   test: {
     include: ["test/**/*.test.ts"],
     exclude: ["test/browser/**"],

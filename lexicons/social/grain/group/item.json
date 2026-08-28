@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group.item",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "description": "A gallery in a group's pool. Written into the group's own repo by whoever is acting as it; the gallery itself stays in its author's repo. Accept a submission by creating one of these, remove from the pool by deleting it.",
+      "record": {
+        "type": "object",
+        "required": ["gallery", "createdAt"],
+        "properties": {
+          "gallery": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The pooled gallery (social.grain.gallery)."
+          },
+          "submission": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The social.grain.group.submission this accepted, if any."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
-import type { GrainActorProfile, Declaration } from "$hatk";
+import type { GrainActorProfile, GermnetworkDeclaration } from "$hatk";
 
 export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx) => {
   const { ok, params, isTakendown, lookup, count, blobUrl, viewer: authViewer } = ctx;
@@ -35,7 +35,7 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
     viewerMutedRows,
   ] = await Promise.all([
     lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
-    lookup<Declaration>("com.germnetwork.declaration", "did", [actor]),
+    lookup<GermnetworkDeclaration>("com.germnetwork.declaration", "did", [actor]),
     count("social.grain.gallery", "did", [actor]),
     ctx.db
       .query(

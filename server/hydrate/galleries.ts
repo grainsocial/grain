@@ -1,5 +1,5 @@
 import { views } from "$hatk";
-import type { GrainActorProfile, Photo, Gallery, Label } from "$hatk";
+import type { GrainActorProfile, Photo, Gallery, Label, GroupRef } from "$hatk";
 import type { PhotoView, GalleryView, ExifView } from "$hatk";
 import type { BaseContext, Row } from "$hatk";
 import { countComments } from "./comments.ts";
@@ -143,11 +143,26 @@ export async function hydrateGalleries(
     }
   }
 
-  // Creators plus facepile members — one batched profile lookup covers both.
+  // Which pool, if any, each gallery sits in. A gallery in two pools shows
+  // the most recent; the card has one line for it.
+  const groupByGallery = new Map<string, { did: string; item: string }>();
+  if (galleryUris.length > 0) {
+    const rows = (await ctx.db.query(
+      `SELECT gallery, did, uri FROM "social.grain.group.item"
+       WHERE gallery IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")})
+       ORDER BY created_at ASC`,
+      galleryUris,
+    )) as { gallery: string; did: string; uri: string }[];
+    for (const row of rows) groupByGallery.set(row.gallery, { did: row.did, item: row.uri });
+  }
+
+  // Creators, facepile members and pooling groups — one batched profile
+  // lookup covers all three.
   const dids = [
     ...new Set([
       ...items.map((item) => item.did).filter(Boolean),
       ...[...favedByFollowing.values()].flat(),
+      ...[...groupByGallery.values()].map((g) => g.did),
     ]),
   ];
 
@@ -288,6 +303,16 @@ export async function hydrateGalleries(
       })
       .filter((v): v is PhotoView => v !== null);
 
+    const pooled = groupByGallery.get(item.uri);
+    const group: GroupRef | undefined = pooled
+      ? {
+          did: pooled.did,
+          handle: profiles.get(pooled.did)?.handle ?? handleMap.get(pooled.did) ?? pooled.did,
+          displayName: profiles.get(pooled.did)?.value.displayName,
+          item: pooled.item,
+        }
+      : undefined;
+
     return views.galleryView({
       uri: item.uri,
       cid: item.cid,
@@ -326,6 +351,7 @@ export async function hydrateGalleries(
       ...(facepile.length > 0 ? { favedByFollowing: facepile } : {}),
       ...(viewerFavs.has(item.uri) ? { viewer: { fav: viewerFavs.get(item.uri) } } : {}),
       ...(crossPosts.has(item.uri) ? { crossPost: { url: crossPosts.get(item.uri)! } } : {}),
+      ...(group ? { group } : {}),
     });
   });
 }
