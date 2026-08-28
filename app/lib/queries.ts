@@ -58,6 +58,26 @@ export const cameraFeedQuery = (camera: string, limit = FEED_PAGE_SIZE, f?: Fetc
     staleTime: 60_000,
   });
 
+/** Paged variant for the camera page's grid, mirroring the location feed. */
+export const cameraFeedInfiniteQuery = (camera: string, f?: Fetch) =>
+  infiniteQueryOptions({
+    queryKey: ["getFeed", "camera", "infinite", camera],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      callXrpc(
+        "dev.hatk.getFeed",
+        {
+          feed: "camera",
+          camera,
+          limit: FEED_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        },
+        f,
+      ),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
+    staleTime: 60_000,
+  });
+
 export const camerasQuery = (f?: Fetch) =>
   queryOptions({
     queryKey: ["cameras"],
