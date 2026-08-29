@@ -22,9 +22,18 @@
   } = $props()
 
   const url = $derived(src || blobUrl(did, blob))
-  const fallback = $derived(name?.[0]?.toUpperCase() || initials(did))
+  const fallback = $derived(name?.[0]?.toUpperCase() || (did ? initials(did) : ''))
+  let loaded = $state(false)
   let imgError = $state(false)
-  $effect(() => { void url; imgError = false })
+  let imgEl: HTMLImageElement | undefined = $state(undefined)
+  $effect(() => {
+    void url
+    loaded = false
+    imgError = false
+    // A cached image may have finished loading before hydration attached the
+    // onload handler; if so, reveal it immediately instead of staying hidden.
+    if (imgEl?.complete && imgEl.naturalWidth > 0) loaded = true
+  })
 
   // Only pin the size when one was given; otherwise inherit.
   const sizeVar = $derived(size === undefined ? undefined : `--avatar-size:${size}px`)
@@ -32,10 +41,22 @@
 
 {#snippet avatarContent()}
   <span class="ring-inner">
+    <span class="avatar bg"></span>
     {#if url && !imgError}
-      <img src={url} alt="" class="avatar" loading="lazy" onerror={() => (imgError = true)} />
+      <img
+        bind:this={imgEl}
+        src={url}
+        alt=""
+        class="avatar img"
+        class:loaded={loaded}
+        loading="lazy"
+        onload={() => (loaded = true)}
+        onerror={() => (imgError = true)}
+      />
     {:else}
-      <span class="avatar fallback">{fallback}</span>
+      {#if fallback}
+        <span class="avatar fallback">{fallback}</span>
+      {/if}
     {/if}
   </span>
 {/snippet}
@@ -70,11 +91,13 @@
   .avatar-btn:hover { opacity: 0.85; }
 
   .ring-inner {
+    position: relative;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     display: flex;
     padding: 0;
+    overflow: hidden;
   }
   .avatar {
     width: 100%;
@@ -83,14 +106,29 @@
     object-fit: cover;
     flex: none;
   }
-  .fallback {
+  /* Neutral placeholder behind the image so first paint has no text or empty
+     hole: the photo fades in over it once loaded. */
+  .avatar.bg {
     background: linear-gradient(135deg, var(--grain), var(--grain-dim));
+  }
+  .avatar.img {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .avatar.img.loaded {
+    opacity: 1;
+  }
+  .fallback {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-family: var(--font-display);
     font-weight: 700;
-    color: #000;
+    color: var(--on-grain);
     /* Tracks the avatar rather than a JS-computed inner size. */
     font-size: calc(var(--avatar-size, 34px) * 0.32);
   }
