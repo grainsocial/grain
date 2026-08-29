@@ -155,7 +155,7 @@
     pointer-events: none;
   }
   .card.skeleton .thumb {
-    background: var(--bg-elevated);
+    background: var(--bg-image);
     animation: pulse 1.2s ease-in-out infinite;
   }
   .card.skeleton::after {
@@ -174,7 +174,7 @@
     width: 100%;
     aspect-ratio: 3 / 4;
     overflow: hidden;
-    background: var(--bg-elevated);
+    background: var(--bg-image);
   }
   .thumb img {
     width: 100%;

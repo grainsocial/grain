@@ -116,7 +116,7 @@
   .cell {
     display: block;
     aspect-ratio: 3 / 4;
-    background: var(--bg-elevated);
+    background: var(--bg-image);
     position: relative;
     overflow: hidden;
   }

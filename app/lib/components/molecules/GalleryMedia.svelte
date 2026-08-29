@@ -232,7 +232,7 @@
     display: block;
     position: relative;
     overflow: hidden;
-    background: var(--bg-elevated);
+    background: var(--bg-image);
   }
 .spacer {
     display: block;

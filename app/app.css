@@ -26,6 +26,7 @@
   --bg-root: #080b12;
   --bg-surface: #0f1419;
   --bg-elevated: #161d27;
+  --bg-image: #161d27;
   --bg-hover: #1c2633;
   --bg-blur: rgba(8, 11, 18, 0.85);
   --border: #1e293b;
@@ -49,6 +50,7 @@
   --bg-root: #ffffff;
   --bg-surface: #f6f7fa;
   --bg-elevated: #ffffff;
+  --bg-image: #e2e6ef;
   --bg-hover: #f0f2f7;
   --bg-blur: rgba(255, 255, 255, 0.85);
   --border: #e2e6ef;
