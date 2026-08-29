@@ -151,7 +151,7 @@
         </div>
       </a>
     </ProfilePopover>
-    {#if !privateGallery}
+    {#if !privateGallery && ($isAuthenticated || isOwner)}
     <OverflowMenu horizontal>
       {#if $isAuthenticated}
         <button class="menu-item" type="button" onclick={() => (reportOpen = true)}>
