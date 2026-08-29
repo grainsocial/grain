@@ -14,7 +14,8 @@
           "cursor": { "type": "string" },
           "actor": { "type": "string", "format": "did", "description": "Filter by actor DID" },
           "camera": { "type": "string", "description": "Filter by camera make and model" },
-          "location": { "type": "string", "description": "Filter by H3 cell index" }
+          "location": { "type": "string", "description": "Filter by H3 cell index" },
+          "tag": { "type": "string", "description": "Filter by hashtag" }
         }
       },
       "output": {

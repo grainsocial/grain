@@ -78,6 +78,26 @@ export const cameraFeedInfiniteQuery = (camera: string, f?: Fetch) =>
     staleTime: 60_000,
   });
 
+/** Paged variant for the hashtag page's grid, mirroring the camera feed. */
+export const hashtagFeedInfiniteQuery = (tag: string, f?: Fetch) =>
+  infiniteQueryOptions({
+    queryKey: ["getFeed", "hashtag", "infinite", tag],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) =>
+      callXrpc(
+        "dev.hatk.getFeed",
+        {
+          feed: "hashtag",
+          tag,
+          limit: FEED_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        },
+        f,
+      ),
+    getNextPageParam: (lastPage) => lastPage?.cursor,
+    staleTime: 60_000,
+  });
+
 export const camerasQuery = (f?: Fetch) =>
   queryOptions({
     queryKey: ["cameras"],
