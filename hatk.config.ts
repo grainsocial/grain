@@ -20,8 +20,18 @@ const grainScopes = [
   "repo:social.grain.comment",
   "repo:social.grain.story",
   "repo:social.grain.graph.block",
-  "repo:app.bsky.feed.post?action=create",
+  // Both actions, not just create: the gallery cross-post is written with
+  // com.atproto.repo.putRecord so a resumed publish overwrites its own post
+  // instead of posting twice, and putRecord asserts create *and* update.
+  "repo:app.bsky.feed.post?action=create&action=update",
 ].join(" ");
+
+// Older iOS builds and the Android app still ask for the create-only form of
+// the Bluesky post scope. hatk forwards a native client's requested scope to
+// the PDS verbatim, and the PDS checks each token against this document
+// literally — not as a semantic subset — so dropping the narrow string would
+// fail their sign-in with `invalid_scope`. Declared, never requested.
+const legacyScopes = "repo:app.bsky.feed.post?action=create";
 
 // Private galleries live in permissioned spaces (proposal 0016). `authority=*`
 // because a reader's session has to reach a space anchored on somebody else's
@@ -108,7 +118,7 @@ export default defineConfig({
             {
               client_id: `https://${prodDomain}/oauth-client-metadata.json`,
               client_name: "grain",
-              scope: `${grainScopes} ${spaceScopes}`,
+              scope: `${grainScopes} ${legacyScopes} ${spaceScopes}`,
               redirect_uris: [
                 `https://${prodDomain}/oauth/callback`,
                 `https://${prodDomain}/admin`,
@@ -123,13 +133,13 @@ export default defineConfig({
         // token exchange rebuilds from this config, so the two would disagree.
         client_id: "http://127.0.0.1:3000/oauth-client-metadata.json",
         client_name: "grain",
-        scope: `${grainScopes} ${spaceScopes}`,
+        scope: `${grainScopes} ${legacyScopes} ${spaceScopes}`,
         redirect_uris: ["http://127.0.0.1:3000/oauth/callback", "http://127.0.0.1:3000/admin"],
       },
       {
         client_id: "grain-native://app",
         client_name: "Grain for iOS",
-        scope: `${grainScopes} ${spaceScopes}`,
+        scope: `${grainScopes} ${legacyScopes} ${spaceScopes}`,
         redirect_uris: ["grain://oauth/callback"],
       },
     ],
