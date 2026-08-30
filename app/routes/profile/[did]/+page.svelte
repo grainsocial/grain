@@ -179,7 +179,7 @@
   <div class="mobile-back"><DetailHeader label={'\u00A0'} /></div>
   <div class="profile-header">
     <div class="profile-info">
-      <div class="avatar-col"><Skeleton circle height="100%" /></div>
+      <div class="avatar-col"><Skeleton circle height="var(--avatar-size)" /></div>
       <div class="meta-col">
         <div><Skeleton width="200px" height="26px" /></div>
         <div style="margin-top: 8px"><Skeleton width="140px" height="14px" /></div>

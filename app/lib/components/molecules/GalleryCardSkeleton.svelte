@@ -4,7 +4,7 @@
 
 <div class="skeleton-card">
   <div class="skeleton-header">
-    <Skeleton circle height="32px" />
+    <Skeleton circle height="40px" />
     <div class="skeleton-author">
       <Skeleton width="100px" height="14px" />
       <Skeleton width="70px" height="12px" />
