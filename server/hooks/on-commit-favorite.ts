@@ -1,5 +1,6 @@
 import { defineHook } from "$hatk";
 import { shouldPush } from "../helpers/notifPrefs.ts";
+import { isBlockedOrMuted } from "../helpers/isModerated.ts";
 import { isRecent } from "../helpers/isRecent.ts";
 import { getUnseenCount } from "../helpers/unseenCount.ts";
 
@@ -14,6 +15,13 @@ export default defineHook(
     const subject = record.subject as string;
     if (!subject) return;
 
+    // A taken-down account should not announce itself on someone's content.
+    const [repos] = (await db.query(
+      `SELECT 1 FROM _repos WHERE did = $1 AND status = 'takendown' LIMIT 1`,
+      [repo],
+    )) as unknown[];
+    if (repos) return;
+
     // Check if the subject is a gallery
     const [gallery] = (await db.query(
       `SELECT did AS author FROM "social.grain.gallery" WHERE uri = $1`,
@@ -21,6 +29,7 @@ export default defineHook(
     )) as { author: string }[];
 
     if (gallery && gallery.author !== repo) {
+      if (await isBlockedOrMuted(db, gallery.author, repo)) return;
       if (!(await shouldPush(db, gallery.author, repo, "favorites"))) return;
       const profiles = await lookup("social.grain.actor.profile", "did", [repo]);
       const actor = profiles.get(repo);
@@ -42,6 +51,7 @@ export default defineHook(
     )) as { author: string }[];
 
     if (story && story.author !== repo) {
+      if (await isBlockedOrMuted(db, story.author, repo)) return;
       if (!(await shouldPush(db, story.author, repo, "favorites"))) return;
       const profiles = await lookup("social.grain.actor.profile", "did", [repo]);
       const actor = profiles.get(repo);
@@ -63,6 +73,7 @@ export default defineHook(
     )) as { author: string; comment_subject: string }[];
 
     if (comment && comment.author !== repo) {
+      if (await isBlockedOrMuted(db, comment.author, repo)) return;
       if (!(await shouldPush(db, comment.author, repo, "favorites"))) return;
       const profiles = await lookup("social.grain.actor.profile", "did", [repo]);
       const actor = profiles.get(repo);

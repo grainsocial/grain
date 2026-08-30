@@ -1,23 +1,38 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { blockFilter } from "../filters/blockMute.ts";
 
 export default defineQuery("social.grain.unspecced.getFollowers", async (ctx) => {
   const { ok, params, lookup, blobUrl, packCursor, unpackCursor } = ctx;
-  const { actor, viewer, limit = 50, cursor } = params;
+  const { actor, limit = 50, cursor } = params;
+  const viewer = params.viewer ?? ctx.viewer?.did;
 
   const offset = cursor ? Number(unpackCursor(cursor)?.primary ?? 0) : 0;
 
+  // Taken-down accounts are hidden from everyone, matching every feed.
+  // Blocked accounts (either direction) are hidden from the list and count.
+  // Mutes are not applied — a mute hides someone's content, not the fact
+  // that they follow someone.
+  const takedowns = `AND (r.status IS NULL OR r.status != 'takendown')`;
+  const blocks = viewer ? `AND ${blockFilter("f.did", "$2")}` : "";
+  const blockParams = viewer ? [viewer] : [];
+
   const [rows, countRows] = await Promise.all([
     ctx.db.query(
-      `SELECT did, cid FROM "social.grain.graph.follow" WHERE subject = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      [actor, Number(limit) + 1, offset],
+      `SELECT f.did AS did, f.cid AS cid FROM "social.grain.graph.follow" f
+       LEFT JOIN _repos r ON r.did = f.did
+       WHERE f.subject = $1 ${takedowns} ${blocks}
+       ORDER BY f.created_at DESC LIMIT $${blockParams.length + 2} OFFSET $${blockParams.length + 3}`,
+      [actor, ...blockParams, Number(limit) + 1, offset],
     ) as Promise<{ did: string; cid: string }[]>,
     // DISTINCT: an account can hold more than one follow record for the same
     // subject, and the raw count would report that account as several
     // followers. Matches getGalleryFavorites, which already counts DISTINCT.
     ctx.db.query(
-      `SELECT COUNT(DISTINCT did) as count FROM "social.grain.graph.follow" WHERE subject = $1`,
-      [actor],
+      `SELECT COUNT(DISTINCT f.did) as count FROM "social.grain.graph.follow" f
+       LEFT JOIN _repos r ON r.did = f.did
+       WHERE f.subject = $1 ${takedowns} ${blocks}`,
+      [actor, ...blockParams],
     ) as Promise<{ count: number }[]>,
   ]);
   const totalCount = Number(countRows[0]?.count ?? 0);

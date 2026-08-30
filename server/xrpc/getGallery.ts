@@ -15,6 +15,14 @@ export default defineQuery("social.grain.unspecced.getGallery", async (ctx) => {
   const galleryRow = recordsMap.get(galleryUri);
   if (!galleryRow) throw new InvalidRequestError("Gallery not found");
 
+  // Taken-down accounts are hidden from everyone, matching every feed — a
+  // direct deep link must not bypass that.
+  const [repos] = (await db.query(
+    `SELECT 1 FROM _repos WHERE did = $1 AND status = 'takendown' LIMIT 1`,
+    [galleryRow.did],
+  )) as unknown[];
+  if (repos) throw new InvalidRequestError("Gallery not found");
+
   const [galleryView] = await hydrateGalleries(ctx, [galleryRow]);
 
   return ok({ gallery: galleryView });

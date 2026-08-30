@@ -1,22 +1,37 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { blockFilter } from "../filters/blockMute.ts";
 
 export default defineQuery("social.grain.unspecced.getFollowing", async (ctx) => {
   const { ok, params, lookup, blobUrl, packCursor, unpackCursor } = ctx;
-  const { actor, viewer, limit = 50, cursor } = params;
+  const { actor, limit = 50, cursor } = params;
+  const viewer = params.viewer ?? ctx.viewer?.did;
 
   const offset = cursor ? Number(unpackCursor(cursor)?.primary ?? 0) : 0;
 
+  // Taken-down accounts are hidden from everyone, matching every feed.
+  // Blocked accounts (either direction) are hidden from the list and count.
+  // Mutes are not applied — a mute hides someone's content, not the fact
+  // that they follow someone.
+  const takedowns = `AND (r.status IS NULL OR r.status != 'takendown')`;
+  const blocks = viewer ? `AND ${blockFilter("f.subject", "$2")}` : "";
+  const blockParams = viewer ? [viewer] : [];
+
   const [rows, countRows] = await Promise.all([
     ctx.db.query(
-      `SELECT subject, cid FROM "social.grain.graph.follow" WHERE did = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      [actor, Number(limit) + 1, offset],
+      `SELECT f.subject AS subject, f.cid AS cid FROM "social.grain.graph.follow" f
+       LEFT JOIN _repos r ON r.did = f.subject
+       WHERE f.did = $1 ${takedowns} ${blocks}
+       ORDER BY f.created_at DESC LIMIT $${blockParams.length + 2} OFFSET $${blockParams.length + 3}`,
+      [actor, ...blockParams, Number(limit) + 1, offset],
     ) as Promise<{ subject: string; cid: string }[]>,
     // DISTINCT: duplicate follow records for the same subject would otherwise
     // inflate the following count past the number of accounts actually listed.
     ctx.db.query(
-      `SELECT COUNT(DISTINCT subject) as count FROM "social.grain.graph.follow" WHERE did = $1`,
-      [actor],
+      `SELECT COUNT(DISTINCT f.subject) as count FROM "social.grain.graph.follow" f
+       LEFT JOIN _repos r ON r.did = f.subject
+       WHERE f.did = $1 ${takedowns} ${blocks}`,
+      [actor, ...blockParams],
     ) as Promise<{ count: number }[]>,
   ]);
   const totalCount = Number(countRows[0]?.count ?? 0);

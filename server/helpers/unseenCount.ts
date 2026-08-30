@@ -8,6 +8,7 @@ function blockMuteFilter(didCol = "did"): string {
     AND ${didCol} NOT IN (SELECT subject FROM "social.grain.graph.block" WHERE did = $1)
     AND ${didCol} NOT IN (SELECT did FROM "social.grain.graph.block" WHERE subject = $1)
     AND ${didCol} NOT IN (SELECT subject FROM _mutes WHERE did = $1)
+    AND ${didCol} NOT IN (SELECT did FROM _repos WHERE status = 'takendown')
   `;
 }
 

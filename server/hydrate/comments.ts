@@ -14,7 +14,9 @@ export async function countComments(
   const placeholders = subjectUris.map((_, i) => `$${i + 1}`).join(",");
   const rows = (await db.query(
     `SELECT c.subject, COUNT(*) as count FROM "social.grain.comment" c
-     WHERE c.subject IN (${placeholders}) AND ${NOT_ORPHANED}
+     LEFT JOIN _repos r ON r.did = c.did
+     WHERE c.subject IN (${placeholders}) AND (r.status IS NULL OR r.status != 'takendown')
+       AND ${NOT_ORPHANED}
      GROUP BY c.subject`,
     subjectUris,
   )) as { subject: string; count: number }[];

@@ -11,7 +11,8 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
 
   const viewerDid = viewer?.did;
 
-  // Build block filter — blocked comments are removed entirely
+  // Build block filter — blocked comments are removed entirely. Taken-down
+  // accounts are hidden from everyone, matching every feed.
   const countParams: any[] = [subject];
   let countBmParam = "";
   if (viewerDid) {
@@ -22,7 +23,9 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
   // Count total comments for this subject, excluding orphaned replies
   const countRows = (await db.query(
     `SELECT count(*) as cnt FROM "social.grain.comment" c
-     WHERE c.subject = $1 AND ${NOT_ORPHANED} ${countBmParam}`,
+     LEFT JOIN _repos r ON r.did = c.did
+     WHERE c.subject = $1 AND (r.status IS NULL OR r.status != 'takendown')
+       AND ${NOT_ORPHANED} ${countBmParam}`,
     countParams,
   )) as { cnt: number }[];
   const totalCount = countRows[0]?.cnt ?? 0;
@@ -31,7 +34,8 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
   const queryParams: any[] = [subject];
   let query = `SELECT c.uri, c.did, c.cid, c.text, c.facets, c.focus, c.reply_to, c.created_at
     FROM "social.grain.comment" c
-    WHERE c.subject = $1 AND ${NOT_ORPHANED}`;
+    LEFT JOIN _repos r ON r.did = c.did
+    WHERE c.subject = $1 AND (r.status IS NULL OR r.status != 'takendown') AND ${NOT_ORPHANED}`;
 
   if (cursor) {
     query += ` AND c.created_at > $2`;

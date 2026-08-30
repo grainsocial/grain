@@ -15,9 +15,11 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   if (resolved) storyUri = resolved;
 
   const rows = (await db.query(
-    `SELECT uri, cid, did, media, aspect_ratio, location, address, created_at
-     FROM "social.grain.story"
-     WHERE uri = $1`,
+    `SELECT s.uri, s.cid, s.did, s.media, s.aspect_ratio, s.location, s.address, s.created_at
+     FROM "social.grain.story" s
+     LEFT JOIN _repos r ON r.did = s.did
+     WHERE s.uri = $1
+       AND (r.status IS NULL OR r.status != 'takendown')`,
     [storyUri],
   )) as {
     uri: string;
