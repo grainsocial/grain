@@ -48,7 +48,7 @@
 
   let fileInput: HTMLInputElement = $state()!
 
-  const MAX_PHOTOS = 10
+  const MAX_PHOTOS = 20
 
   // ─── Step 1: Photo Selection ────────────────────────────────────────
 
