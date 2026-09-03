@@ -2,11 +2,10 @@
 // a grain user or link one of their galleries. One endpoint, two modes: with a
 // `scope` it searches that account's galleries, without one it searches users.
 //
-// The unscoped mode and the fuzzy gallery search both go through hatk's search
-// index, which the test harness does not populate — neither `db.run` nor
-// `server.seed` reaches it. So those paths are exercised but can only be
-// asserted as far as "answers, and answers empty". The browse mode (a scope
-// with no query) is pure SQL and is where the real assertions are.
+// This file covers the browse mode — a scope with no query — which is pure SQL
+// over rows inserted with `db.run`. The search-backed modes need records in the
+// FTS index, which only `insertRecord` maintains, so they live in
+// `test/search.test.ts` with its YAML fixtures.
 
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { startTestServer } from "@hatk/hatk/test";
@@ -180,14 +179,8 @@ describe("browsing an account's galleries", () => {
 });
 
 describe("searching users", () => {
-  test("answers with an empty list rather than erroring on a blank query", async () => {
+  test("short-circuits a blank query without touching the index", async () => {
     expect(await get("search=")).toEqual([]);
     expect(await get("search=%20%20")).toEqual([]);
-  });
-
-  test("answers a real query", async () => {
-    // The harness has no search index, so this can only be asserted as far as
-    // "returns a well-formed empty result" — see the note at the top.
-    expect(await get("search=Alice")).toEqual([]);
   });
 });

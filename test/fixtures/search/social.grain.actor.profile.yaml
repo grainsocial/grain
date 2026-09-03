@@ -1,0 +1,15 @@
+- did: did:plc:alice
+  rkey: self
+  displayName: Alice Anders
+  description: landscape photographer in Portland
+  createdAt: "2026-01-01T00:00:00Z"
+- did: did:plc:bob
+  rkey: self
+  displayName: Bob Ross
+  description: happy little trees
+  createdAt: "2026-01-01T00:00:00Z"
+- did: did:plc:carol
+  rkey: self
+  displayName: Carol Cartier
+  description: taken down photographer
+  createdAt: "2026-01-01T00:00:00Z"

@@ -1,0 +1,15 @@
+- did: did:plc:alice
+  rkey: g1
+  title: Portland Sunsets
+  description: evenings on the river
+  createdAt: "2026-03-01T00:00:00Z"
+- did: did:plc:bob
+  rkey: g2
+  title: Mountain Trails
+  description: hiking in the cascades
+  createdAt: "2026-03-02T00:00:00Z"
+- did: did:plc:carol
+  rkey: g3
+  title: Hidden Harbour
+  description: taken down gallery
+  createdAt: "2026-03-03T00:00:00Z"

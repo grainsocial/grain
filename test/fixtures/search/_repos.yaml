@@ -1,0 +1,10 @@
+# Records here are loaded through insertRecord, which is what puts them in the
+# FTS index. Raw `db.run` inserts elsewhere in the suite bypass that and are
+# not searchable — same as in production.
+- did: did:plc:alice
+  handle: alice.test
+- did: did:plc:bob
+  handle: bob.test
+- did: did:plc:carol
+  handle: carol.test
+  status: takendown

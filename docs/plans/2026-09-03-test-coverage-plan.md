@@ -49,7 +49,7 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 265       | 1022 | 74.1%   |
+| `server/xrpc`    | 234       | 1022 | 77.1%   |
 | `server/og`      | 100       | 184  | 45.7%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/helpers` | 26        | 175  | 85.1%   |
@@ -59,18 +59,16 @@ current state, not the original snapshot.
 
 Biggest single files still outstanding:
 
-| file                                   | uncovered | covered |
-| -------------------------------------- | --------- | ------- |
-| `server/og/gallery.ts`                 | 37/37     | 0.0%    |
-| `server/og/profile.ts`                 | 36/36     | 0.0%    |
-| `server/xrpc/searchActorsTypeahead.ts` | 21/21     | 0.0%    |
-| `server/og/story.ts`                   | 17/17     | 0.0%    |
-| `server/xrpc/getLocations.ts`          | 13/102    | 87.2%   |
-| `server/xrpc/mentionSearch.ts`         | 13/45     | 71.1%   |
-| `server/helpers/resolveActor.ts`       | 12/13     | 7.7%    |
-| `server/hydrate/galleries.ts`          | 12/83     | 85.5%   |
-| `server/helpers/country.ts`            | 10/45     | 77.8%   |
-| `server/og/fonts.ts`                   | 9/9       | 0.0%    |
+| file                             | uncovered | covered |
+| -------------------------------- | --------- | ------- |
+| `server/og/gallery.ts`           | 37/37     | 0.0%    |
+| `server/og/profile.ts`           | 36/36     | 0.0%    |
+| `server/og/story.ts`             | 17/17     | 0.0%    |
+| `server/xrpc/getLocations.ts`    | 13/102    | 87.2%   |
+| `server/helpers/resolveActor.ts` | 12/13     | 7.7%    |
+| `server/hydrate/galleries.ts`    | 12/83     | 85.5%   |
+| `server/helpers/country.ts`      | 10/45     | 77.8%   |
+| `server/og/fonts.ts`             | 9/9       | 0.0%    |
 
 **Spaces is out of scope** (decided 2026-09-03). Everything behind
 `spaces/client.ts` — the private and shared gallery handlers, `getSpaceMembers`,
@@ -206,20 +204,21 @@ Recorded as they are hit, so a later pass does not rediscover them.
   `defineProcedure` returns `{ handler }` untouched, exactly like `defineHook`.
   `test/deletion.test.ts` does this, passing a `deleteRecord` that records the
   calls rather than making them.
-- `ctx.search` always returns empty in tests, and it is an upstream gap rather
-  than anything a fixture can work around. `startTestServer` installs a
-  SearchPort but never calls `rebuildAllIndexes`, which is what creates the
-  `_fts_*` shadow tables and fills the search-column cache — `main.js` does
-  call it, so production is unaffected. Without it every query fails phase 1
-  with `bm25: no such table: _fts_...`, and SQLite has no phase 2 because
-  `SQLITE_DIALECT.jaroWinklerSimilarity` is `null`. The log line
-  `phases_used: ""` is the tell. Not fixable from here: `database/fts.js` is
-  not in hatk's `exports` map, so the rebuild cannot be triggered from a test.
-  A one-line addition to hatk's `test.js`, mirroring `main.js`, would fix it.
-  So `mentionSearch`'s browse mode (a scope and no query) is plain SQL and is
-  the half worth asserting; its fuzzy paths, `searchActorsTypeahead`,
-  `searchProfiles` and `searchGalleries` can only be checked as far as
-  "answers, and answers empty" until that lands.
+- `ctx.search` works as of `@hatk/hatk` alpha.82, which was published for this
+  (hatk `2d836b4`): `createTestContext` never built the FTS shadow tables, so
+  every query failed its BM25 phase with `no such table: _fts_...` — caught and
+  recorded rather than thrown — and SQLite has no fuzzy phase to recover with.
+  Every search answered empty in every project built on hatk.
+- A record is only searchable if it was written through `insertRecord`, which is
+  what maintains the index. That means `loadFixtures` and a YAML fixture
+  directory; a raw `db.run` insert leaves the row present but unfindable, the
+  same as in production. `test/search.test.ts` and `test/fixtures/search/` are
+  the only place in the suite that works this way — everything else uses
+  `db.run` because it does not need the index.
+- Stubbing `fetch` in a test that also uses `server.fetch` has to pass
+  non-matching requests through to the real one; the harness drives its own
+  requests over real HTTP, so a stub that swallows everything breaks the request
+  under test.
 - Two things that look like harness limits but are not. `server.seed()` takes
   _options_ and returns helpers bound to a live PDS — it is for integration
   tests against the docker-compose stack, not for seeding the in-memory
@@ -247,3 +246,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications |
 | 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                               |
 | 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                             |
+| 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                     |
