@@ -49,7 +49,7 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 463       | 1022 | 54.7%   |
+| `server/xrpc`    | 385       | 1022 | 62.3%   |
 | `server/og`      | 100       | 184  | 45.7%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/hooks`   | 36        | 125  | 71.2%   |
@@ -61,7 +61,6 @@ Biggest single files still outstanding:
 
 | file                                  | uncovered | covered |
 | ------------------------------------- | --------- | ------- |
-| `server/xrpc/getNotifications.ts`     | 80/172    | 53.5%   |
 | `server/spaces/client.ts`             | 53/78     | 32.0%   |
 | `server/xrpc/mentionSearch.ts`        | 44/45     | 2.2%    |
 | `server/og/gallery.ts`                | 37/37     | 0.0%    |
@@ -71,6 +70,7 @@ Biggest single files still outstanding:
 | `server/xrpc/createPrivateGallery.ts` | 32/33     | 3.0%    |
 | `server/xrpc/listSharedGalleries.ts`  | 32/32     | 0.0%    |
 | `server/hooks/on-login.ts`            | 30/31     | 3.2%    |
+| `server/xrpc/getPrivateGallery.ts`    | 28/28     | 0.0%    |
 
 `server/feeds`, `server/hooks` and `server/hydrate` are done, and `server/og`
 is past its biggest file. What is left is the long tail of `server/xrpc`
@@ -170,15 +170,27 @@ Recorded as they are hit, so a later pass does not rediscover them.
   index, so it is left for later — do not let it make a live request in tests.
 - `getActorFavorites` is private to its own actor: it returns an empty list to
   everyone else rather than erroring, so a test has to name the viewer.
+- `x NOT IN (subquery)` is NULL, not true, when `x` is NULL — so a nullable
+  column filtered that way silently drops its NULL rows, _but only once the
+  subquery is non-empty_. That made a real bug hide: mention notifications
+  worked for anyone who had never commented and stopped the moment they did.
+  `server/hydrate/comments.ts` already uses the safe idiom
+  (`reply_to IS NULL OR ...`); prefer it anywhere a nullable column is filtered.
+- getNotifications has two test files on purpose. `test/notifications.test.ts`
+  keeps a deliberately small fixture for the moderation filtering and the
+  unseen count; `test/notificationSources.test.ts` needs a much bigger one to
+  reach all nine sources. Do not merge them — the small fixture's assertions
+  are exact counts that any addition breaks.
 
 ## Ledger
 
-| date       | statements | delta | what landed                                                                                                                    |
-| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------------------------------------------ |
-| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                            |
-| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                     |
-| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                               |
-| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                        |
-| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage |
-| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`     |
-| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`  |
+| date       | statements | delta | what landed                                                                                                                                         |
+| ---------- | ---------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                                                 |
+| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                                          |
+| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                                                    |
+| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                                             |
+| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage                      |
+| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`                          |
+| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                       |
+| 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications |
