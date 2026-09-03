@@ -44,19 +44,22 @@ Match `test/`, don't invent a second style.
 ## Order of work
 
 Ranked by uncovered statements, which is roughly the ratio of number-moved to
-effort. Feeds and og are the two big untouched blocks.
+effort. Refreshed each pass from `coverage/coverage-summary.json`, so this is
+current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
 | `server/xrpc`    | 624       | 1022 | 38.9%   |
-| `server/feeds`   | 242       | 244  | 0.8%    |
+| `server/feeds`   | 201       | 244  | 17.6%   |
 | `server/og`      | 180       | 184  | 2.2%    |
 | `server/hooks`   | 118       | 125  | 5.6%    |
 | `server/spaces`  | 92        | 122  | 24.6%   |
-| `server/hydrate` | 78        | 146  | 46.6%   |
+| `server/hydrate` | 69        | 146  | 52.7%   |
 | `server/helpers` | 67        | 175  | 61.7%   |
+| `server/filters` | 0         | 2    | 100%    |
+| `server/labels`  | 0         | 4    | 100%    |
 
-Biggest single files at the start:
+Biggest single files still outstanding:
 
 | file                                 | uncovered | covered |
 | ------------------------------------ | --------- | ------- |
@@ -71,6 +74,9 @@ Biggest single files at the start:
 | `server/xrpc/getStory.ts`            | 40/40     | 0.0%    |
 | `server/og/gallery.ts`               | 37/37     | 0.0%    |
 
+`server/feeds` is down to `foryou.ts` and `location.ts`; the other five feeds
+are covered by `test/galleryFeeds.test.ts`.
+
 ## Known hard spots
 
 Recorded as they are hit, so a later pass does not rediscover them.
@@ -82,9 +88,22 @@ Recorded as they are hit, so a later pass does not rediscover them.
   `test/spaces.live.test.ts` and should stay there.
 - `server/hooks/*` are firehose commit handlers. They take a commit event and a
   db, so they should be callable directly without a server.
+- Feeds are reached at `/xrpc/dev.hatk.getFeed?feed=<name>`, and answer
+  `{ items, cursor }` where each item is a hydrated gallery view. There is no
+  per-feed lexicon to read; `app/lib/queries.ts` is the list of what each feed
+  takes for parameters.
+- `_mutes` is not created by the test harness (it lives in `server/setup`), so
+  any test touching mutes has to `CREATE TABLE IF NOT EXISTS` it first. Several
+  existing tests already do; copy one.
+- The `actor` feed orders on `created_at` while `/recent` and the rest order on
+  `sort_at` (`min(created_at, indexed_at)`). A gallery with a skewed future
+  `createdAt` therefore heads a profile grid but not the home feed. This is
+  asserted as-is in `test/galleryFeeds.test.ts`; it looks unintended, and
+  changing it should start by deciding which of the two is right.
 
 ## Ledger
 
-| date       | statements | delta | what landed                         |
-| ---------- | ---------- | ----- | ----------------------------------- |
-| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up |
+| date       | statements | delta | what landed                                                                                |
+| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------ |
+| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                        |
+| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts` |
