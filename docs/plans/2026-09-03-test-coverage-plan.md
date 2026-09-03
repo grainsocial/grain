@@ -49,34 +49,33 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 624       | 1022 | 38.9%   |
+| `server/xrpc`    | 555       | 1022 | 45.7%   |
 | `server/og`      | 180       | 184  | 2.2%    |
 | `server/spaces`  | 92        | 122  | 24.6%   |
-| `server/hydrate` | 69        | 146  | 52.7%   |
 | `server/hooks`   | 36        | 125  | 71.2%   |
-| `server/helpers` | 31        | 175  | 82.3%   |
+| `server/helpers` | 28        | 175  | 84.0%   |
 | `server/feeds`   | 18        | 244  | 92.6%   |
-| `server/filters` | 0         | 2    | 100%    |
-| `server/labels`  | 0         | 4    | 100%    |
+| `server/hydrate` | 13        | 146  | 91.1%   |
 
 Biggest single files still outstanding:
 
-| file                              | uncovered | covered |
-| --------------------------------- | --------- | ------- |
-| `server/og/collage.ts`            | 81/85     | 4.7%    |
-| `server/xrpc/getNotifications.ts` | 80/172    | 53.5%   |
-| `server/hydrate/stories.ts`       | 53/53     | 0.0%    |
-| `server/spaces/client.ts`         | 53/78     | 32.0%   |
-| `server/xrpc/mentionSearch.ts`    | 44/45     | 2.2%    |
-| `server/xrpc/getStory.ts`         | 40/40     | 0.0%    |
-| `server/og/gallery.ts`            | 37/37     | 0.0%    |
-| `server/og/profile.ts`            | 36/36     | 0.0%    |
-| `server/xrpc/deleteGallery.ts`    | 35/35     | 0.0%    |
-| `server/xrpc/getActorProfile.ts`  | 33/33     | 0.0%    |
+| file                                  | uncovered | covered |
+| ------------------------------------- | --------- | ------- |
+| `server/og/collage.ts`                | 81/85     | 4.7%    |
+| `server/xrpc/getNotifications.ts`     | 80/172    | 53.5%   |
+| `server/spaces/client.ts`             | 53/78     | 32.0%   |
+| `server/xrpc/mentionSearch.ts`        | 44/45     | 2.2%    |
+| `server/og/gallery.ts`                | 37/37     | 0.0%    |
+| `server/og/profile.ts`                | 36/36     | 0.0%    |
+| `server/xrpc/deleteGallery.ts`        | 35/35     | 0.0%    |
+| `server/xrpc/getActorProfile.ts`      | 33/33     | 0.0%    |
+| `server/xrpc/createPrivateGallery.ts` | 32/33     | 3.0%    |
+| `server/xrpc/listSharedGalleries.ts`  | 32/32     | 0.0%    |
 
-`server/feeds` and `server/hooks` are done bar `on-login.ts`. `server/xrpc` is
-the largest block left but it is spread thin over many small handlers, so the
-next concentrated wins are `server/og`, `server/hydrate` and `server/spaces`.
+`server/feeds`, `server/hooks` and `server/hydrate` are done. What is left is
+`server/og` (four renderers), `server/spaces` (a DPoP client that needs its
+transport stubbed) and the long tail of `server/xrpc` handlers — which is the
+biggest total but the most scattered.
 
 ## Known hard spots
 
@@ -137,6 +136,27 @@ Recorded as they are hit, so a later pass does not rediscover them.
 - `_preferences` is another `server/setup` table the harness skips, alongside
   `_mutes`. Create it in `beforeAll` before touching notification prefs or
   badge counts.
+- Lexicon-required parameters are enforced before a handler runs, so a handler's
+  own `if (!param) return ok({})` guard for a required param is unreachable —
+  the request gets a 400 instead. `getStories`, `getStoryArchive` and `getStory`
+  all have one. Assert the 400; do not chase the guard.
+- Child tables generated from array fields (e.g.
+  `social.grain.story__labels_self_labels`) carry `parent_did` alongside
+  `parent_uri`, and both are NOT NULL.
+- Self-labels live in those child tables, not in `_labels`. So the SQL
+  `hideLabelsFilter` does not see them, while the hydrators, which merge both,
+  do. `getStoryAuthors` therefore counts a self-labelled story in `storyCount`
+  even though `getStories` will not return it — asserted as it stands in
+  `test/stories.test.ts`, but the two disagree.
+- `getStoryArchive` applies its LIMIT in SQL and filters hidden stories
+  afterwards in the hydrator, so **a page can come back shorter than the limit**
+  and the cursor comes from the pre-filter row. A client has to page until the
+  cursor is gone, not until a page looks short.
+- `hydrateStories` wraps its `media` parse in a try/catch that cannot help:
+  `ctx.blobUrl` parses the blob ref itself and throws on the raw string the
+  catch assigns, so a story row with non-JSON media is a 500 either way. The
+  neighbouring `aspect_ratio` fallback does work and is tested. Only reachable
+  if something writes a malformed blob column, which the indexer does not.
 
 ## Ledger
 
@@ -147,3 +167,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                               |
 | 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                        |
 | 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage |
+| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`     |
