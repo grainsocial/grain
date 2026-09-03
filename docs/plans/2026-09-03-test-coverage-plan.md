@@ -206,11 +206,28 @@ Recorded as they are hit, so a later pass does not rediscover them.
   `defineProcedure` returns `{ handler }` untouched, exactly like `defineHook`.
   `test/deletion.test.ts` does this, passing a `deleteRecord` that records the
   calls rather than making them.
-- `ctx.search` is backed by an index the harness never populates — neither
-  `db.run` nor `server.seed` reaches it — so every search-backed path answers
-  empty. `mentionSearch`'s browse mode (a scope with no query) is plain SQL and
-  is the half worth asserting; the fuzzy paths can only be checked as far as
-  "answers, and answers empty". Same limit applies to `searchActorsTypeahead`.
+- `ctx.search` always returns empty in tests, and it is an upstream gap rather
+  than anything a fixture can work around. `startTestServer` installs a
+  SearchPort but never calls `rebuildAllIndexes`, which is what creates the
+  `_fts_*` shadow tables and fills the search-column cache — `main.js` does
+  call it, so production is unaffected. Without it every query fails phase 1
+  with `bm25: no such table: _fts_...`, and SQLite has no phase 2 because
+  `SQLITE_DIALECT.jaroWinklerSimilarity` is `null`. The log line
+  `phases_used: ""` is the tell. Not fixable from here: `database/fts.js` is
+  not in hatk's `exports` map, so the rebuild cannot be triggered from a test.
+  A one-line addition to hatk's `test.js`, mirroring `main.js`, would fix it.
+  So `mentionSearch`'s browse mode (a scope and no query) is plain SQL and is
+  the half worth asserting; its fuzzy paths, `searchActorsTypeahead`,
+  `searchProfiles` and `searchGalleries` can only be checked as far as
+  "answers, and answers empty" until that lands.
+- Two things that look like harness limits but are not. `server.seed()` takes
+  _options_ and returns helpers bound to a live PDS — it is for integration
+  tests against the docker-compose stack, not for seeding the in-memory
+  database, so calling it `seed(collection, rows)` silently does nothing.
+  And the missing OAuth config is deliberate: the harness exposes
+  `loadXrpc(name).handler` precisely so procedures that write to a PDS can be
+  driven directly, which is what `test/deletion.test.ts` does (by importing the
+  module; `loadXrpc` would be the more idiomatic route).
 - `deleteGallery` builds the gallery uri from `viewer.did`, so naming someone
   else's rkey just addresses a gallery of yours that does not exist. The
   query's `AND did = $2` cannot be violated through the interface and removing
