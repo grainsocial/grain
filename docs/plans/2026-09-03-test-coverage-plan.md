@@ -49,26 +49,26 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 234       | 1022 | 77.1%   |
+| `server/xrpc`    | 233       | 1022 | 77.2%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
-| `server/helpers` | 27        | 175  | 84.6%   |
 | `server/feeds`   | 18        | 244  | 92.6%   |
-| `server/hydrate` | 13        | 146  | 91.1%   |
 | `server/og`      | 10        | 184  | 94.6%   |
 | `server/hooks`   | 7         | 125  | 94.4%   |
+| `server/hydrate` | 6         | 146  | 95.9%   |
+| `server/helpers` | 5         | 175  | 97.1%   |
 
 Biggest single files still outstanding:
 
 | file                              | uncovered | covered |
 | --------------------------------- | --------- | ------- |
 | `server/xrpc/getLocations.ts`     | 13/102    | 87.2%   |
-| `server/helpers/resolveActor.ts`  | 12/13     | 7.7%    |
-| `server/hydrate/galleries.ts`     | 12/83     | 85.5%   |
-| `server/helpers/country.ts`       | 10/45     | 77.8%   |
 | `server/xrpc/mentionSearch.ts`    | 9/45      | 80.0%   |
+| `server/hydrate/galleries.ts`     | 5/83      | 94.0%   |
 | `server/xrpc/getCommentThread.ts` | 5/56      | 91.1%   |
-| `server/xrpc/getGallery.ts`       | 5/14      | 64.3%   |
 | `server/xrpc/getStory.ts`         | 5/40      | 87.5%   |
+| `server/xrpc/getFollowing.ts`     | 4/24      | 83.3%   |
+| `server/xrpc/getGallery.ts`       | 4/14      | 71.4%   |
+| `server/feeds/actor.ts`           | 3/13      | 76.9%   |
 
 **Spaces is out of scope** (decided 2026-09-03). Everything behind
 `spaces/client.ts` — the private and shared gallery handlers, `getSpaceMembers`,
@@ -236,20 +236,31 @@ Recorded as they are hit, so a later pass does not rediscover them.
   else's rkey just addresses a gallery of yours that does not exist. The
   query's `AND did = $2` cannot be violated through the interface and removing
   it fails nothing — the construction is what makes it safe, not the condition.
+- Two guards in the codebase cannot be reached through their own interface and
+  fail nothing when removed. `deleteGallery`'s `AND did = $2` is redundant
+  because the uri is built from `viewer.did`; `getGallery`'s takedown check is
+  redundant because hatk's `getRecords` already excludes taken-down repos, so
+  the row never arrives. Both are recorded in their tests as defence in depth
+  rather than dressed up as load-bearing. Do not chase either with a test.
+- EXIF numbers are stored scaled by a million — atproto lexicons have no
+  decimal type, so `app/lib/utils/image-resize.ts` multiplies on the way in and
+  `hydrate/galleries.ts` divides on the way out. ISO is scaled too despite
+  already being a whole number, which is easy to get wrong in a fixture.
 
 ## Ledger
 
-| date       | statements | delta | what landed                                                                                                                                         |
-| ---------- | ---------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                                                 |
-| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                                          |
-| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                                                    |
-| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                                             |
-| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage                      |
-| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`                          |
-| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                       |
-| 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications |
-| 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                               |
-| 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                             |
-| 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                     |
-| 2026-09-03 | **80.14%** | +4.38 | the three OG cards and the font loader — `test/ogCards.test.ts`. **Goal met.** Excluding spaces, 92.1%                                              |
+| date       | statements | delta | what landed                                                                                                                                                     |
+| ---------- | ---------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                                                             |
+| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                                                      |
+| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                                                                |
+| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                                                         |
+| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage                                  |
+| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`                                      |
+| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                                   |
+| 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications             |
+| 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                                           |
+| 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                                         |
+| 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                                 |
+| 2026-09-03 | **80.14%** | +4.38 | the three OG cards and the font loader — `test/ogCards.test.ts`. **Goal met.** Excluding spaces, 92.1%                                                          |
+| 2026-09-04 | 81.62%     | +1.48 | resolveActor and the country helpers — `test/resolveAndCountry.test.ts`; getGallery and EXIF formatting — `test/galleryDetail.test.ts`. Excluding spaces, 93.8% |
