@@ -50,12 +50,12 @@ current state, not the original snapshot.
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
 | `server/xrpc`    | 624       | 1022 | 38.9%   |
-| `server/feeds`   | 201       | 244  | 17.6%   |
 | `server/og`      | 180       | 184  | 2.2%    |
 | `server/hooks`   | 118       | 125  | 5.6%    |
+| `server/feeds`   | 114       | 244  | 53.3%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/hydrate` | 69        | 146  | 52.7%   |
-| `server/helpers` | 67        | 175  | 61.7%   |
+| `server/helpers` | 62        | 175  | 64.6%   |
 | `server/filters` | 0         | 2    | 100%    |
 | `server/labels`  | 0         | 4    | 100%    |
 
@@ -64,7 +64,6 @@ Biggest single files still outstanding:
 | file                                 | uncovered | covered |
 | ------------------------------------ | --------- | ------- |
 | `server/feeds/foryou.ts`             | 99/99     | 0.0%    |
-| `server/feeds/location.ts`           | 90/90     | 0.0%    |
 | `server/og/collage.ts`               | 81/85     | 4.7%    |
 | `server/xrpc/getNotifications.ts`    | 80/172    | 53.5%   |
 | `server/hydrate/stories.ts`          | 53/53     | 0.0%    |
@@ -73,9 +72,10 @@ Biggest single files still outstanding:
 | `server/hooks/on-commit-favorite.ts` | 40/42     | 4.8%    |
 | `server/xrpc/getStory.ts`            | 40/40     | 0.0%    |
 | `server/og/gallery.ts`               | 37/37     | 0.0%    |
+| `server/og/profile.ts`               | 36/36     | 0.0%    |
 
-`server/feeds` is down to `foryou.ts` and `location.ts`; the other five feeds
-are covered by `test/galleryFeeds.test.ts`.
+`server/feeds` is down to `foryou.ts` alone — the other seven feeds are covered
+by `test/galleryFeeds.test.ts` and `test/locationFeed.test.ts`.
 
 ## Known hard spots
 
@@ -100,6 +100,17 @@ Recorded as they are hit, so a later pass does not rediscover them.
   `createdAt` therefore heads a profile grid but not the home feed. This is
   asserted as-is in `test/galleryFeeds.test.ts`; it looks unintended, and
   changing it should start by deciding which of the two is right.
+- H3 fixtures have to be real cells — `getResolution` throws on a made-up
+  string and the city-level path swallows that in a `catch`, so an invalid cell
+  silently drops out of results instead of failing. Generate them with
+  `latLngToCell(lat, lng, 10)` and `cellToParent(cell, 5)`.
+- `location.ts` has an unreachable guard: the `aliases.length === 0` branch
+  that drops a country interpretation cannot fire, because `normalizeCountry`
+  falls back to returning the upper-cased input and only returns null for an
+  empty string, while `parts` is already `.filter(Boolean)`-ed. It is harmless
+  defence against `normalizeCountry` changing, but it cannot be covered and
+  should not be chased. The reachable version of that case — a one-word name
+  that is not a country, like "Waldport" — is tested instead.
 
 ## Ledger
 
@@ -107,3 +118,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------ |
 | 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                        |
 | 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts` |
+| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`           |
