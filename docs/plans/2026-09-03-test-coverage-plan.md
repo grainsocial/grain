@@ -50,25 +50,25 @@ current state, not the original snapshot.
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
 | `server/xrpc`    | 234       | 1022 | 77.1%   |
-| `server/og`      | 100       | 184  | 45.7%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
-| `server/helpers` | 26        | 175  | 85.1%   |
+| `server/helpers` | 27        | 175  | 84.6%   |
 | `server/feeds`   | 18        | 244  | 92.6%   |
 | `server/hydrate` | 13        | 146  | 91.1%   |
+| `server/og`      | 10        | 184  | 94.6%   |
 | `server/hooks`   | 7         | 125  | 94.4%   |
 
 Biggest single files still outstanding:
 
-| file                             | uncovered | covered |
-| -------------------------------- | --------- | ------- |
-| `server/og/gallery.ts`           | 37/37     | 0.0%    |
-| `server/og/profile.ts`           | 36/36     | 0.0%    |
-| `server/og/story.ts`             | 17/17     | 0.0%    |
-| `server/xrpc/getLocations.ts`    | 13/102    | 87.2%   |
-| `server/helpers/resolveActor.ts` | 12/13     | 7.7%    |
-| `server/hydrate/galleries.ts`    | 12/83     | 85.5%   |
-| `server/helpers/country.ts`      | 10/45     | 77.8%   |
-| `server/og/fonts.ts`             | 9/9       | 0.0%    |
+| file                              | uncovered | covered |
+| --------------------------------- | --------- | ------- |
+| `server/xrpc/getLocations.ts`     | 13/102    | 87.2%   |
+| `server/helpers/resolveActor.ts`  | 12/13     | 7.7%    |
+| `server/hydrate/galleries.ts`     | 12/83     | 85.5%   |
+| `server/helpers/country.ts`       | 10/45     | 77.8%   |
+| `server/xrpc/mentionSearch.ts`    | 9/45      | 80.0%   |
+| `server/xrpc/getCommentThread.ts` | 5/56      | 91.1%   |
+| `server/xrpc/getGallery.ts`       | 5/14      | 64.3%   |
+| `server/xrpc/getStory.ts`         | 5/40      | 87.5%   |
 
 **Spaces is out of scope** (decided 2026-09-03). Everything behind
 `spaces/client.ts` — the private and shared gallery handlers, `getSpaceMembers`,
@@ -164,10 +164,15 @@ Recorded as they are hit, so a later pass does not rediscover them.
   if something writes a malformed blob column, which the indexer does not.
 - OG renderers return a satori element tree rather than a bitmap, and
   `defineOG` exposes it as `{ generate }`, so they can be called directly and
-  asserted on. But their context wants `lookup`, `blobUrl`, `getRecords` and
-  `fetchImage`, and `startTestServer().feedContext()` supplies none of those —
-  it gives `db`, `params`, `viewer`, `paginate` and the cursor helpers only. So
-  they need real stubbing; budget for it.
+  asserted on without rasterising anything. Their context wants `lookup`,
+  `blobUrl`, `getRecords` and `fetchImage`, none of which
+  `startTestServer().feedContext()` supplies — see `test/ogCards.test.ts` for a
+  set of stubs that work. Walk the returned tree for its strings and its
+  `<img src>`s rather than asserting on the tree's shape, which is layout and
+  changes freely.
+- What each card draws is not what it tells a crawler. The profile card's
+  description and the story card's handle appear only in `meta`, never on the
+  card itself. Check both.
 - `server/og/collage.ts` is the exception: `calculateCollageLayout` is a pure
   function over a seeded PRNG, and it is where most of `server/og` lives.
 - `searchActorsTypeahead` calls `public.api.bsky.app` directly and merges the
@@ -247,3 +252,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                               |
 | 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                             |
 | 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                     |
+| 2026-09-03 | **80.14%** | +4.38 | the three OG cards and the font loader — `test/ogCards.test.ts`. **Goal met.** Excluding spaces, 92.1%                                              |
