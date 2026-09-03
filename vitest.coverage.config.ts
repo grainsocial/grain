@@ -25,10 +25,10 @@ export default defineConfig({
       // reaches, so coverage can go up and never quietly back down.
       thresholds: {
         autoUpdate: true,
-        statements: 42.61,
-        branches: 37.35,
-        functions: 46.57,
-        lines: 43.25,
+        statements: 48.17,
+        branches: 43.9,
+        functions: 49.18,
+        lines: 48.71,
       },
     },
   },

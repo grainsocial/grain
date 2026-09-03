@@ -51,32 +51,32 @@ current state, not the original snapshot.
 | ---------------- | --------- | ---- | ------- |
 | `server/xrpc`    | 624       | 1022 | 38.9%   |
 | `server/og`      | 180       | 184  | 2.2%    |
-| `server/hooks`   | 118       | 125  | 5.6%    |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/hydrate` | 69        | 146  | 52.7%   |
-| `server/helpers` | 62        | 175  | 64.6%   |
+| `server/hooks`   | 36        | 125  | 71.2%   |
+| `server/helpers` | 31        | 175  | 82.3%   |
 | `server/feeds`   | 18        | 244  | 92.6%   |
 | `server/filters` | 0         | 2    | 100%    |
 | `server/labels`  | 0         | 4    | 100%    |
 
 Biggest single files still outstanding:
 
-| file                                 | uncovered | covered |
-| ------------------------------------ | --------- | ------- |
-| `server/og/collage.ts`               | 81/85     | 4.7%    |
-| `server/xrpc/getNotifications.ts`    | 80/172    | 53.5%   |
-| `server/hydrate/stories.ts`          | 53/53     | 0.0%    |
-| `server/spaces/client.ts`            | 53/78     | 32.0%   |
-| `server/xrpc/mentionSearch.ts`       | 44/45     | 2.2%    |
-| `server/hooks/on-commit-favorite.ts` | 40/42     | 4.8%    |
-| `server/xrpc/getStory.ts`            | 40/40     | 0.0%    |
-| `server/og/gallery.ts`               | 37/37     | 0.0%    |
-| `server/og/profile.ts`               | 36/36     | 0.0%    |
-| `server/xrpc/deleteGallery.ts`       | 35/35     | 0.0%    |
+| file                              | uncovered | covered |
+| --------------------------------- | --------- | ------- |
+| `server/og/collage.ts`            | 81/85     | 4.7%    |
+| `server/xrpc/getNotifications.ts` | 80/172    | 53.5%   |
+| `server/hydrate/stories.ts`       | 53/53     | 0.0%    |
+| `server/spaces/client.ts`         | 53/78     | 32.0%   |
+| `server/xrpc/mentionSearch.ts`    | 44/45     | 2.2%    |
+| `server/xrpc/getStory.ts`         | 40/40     | 0.0%    |
+| `server/og/gallery.ts`            | 37/37     | 0.0%    |
+| `server/og/profile.ts`            | 36/36     | 0.0%    |
+| `server/xrpc/deleteGallery.ts`    | 35/35     | 0.0%    |
+| `server/xrpc/getActorProfile.ts`  | 33/33     | 0.0%    |
 
-`server/feeds` is done at 92.6%; every feed has tests. `server/xrpc` is the
-largest block left but it is spread thin over many small handlers, so the next
-concentrated wins are `server/og`, `server/hooks` and `server/hydrate`.
+`server/feeds` and `server/hooks` are done bar `on-login.ts`. `server/xrpc` is
+the largest block left but it is spread thin over many small handlers, so the
+next concentrated wins are `server/og`, `server/hydrate` and `server/spaces`.
 
 ## Known hard spots
 
@@ -124,12 +124,26 @@ Recorded as they are hit, so a later pass does not rediscover them.
 - `foryou.ts` has one dead knob: `CORATER_DECAY` is 0, so the decay branch
   never runs and the `coratersSeenCount` map it feeds is maintained but has no
   effect. Not coverable without changing the constant.
+- on-commit hooks are directly callable: `defineHook` returns `{ handler }`
+  untouched, so a test can build the commit context by hand — real `db` from
+  `startTestServer`, a `push` stub that collects messages, and a `lookup` stub,
+  which the hooks use only to get the actor's display name. No firehose needed.
+- `fireOnCommitHooks` catches a rejected hook and turns it into a log line, so
+  **anything that throws inside a hook fails silently**. That is how a helper
+  that could not parse went unnoticed in production; see the isBlockedOrMuted
+  regression test in `test/commitHooks.test.ts`. When testing a hook, assert
+  that it resolves, not only what it pushed.
+- `social.grain.story` rows need `media` and `aspect_ratio`; both are NOT NULL.
+- `_preferences` is another `server/setup` table the harness skips, alongside
+  `_mutes`. Create it in `beforeAll` before touching notification prefs or
+  badge counts.
 
 ## Ledger
 
-| date       | statements | delta | what landed                                                                                             |
-| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------------------- |
-| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                     |
-| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`              |
-| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                        |
-| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6% |
+| date       | statements | delta | what landed                                                                                                                    |
+| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                            |
+| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                     |
+| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                               |
+| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                        |
+| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage |
