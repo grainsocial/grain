@@ -11,3 +11,12 @@ export const load: PageLoad = async ({ parent, fetch }) => {
   if (!browser) await prefetch;
   return { wide: true };
 };
+
+// Start the map's chunks downloading while the route is still loading. They are
+// dynamic imports inside the components, so nothing else preloads them, and on
+// a client-side navigation they would otherwise begin only after first paint.
+// Module cache means the components' own imports then resolve instantly.
+if (browser) {
+  void import("maplibre-gl");
+  void import("protomaps-themes-base");
+}

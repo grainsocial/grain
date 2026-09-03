@@ -3,6 +3,7 @@
   import LocationsMap from '$lib/components/molecules/LocationsMap.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import { BASEMAP_ORIGIN } from '$lib/basemap'
   import { ArrowLeft } from 'lucide-svelte'
   import { createQuery } from '@tanstack/svelte-query'
   import { locationsQuery, locationPinsQuery } from '$lib/queries'
@@ -29,6 +30,11 @@
 </script>
 
 <OGMeta title="Locations - grain" />
+<svelte:head>
+  <!-- The tile host is a different origin; warm DNS and TLS while the map
+       chunk is still downloading rather than after it asks for a tile. -->
+  <link rel="preconnect" href={BASEMAP_ORIGIN} crossorigin="anonymous" />
+</svelte:head>
 
 <div class="places">
   <!-- Places are spatial; a stacked list of names is the wrong shape for them.

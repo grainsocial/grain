@@ -1,9 +1,9 @@
 <script lang="ts">
   import { cellToLatLng, isValidCell } from 'h3-js'
   import { onMount } from 'svelte'
-  import type { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl'
+  import type { Map as MapLibreMap, GeoJSONSource, LngLatBoundsLike } from 'maplibre-gl'
   import { goto } from '$app/navigation'
-  import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '$lib/basemap'
+  import { BASEMAP_SOURCE } from '$lib/basemap'
   // maplibre sets `touch-action: none` on the canvas container from this
   // stylesheet. Without it a touch drag scrolls the page instead of panning.
   import 'maplibre-gl/dist/maplibre-gl.css'
@@ -19,6 +19,7 @@
   const SOURCE = 'places'
   const CLUSTERS = 'place-clusters'
   const POINTS = 'place-points'
+  const FIT = { padding: 40, maxZoom: 5 }
 
   const features = $derived(
     places
@@ -27,13 +28,37 @@
         const [lat, lng] = cellToLatLng(p.h3Index)
         return {
           type: 'Feature' as const,
-          geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+          geometry: { type: 'Point' as const, coordinates: [lng, lat] as [number, number] },
           properties: { name: p.name, h3: p.h3Index, count: p.galleryCount },
         }
       }),
   )
 
   const collection = $derived({ type: 'FeatureCollection' as const, features })
+
+  // Computed without maplibre so it is known before the library has loaded.
+  // On a full page load the pins are already here — SvelteKit inlines the
+  // prefetch — so the map is constructed at its final camera and the clusters
+  // form exactly once. Anything else is the flash of pins splaying out at a
+  // placeholder camera and then snapping into clusters a frame later.
+  const bounds = $derived.by((): LngLatBoundsLike | null => {
+    if (!features.length) return null
+    let w = Infinity
+    let s = Infinity
+    let e = -Infinity
+    let n = -Infinity
+    for (const f of features) {
+      const [lng, lat] = f.geometry.coordinates
+      if (lng < w) w = lng
+      if (lng > e) e = lng
+      if (lat < s) s = lat
+      if (lat > n) n = lat
+    }
+    return [
+      [w, s],
+      [e, n],
+    ]
+  })
 
   let container: HTMLDivElement | undefined = $state()
   let map: MapLibreMap | null = $state(null)
@@ -119,27 +144,24 @@
     return `/location/${encodeURIComponent(h3)}?name=${encodeURIComponent(name)}`
   }
 
-  // setData rather than a fresh source: the query can resolve after the map is
-  // up, and re-adding a source drops the cluster index and repaints everything.
+  // For pins that arrive after the map is up — a client-side navigation before
+  // the query settles. Order matters: move the camera, then set the data, so
+  // the cluster index is built once, at the zoom it will be shown at. setData
+  // rather than a fresh source, because re-adding drops that index.
   $effect(() => {
     const data = collection
+    const b = bounds
     const m = map
     if (!m) return
     const source = m.getSource(SOURCE) as GeoJSONSource | undefined
     if (!source) return
-    source.setData(data)
-    if (!fitted && data.features.length) {
+    if (!fitted && b) {
       fitted = true
-      fitTo(m, data.features)
+      const camera = m.cameraForBounds(b, FIT)
+      if (camera) m.jumpTo(camera)
     }
+    source.setData(data)
   })
-
-  async function fitTo(m: MapLibreMap, feats: typeof features) {
-    const { LngLatBounds } = await import('maplibre-gl')
-    const bounds = new LngLatBounds()
-    for (const f of feats) bounds.extend(f.geometry.coordinates as [number, number])
-    m.fitBounds(bounds, { padding: 40, maxZoom: 5, animate: false })
-  }
 
   onMount(() => {
     if (!container) return
@@ -164,35 +186,34 @@
       const { layers, namedTheme } = await import('protomaps-themes-base')
       return {
         version: 8 as const,
-        sources: {
-          protomaps: {
-            type: 'vector' as const,
-            url: `pmtiles://${BASEMAP_URL}`,
-            attribution: BASEMAP_ATTRIBUTION,
-          },
-        },
+        sources: { protomaps: BASEMAP_SOURCE },
         layers: layers('protomaps', namedTheme(theme), { lang: 'en' }),
       }
     }
 
     // Same reasoning as LocationMapBanner: maplibre is far too large to sit in
-    // the shared bundle for the handful of routes that draw a map.
+    // the shared bundle for the handful of routes that draw a map. No pmtiles
+    // import any more: the Worker on tiles.grain.social does the directory
+    // walk, so the client neither loads that library nor spends two range
+    // requests on directories before the first tile.
     ;(async () => {
-      const [maplibre, { Protocol }, style] = await Promise.all([
-        import('maplibre-gl'),
-        import('pmtiles'),
-        buildStyle(),
-      ])
+      const [maplibre, style] = await Promise.all([import('maplibre-gl'), buildStyle()])
       if (disposed || !container) return
 
-      const protocol = new Protocol()
-      maplibre.addProtocol('pmtiles', protocol.tile)
+      const initial = bounds
+      if (initial) fitted = true
 
       const m = new maplibre.Map({
         container,
         style,
-        center: [0, 20],
-        zoom: 1,
+        // Start where the data is, when the data is already here.
+        ...(initial
+          ? { bounds: initial, fitBoundsOptions: FIT }
+          : { center: [0, 20] as [number, number], zoom: 1 }),
+        // Tiles are immutable and edge-cached: paint them the moment they land
+        // rather than fading them in, and never re-request an expired one.
+        fadeDuration: 0,
+        refreshExpiredTiles: false,
         attributionControl: false,
         // One earth. Repeated copies triple the pins drawn and let a place
         // appear three times on the same screen.
@@ -203,14 +224,7 @@
       })
       m.touchZoomRotate?.disableRotation()
 
-      m.on('load', () => {
-        install(m)
-        if (!fitted && collection.features.length) {
-          fitted = true
-          fitTo(m, collection.features)
-        }
-      })
-
+      m.on('load', () => install(m))
       // setStyle drops everything not in the new style, so put it back.
       m.on('styledata', () => install(m))
 
