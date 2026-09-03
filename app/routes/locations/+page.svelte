@@ -5,10 +5,13 @@
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import { ArrowLeft } from 'lucide-svelte'
   import { createQuery } from '@tanstack/svelte-query'
-  import { locationsQuery } from '$lib/queries'
+  import { locationsQuery, locationPinsQuery } from '$lib/queries'
   import { goto } from '$app/navigation'
 
   const locations = createQuery(() => locationsQuery())
+  // The map plots every place; the tiles below stay on the ranked top thirty,
+  // which are the only ones that carry thumbnails.
+  const pins = createQuery(() => locationPinsQuery())
 
   const fmt = new Intl.NumberFormat('en')
   const galleries = (n: number) => `${fmt.format(n)} ${n === 1 ? 'gallery' : 'galleries'}`
@@ -17,9 +20,7 @@
     return `/location/${encodeURIComponent(loc.h3Index)}?name=${encodeURIComponent(loc.name)}`
   }
 
-  const places = $derived(
-    (locations.data ?? []).map((l) => ({ name: l.name, h3Index: l.h3Index, href: href(l) })),
-  )
+  const places = $derived(pins.data ?? [])
 
   function back() {
     if (window.history.length > 1) history.back()

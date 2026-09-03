@@ -155,6 +155,20 @@ export const locationsQuery = (f?: Fetch) =>
     staleTime: 5 * 60_000,
   });
 
+// Every place, carrying only what the index map plots. Separate from
+// locationsQuery because the shapes are wanted in different sizes: tiles need
+// thumbnails for thirty places, the map needs coordinates for all seven
+// hundred, and serving the rich shape for all of them is ~780KB.
+export const locationPinsQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["locationPins"],
+    queryFn: () =>
+      callXrpc("social.grain.unspecced.getLocations", { pins: true }, f).then(
+        (r) => r?.locations ?? [],
+      ),
+    staleTime: 5 * 60_000,
+  });
+
 // ─── Favorites ──────────────────────────────────────────────────────
 
 export const actorFavoritesInfiniteQuery = (did: string, f?: Fetch) =>

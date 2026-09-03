@@ -1,67 +1,145 @@
 <script lang="ts">
   import { cellToLatLng, isValidCell } from 'h3-js'
   import { onMount } from 'svelte'
-  import type { Map as MapLibreMap } from 'maplibre-gl'
+  import type { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl'
   import { goto } from '$app/navigation'
   import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '$lib/basemap'
-  // Nothing else in the app loads this: LocationMapBanner draws a canvas with
-  // no markers and no interaction, which needs no stylesheet. Markers do —
-  // without it they are position: static and `overflow: hidden` eats them.
+  // maplibre sets `touch-action: none` on the canvas container from this
+  // stylesheet. Without it a touch drag scrolls the page instead of panning.
   import 'maplibre-gl/dist/maplibre-gl.css'
 
-  // The index map: every place at once, rather than LocationMapBanner's single
-  // place. Interactive, because picking a place off a map is the whole point —
-  // where the banner on a place's own page is decorative.
-  type Place = { name: string; h3Index: string; href: string }
+  // Every place at once, rather than LocationMapBanner's single place. Drawn as
+  // a clustered GeoJSON source rather than Marker elements: there are ~700
+  // places, and a DOM marker each means 700 nodes maplibre re-transforms on
+  // every pan and zoom frame. Circles live on the GPU and cost nothing to move.
+  type Place = { name: string; h3Index: string; galleryCount: number }
 
   let { places, height = 260 }: { places: Place[]; height?: number } = $props()
 
-  const pins = $derived(
+  const SOURCE = 'places'
+  const CLUSTERS = 'place-clusters'
+  const POINTS = 'place-points'
+
+  const features = $derived(
     places
       .filter((p) => p.h3Index && isValidCell(p.h3Index))
-      .map((p) => ({ ...p, latLng: cellToLatLng(p.h3Index) })),
+      .map((p) => {
+        const [lat, lng] = cellToLatLng(p.h3Index)
+        return {
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [lng, lat] },
+          properties: { name: p.name, h3: p.h3Index, count: p.galleryCount },
+        }
+      }),
   )
+
+  const collection = $derived({ type: 'FeatureCollection' as const, features })
 
   let container: HTMLDivElement | undefined = $state()
   let map: MapLibreMap | null = $state(null)
-  let markers: { remove: () => void }[] = []
+  let fitted = false
 
-  // Places arrive from an async query and the list can change under us, so
-  // markers are rebuilt from scratch rather than diffed — thirty of them.
-  $effect(() => {
-    const current = pins
-    const instance = map
-    if (!instance) return
+  function accent(): string {
+    if (typeof document === 'undefined') return '#85a1ff'
+    return (
+      getComputedStyle(document.documentElement).getPropertyValue('--grain').trim() || '#85a1ff'
+    )
+  }
 
-    for (const m of markers) m.remove()
-    markers = []
+  /** Idempotent: also used to restore the layers a setStyle() tears down. */
+  function install(m: MapLibreMap) {
+    if (m.getSource(SOURCE)) return
+    const color = accent()
 
-    if (current.length === 0) return
-
-    import('maplibre-gl').then((maplibre) => {
-      if (map !== instance) return
-      for (const p of current) {
-        const el = document.createElement('button')
-        el.className = 'pin'
-        el.type = 'button'
-        el.title = p.name
-        el.setAttribute('aria-label', p.name)
-        el.addEventListener('click', (e) => {
-          e.stopPropagation()
-          goto(p.href)
-        })
-        markers.push(
-          new maplibre.Marker({ element: el })
-            .setLngLat([p.latLng[1], p.latLng[0]])
-            .addTo(instance),
-        )
-      }
-
-      const bounds = new maplibre.LngLatBounds()
-      for (const p of current) bounds.extend([p.latLng[1], p.latLng[0]])
-      instance.fitBounds(bounds, { padding: 48, maxZoom: 9, animate: false })
+    m.addSource(SOURCE, {
+      type: 'geojson',
+      data: collection,
+      cluster: true,
+      // Tuned against the real distribution (~700 places, concentrated in North
+      // America and Europe): tight enough that a continent is several clusters
+      // rather than one dot, wide enough that they do not overlap at world zoom.
+      clusterRadius: 45,
+      // Past this zoom the places have separated enough to stand alone.
+      clusterMaxZoom: 11,
+      clusterProperties: { total: ['+', ['get', 'count']] },
     })
+
+    // No text layer anywhere here: the basemap ships without a glyphs endpoint
+    // (5360554 — the tiles carry their own fonts), so a symbol layer would have
+    // nothing to render with. Magnitude is carried by radius instead.
+    m.addLayer({
+      id: CLUSTERS,
+      type: 'circle',
+      source: SOURCE,
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': color,
+        'circle-opacity': 0.85,
+        // Radius scales with zoom as well as size: a circle that reads well
+        // over one city is a blot when the whole world is on screen.
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          0,
+          ['step', ['get', 'point_count'], 5, 5, 7, 20, 9, 60, 12],
+          6,
+          ['step', ['get', 'point_count'], 10, 5, 14, 20, 18, 60, 24],
+        ],
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#fff',
+        'circle-stroke-opacity': 0.85,
+      },
+    })
+
+    m.addLayer({
+      id: POINTS,
+      type: 'circle',
+      source: SOURCE,
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': color,
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          0,
+          ['step', ['get', 'count'], 3, 5, 4, 25, 5, 100, 6],
+          6,
+          ['step', ['get', 'count'], 6, 5, 8, 25, 10, 100, 12],
+        ],
+        'circle-stroke-width': 1.5,
+        'circle-stroke-color': '#fff',
+        'circle-stroke-opacity': 0.85,
+      },
+    })
+  }
+
+  function href(name: string, h3: string): string {
+    return `/location/${encodeURIComponent(h3)}?name=${encodeURIComponent(name)}`
+  }
+
+  // setData rather than a fresh source: the query can resolve after the map is
+  // up, and re-adding a source drops the cluster index and repaints everything.
+  $effect(() => {
+    const data = collection
+    const m = map
+    if (!m) return
+    const source = m.getSource(SOURCE) as GeoJSONSource | undefined
+    if (!source) return
+    source.setData(data)
+    if (!fitted && data.features.length) {
+      fitted = true
+      fitTo(m, data.features)
+    }
   })
+
+  async function fitTo(m: MapLibreMap, feats: typeof features) {
+    const { LngLatBounds } = await import('maplibre-gl')
+    const bounds = new LngLatBounds()
+    for (const f of feats) bounds.extend(f.geometry.coordinates as [number, number])
+    m.fitBounds(bounds, { padding: 40, maxZoom: 5, animate: false })
+  }
 
   onMount(() => {
     if (!container) return
@@ -110,25 +188,56 @@
       const protocol = new Protocol()
       maplibre.addProtocol('pmtiles', protocol.tile)
 
-      map = new maplibre.Map({
+      const m = new maplibre.Map({
         container,
         style,
         center: [0, 20],
         zoom: 1,
         attributionControl: false,
+        // One earth. Repeated copies triple the pins drawn and let a place
+        // appear three times on the same screen.
+        renderWorldCopies: false,
         // Drag and zoom, but no rotation — a tilted world map helps nobody.
         dragRotate: false,
         pitchWithRotate: false,
-        touchZoomRotate: true,
       })
-      map.touchZoomRotate?.disableRotation()
+      m.touchZoomRotate?.disableRotation()
+
+      m.on('load', () => {
+        install(m)
+        if (!fitted && collection.features.length) {
+          fitted = true
+          fitTo(m, collection.features)
+        }
+      })
+
+      // setStyle drops everything not in the new style, so put it back.
+      m.on('styledata', () => install(m))
+
+      m.on('click', CLUSTERS, async (e) => {
+        const feature = e.features?.[0]
+        if (!feature) return
+        const source = m.getSource(SOURCE) as GeoJSONSource
+        const zoom = await source.getClusterExpansionZoom(feature.properties.cluster_id)
+        m.easeTo({ center: (feature.geometry as any).coordinates, zoom })
+      })
+
+      m.on('click', POINTS, (e) => {
+        const p = e.features?.[0]?.properties
+        if (p) goto(href(p.name as string, p.h3 as string))
+      })
+
+      for (const layer of [CLUSTERS, POINTS]) {
+        m.on('mouseenter', layer, () => (m.getCanvas().style.cursor = 'pointer'))
+        m.on('mouseleave', layer, () => (m.getCanvas().style.cursor = ''))
+      }
+
+      map = m
     })()
 
     return () => {
       disposed = true
       observer.disconnect()
-      for (const m of markers) m.remove()
-      markers = []
       map?.remove()
       map = null
     }
@@ -171,27 +280,5 @@
   }
   .attribution:hover {
     color: var(--text-primary);
-  }
-
-  /* Markers are created imperatively by maplibre, outside this component's
-     scoped CSS, so the pin style has to be global. */
-  :global(.pin) {
-    width: 14px;
-    height: 14px;
-    padding: 0;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    background: var(--grain);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-    cursor: pointer;
-    /* Hover must not touch `transform`: maplibre positions the marker with an
-       inline transform, so animating it here would fling the pin to 0,0. */
-    transition: box-shadow 0.12s, background-color 0.12s;
-  }
-  :global(.pin:hover),
-  :global(.pin:focus-visible) {
-    background: #fff;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45), 0 0 0 5px var(--grain-glow);
-    outline: none;
   }
 </style>
