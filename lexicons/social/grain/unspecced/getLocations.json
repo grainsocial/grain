@@ -23,18 +23,37 @@
     },
     "locationItem": {
       "type": "object",
-      "required": ["name", "h3Index", "galleryCount"],
+      "required": [
+        "name",
+        "h3Index",
+        "galleryCount"
+      ],
       "properties": {
-        "name": { "type": "string" },
+        "name": {
+          "type": "string"
+        },
         "h3Index": {
           "type": "string",
           "description": "Canonical H3 cell for the place (densest cell in the group)."
         },
-        "galleryCount": { "type": "integer" },
+        "galleryCount": {
+          "type": "integer"
+        },
         "h3Cells": {
           "type": "array",
           "description": "All H3 cells whose galleries map to this place. Ordered by gallery count desc.",
-          "items": { "type": "string" }
+          "items": {
+            "type": "string"
+          }
+        },
+        "thumbs": {
+          "type": "array",
+          "description": "Up to four representative photo thumbnails, most recent first. Lets the index render without a feed request per location.",
+          "maxLength": 4,
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
         }
       }
     }

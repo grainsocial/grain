@@ -6,5 +6,5 @@ export const load: PageLoad = async ({ parent, fetch }) => {
   const { queryClient } = await parent();
   const prefetch = queryClient.prefetchQuery(locationsQuery(fetch));
   if (!browser) await prefetch;
-  return {};
+  return { wide: true };
 };

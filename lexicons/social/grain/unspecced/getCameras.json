@@ -23,10 +23,26 @@
     },
     "cameraItem": {
       "type": "object",
-      "required": ["camera", "photoCount"],
+      "required": [
+        "camera",
+        "photoCount"
+      ],
       "properties": {
-        "camera": { "type": "string" },
-        "photoCount": { "type": "integer" }
+        "camera": {
+          "type": "string"
+        },
+        "photoCount": {
+          "type": "integer"
+        },
+        "thumbs": {
+          "type": "array",
+          "description": "Up to four representative photo thumbnails, most recent first. Lets the index render without a feed request per camera.",
+          "maxLength": 4,
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
       }
     }
   }

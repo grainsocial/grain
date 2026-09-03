@@ -19,16 +19,21 @@ import { defineQuery } from "$hatk";
 import { getResolution, cellToParent } from "h3-js";
 import { normalizeCountry } from "../helpers/country.ts";
 
+/** Thumbnails carried per place, enough for the index tile's 2x2 mosaic. */
+const THUMBS_PER_LOCATION = 4;
+
 type LocationItem = {
   name: string;
   h3Index: string;
   galleryCount: number;
   h3Cells: string[];
+  thumbs: string[];
 };
 let cache: { data: LocationItem[]; expires: number } | null = null;
 const TTL = 5 * 60 * 1000;
 
 type Row = {
+  uri: string;
   name: string | null;
   h3_index: string | null;
   locality: string | null;
@@ -87,20 +92,27 @@ function computeDisplayName(r: Row): string | null {
   return r.name?.trim() || null;
 }
 
-async function refresh(db: any) {
+async function refresh(ctx: any) {
+  const { db } = ctx;
+
+  // Ordered newest first so the first galleries kept per group are also the
+  // ones the index tile shows.
   const rows = (await db.query(`
-    SELECT json_extract(location, '$.name') AS name,
+    SELECT uri,
+           json_extract(location, '$.name') AS name,
            json_extract(location, '$.value') AS h3_index,
            json_extract(address, '$.locality') AS locality,
            json_extract(address, '$.region') AS region,
            json_extract(address, '$.country') AS country
     FROM "social.grain.gallery"
     WHERE location IS NOT NULL
+    ORDER BY created_at DESC
   `)) as Row[];
 
   type Group = {
     nameCounts: Map<string, number>;
     h3Counts: Map<string, number>;
+    galleryUris: string[];
     count: number;
   };
   const groups = new Map<string, Group>();
@@ -113,10 +125,11 @@ async function refresh(db: any) {
 
     let g = groups.get(key);
     if (!g) {
-      g = { nameCounts: new Map(), h3Counts: new Map(), count: 0 };
+      g = { nameCounts: new Map(), h3Counts: new Map(), galleryUris: [], count: 0 };
       groups.set(key, g);
     }
     g.count++;
+    if (g.galleryUris.length < THUMBS_PER_LOCATION) g.galleryUris.push(row.uri);
     g.nameCounts.set(displayName, (g.nameCounts.get(displayName) ?? 0) + 1);
     if (row.h3_index) {
       g.h3Counts.set(row.h3_index, (g.h3Counts.get(row.h3_index) ?? 0) + 1);
@@ -142,24 +155,68 @@ async function refresh(db: any) {
         h3Index: bestH3,
         galleryCount: g.count,
         h3Cells: sortedCells,
-      });
+        thumbs: [],
+        galleryUris: g.galleryUris,
+      } as LocationItem & { galleryUris: string[] });
     }
   }
 
   data.sort((a, b) => b.galleryCount - a.galleryCount || a.name.localeCompare(b.name));
-  const top = data.slice(0, 30);
+  const top = data.slice(0, 30) as (LocationItem & { galleryUris?: string[] })[];
+
+  const thumbs = await thumbsByGallery(ctx, top.flatMap((l) => l.galleryUris ?? []));
+  for (const l of top) {
+    l.thumbs = (l.galleryUris ?? [])
+      .map((uri) => thumbs.get(uri))
+      .filter((u): u is string => !!u);
+    delete l.galleryUris;
+  }
 
   cache = { data: top, expires: Date.now() + TTL };
   return top;
 }
 
+/**
+ * Cover thumbnail per gallery — the photo in position 0, the same one the
+ * gallery card leads with. Keyed by gallery URI so a place can pick its own.
+ */
+async function thumbsByGallery(ctx: any, galleryUris: string[]): Promise<Map<string, string>> {
+  const { db, blobUrl, getRecords } = ctx;
+  if (galleryUris.length === 0) return new Map();
+
+  const items = (await db.query(
+    `SELECT gallery, item
+     FROM "social.grain.gallery.item"
+     WHERE gallery IN (${galleryUris.map((_: string, i: number) => `$${i + 1}`).join(",")})
+     ORDER BY position ASC`,
+    galleryUris,
+  )) as { gallery: string; item: string }[];
+
+  const cover = new Map<string, string>();
+  for (const row of items) {
+    if (!cover.has(row.gallery)) cover.set(row.gallery, row.item);
+  }
+
+  const photoUris = [...new Set(cover.values())];
+  if (photoUris.length === 0) return new Map();
+  const photos = await getRecords("social.grain.photo", photoUris);
+
+  const out = new Map<string, string>();
+  for (const [gallery, photoUri] of cover) {
+    const rec = photos.get(photoUri);
+    const url = rec ? blobUrl(rec.did, rec.value.photo, "feed_thumbnail") : null;
+    if (url) out.set(gallery, url);
+  }
+  return out;
+}
+
 export default defineQuery("social.grain.unspecced.getLocations", async (ctx) => {
-  const { db, ok } = ctx;
+  const { ok } = ctx;
 
   if (cache) {
-    if (Date.now() >= cache.expires) refresh(db);
+    if (Date.now() >= cache.expires) refresh(ctx);
     return ok({ locations: cache.data });
   }
 
-  return ok({ locations: await refresh(db) });
+  return ok({ locations: await refresh(ctx) });
 });
