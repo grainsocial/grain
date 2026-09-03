@@ -47,6 +47,23 @@ rather than creating files manually. These generate files with the correct impor
 
 After modifying lexicons, always run `npx hatk generate types` to update the generated types.
 
+## The vitest overrides
+
+`vp test` runs Vitest, but vite-plus pins it to an exact version — 0.3.0 depends
+on `vitest@4.1.11` and on every `@vitest/*` package at that same exact version.
+Moving to Vitest 5 therefore takes an `overrides` block in `package.json` that
+lifts the whole set together; overriding `vitest` alone leaves `@vitest/expect`
+and friends at 4.x against a 5.x runner, which breaks at import time.
+
+Two entries are there only to keep `npm install` resolvable, not because we use
+them. `@vitest/browser-playwright` and `@vitest/browser-webdriverio` are optional
+peers of vite-plus at 4.1.11, and Vitest 5 wants `>=5.0.0`; webdriverio has no
+5.0.0 release yet, so it is pinned to `5.0.0-rc.1`. Vitest browser mode is unused
+here — the browser tests in `test/browser/` are plain Playwright, run separately
+with `npm run test:browser`.
+
+Drop the whole block once vite-plus ships a release built on Vitest 5.
+
 ## Running
 
 - `npm run dev` — start dev server (hatk + SvelteKit + PDS)

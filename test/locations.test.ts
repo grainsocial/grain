@@ -82,15 +82,62 @@ beforeAll(async () => {
 
   // Five Portland galleries across two cells, so only the newest four can
   // supply thumbnails and the densest cell has to win as the canonical one.
-  await gallery(db, { id: "p1", createdAt: "2026-05-01", h3: "8a28f002358ffff", locality: "Portland", region: "Oregon", country: "US", items: { p1b: 1, p1a: 0 } });
-  await gallery(db, { id: "p2", createdAt: "2026-05-02", h3: "8a28f002358ffff", locality: "Portland", region: "Oregon", country: "US", items: { p2a: 0 } });
-  await gallery(db, { id: "p3", createdAt: "2026-05-03", h3: "8a28f002358ffff", locality: "Portland", region: "Oregon", country: "US", items: { p3b: 1, p3a: 0 } });
-  await gallery(db, { id: "p4", createdAt: "2026-05-04", h3: "8a28f00d8227fff", locality: "Portland", region: "Oregon", country: "US", items: { p4a: 0 } });
+  await gallery(db, {
+    id: "p1",
+    createdAt: "2026-05-01",
+    h3: "8a28f002358ffff",
+    locality: "Portland",
+    region: "Oregon",
+    country: "US",
+    items: { p1b: 1, p1a: 0 },
+  });
+  await gallery(db, {
+    id: "p2",
+    createdAt: "2026-05-02",
+    h3: "8a28f002358ffff",
+    locality: "Portland",
+    region: "Oregon",
+    country: "US",
+    items: { p2a: 0 },
+  });
+  await gallery(db, {
+    id: "p3",
+    createdAt: "2026-05-03",
+    h3: "8a28f002358ffff",
+    locality: "Portland",
+    region: "Oregon",
+    country: "US",
+    items: { p3b: 1, p3a: 0 },
+  });
+  await gallery(db, {
+    id: "p4",
+    createdAt: "2026-05-04",
+    h3: "8a28f00d8227fff",
+    locality: "Portland",
+    region: "Oregon",
+    country: "US",
+    items: { p4a: 0 },
+  });
   // Newest, but empty: it takes a thumbnail slot and yields nothing.
-  await gallery(db, { id: "p5", createdAt: "2026-05-05", h3: "8a28f002358ffff", locality: "Portland", region: "Oregon", country: "US" });
+  await gallery(db, {
+    id: "p5",
+    createdAt: "2026-05-05",
+    h3: "8a28f002358ffff",
+    locality: "Portland",
+    region: "Oregon",
+    country: "US",
+  });
 
   // A second place, to prove grouping splits on the address key.
-  await gallery(db, { id: "n1", createdAt: "2026-05-06", h3: "8a2a1072b59ffff", locality: "New York", region: "New York", country: "US", items: { n1a: 0 } });
+  await gallery(db, {
+    id: "n1",
+    createdAt: "2026-05-06",
+    h3: "8a2a1072b59ffff",
+    locality: "New York",
+    region: "New York",
+    country: "US",
+    items: { n1a: 0 },
+  });
 });
 
 afterAll(async () => {
@@ -100,8 +147,7 @@ afterAll(async () => {
 const getLocations = async () =>
   (await (await server.fetch("/xrpc/social.grain.unspecced.getLocations")).json()).locations;
 
-const byName = (locations: any[], name: string) =>
-  locations.find((l: any) => l.name === name);
+const byName = (locations: any[], name: string) => locations.find((l: any) => l.name === name);
 
 const cid = (url: string) => url.match(/bafy-(\w+)/)![1];
 

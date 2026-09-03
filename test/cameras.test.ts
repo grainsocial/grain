@@ -8,7 +8,13 @@ let server: Awaited<ReturnType<typeof startTestServer>>;
 /** Insert a photo and the exif row that attributes it to a camera. */
 async function photo(
   db: any,
-  opts: { id: string; make: string | null; model: string | null; createdAt: string; exif?: boolean },
+  opts: {
+    id: string;
+    make: string | null;
+    model: string | null;
+    createdAt: string;
+    exif?: boolean;
+  },
 ) {
   const uri = `at://${ALICE}/social.grain.photo/${opts.id}`;
   await db.run(
@@ -56,8 +62,18 @@ beforeAll(async () => {
 
   // Two raw make/model pairs that normalize to the same camera. This is the
   // case the window function cannot see: it partitions on the raw pair.
-  await photo(db, { id: "r1", make: "RICOH IMAGING COMPANY, LTD.", model: "GR III", createdAt: "2026-05-01" });
-  await photo(db, { id: "r2", make: "RICOH IMAGING COMPANY, LTD.", model: "GR III", createdAt: "2026-05-03" });
+  await photo(db, {
+    id: "r1",
+    make: "RICOH IMAGING COMPANY, LTD.",
+    model: "GR III",
+    createdAt: "2026-05-01",
+  });
+  await photo(db, {
+    id: "r2",
+    make: "RICOH IMAGING COMPANY, LTD.",
+    model: "GR III",
+    createdAt: "2026-05-03",
+  });
   await photo(db, { id: "r3", make: "Ricoh", model: "GR III", createdAt: "2026-05-02" });
   await photo(db, { id: "r4", make: "Ricoh", model: "GR III", createdAt: "2026-05-04" });
   await photo(db, { id: "r5", make: "Ricoh", model: "GR III", createdAt: "2026-05-05" });

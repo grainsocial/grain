@@ -23,10 +23,7 @@
     },
     "cameraItem": {
       "type": "object",
-      "required": [
-        "camera",
-        "photoCount"
-      ],
+      "required": ["camera", "photoCount"],
       "properties": {
         "camera": {
           "type": "string"

@@ -27,15 +27,24 @@
   "devDependencies": {
     "@playwright/test": "^1",
     "@types/node": "^25.4.0",
-    "@voidzero-dev/vite-plus-core": "^0.1.11",
+    "@voidzero-dev/vite-plus-core": "^0.3.0",
     "svelte": "^5",
     "svelte-check": "^4",
     "typescript": "^5",
-    "vite-plus": "^0.1.11"
+    "vite-plus": "^0.3.0"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "@vitest/browser": "5.0.0",
+    "@vitest/browser-playwright": "5.0.0",
+    "@vitest/browser-preview": "5.0.0",
+    "@vitest/browser-webdriverio": "5.0.0-rc.1",
+    "@vitest/expect": "5.0.0",
+    "@vitest/mocker": "5.0.0",
+    "@vitest/pretty-format": "5.0.0",
+    "@vitest/snapshot": "5.0.0",
+    "@vitest/spy": "5.0.0",
+    "@vitest/utils": "5.0.0",
+    "vitest": "5.0.0"
   },
   "packageManager": "npm@11.11.1"
 }

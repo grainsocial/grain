@@ -23,11 +23,7 @@
     },
     "locationItem": {
       "type": "object",
-      "required": [
-        "name",
-        "h3Index",
-        "galleryCount"
-      ],
+      "required": ["name", "h3Index", "galleryCount"],
       "properties": {
         "name": {
           "type": "string"

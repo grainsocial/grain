@@ -164,11 +164,12 @@ async function refresh(ctx: any) {
   data.sort((a, b) => b.galleryCount - a.galleryCount || a.name.localeCompare(b.name));
   const top = data.slice(0, 30) as (LocationItem & { galleryUris?: string[] })[];
 
-  const thumbs = await thumbsByGallery(ctx, top.flatMap((l) => l.galleryUris ?? []));
+  const thumbs = await thumbsByGallery(
+    ctx,
+    top.flatMap((l) => l.galleryUris ?? []),
+  );
   for (const l of top) {
-    l.thumbs = (l.galleryUris ?? [])
-      .map((uri) => thumbs.get(uri))
-      .filter((u): u is string => !!u);
+    l.thumbs = (l.galleryUris ?? []).map((uri) => thumbs.get(uri)).filter((u): u is string => !!u);
     delete l.galleryUris;
   }
 
