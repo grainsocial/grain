@@ -49,8 +49,8 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 555       | 1022 | 45.7%   |
-| `server/og`      | 180       | 184  | 2.2%    |
+| `server/xrpc`    | 463       | 1022 | 54.7%   |
+| `server/og`      | 100       | 184  | 45.7%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/hooks`   | 36        | 125  | 71.2%   |
 | `server/helpers` | 28        | 175  | 84.0%   |
@@ -61,7 +61,6 @@ Biggest single files still outstanding:
 
 | file                                  | uncovered | covered |
 | ------------------------------------- | --------- | ------- |
-| `server/og/collage.ts`                | 81/85     | 4.7%    |
 | `server/xrpc/getNotifications.ts`     | 80/172    | 53.5%   |
 | `server/spaces/client.ts`             | 53/78     | 32.0%   |
 | `server/xrpc/mentionSearch.ts`        | 44/45     | 2.2%    |
@@ -71,11 +70,12 @@ Biggest single files still outstanding:
 | `server/xrpc/getActorProfile.ts`      | 33/33     | 0.0%    |
 | `server/xrpc/createPrivateGallery.ts` | 32/33     | 3.0%    |
 | `server/xrpc/listSharedGalleries.ts`  | 32/32     | 0.0%    |
+| `server/hooks/on-login.ts`            | 30/31     | 3.2%    |
 
-`server/feeds`, `server/hooks` and `server/hydrate` are done. What is left is
-`server/og` (four renderers), `server/spaces` (a DPoP client that needs its
-transport stubbed) and the long tail of `server/xrpc` handlers — which is the
-biggest total but the most scattered.
+`server/feeds`, `server/hooks` and `server/hydrate` are done, and `server/og`
+is past its biggest file. What is left is the long tail of `server/xrpc`
+handlers — the biggest total, most of them small and testable straight through
+`server.fetch` — plus the three OG renderers and `server/spaces`.
 
 ## Known hard spots
 
@@ -157,6 +157,19 @@ Recorded as they are hit, so a later pass does not rediscover them.
   catch assigns, so a story row with non-JSON media is a 500 either way. The
   neighbouring `aspect_ratio` fallback does work and is tested. Only reachable
   if something writes a malformed blob column, which the indexer does not.
+- OG renderers return a satori element tree rather than a bitmap, and
+  `defineOG` exposes it as `{ generate }`, so they can be called directly and
+  asserted on. But their context wants `lookup`, `blobUrl`, `getRecords` and
+  `fetchImage`, and `startTestServer().feedContext()` supplies none of those —
+  it gives `db`, `params`, `viewer`, `paginate` and the cursor helpers only. So
+  they need real stubbing; budget for it.
+- `server/og/collage.ts` is the exception: `calculateCollageLayout` is a pure
+  function over a seeded PRNG, and it is where most of `server/og` lives.
+- `searchActorsTypeahead` calls `public.api.bsky.app` directly and merges the
+  result with a local `search()`. It needs `fetch` stubbed and the hatk search
+  index, so it is left for later — do not let it make a live request in tests.
+- `getActorFavorites` is private to its own actor: it returns an empty list to
+  everyone else rather than erroring, so a test has to name the viewer.
 
 ## Ledger
 
@@ -168,3 +181,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                        |
 | 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage |
 | 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`     |
+| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`  |
