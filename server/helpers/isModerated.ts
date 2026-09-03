@@ -12,12 +12,17 @@ export async function isBlockedOrMuted(
   recipient: string,
   actor: string,
 ): Promise<boolean> {
+  // One LIMIT, after the last UNION ALL. SQLite rejects a LIMIT on a branch of
+  // a compound SELECT outright ("LIMIT clause should come after UNION ALL not
+  // before"), so a per-branch LIMIT does not merely fail to narrow the query —
+  // it fails to parse, and every caller throws.
   const rows = (await db.query(
-    `SELECT 1 FROM _mutes WHERE did = $1 AND subject = $2 LIMIT 1
+    `SELECT 1 FROM _mutes WHERE did = $1 AND subject = $2
      UNION ALL
-     SELECT 1 FROM "social.grain.graph.block" WHERE did = $1 AND subject = $2 LIMIT 1
+     SELECT 1 FROM "social.grain.graph.block" WHERE did = $1 AND subject = $2
      UNION ALL
-     SELECT 1 FROM "social.grain.graph.block" WHERE did = $2 AND subject = $1 LIMIT 1`,
+     SELECT 1 FROM "social.grain.graph.block" WHERE did = $2 AND subject = $1
+     LIMIT 1`,
     [recipient, actor],
   )) as unknown[];
   return rows.length > 0;
