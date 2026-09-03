@@ -52,10 +52,10 @@ current state, not the original snapshot.
 | `server/xrpc`    | 624       | 1022 | 38.9%   |
 | `server/og`      | 180       | 184  | 2.2%    |
 | `server/hooks`   | 118       | 125  | 5.6%    |
-| `server/feeds`   | 114       | 244  | 53.3%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/hydrate` | 69        | 146  | 52.7%   |
 | `server/helpers` | 62        | 175  | 64.6%   |
+| `server/feeds`   | 18        | 244  | 92.6%   |
 | `server/filters` | 0         | 2    | 100%    |
 | `server/labels`  | 0         | 4    | 100%    |
 
@@ -63,7 +63,6 @@ Biggest single files still outstanding:
 
 | file                                 | uncovered | covered |
 | ------------------------------------ | --------- | ------- |
-| `server/feeds/foryou.ts`             | 99/99     | 0.0%    |
 | `server/og/collage.ts`               | 81/85     | 4.7%    |
 | `server/xrpc/getNotifications.ts`    | 80/172    | 53.5%   |
 | `server/hydrate/stories.ts`          | 53/53     | 0.0%    |
@@ -73,9 +72,11 @@ Biggest single files still outstanding:
 | `server/xrpc/getStory.ts`            | 40/40     | 0.0%    |
 | `server/og/gallery.ts`               | 37/37     | 0.0%    |
 | `server/og/profile.ts`               | 36/36     | 0.0%    |
+| `server/xrpc/deleteGallery.ts`       | 35/35     | 0.0%    |
 
-`server/feeds` is down to `foryou.ts` alone — the other seven feeds are covered
-by `test/galleryFeeds.test.ts` and `test/locationFeed.test.ts`.
+`server/feeds` is done at 92.6%; every feed has tests. `server/xrpc` is the
+largest block left but it is spread thin over many small handlers, so the next
+concentrated wins are `server/og`, `server/hooks` and `server/hydrate`.
 
 ## Known hard spots
 
@@ -111,11 +112,24 @@ Recorded as they are hit, so a later pass does not rediscover them.
   defence against `normalizeCountry` changing, but it cannot be covered and
   should not be chased. The reachable version of that case — a one-word name
   that is not a country, like "Waldport" — is tested instead.
+- Two `startTestServer()` instances in one file are properly isolated, so a
+  test file can hold several fixtures under separate `describe` blocks rather
+  than one shared world. `test/foryouFeed.test.ts` uses three.
+- Every feed query embeds `blockMuteFilter`, which names `_mutes`. A fixture
+  that never creates that table gets a **500 from every feed request**, not a
+  silently skipped mute check. Create it in each world's `beforeAll`.
+- `foryou.ts` scores with a six-hour half life, so fixtures have to be dated
+  relative to `Date.now()`. Anything pinned to a calendar date scores at or
+  near zero across the board and the ranking stops discriminating.
+- `foryou.ts` has one dead knob: `CORATER_DECAY` is 0, so the decay branch
+  never runs and the `coratersSeenCount` map it feeds is maintained but has no
+  effect. Not coverable without changing the constant.
 
 ## Ledger
 
-| date       | statements | delta | what landed                                                                                |
-| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------ |
-| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                        |
-| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts` |
-| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`           |
+| date       | statements | delta | what landed                                                                                             |
+| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------------------- |
+| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                     |
+| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`              |
+| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                        |
+| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6% |
