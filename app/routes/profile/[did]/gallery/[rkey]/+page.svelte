@@ -11,7 +11,7 @@
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import { ArrowLeft, AlertTriangle, Info } from 'lucide-svelte'
+  import { ArrowLeft, AlertTriangle, Info, MapPin } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { relativeTime } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
@@ -25,6 +25,19 @@
   const galleryQ = createQuery(() => galleryQuery(galleryUri))
   const gallery = $derived((galleryQ.data as GalleryView) ?? null)
   const bskyUrl = $derived((gallery as any)?.crossPost?.url ?? null)
+
+  // Same fallback chain the card uses, so a gallery reads the same place name
+  // in either layout.
+  const locationLabel = $derived(
+    gallery?.location
+      ? (gallery.locationDisplay ?? gallery.location.name ?? gallery.location.value)
+      : null,
+  )
+  const locationHref = $derived(
+    gallery?.location && locationLabel
+      ? `/location/${encodeURIComponent(gallery.location.value)}?name=${encodeURIComponent(locationLabel)}`
+      : null,
+  )
 
   const photos = $derived((gallery?.items ?? []) as PhotoView[])
   let currentIndex = $state(0)
@@ -200,21 +213,32 @@
         {/if}
       </div>
 
-      <a class="author" href="/profile/{gallery.creator?.did}">
-        <Avatar
-          did={gallery.creator?.did ?? ''}
-          src={gallery.creator?.avatar ?? null}
-          name={gallery.creator?.displayName ?? gallery.creator?.handle}
-          size={40}
-        />
-        <span class="author-text">
-          <span class="author-name">{gallery.creator?.displayName || gallery.creator?.handle}</span>
-          <span class="author-sub">
-            {gallery.creator?.handle ? `@${gallery.creator.handle}` : ''}
-            {#if gallery.createdAt}· {relativeTime(gallery.createdAt)}{/if}
+      <!-- The location is a sibling of the author link rather than nested in
+           it: both are links, and the card only gets away with nesting them
+           because it silences the SSR placement check. -->
+      <div class="identity">
+        <a class="author" href="/profile/{gallery.creator?.did}">
+          <Avatar
+            did={gallery.creator?.did ?? ''}
+            src={gallery.creator?.avatar ?? null}
+            name={gallery.creator?.displayName ?? gallery.creator?.handle}
+            size={40}
+          />
+          <span class="author-text">
+            <span class="author-name">{gallery.creator?.displayName || gallery.creator?.handle}</span>
+            <span class="author-sub">
+              {gallery.creator?.handle ? `@${gallery.creator.handle}` : ''}
+              {#if gallery.createdAt}· {relativeTime(gallery.createdAt)}{/if}
+            </span>
           </span>
-        </span>
-      </a>
+        </a>
+        {#if locationHref && locationLabel}
+          <a class="location" href={locationHref}>
+            <MapPin size={14} />
+            <span>{locationLabel}</span>
+          </a>
+        {/if}
+      </div>
 
       <div class="thread">
         <CommentSheet open={isSplit} inline subjectUri={gallery.uri} onClose={() => {}}>
@@ -347,9 +371,28 @@
     color: inherit;
     min-width: 0;
   }
+  .identity { display: flex; flex-direction: column; gap: 8px; }
   .author-text { display: flex; flex-direction: column; min-width: 0; }
   .author-name { font-size: 15px; font-weight: 600; }
   .author-sub { font-size: 13px; color: var(--text-muted); }
+
+  .location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .location span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .location :global(svg) { flex-shrink: 0; }
+  .location:hover { color: var(--grain); }
 
   h1 {
     font-size: 18px;

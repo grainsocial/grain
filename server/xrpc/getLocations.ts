@@ -29,11 +29,16 @@ type LocationItem = {
   h3Cells: string[];
   thumbs: string[];
 };
-let cache: { data: LocationItem[]; expires: number } | null = null;
+
+/** What a map needs and nothing else — see the `pins` parameter. */
+type LocationPin = { name: string; h3Index: string; galleryCount: number };
+
+let cache: { top: LocationItem[]; pins: LocationPin[]; expires: number } | null = null;
 const TTL = 5 * 60 * 1000;
 
 type Row = {
   uri: string;
+  created_at: string;
   name: string | null;
   h3_index: string | null;
   locality: string | null;
@@ -99,6 +104,7 @@ async function refresh(ctx: any) {
   // ones the index tile shows.
   const rows = (await db.query(`
     SELECT uri,
+           created_at,
            json_extract(location, '$.name') AS name,
            json_extract(location, '$.value') AS h3_index,
            json_extract(address, '$.locality') AS locality,
@@ -112,7 +118,11 @@ async function refresh(ctx: any) {
   type Group = {
     nameCounts: Map<string, number>;
     h3Counts: Map<string, number>;
-    galleryUris: string[];
+    /** Newest few galleries, kept with their dates so a merge can re-rank. */
+    galleries: { uri: string; createdAt: string }[];
+    country: string;
+    region: string;
+    locality: string;
     count: number;
   };
   const groups = new Map<string, Group>();
@@ -125,18 +135,56 @@ async function refresh(ctx: any) {
 
     let g = groups.get(key);
     if (!g) {
-      g = { nameCounts: new Map(), h3Counts: new Map(), galleryUris: [], count: 0 };
+      g = {
+        nameCounts: new Map(),
+        h3Counts: new Map(),
+        galleries: [],
+        country: normalizeCountry(row.country) ?? "",
+        region: row.region?.trim().toLowerCase() ?? "",
+        locality: row.locality?.trim().toLowerCase() ?? "",
+        count: 0,
+      };
       groups.set(key, g);
     }
     g.count++;
-    if (g.galleryUris.length < THUMBS_PER_LOCATION) g.galleryUris.push(row.uri);
+    if (g.galleries.length < THUMBS_PER_LOCATION) {
+      g.galleries.push({ uri: row.uri, createdAt: row.created_at });
+    }
     g.nameCounts.set(displayName, (g.nameCounts.get(displayName) ?? 0) + 1);
     if (row.h3_index) {
       g.h3Counts.set(row.h3_index, (g.h3Counts.get(row.h3_index) ?? 0) + 1);
     }
   }
 
-  const data: LocationItem[] = [];
+  // A geocoder gives some galleries "Lisbon, PT" and others "Lisbon, Lisbon, PT",
+  // and keyed verbatim those are two places that each fall short of the cut.
+  // Fold a region-less group into its region-bearing twin — but only when there
+  // is exactly one candidate: "Portland, US" alongside both an Oregon and a
+  // Maine group is genuinely ambiguous, and merging it would be a lie.
+  const byCountryLocality = new Map<string, string[]>();
+  for (const [key, g] of groups) {
+    if (!g.region || !g.locality) continue;
+    const id = `${g.country}|${g.locality}`;
+    byCountryLocality.set(id, [...(byCountryLocality.get(id) ?? []), key]);
+  }
+  for (const [key, g] of [...groups]) {
+    if (g.region || !g.locality) continue;
+    const candidates = byCountryLocality.get(`${g.country}|${g.locality}`) ?? [];
+    if (candidates.length !== 1) continue;
+    const into = groups.get(candidates[0]);
+    if (!into) continue;
+
+    into.count += g.count;
+    for (const [n, c] of g.nameCounts) into.nameCounts.set(n, (into.nameCounts.get(n) ?? 0) + c);
+    for (const [h, c] of g.h3Counts) into.h3Counts.set(h, (into.h3Counts.get(h) ?? 0) + c);
+    into.galleries = [...into.galleries, ...g.galleries]
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0))
+      .slice(0, THUMBS_PER_LOCATION);
+    groups.delete(key);
+  }
+
+  type Ranked = LocationItem & { galleryUris?: string[] };
+  const data: Ranked[] = [];
   for (const g of groups.values()) {
     let bestName = "";
     let bestNameCount = 0;
@@ -156,14 +204,25 @@ async function refresh(ctx: any) {
         galleryCount: g.count,
         h3Cells: sortedCells,
         thumbs: [],
-        galleryUris: g.galleryUris,
-      } as LocationItem & { galleryUris: string[] });
+        galleryUris: g.galleries.map((x) => x.uri),
+      });
     }
   }
 
   data.sort((a, b) => b.galleryCount - a.galleryCount || a.name.localeCompare(b.name));
-  const top = data.slice(0, 30) as (LocationItem & { galleryUris?: string[] })[];
 
+  // Every place, carrying only what a map plots. Free to build — the ranking
+  // above already walked all of them — and the reason `pins` does not need its
+  // own query or its own cache.
+  const pins: LocationPin[] = data.map((l) => ({
+    name: l.name,
+    h3Index: l.h3Index,
+    galleryCount: l.galleryCount,
+  }));
+
+  // Thumbnails are the expensive part, so only the slice that renders tiles
+  // pays for them.
+  const top = data.slice(0, 30);
   const thumbs = await thumbsByGallery(
     ctx,
     top.flatMap((l) => l.galleryUris ?? []),
@@ -173,8 +232,8 @@ async function refresh(ctx: any) {
     delete l.galleryUris;
   }
 
-  cache = { data: top, expires: Date.now() + TTL };
-  return top;
+  cache = { top, pins, expires: Date.now() + TTL };
+  return cache;
 }
 
 /**
@@ -212,12 +271,17 @@ async function thumbsByGallery(ctx: any, galleryUris: string[]): Promise<Map<str
 }
 
 export default defineQuery("social.grain.unspecced.getLocations", async (ctx) => {
-  const { ok } = ctx;
+  const { ok, params } = ctx;
+  const pins = params?.pins === true || params?.pins === "true";
 
+  // Stale-while-revalidate, as before: serve what is cached and refresh behind
+  // the request. Both shapes come out of the same entry, so asking for pins
+  // never triggers a second pass over the galleries.
   if (cache) {
     if (Date.now() >= cache.expires) refresh(ctx);
-    return ok({ locations: cache.data });
+    return ok({ locations: pins ? cache.pins : cache.top });
   }
 
-  return ok({ locations: await refresh(ctx) });
+  const fresh = await refresh(ctx);
+  return ok({ locations: pins ? fresh.pins : fresh.top });
 });

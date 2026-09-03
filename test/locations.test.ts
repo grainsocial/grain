@@ -138,6 +138,63 @@ beforeAll(async () => {
     country: "US",
     items: { n1a: 0 },
   });
+
+  // Lisbon, as the geocoder actually returns it: some galleries carry a region
+  // and some do not. Keyed verbatim these are two places.
+  await gallery(db, {
+    id: "l1",
+    createdAt: "2026-05-07",
+    h3: "8a3969a40a47fff",
+    locality: "Lisbon",
+    country: "PT",
+    items: { l1a: 0 },
+  });
+  await gallery(db, {
+    id: "l2",
+    createdAt: "2026-05-08",
+    h3: "8a3969a40a47fff",
+    locality: "Lisbon",
+    country: "PT",
+    items: { l2a: 0 },
+  });
+  await gallery(db, {
+    id: "l3",
+    createdAt: "2026-05-09",
+    h3: "8a3969a41b0ffff",
+    locality: "Lisbon",
+    region: "Lisbon",
+    country: "PT",
+    items: { l3a: 0 },
+  });
+
+  // Springfield is the ambiguous case the fold must refuse: a region-less group
+  // with two region-bearing candidates in the same country.
+  await gallery(db, {
+    id: "s1",
+    createdAt: "2026-05-10",
+    h3: "8a2a1072b59ffff",
+    locality: "Springfield",
+    region: "Illinois",
+    country: "US",
+    items: { s1a: 0 },
+  });
+  await gallery(db, {
+    id: "s2",
+    createdAt: "2026-05-11",
+    h3: "8a2a1072b5bffff",
+    locality: "Springfield",
+    region: "Missouri",
+    country: "US",
+    items: { s2a: 0 },
+  });
+  await gallery(db, {
+    id: "s3",
+    createdAt: "2026-05-12",
+    h3: "8a2a1072b5affff",
+    locality: "Springfield",
+    country: "US",
+    items: { s3a: 0 },
+  });
 });
 
 afterAll(async () => {
@@ -191,6 +248,45 @@ describe("getLocations", () => {
   test("orders places by gallery count", async () => {
     const counts = (await getLocations()).map((l: any) => l.galleryCount);
     expect(counts).toEqual([...counts].sort((a: number, b: number) => b - a));
+  });
+
+  test("folds a region-less group into its only region-bearing twin", async () => {
+    const locations = await getLocations();
+    const lisbons = locations.filter((l: any) => l.name.startsWith("Lisbon"));
+
+    expect(lisbons).toHaveLength(1);
+    expect(lisbons[0].galleryCount).toBe(3);
+    // The commoner spelling wins: two galleries say "Lisbon, PT", one says
+    // "Lisbon, Lisbon, PT".
+    expect(lisbons[0].name).toBe("Lisbon, PT");
+    // Cells from both sides of the merge are kept.
+    expect(lisbons[0].h3Cells).toHaveLength(2);
+  });
+
+  test("re-ranks thumbnails across a fold rather than concatenating", async () => {
+    const lisbon = byName(await getLocations(), "Lisbon, PT");
+    // l3 is newest and came from the region-bearing group.
+    expect(lisbon.thumbs.map(cid)).toEqual(["l3a", "l2a", "l1a"]);
+  });
+
+  test("refuses to fold when the region-less group is ambiguous", async () => {
+    const names = (await getLocations()).map((l: any) => l.name);
+    // Two Springfields with regions means the bare one cannot be attributed.
+    expect(names).toContain("Springfield, Illinois, US");
+    expect(names).toContain("Springfield, Missouri, US");
+    expect(names).toContain("Springfield, US");
+  });
+
+  test("pins returns every place, lean, for the map", async () => {
+    const res = await server.fetch("/xrpc/social.grain.unspecced.getLocations?pins=true");
+    const pins = (await res.json()).locations;
+    const full = await getLocations();
+
+    expect(pins.length).toBe(full.length);
+    expect(Object.keys(pins[0]).sort()).toEqual(["galleryCount", "h3Index", "name"]);
+    // The expensive fields are exactly what pins drops.
+    expect(pins[0].thumbs).toBeUndefined();
+    expect(pins[0].h3Cells).toBeUndefined();
   });
 
   test("does not leak the internal gallery list into the response", async () => {

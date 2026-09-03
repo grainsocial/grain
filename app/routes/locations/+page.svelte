@@ -3,12 +3,16 @@
   import LocationsMap from '$lib/components/molecules/LocationsMap.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import { BASEMAP_ORIGIN } from '$lib/basemap'
   import { ArrowLeft } from 'lucide-svelte'
   import { createQuery } from '@tanstack/svelte-query'
-  import { locationsQuery } from '$lib/queries'
+  import { locationsQuery, locationPinsQuery } from '$lib/queries'
   import { goto } from '$app/navigation'
 
   const locations = createQuery(() => locationsQuery())
+  // The map plots every place; the tiles below stay on the ranked top thirty,
+  // which are the only ones that carry thumbnails.
+  const pins = createQuery(() => locationPinsQuery())
 
   const fmt = new Intl.NumberFormat('en')
   const galleries = (n: number) => `${fmt.format(n)} ${n === 1 ? 'gallery' : 'galleries'}`
@@ -17,9 +21,7 @@
     return `/location/${encodeURIComponent(loc.h3Index)}?name=${encodeURIComponent(loc.name)}`
   }
 
-  const places = $derived(
-    (locations.data ?? []).map((l) => ({ name: l.name, h3Index: l.h3Index, href: href(l) })),
-  )
+  const places = $derived(pins.data ?? [])
 
   function back() {
     if (window.history.length > 1) history.back()
@@ -28,6 +30,11 @@
 </script>
 
 <OGMeta title="Locations - grain" />
+<svelte:head>
+  <!-- The tile host is a different origin; warm DNS and TLS while the map
+       chunk is still downloading rather than after it asks for a tile. -->
+  <link rel="preconnect" href={BASEMAP_ORIGIN} crossorigin="anonymous" />
+</svelte:head>
 
 <div class="places">
   <!-- Places are spatial; a stacked list of names is the wrong shape for them.

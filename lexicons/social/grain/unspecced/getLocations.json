@@ -19,6 +19,15 @@
             }
           }
         }
+      },
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "pins": {
+            "type": "boolean",
+            "description": "Return every place carrying only what a map needs \u2014 name, h3Index, galleryCount \u2014 instead of the top 30 with thumbnails and cell lists. The full shape is ~1.1KB per place, so all of them would be ~780KB; lean it is ~70 bytes each."
+          }
+        }
       }
     },
     "locationItem": {

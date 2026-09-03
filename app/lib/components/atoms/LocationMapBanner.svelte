@@ -2,7 +2,7 @@
   import { cellToLatLng, isValidCell } from 'h3-js'
   import { onMount } from 'svelte'
   import type { Map as MapLibreMap } from 'maplibre-gl'
-  import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '$lib/basemap'
+  import { BASEMAP_SOURCE } from '$lib/basemap'
 
   let {
     h3Index,
@@ -81,13 +81,7 @@
         // `layers()` returns geometry only. No glyphs endpoint is needed:
         // this basemap carries its fonts in the tiles (verified by removing
         // it and watching labels still draw, with zero font requests).
-        sources: {
-          protomaps: {
-            type: 'vector' as const,
-            url: `pmtiles://${BASEMAP_URL}`,
-            attribution: BASEMAP_ATTRIBUTION,
-          },
-        },
+        sources: { protomaps: BASEMAP_SOURCE },
         layers: layers('protomaps', namedTheme(theme), { lang: 'en' }),
       }
     }
@@ -95,21 +89,16 @@
     // Loaded on demand: this is the only route with a map, and maplibre is far
     // too large to sit in the shared bundle for a decorative strip.
     ;(async () => {
-      const [maplibre, { Protocol }, style] = await Promise.all([
-        import('maplibre-gl'),
-        import('pmtiles'),
-        buildStyle(),
-      ])
+      const [maplibre, style] = await Promise.all([import('maplibre-gl'), buildStyle()])
       if (disposed || !container) return
-
-      const protocol = new Protocol()
-      maplibre.addProtocol('pmtiles', protocol.tile)
 
       const instance = new maplibre.Map({
         container,
         style,
         center: [lng, lat],
         zoom,
+        fadeDuration: 0,
+        refreshExpiredTiles: false,
         // Decorative: no panning, zooming, keyboard focus or controls.
         interactive: false,
         attributionControl: false,
