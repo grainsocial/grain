@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import ProfileCard from '$lib/components/molecules/ProfileCard.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import { createQuery } from '@tanstack/svelte-query'
@@ -13,27 +13,33 @@
   const items = $derived(favorites.data?.items ?? [])
 </script>
 
-<DetailHeader label="Favorited by" />
+<PageHeading title="Favorited by" back />
 
-{#if favorites.isLoading}
-  {#each { length: 5 } as _}
-    <div class="skeleton-row">
-      <Skeleton circle height="40px" />
-      <div>
-        <Skeleton width="120px" height="15px" />
-        <div style="margin-top:6px"><Skeleton width="80px" height="13px" /></div>
+<div class="page">
+  {#if favorites.isLoading}
+    {#each { length: 5 } as _}
+      <div class="skeleton-row">
+        <Skeleton circle height="40px" />
+        <div>
+          <Skeleton width="120px" height="15px" />
+          <div style="margin-top:6px"><Skeleton width="80px" height="13px" /></div>
+        </div>
       </div>
-    </div>
-  {/each}
-{:else if items.length === 0}
-  <div class="empty-state">No one has favorited this gallery yet</div>
-{:else}
-  {#each items as person (person.did)}
-    <ProfileCard profile={person} />
-  {/each}
-{/if}
+    {/each}
+  {:else if items.length === 0}
+    <div class="empty-state">No one has favorited this gallery yet</div>
+  {:else}
+    {#each items as person (person.did)}
+      <ProfileCard profile={person} />
+    {/each}
+  {/if}
+</div>
 
 <style>
+  .page {
+    margin-top: 18px;
+    padding-bottom: 32px;
+  }
   .empty-state {
     padding: 48px;
     text-align: center;

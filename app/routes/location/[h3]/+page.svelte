@@ -124,7 +124,7 @@
   }
   h1 {
     font-family: var(--font-display);
-    font-size: 30px;
+    font-size: 26px;
     font-weight: 800;
     letter-spacing: -0.015em;
     line-height: 1.15;
@@ -134,7 +134,7 @@
   }
 
   @media (max-width: 600px) {
-    h1 { font-size: 24px; }
+    h1 { font-size: 22px; }
     .hero-foot { right: 16px; bottom: 30px; }
   }
 </style>

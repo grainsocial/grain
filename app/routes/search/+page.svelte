@@ -4,7 +4,7 @@
   import Avatar from '$lib/components/atoms/Avatar.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import GalleryCardSkeleton from '$lib/components/molecules/GalleryCardSkeleton.svelte'
-  import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import { truncDid } from '$lib/utils'
   import { page } from '$app/state'
   import { searchGalleriesQuery, searchProfilesQuery } from '$lib/queries'
@@ -21,7 +21,7 @@
 </script>
 
 <OGMeta title="Search - grain" />
-<DetailHeader label='"{query}"' />
+<PageHeading title='"{query}"' back />
 
 <div class="search-tabs">
   <a class="search-tab" class:active={activeTab === 'galleries'} href="/search?q={encodeURIComponent(query)}">Galleries</a>
@@ -68,7 +68,7 @@
 {/if}
 
 <style>
-  .search-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .search-tabs { display: flex; border-bottom: 1px solid var(--border); margin-top: 18px; }
   .search-tab {
     flex: 1; padding: 10px 16px; text-align: center; font-size: 14px; font-weight: 500;
     color: var(--text-muted); cursor: pointer; border: none;

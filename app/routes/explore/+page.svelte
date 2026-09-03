@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query'
   import GalleryGrid from '$lib/components/organisms/GalleryGrid.svelte'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import { camerasQuery, locationsQuery, recentFeedQuery } from '$lib/queries'
 
@@ -19,7 +20,7 @@
 <OGMeta title="Explore — grain" description="Browse grain by camera and place." />
 
 <div class="explore">
-  <h1 class="title">Explore</h1>
+  <PageHeading title="Explore" />
 
   <section class="chip-group">
     <h2 class="chip-label">Cameras</h2>
@@ -59,16 +60,8 @@
   .explore {
     padding: 8px 0 32px;
   }
-  .title,
   .chip-group {
     padding-inline: 16px;
-  }
-  .title {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 26px;
-    letter-spacing: -0.01em;
-    margin: 18px 0 4px;
   }
   .chip-group {
     margin-top: 18px;

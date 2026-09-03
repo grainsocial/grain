@@ -1,5 +1,5 @@
 <script lang="ts">
-  import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import ProfileCard from '$lib/components/molecules/ProfileCard.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import { createQuery } from '@tanstack/svelte-query'
@@ -16,29 +16,35 @@
   }))
 </script>
 
-<DetailHeader label="Followers you know" />
+<PageHeading title="Followers you know" back />
 
-{#if known.isLoading}
-  {#each { length: 5 } as _}
-    <div class="skeleton-row">
-      <Skeleton circle height="40px" />
-      <div>
-        <Skeleton width="120px" height="15px" />
-        <div style="margin-top:6px"><Skeleton width="80px" height="13px" /></div>
+<div class="page">
+  {#if known.isLoading}
+    {#each { length: 5 } as _}
+      <div class="skeleton-row">
+        <Skeleton circle height="40px" />
+        <div>
+          <Skeleton width="120px" height="15px" />
+          <div style="margin-top:6px"><Skeleton width="80px" height="13px" /></div>
+        </div>
       </div>
+    {/each}
+  {:else if (known.data?.items ?? []).length === 0}
+    <div class="empty-state">
+      None of the people you follow also follow {profile.data?.displayName || 'this person'}
     </div>
-  {/each}
-{:else if (known.data?.items ?? []).length === 0}
-  <div class="empty-state">
-    None of the people you follow also follow {profile.data?.displayName || 'this person'}
-  </div>
-{:else}
-  {#each known.data?.items ?? [] as person (person.did)}
-    <ProfileCard profile={person} />
-  {/each}
-{/if}
+  {:else}
+    {#each known.data?.items ?? [] as person (person.did)}
+      <ProfileCard profile={person} />
+    {/each}
+  {/if}
+</div>
 
 <style>
+  .page {
+    margin-top: 18px;
+    padding-bottom: 32px;
+  }
   .empty-state {
     padding: 48px;
     text-align: center;

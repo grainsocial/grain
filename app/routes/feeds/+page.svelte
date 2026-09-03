@@ -1,6 +1,6 @@
 <script lang="ts">
   import { GripVertical } from 'lucide-svelte'
-  import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import PinButton from '$lib/components/atoms/PinButton.svelte'
   import { pinnedFeeds, DEFAULT_PINNED, feedIcon, reorderFeeds } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
@@ -86,7 +86,7 @@
 </script>
 
 <OGMeta title="My Feeds - grain" />
-<DetailHeader label="My Feeds" />
+<PageHeading title="My Feeds" back />
 
 <div class="feeds-page" bind:this={listEl}>
   {#each $pinnedFeeds as feed, i (feed.id)}
@@ -143,6 +143,8 @@
   .feeds-page {
     display: flex;
     flex-direction: column;
+    margin-top: 18px;
+    padding-bottom: 32px;
   }
   .feed-row {
     display: flex;

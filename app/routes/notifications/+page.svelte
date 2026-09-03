@@ -6,7 +6,7 @@
   import { markNotificationsSeen } from '$lib/preferences'
   import { viewer as viewerStore } from '$lib/stores'
   import { groupNotifications, type GroupedNotification } from '$lib/notifications'
-  import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import NotificationItem from '$lib/components/atoms/NotificationItem.svelte'
   import Spinner from '$lib/components/atoms/Spinner.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
@@ -71,26 +71,35 @@
 </script>
 
 <OGMeta title="Notifications - grain" />
-<DetailHeader label="Notifications" />
 
-{#if notifications.isLoading}
-  <div class="center"><Spinner /></div>
-{:else if grouped.length === 0}
-  <div class="empty">No notifications yet</div>
-{:else}
-  <div class="notification-list">
-    {#each grouped as group (group.notification.uri)}
-      <NotificationItem {group} />
-    {/each}
-    {#if hasMore}
-      <div use:infiniteScroll={() => { if (!loadingMore) loadMore() }} class="sentinel">
-        {#if loadingMore}<Spinner />{/if}
-      </div>
-    {/if}
-  </div>
-{/if}
+<div class="notifications">
+  <PageHeading title="Notifications" />
+
+  {#if notifications.isLoading}
+    <div class="center"><Spinner /></div>
+  {:else if grouped.length === 0}
+    <div class="empty">No notifications yet</div>
+  {:else}
+    <div class="notification-list">
+      {#each grouped as group (group.notification.uri)}
+        <NotificationItem {group} />
+      {/each}
+      {#if hasMore}
+        <div use:infiniteScroll={() => { if (!loadingMore) loadMore() }} class="sentinel">
+          {#if loadingMore}<Spinner />{/if}
+        </div>
+      {/if}
+    </div>
+  {/if}
+</div>
 
 <style>
+  .notifications {
+    padding: 0 0 32px;
+  }
+  .notification-list {
+    margin-top: 18px;
+  }
   .center {
     display: flex;
     justify-content: center;
@@ -101,10 +110,6 @@
     padding: 60px 20px;
     color: var(--text-muted);
     font-size: 14px;
-  }
-  .notification-list {
-    display: flex;
-    flex-direction: column;
   }
   .sentinel {
     display: flex;
