@@ -49,13 +49,13 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 385       | 1022 | 62.3%   |
+| `server/xrpc`    | 346       | 1022 | 66.1%   |
 | `server/og`      | 100       | 184  | 45.7%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
-| `server/hooks`   | 36        | 125  | 71.2%   |
-| `server/helpers` | 28        | 175  | 84.0%   |
+| `server/helpers` | 26        | 175  | 85.1%   |
 | `server/feeds`   | 18        | 244  | 92.6%   |
 | `server/hydrate` | 13        | 146  | 91.1%   |
+| `server/hooks`   | 7         | 125  | 94.4%   |
 
 Biggest single files still outstanding:
 
@@ -66,16 +66,17 @@ Biggest single files still outstanding:
 | `server/og/gallery.ts`                | 37/37     | 0.0%    |
 | `server/og/profile.ts`                | 36/36     | 0.0%    |
 | `server/xrpc/deleteGallery.ts`        | 35/35     | 0.0%    |
-| `server/xrpc/getActorProfile.ts`      | 33/33     | 0.0%    |
 | `server/xrpc/createPrivateGallery.ts` | 32/33     | 3.0%    |
 | `server/xrpc/listSharedGalleries.ts`  | 32/32     | 0.0%    |
-| `server/hooks/on-login.ts`            | 30/31     | 3.2%    |
 | `server/xrpc/getPrivateGallery.ts`    | 28/28     | 0.0%    |
+| `server/spaces/dpop.ts`               | 27/29     | 6.9%    |
+| `server/xrpc/getSpaceMembers.ts`      | 25/25     | 0.0%    |
 
-`server/feeds`, `server/hooks` and `server/hydrate` are done, and `server/og`
-is past its biggest file. What is left is the long tail of `server/xrpc`
-handlers — the biggest total, most of them small and testable straight through
-`server.fetch` — plus the three OG renderers and `server/spaces`.
+`server/feeds`, `server/hooks`, `server/hydrate` and `server/helpers` are
+done. What is left splits in two: the private-gallery and spaces handlers,
+which all go through `spaces/client.ts` and need its transport stubbed, and a
+handful of standalone pieces — the two OG renderers, `mentionSearch`,
+`deleteGallery`, `searchActorsTypeahead`.
 
 ## Known hard spots
 
@@ -133,9 +134,10 @@ Recorded as they are hit, so a later pass does not rediscover them.
   regression test in `test/commitHooks.test.ts`. When testing a hook, assert
   that it resolves, not only what it pushed.
 - `social.grain.story` rows need `media` and `aspect_ratio`; both are NOT NULL.
-- `_preferences` is another `server/setup` table the harness skips, alongside
-  `_mutes`. Create it in `beforeAll` before touching notification prefs or
-  badge counts.
+- `_mutes` is the **only** table the harness is missing. `_preferences`,
+  `_oauth_sessions`, `_labels`, `_push_tokens` and the rest are all created —
+  an earlier note here wrongly listed `_preferences` alongside `_mutes`. A
+  `CREATE TABLE IF NOT EXISTS` for it is harmless but unnecessary.
 - Lexicon-required parameters are enforced before a handler runs, so a handler's
   own `if (!param) return ok({})` guard for a required param is unreachable —
   the request gets a 400 instead. `getStories`, `getStoryArchive` and `getStory`
@@ -181,6 +183,17 @@ Recorded as they are hit, so a later pass does not rediscover them.
   unseen count; `test/notificationSources.test.ts` needs a much bigger one to
   reach all nine sources. Do not merge them — the small fixture's assertions
   are exact counts that any addition breaks.
+- Procedures (POST) work through the same harness as queries: pass an init
+  object as `server.fetchAs(did, path, { method, headers, body })`. See
+  `test/actorProfile.test.ts`, which drives muteActor and then reads the flag
+  back off getActorProfile.
+- The on-login hook is callable exactly like the on-commit ones, but its
+  context is bigger: `did`, `db`, `lookup`, `ensureRepo`, `createRecord`,
+  `putRecord`, `deleteRecord`. It also reads the Bluesky profile straight off
+  the user's PDS, so `fetch` has to be stubbed with `vi.stubGlobal`.
+- Its two backgrounded calls — `ensureRepo` and the space-support probe — are
+  fire-and-forget with `.catch()` attached, so neither can fail a test, but a
+  `fetch` stub will see the probe's request too.
 
 ## Ledger
 
@@ -194,3 +207,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`                          |
 | 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                       |
 | 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications |
+| 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                               |
