@@ -11,3 +11,4 @@ certs/
 *.p8
 public/
 *.tsbuildinfo
+coverage/

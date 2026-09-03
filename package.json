@@ -9,6 +9,7 @@
     "check": "vp check && svelte-check",
     "format": "vp format",
     "test": "vp test",
+    "test:coverage": "vitest run --config vitest.coverage.config.ts --coverage",
     "test:browser": "npx playwright test"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
   "devDependencies": {
     "@playwright/test": "^1",
     "@types/node": "^25.4.0",
+    "@vitest/coverage-v8": "^5.0.0",
     "@voidzero-dev/vite-plus-core": "^0.3.0",
     "svelte": "^5",
     "svelte-check": "^4",
