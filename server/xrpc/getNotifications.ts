@@ -86,7 +86,8 @@ function notificationUnion(select: "count" | "full", extraFilter: string): strin
     SELECT ${mentionCommentCols} FROM "social.grain.comment"
     WHERE facets LIKE '%' || $1 || '%' AND did != $1
       AND subject NOT IN (SELECT uri FROM "social.grain.gallery" WHERE did = $1)
-      AND reply_to NOT IN (SELECT uri FROM "social.grain.comment" WHERE did = $1)
+      AND (reply_to IS NULL
+           OR reply_to NOT IN (SELECT uri FROM "social.grain.comment" WHERE did = $1))
       ${blockMuteNotifFilter()} ${extraFilter}
 
     UNION ALL
