@@ -181,6 +181,30 @@ describe("searchActorsTypeahead", () => {
   });
 });
 
+describe("mentionSearch, searching within one account's galleries", () => {
+  const path = (scope: string, search: string) =>
+    `/xrpc/parts.page.mention.search?service=${encodeURIComponent("at://did:plc:svc/parts.page.mention.service/self")}&scope=${encodeURIComponent(scope)}&search=${encodeURIComponent(search)}`;
+
+  test("finds an account's own gallery by a word in it", async () => {
+    const { results } = await get(path(ALICE, "Sunsets"));
+    expect(results.map((r: any) => r.name)).toEqual(["Portland Sunsets"]);
+  });
+
+  test("will not reach another account's galleries", async () => {
+    // Bob's "Mountain Trails" matches the term, but the scope is Alice.
+    const { results } = await get(path(ALICE, "Mountain"));
+    expect(results).toEqual([]);
+    // ...and it is genuinely findable when the scope is his.
+    expect((await get(path(BOB, "Mountain"))).results.map((r: any) => r.name)).toEqual([
+      "Mountain Trails",
+    ]);
+  });
+
+  test("finds nothing in an account with no matching gallery", async () => {
+    expect((await get(path(ALICE, "kayaking"))).results).toEqual([]);
+  });
+});
+
 describe("mentionSearch, searching users", () => {
   test("finds a grain user by name", async () => {
     const { results } = await get(

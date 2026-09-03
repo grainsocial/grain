@@ -1,7 +1,13 @@
 # Server test coverage
 
-**Goal: 80% statement coverage of `server/**/*.ts`.**
+**Goal: 80% statement coverage of `server/**/*.ts`. Met — 81.97%.**
 Baseline when this started, 2026-09-03: **30.68%** (623/2030 statements).
+
+Spaces is out of scope (see below); excluding it the rest of `server/` is at
+**94.2%**. What remains uncovered outside spaces is roughly 100 statements of
+`JSON.parse` fallbacks against malformed columns the indexer cannot write, and
+a handful of similar defensive branches. They are listed below but are not
+worth chasing — several are provably unreachable.
 
 This file is the running state of that work. Each pass updates the ledger at the
 bottom, so the next pass can start by reading it instead of re-deriving where
@@ -264,3 +270,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                                 |
 | 2026-09-03 | **80.14%** | +4.38 | the three OG cards and the font loader — `test/ogCards.test.ts`. **Goal met.** Excluding spaces, 92.1%                                                          |
 | 2026-09-04 | 81.62%     | +1.48 | resolveActor and the country helpers — `test/resolveAndCountry.test.ts`; getGallery and EXIF formatting — `test/galleryDetail.test.ts`. Excluding spaces, 93.8% |
+| 2026-09-04 | 81.97%     | +0.35 | mentionSearch scoped to one account's galleries, the last search path left                                                                                      |
