@@ -49,7 +49,7 @@ current state, not the original snapshot.
 
 | area             | uncovered | of   | covered |
 | ---------------- | --------- | ---- | ------- |
-| `server/xrpc`    | 346       | 1022 | 66.1%   |
+| `server/xrpc`    | 265       | 1022 | 74.1%   |
 | `server/og`      | 100       | 184  | 45.7%   |
 | `server/spaces`  | 92        | 122  | 24.6%   |
 | `server/helpers` | 26        | 175  | 85.1%   |
@@ -59,24 +59,29 @@ current state, not the original snapshot.
 
 Biggest single files still outstanding:
 
-| file                                  | uncovered | covered |
-| ------------------------------------- | --------- | ------- |
-| `server/spaces/client.ts`             | 53/78     | 32.0%   |
-| `server/xrpc/mentionSearch.ts`        | 44/45     | 2.2%    |
-| `server/og/gallery.ts`                | 37/37     | 0.0%    |
-| `server/og/profile.ts`                | 36/36     | 0.0%    |
-| `server/xrpc/deleteGallery.ts`        | 35/35     | 0.0%    |
-| `server/xrpc/createPrivateGallery.ts` | 32/33     | 3.0%    |
-| `server/xrpc/listSharedGalleries.ts`  | 32/32     | 0.0%    |
-| `server/xrpc/getPrivateGallery.ts`    | 28/28     | 0.0%    |
-| `server/spaces/dpop.ts`               | 27/29     | 6.9%    |
-| `server/xrpc/getSpaceMembers.ts`      | 25/25     | 0.0%    |
+| file                                   | uncovered | covered |
+| -------------------------------------- | --------- | ------- |
+| `server/og/gallery.ts`                 | 37/37     | 0.0%    |
+| `server/og/profile.ts`                 | 36/36     | 0.0%    |
+| `server/xrpc/searchActorsTypeahead.ts` | 21/21     | 0.0%    |
+| `server/og/story.ts`                   | 17/17     | 0.0%    |
+| `server/xrpc/getLocations.ts`          | 13/102    | 87.2%   |
+| `server/xrpc/mentionSearch.ts`         | 13/45     | 71.1%   |
+| `server/helpers/resolveActor.ts`       | 12/13     | 7.7%    |
+| `server/hydrate/galleries.ts`          | 12/83     | 85.5%   |
+| `server/helpers/country.ts`            | 10/45     | 77.8%   |
+| `server/og/fonts.ts`                   | 9/9       | 0.0%    |
 
-`server/feeds`, `server/hooks`, `server/hydrate` and `server/helpers` are
-done. What is left splits in two: the private-gallery and spaces handlers,
-which all go through `spaces/client.ts` and need its transport stubbed, and a
-handful of standalone pieces — the two OG renderers, `mentionSearch`,
-`deleteGallery`, `searchActorsTypeahead`.
+**Spaces is out of scope** (decided 2026-09-03). Everything behind
+`spaces/client.ts` — the private and shared gallery handlers, `getSpaceMembers`,
+`addSpaceMember`, `getPrivateBlob`, `getSpaceSupport`, and the client and DPoP
+modules themselves — needs a stubbed remote PDS to test, and other things
+matter more. That is 304 statements, 12.5% covered.
+
+Excluding it, the rest of `server/` is at **85.1%**, so the 80% goal is
+comfortably reachable without touching spaces. What is left there: the three OG
+renderers and their font loader, `searchActorsTypeahead`, and small remainders
+in `getLocations`, `mentionSearch`, `hydrate/galleries` and `helpers/country`.
 
 ## Known hard spots
 
@@ -194,6 +199,22 @@ Recorded as they are hit, so a later pass does not rediscover them.
 - Its two backgrounded calls — `ensureRepo` and the space-support probe — are
   fire-and-forget with `.catch()` attached, so neither can fail a test, but a
   `fetch` stub will see the probe's request too.
+- Anything that writes to a PDS — `deleteRecord`, `createRecord`, `putRecord` —
+  cannot be driven through `server.fetch`: the harness has no OAuth config and
+  the request fails with "No OAuth config — cannot write to PDS" before
+  reaching the handler's logic. Call the procedure directly instead;
+  `defineProcedure` returns `{ handler }` untouched, exactly like `defineHook`.
+  `test/deletion.test.ts` does this, passing a `deleteRecord` that records the
+  calls rather than making them.
+- `ctx.search` is backed by an index the harness never populates — neither
+  `db.run` nor `server.seed` reaches it — so every search-backed path answers
+  empty. `mentionSearch`'s browse mode (a scope with no query) is plain SQL and
+  is the half worth asserting; the fuzzy paths can only be checked as far as
+  "answers, and answers empty". Same limit applies to `searchActorsTypeahead`.
+- `deleteGallery` builds the gallery uri from `viewer.did`, so naming someone
+  else's rkey just addresses a gallery of yours that does not exist. The
+  query's `AND did = $2` cannot be violated through the interface and removing
+  it fails nothing — the construction is what makes it safe, not the condition.
 
 ## Ledger
 
@@ -208,3 +229,4 @@ Recorded as they are hit, so a later pass does not rediscover them.
 | 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                       |
 | 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications |
 | 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                               |
+| 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                             |
