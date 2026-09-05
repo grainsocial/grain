@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Home, Plus, Settings, Bell, Search, LogOut, Compass } from 'lucide-svelte'
+  import { Home, ImagePlus, Settings, Bell, Search, LogOut, Compass } from 'lucide-svelte'
   import Avatar from '../atoms/Avatar.svelte'
   import Button from '../atoms/Button.svelte'
   import LoginModal from './LoginModal.svelte'
@@ -72,10 +72,6 @@
         </span>
         <span class="nav-label">Notifications</span>
       </a>
-      <a href="/create" class="nav-item" class:active={page.url.pathname === '/create'}>
-        <Plus size={24} />
-        <span class="nav-label">Create</span>
-      </a>
       {#if $viewer}
         <a href="/profile/{$viewer.did}" class="nav-item" class:active={page.url.pathname === `/profile/${$viewer.did}`}>
           <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />
@@ -88,6 +84,13 @@
       </a>
     {/if}
   </div>
+
+  {#if $isAuthenticated}
+    <a href="/create" class="create-btn" class:active={page.url.pathname === '/create'}>
+      <ImagePlus size={22} />
+      <span class="nav-label">Create</span>
+    </a>
+  {/if}
 
   <div class="sidebar-bottom">
     {#if $isAuthenticated}
@@ -174,6 +177,26 @@
   .nav-item.logout:hover { color: var(--danger); background: var(--danger-bg); }
   .nav-label { white-space: nowrap; }
 
+  /* Create is the sidebar's only primary action, so it sits below the nav list
+     as a filled button rather than blending into the item column. */
+  .create-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 52px;
+    margin: 16px 6px 0;
+    border-radius: 999px;
+    background: var(--grain-btn);
+    color: #fff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    transition: background 0.12s;
+  }
+  .create-btn :global(svg) { flex: none; }
+  .create-btn:hover, .create-btn.active { background: var(--grain-btn-dim); }
+
   /* Icon rail: same items, no labels, so a route's own sub-nav is the only
      labelled column on screen. */
   .rail .nav-item {
@@ -186,6 +209,11 @@
   .rail .sidebar-footer,
   .rail .sidebar-tagline { display: none; }
   .rail .sidebar-top { align-items: center; padding: 6px 0 22px; }
+  .rail .create-btn {
+    width: 52px;
+    align-self: center;
+    margin: 16px 0 0;
+  }
   .rail .logo-text { font-size: 0; }
   .rail .logo-text::before { content: 'g'; font-size: 26px; }
 

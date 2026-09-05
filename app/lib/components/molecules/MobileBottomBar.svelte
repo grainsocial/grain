@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Image, Compass, Plus, Bell } from 'lucide-svelte'
+  import { Image, Compass, ImagePlus, Bell } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
   import { isAuthenticated, loginModalOpen, viewer } from '$lib/stores'
@@ -36,7 +36,7 @@
       class:active={page.url.pathname === '/create'}
       onclick={() => goto('/create')}
     >
-      <Plus size={22} />
+      <ImagePlus size={22} />
     </button>
     <button
       class="mobile-tab"

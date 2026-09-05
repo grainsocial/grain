@@ -93,21 +93,23 @@
   .avatar-btn { cursor: pointer; }
   .avatar-btn:hover { opacity: 0.85; }
 
+  /* The layers share one grid cell rather than stacking with absolute
+     positioning: `inset: 0` resolves against the padding box, so a loaded photo
+     painted over the story ring's gap and only the fallback ever showed one. */
   .ring-inner {
-    position: relative;
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    display: flex;
+    display: grid;
     padding: 0;
     overflow: hidden;
   }
   .avatar {
+    grid-area: 1 / 1;
     width: 100%;
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    flex: none;
   }
   /* Neutral placeholder behind the image so first paint has no text or empty
      hole: the photo fades in over it once loaded. */
@@ -115,8 +117,6 @@
     background: linear-gradient(135deg, var(--grain), var(--grain-dim));
   }
   .avatar.img {
-    position: absolute;
-    inset: 0;
     opacity: 0;
     transition: opacity 0.15s ease;
   }
@@ -124,8 +124,6 @@
     opacity: 1;
   }
   .fallback {
-    position: absolute;
-    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;

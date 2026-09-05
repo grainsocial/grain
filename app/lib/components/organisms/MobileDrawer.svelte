@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Home, Search, Compass, Bell, Plus, User, Settings } from 'lucide-svelte'
+  import { Home, Search, Compass, Bell, ImagePlus, User, Settings } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { isAuthenticated, viewer } from '$lib/stores'
   import Button from '../atoms/Button.svelte'
@@ -54,9 +54,6 @@
     <button class="drawer-link" onclick={() => nav('/notifications')}>
       <span class="drawer-link-icon"><Bell size={18} /></span> Notifications
     </button>
-    <button class="drawer-link" onclick={() => nav('/create')}>
-      <span class="drawer-link-icon"><Plus size={18} /></span> Create
-    </button>
     {#if $viewer}
       {@const viewerDid = $viewer.did}
       <button class="drawer-link" onclick={() => nav(`/profile/${viewerDid}`)}>
@@ -65,6 +62,10 @@
     {/if}
     <button class="drawer-link" onclick={() => nav('/settings')}>
       <span class="drawer-link-icon"><Settings size={18} /></span> Settings
+    </button>
+
+    <button class="drawer-create" onclick={() => nav('/create')}>
+      <ImagePlus size={18} /> Create
     </button>
   {/if}
 
@@ -155,6 +156,27 @@
     align-items: center;
     justify-content: center;
   }
+  /* Matches the desktop nav: Create is the only primary action here, so it sits
+     below the list as a filled button rather than another row in it. */
+  .drawer-create {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 8px;
+    margin-top: 14px;
+    border-radius: 999px;
+    background: var(--grain-btn);
+    color: #fff;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .drawer-create:hover { background: var(--grain-btn-dim); }
   .drawer-sign-in {
     padding: 0 8px 12px;
     border-bottom: 1px solid var(--border);
