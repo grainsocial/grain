@@ -67,6 +67,9 @@
   const favoriteItems = $derived(favorites.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const stories = createQuery(() => storiesQuery(did))
   const hasStory = $derived((stories.data?.length ?? 0) > 0)
+  const storyViewed = $derived(
+    !isOwnProfile && hasStory && (stories.data?.every((s) => s.viewer?.viewed) ?? false)
+  )
   const knownFollowers = createQuery(() => ({
     ...knownFollowersQuery(did, viewerDid ?? ''),
     enabled: !!viewerDid && viewerDid !== did,
@@ -229,7 +232,7 @@
     </div>
     <div class="profile-info">
       <div class="avatar-col">
-        <Avatar {did} src={p.avatar ?? null} name={p.displayName} {hasStory} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
+        <Avatar {did} src={p.avatar ?? null} name={p.displayName} {hasStory} {storyViewed} onclick={hasStory ? () => (showStoryViewer = true) : p.avatar ? () => (lightboxSrc = p.avatar!) : undefined} />
       </div>
       <div class="meta-col">
       <div class="profile-name">{p.displayName || p.handle || did}</div>

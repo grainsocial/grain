@@ -5,6 +5,7 @@
   import { callXrpc } from '$hatk/client'
   import { storiesQuery, storyAuthorsQuery, storyQuery, commentThreadQuery } from '$lib/queries'
   import { viewer as viewerStore } from '$lib/stores'
+  import { firstUnviewedIndex, markStoriesViewed } from '$lib/stories'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import ReportButton from '$lib/components/molecules/ReportButton.svelte'
   import CommentSheet from '$lib/components/organisms/CommentSheet.svelte'
@@ -70,9 +71,30 @@
     enabled: !!singleStory,
   }))
 
+  // Open each author on their first unwatched story, as the phone apps do. Your
+  // own stories replay from the start: you have obviously seen them all.
+  let positionedFor = $state<string | null>(null)
+  $effect(() => {
+    if (singleStory || !stories.data || positionedFor === currentDid) return
+    positionedFor = currentDid
+    currentStoryIndex = currentDid === $viewerStore?.did ? 0 : firstUnviewedIndex(stories.data)
+    progress = 0
+  })
+
   const currentStory = $derived(
     singleStory ? (singleStoryData.data ?? undefined) : stories.data?.[currentStoryIndex]
   )
+
+  // A story counts as watched once a quarter of it has played, matching iOS.
+  // The timer pauses with the story, so a story held open still counts and a
+  // story skipped past does not.
+  const VIEWED_AT = 0.25
+  let viewedReported = $state('')
+  function reportViewed() {
+    if (!currentStory || viewedReported === currentStory.uri || !$viewerStore) return
+    viewedReported = currentStory.uri
+    markStoriesViewed([currentStory], queryClient)
+  }
   const totalStories = $derived(singleStory ? 1 : (stories.data?.length ?? 0))
   const isOwn = $derived(currentDid === $viewerStore?.did)
   const bskyUrl = $derived((currentStory as any)?.crossPost?.url ?? null)
@@ -148,6 +170,7 @@
     timer = setInterval(() => {
       if (paused) return
       progress += TICK / DURATION
+      if (progress >= VIEWED_AT) reportViewed()
       if (progress >= 1) {
         next()
       }

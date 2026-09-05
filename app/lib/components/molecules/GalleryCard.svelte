@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
   import { callXrpc } from '$hatk/client'
+  import { isCaughtUp } from '$lib/stories'
   import { goto } from '$app/navigation'
   import Avatar from '../atoms/Avatar.svelte'
   import Facepile from '../atoms/Facepile.svelte'
@@ -43,8 +44,12 @@
   const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
   const storyAuthors = createQuery(() => storyAuthorsQuery())
-  const creatorHasStory = $derived(
-    storyAuthors.data?.some((a) => a.profile.did === gallery.creator?.did) ?? false
+  const creatorStoryAuthor = $derived(
+    storyAuthors.data?.find((a) => a.profile.did === gallery.creator?.did)
+  )
+  const creatorHasStory = $derived(!!creatorStoryAuthor)
+  const creatorStoryViewed = $derived(
+    !isOwner && !!creatorStoryAuthor && isCaughtUp(creatorStoryAuthor)
   )
   let deleting = $state(false)
   let reportOpen = $state(false)
@@ -135,7 +140,7 @@
   <header class="card-header">
     <ProfilePopover did={gallery.creator?.did ?? ''}>
       <a href="/profile/{gallery.creator?.did}" class="author-chip">
-        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} name={displayName} size={40} hasStory={creatorHasStory} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
+        <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} name={displayName} size={40} hasStory={creatorHasStory} storyViewed={creatorStoryViewed} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
         <div class="author-info">
           <span class="author-name-row">
             <span class="author-handle">{displayName}</span>

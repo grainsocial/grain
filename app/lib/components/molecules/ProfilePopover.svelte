@@ -2,6 +2,7 @@
   import { createQuery } from '@tanstack/svelte-query'
   import type { GrainActorDefsProfileViewDetailed, GetKnownFollowersFollowerItem } from '$hatk/client'
   import { actorProfileQuery, knownFollowersQuery, storyAuthorsQuery } from '$lib/queries'
+  import { isCaughtUp } from '$lib/stories'
   import { viewer } from '$lib/stores'
   import { compactCount } from '$lib/utils'
   import Avatar from '../atoms/Avatar.svelte'
@@ -34,7 +35,9 @@
   }))
 
   const storyAuthors = createQuery(() => storyAuthorsQuery())
-  const hasStory = $derived(storyAuthors.data?.some((a) => a.profile.did === did) ?? false)
+  const storyAuthor = $derived(storyAuthors.data?.find((a) => a.profile.did === did))
+  const hasStory = $derived(!!storyAuthor)
+  const storyViewed = $derived(!isOwnProfile && !!storyAuthor && isCaughtUp(storyAuthor))
 
   const p = $derived(profile.data as GrainActorDefsProfileViewDetailed | undefined)
   const knownList = $derived(
@@ -74,7 +77,7 @@
     <div class="popover" onmouseenter={handleEnter} onmouseleave={handleLeave}>
       <div class="popover-header">
         <a href="/profile/{p.did}" class="popover-avatar-link">
-          <Avatar did={p.did} src={p.avatar ?? null} name={p.displayName ?? p.handle} size={48} {hasStory} />
+          <Avatar did={p.did} src={p.avatar ?? null} name={p.displayName ?? p.handle} size={48} {hasStory} {storyViewed} />
         </a>
         {#if !isOwnProfile && $viewer}
           <FollowButton did={p.did} {viewerFollow} />

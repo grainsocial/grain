@@ -3,6 +3,7 @@
   import { Plus } from 'lucide-svelte'
   import Avatar from '../atoms/Avatar.svelte'
   import { storyAuthorsQuery } from '$lib/queries'
+  import { isCaughtUp } from '$lib/stories'
   import { isAuthenticated, viewer } from '$lib/stores'
 
   let {
@@ -18,7 +19,12 @@
   const viewerDid = $derived($viewer?.did)
   const viewerAvatar = $derived($viewer?.avatar)
   const ownAuthor = $derived(authors.data?.find((a) => a.profile.did === viewerDid))
-  const otherAuthors = $derived(authors.data?.filter((a) => a.profile.did !== viewerDid) ?? [])
+  // Unwatched authors first, each group in the server's newest-first order,
+  // so what is left to watch sits at the front of the strip.
+  const otherAuthors = $derived.by(() => {
+    const others = authors.data?.filter((a) => a.profile.did !== viewerDid) ?? []
+    return [...others.filter((a) => !isCaughtUp(a)), ...others.filter((a) => isCaughtUp(a))]
+  })
 
   let menuOpen = $state(false)
   let menuAnchor = $state<HTMLButtonElement | undefined>()
@@ -78,6 +84,7 @@
           name={author.profile.displayName ?? author.profile.handle}
           size={68}
           hasStory
+          storyViewed={isCaughtUp(author)}
         />
         <span class="label">{author.profile.displayName ?? author.profile.handle}</span>
       </button>

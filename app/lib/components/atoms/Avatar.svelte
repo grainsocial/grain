@@ -8,6 +8,7 @@
     name = null,
     size = undefined,
     hasStory = false,
+    storyViewed = false,
     onclick = undefined,
   }: {
     did: string
@@ -18,6 +19,8 @@
         which is how a caller makes the avatar responsive without JS. */
     size?: number | undefined
     hasStory?: boolean
+    /** Grey ring: the story is there but has been watched. */
+    storyViewed?: boolean
     onclick?: (() => void) | undefined
   } = $props()
 
@@ -62,11 +65,11 @@
 {/snippet}
 
 {#if onclick}
-  <button type="button" class="avatar-btn" class:story-ring={hasStory} style={sizeVar} {onclick}>
+  <button type="button" class="avatar-btn" class:story-ring={hasStory} class:viewed={hasStory && storyViewed} style={sizeVar} {onclick}>
     {@render avatarContent()}
   </button>
 {:else}
-  <span class="avatar-wrap" class:story-ring={hasStory} style={sizeVar}>
+  <span class="avatar-wrap" class:story-ring={hasStory} class:viewed={hasStory && storyViewed} style={sizeVar}>
     {@render avatarContent()}
   </span>
 {/if}
@@ -144,5 +147,11 @@
   .story-ring .ring-inner {
     background: var(--bg-root);
     padding: max(2px, calc(var(--avatar-size, 34px) * 0.037));
+  }
+  /* Watched to the end: the ring stays so the story is still reachable, but
+     it drops to grey, matching the phone apps. */
+  .story-ring.viewed {
+    background: var(--text-secondary);
+    opacity: 0.55;
   }
 </style>
