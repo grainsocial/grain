@@ -18,7 +18,7 @@
   .mobile-top {
     display: none;
     position: fixed;
-    top: 0;
+    top: var(--ios-banner-h, 0px);
     left: 0;
     right: 0;
     z-index: 60;

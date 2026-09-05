@@ -23,6 +23,12 @@
   import { loadPreferences } from '$lib/preferences'
   import { initTheme } from '$lib/theme'
   import { afterNavigate } from '$app/navigation'
+  import { page } from '$app/state'
+
+  // Grain Social on the App Store. Safari on iOS turns the meta tag below into
+  // its own banner above the page, which it dismisses and remembers on its own,
+  // and which reads "Open" rather than "View" once the app is installed.
+  const IOS_APP_ID = '6747730230'
 
   $effect(() => initTheme())
 
@@ -103,6 +109,13 @@
     }
   })
 </script>
+
+<svelte:head>
+  <!-- app-argument is the page being viewed, so an install that already handles
+       it as a universal link (see .well-known/apple-app-site-association) opens
+       there instead of at its own home screen. -->
+  <meta name="apple-itunes-app" content="app-id={IOS_APP_ID}, app-argument={page.url.href}" />
+</svelte:head>
 
 <QueryClientProvider client={data.queryClient}>
   <Shell>
