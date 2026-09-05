@@ -137,6 +137,13 @@ CREATE TABLE _space_support (
   checked_at TEXT NOT NULL
 );
 
+CREATE TABLE _story_views (
+  did TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (did, subject)
+);
+
 CREATE TABLE "app.bsky.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
