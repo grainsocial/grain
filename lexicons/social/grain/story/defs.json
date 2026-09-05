@@ -44,7 +44,11 @@
       "type": "object",
       "description": "Metadata about the requesting account's relationship with the story.",
       "properties": {
-        "fav": { "type": "string", "format": "at-uri" }
+        "fav": { "type": "string", "format": "at-uri" },
+        "viewed": {
+          "type": "boolean",
+          "description": "Whether the requesting account has watched this story. Only present when true."
+        }
       }
     }
   }

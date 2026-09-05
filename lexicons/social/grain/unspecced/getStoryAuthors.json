@@ -28,7 +28,16 @@
       "properties": {
         "profile": { "type": "ref", "ref": "social.grain.actor.defs#profileView" },
         "storyCount": { "type": "integer" },
-        "latestAt": { "type": "string", "format": "datetime" }
+        "latestAt": { "type": "string", "format": "datetime" },
+        "lastViewedAt": {
+          "type": "string",
+          "format": "datetime",
+          "description": "createdAt of the newest of this author's live stories the requesting account has watched. Compare against latestAt to tell whether the viewer is caught up. Only present for an authenticated viewer who has watched at least one."
+        },
+        "unviewedCount": {
+          "type": "integer",
+          "description": "How many of this author's live stories the requesting account has not watched. Only present for an authenticated viewer."
+        }
       }
     }
   }

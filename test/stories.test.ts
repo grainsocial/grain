@@ -69,6 +69,18 @@ async function get(path: string, as?: string) {
 /** For the cases where the interesting part is the status code. */
 const status = async (path: string) => (await server.fetch(path)).status;
 
+async function post(nsid: string, body: unknown, as?: string) {
+  const path = `/xrpc/${nsid}`;
+  const init = {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  };
+  return as ? server.fetchAs(as, path, init) : server.fetch(path, init);
+}
+
+const storyUri = (did: string, id: string) => `at://${did}/social.grain.story/${id}`;
+
 const ids = (stories: any[]) => stories.map((s) => s.uri.split("/").pop());
 
 beforeAll(async () => {
@@ -77,6 +89,14 @@ beforeAll(async () => {
 
   await db.run(
     `CREATE TABLE IF NOT EXISTS _mutes (
+       did TEXT NOT NULL, subject TEXT NOT NULL, created_at TEXT NOT NULL,
+       PRIMARY KEY (did, subject)
+     )`,
+  );
+  // Setup scripts do not run under the test server, so the private tables
+  // the story handlers read are created here, as _mutes is above.
+  await db.run(
+    `CREATE TABLE IF NOT EXISTS _story_views (
        did TEXT NOT NULL, subject TEXT NOT NULL, created_at TEXT NOT NULL,
        PRIMARY KEY (did, subject)
      )`,
@@ -307,13 +327,13 @@ describe("getStoryAuthors", () => {
     expect(authors.map((a: any) => a.profile.did)).toEqual([ALICE, BOB, DAVE, ERIN]);
   });
 
-  test("counts each author's live stories, ignoring expired ones", async () => {
+  test("counts each author's live stories, ignoring expired and hidden ones", async () => {
     const { authors } = await get("/xrpc/social.grain.unspecced.getStoryAuthors");
     const alice = authors.find((a: any) => a.profile.did === ALICE);
-    // a1, a2, a3, a-bad and a-hidden are inside the window; the label filter
-    // here runs in SQL over _labels, which a self-label does not populate, so
-    // a-hidden still counts. a-old is outside the window.
-    expect(alice.storyCount).toBe(5);
+    // a1, a2, a3 and a-bad: what getStories serves. a-old is outside the
+    // window and a-hidden is self-labelled spam, which getStories drops, so
+    // the count agrees with what the viewer will actually show.
+    expect(alice.storyCount).toBe(4);
   });
 
   test("omits taken-down authors", async () => {
@@ -384,5 +404,112 @@ describe("getStory", () => {
 
   test("rejects a request with no story uri", async () => {
     expect(await status("/xrpc/social.grain.unspecced.getStory")).toBe(400);
+  });
+});
+
+// Viewed state is private to the viewer and lives in _story_views. Bob does
+// the watching here; nothing he marks is visible to Alice, and nothing he
+// marks changes what an anonymous request sees.
+describe("markStoriesViewed", () => {
+  const MARK = "social.grain.unspecced.markStoriesViewed";
+  const authors = async (as?: string) =>
+    (await get("/xrpc/social.grain.unspecced.getStoryAuthors", as)).authors;
+  const alice = async (as?: string) =>
+    (await authors(as)).find((a: any) => a.profile.did === ALICE);
+
+  test("requires a session", async () => {
+    const res = await post(MARK, { stories: [storyUri(ALICE, "a1")] });
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
+  test("rejects an empty list, a non-list, and a list that is too long", async () => {
+    expect((await post(MARK, { stories: [] }, BOB)).status).toBeGreaterThanOrEqual(400);
+    expect((await post(MARK, {}, BOB)).status).toBeGreaterThanOrEqual(400);
+    expect((await post(MARK, { stories: "at://x" }, BOB)).status).toBeGreaterThanOrEqual(400);
+    expect((await post(MARK, { stories: ["not-a-uri"] }, BOB)).status).toBeGreaterThanOrEqual(400);
+    const many = Array.from({ length: 101 }, (_, i) => storyUri(ALICE, `x${i}`));
+    expect((await post(MARK, { stories: many }, BOB)).status).toBeGreaterThanOrEqual(400);
+  });
+
+  test("before anything is watched, an authenticated viewer sees every story unwatched", async () => {
+    const a = await alice(BOB);
+    expect(a.unviewedCount).toBe(a.storyCount);
+    expect(a.lastViewedAt).toBeUndefined();
+
+    const { stories } = await get(`/xrpc/social.grain.unspecced.getStories?actor=${ALICE}`, BOB);
+    expect(stories.some((s: any) => s.viewer?.viewed)).toBe(false);
+  });
+
+  test("an anonymous request carries no viewed state at all", async () => {
+    const a = await alice();
+    expect(a.unviewedCount).toBeUndefined();
+    expect(a.lastViewedAt).toBeUndefined();
+  });
+
+  test("marking a story flags it on the story and moves the author's high-water mark", async () => {
+    // a3 is the oldest live story; a1 is the newest.
+    const res = await post(MARK, { stories: [storyUri(ALICE, "a3")] }, BOB);
+    expect(res.status).toBe(200);
+
+    const { stories } = await get(`/xrpc/social.grain.unspecced.getStories?actor=${ALICE}`, BOB);
+    const a3 = stories.find((s: any) => s.uri.endsWith("/a3"));
+    const a1 = stories.find((s: any) => s.uri.endsWith("/a1"));
+    expect(a3.viewer.viewed).toBe(true);
+    // Bob favorited a1 but has not watched it: the fav stays, viewed stays off.
+    expect(a1.viewer).toEqual({ fav: `at://${BOB}/social.grain.favorite/f1` });
+
+    const a = await alice(BOB);
+    expect(a.lastViewedAt).toBe(a3.createdAt);
+    expect(a.unviewedCount).toBe(a.storyCount - 1);
+  });
+
+  test("the single-story endpoint agrees", async () => {
+    const seen = await get(
+      `/xrpc/social.grain.unspecced.getStory?story=${storyUri(ALICE, "a3")}`,
+      BOB,
+    );
+    expect(seen.story.viewer).toEqual({ viewed: true });
+    const unseen = await get(
+      `/xrpc/social.grain.unspecced.getStory?story=${storyUri(ALICE, "a1")}`,
+      BOB,
+    );
+    expect(unseen.story.viewer).toBeUndefined();
+  });
+
+  test("watching everything catches the viewer up", async () => {
+    const { stories } = await get(`/xrpc/social.grain.unspecced.getStories?actor=${ALICE}`, BOB);
+    const res = await post(MARK, { stories: stories.map((s: any) => s.uri) }, BOB);
+    expect(res.status).toBe(200);
+
+    const a = await alice(BOB);
+    // Every story getStories served is watched, and a-hidden, which it never
+    // serves, is not counted either: the ring can actually reach grey.
+    expect(a.unviewedCount).toBe(0);
+    expect(a.lastViewedAt).toBe(a.latestAt);
+  });
+
+  test("marking twice is not an error and stores one row", async () => {
+    expect((await post(MARK, { stories: [storyUri(ALICE, "a3")] }, BOB)).status).toBe(200);
+    const rows = await server.db.query(
+      `SELECT * FROM _story_views WHERE did = $1 AND subject = $2`,
+      [BOB, storyUri(ALICE, "a3")],
+    );
+    expect(rows).toHaveLength(1);
+  });
+
+  test("a URI that is not a known story is ignored rather than stored", async () => {
+    expect((await post(MARK, { stories: [storyUri(ALICE, "nope")] }, BOB)).status).toBe(200);
+    const rows = await server.db.query(`SELECT * FROM _story_views WHERE subject = $1`, [
+      storyUri(ALICE, "nope"),
+    ]);
+    expect(rows).toHaveLength(0);
+  });
+
+  test("one account's views are invisible to another", async () => {
+    const a = await alice(ERIN);
+    expect(a.lastViewedAt).toBeUndefined();
+    expect(a.unviewedCount).toBe(a.storyCount);
+    const { stories } = await get(`/xrpc/social.grain.unspecced.getStories?actor=${ALICE}`, ERIN);
+    expect(stories.some((s: any) => s.viewer?.viewed)).toBe(false);
   });
 });

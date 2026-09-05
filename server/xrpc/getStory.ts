@@ -4,6 +4,7 @@ import type { GrainActorProfile, Story, Label } from "$hatk";
 import { lookupCrossPosts } from "../hydrate/galleries.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 import { resolveAtUri } from "../helpers/resolveHandle.ts";
+import { lookupViewedStories, storyViewerState } from "../helpers/storyViews.ts";
 
 export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
   const { db, ok } = ctx;
@@ -99,8 +100,11 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
     labels.push({ src: row.did, uri: row.uri, val: sl.val, cts: new Date().toISOString() });
   }
 
-  // Cross-post lookup
-  const crossPostMap = await lookupCrossPosts(db, [row], "story");
+  // Cross-post lookup, and whether the viewer has already watched it
+  const [crossPostMap, viewed] = await Promise.all([
+    lookupCrossPosts(db, [row], "story"),
+    lookupViewedStories(db, ctx.viewer?.did, [row.uri]),
+  ]);
   const crossPostUrl = crossPostMap.get(row.uri);
   const crossPost = crossPostUrl ? { url: crossPostUrl } : undefined;
 
@@ -120,6 +124,7 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
     ...(crossPost ? { crossPost } : {}),
     ...(labels.length > 0 ? { labels } : {}),
     createdAt: row.created_at,
+    ...storyViewerState(undefined, viewed.has(row.uri)),
   });
 
   return ok({ story });

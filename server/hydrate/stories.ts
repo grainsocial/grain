@@ -5,6 +5,7 @@ import { countComments } from "./comments.ts";
 import { formatStoredLocation } from "../helpers/formatLocation.ts";
 import { lookupCrossPosts } from "./galleries.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { lookupViewedStories, storyViewerState } from "../helpers/storyViews.ts";
 
 export type StoryRow = {
   uri: string;
@@ -24,7 +25,7 @@ export type StoryRow = {
 export async function hydrateStories(ctx: BaseContext, actor: string, rows: StoryRow[]) {
   const storyUris = rows.map((r) => r.uri);
 
-  // Resolve author profile + fav/comment counts + viewer favs
+  // Resolve author profile + fav/comment counts + viewer favs and views
   const viewerFavs = new Map<string, string>();
   if (ctx.viewer?.did && storyUris.length > 0) {
     const favRows = (await ctx.db.query(
@@ -34,6 +35,7 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
     )) as { subject: string; uri: string }[];
     for (const row of favRows) viewerFavs.set(row.subject, row.uri);
   }
+  const viewed = await lookupViewedStories(ctx.db, ctx.viewer?.did, storyUris);
 
   const [profiles, handleMap] = await Promise.all([
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
@@ -152,7 +154,7 @@ export async function hydrateStories(ctx: BaseContext, actor: string, rows: Stor
       ...(crossPosts.has(row.uri) ? { crossPost: { url: crossPosts.get(row.uri)! } } : {}),
       expired: Date.now() - new Date(row.created_at).getTime() > 24 * 60 * 60 * 1000,
       commentCount: commentCounts.get(row.uri) ?? 0,
-      ...(viewerFavs.has(row.uri) ? { viewer: { fav: viewerFavs.get(row.uri) } } : {}),
+      ...storyViewerState(viewerFavs.get(row.uri), viewed.has(row.uri)),
     });
   });
 

@@ -166,8 +166,9 @@ Table names contain dots, so bracket them: `[social.grain.photo]`.
 Everything under a collection name is re-derivable — backfill fetches it from
 the network. The underscore-prefixed tables are not: `_oauth_keys` (change them
 and every session is void), `_oauth_sessions`, `_push_tokens`, `_preferences`,
-`_labels`, `_mutes`, `_reports`, `_space_invites`, `_space_support`, and the
-`status` column of `_repos`, which is where an admin takedown lives.
+`_labels`, `_mutes`, `_story_views`, `_reports`, `_space_invites`,
+`_space_support`, and the `status` column of `_repos`, which is where an admin
+takedown lives.
 
 `_repos` is the trap: the row is mostly backfill bookkeeping that rebuilds
 itself, but `status` is administrator intent that nothing reconstructs. Treating

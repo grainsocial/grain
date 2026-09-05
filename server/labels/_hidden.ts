@@ -25,3 +25,16 @@ export function hideLabelsFilter(uriExpr: string): string {
       )
   )`;
 }
+
+/** SQL fragment: NOT EXISTS subquery filtering rows the author self-labelled
+ *  with a hide-severity value. `selfLabelTable` is the record's self-label
+ *  child table, e.g. "social.grain.story__labels_self_labels". The story
+ *  hydrator drops these before serving, so a count that includes them is a
+ *  count of stories nobody will ever be shown. */
+export function hideSelfLabelsFilter(selfLabelTable: string, uriExpr: string): string {
+  const inList = [...HIDE_LABELS].map((v) => `'${v}'`).join(",");
+  return `NOT EXISTS (
+    SELECT 1 FROM "${selfLabelTable}" sl
+    WHERE sl.parent_uri = ${uriExpr} AND sl.val IN (${inList})
+  )`;
+}
