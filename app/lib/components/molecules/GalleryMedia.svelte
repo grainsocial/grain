@@ -193,7 +193,7 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    color: var(--danger);
+    color: var(--heart);
     animation: heart-pop 0.8s ease-out forwards;
     z-index: 5;
   }

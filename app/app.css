@@ -43,6 +43,9 @@
   --text-faint: #64748b;
   --danger: #f87171;
   --danger-bg: #1c1117;
+  /* Favourites. Set once, not per theme: the heart is the same red in light
+     and dark, as it is on iOS and Android. */
+  --heart: #ff4066;
 }
 
 :root[data-theme="light"] {

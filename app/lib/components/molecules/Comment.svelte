@@ -190,7 +190,7 @@
     transition: color 0.15s;
   }
   .fav-btn:hover { color: var(--text-secondary); }
-  .fav-btn.faved { color: var(--danger); }
+  .fav-btn.faved { color: var(--heart); }
   .fav-count {
     font-size: 12px;
     color: var(--text-muted);

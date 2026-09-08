@@ -607,7 +607,7 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    color: var(--grain);
+    color: var(--heart);
     animation: heart-pop 0.8s ease-out forwards;
     z-index: 5;
   }
@@ -761,7 +761,7 @@
     transition: color 0.15s;
   }
   .fav-btn:hover { opacity: 0.8; }
-  .fav-btn.faved { color: var(--grain); }
+  .fav-btn.faved { color: var(--heart); }
 
   /* Contained comment sheet */
   .contained-sheet-wrapper {
