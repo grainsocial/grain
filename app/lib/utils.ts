@@ -14,11 +14,6 @@ export function blobUrl(did: string, blobRef: unknown): string | null {
   return `https://cdn.bsky.app/img/avatar/plain/${did}/${p.ref.$link}@jpeg`;
 }
 
-/** Get initials for fallback avatar. */
-export function initials(did: string): string {
-  return did.split(":")[2]?.slice(0, 2).toUpperCase() || "??";
-}
-
 /** Truncate a DID for display. */
 export function truncDid(did: string): string {
   if (did.length <= 24) return did;

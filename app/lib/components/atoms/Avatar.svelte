@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { blobUrl, initials } from '$lib/utils'
+  import { blobUrl } from '$lib/utils'
 
   let {
     did,
@@ -25,7 +25,6 @@
   } = $props()
 
   const url = $derived(src || blobUrl(did, blob))
-  const fallback = $derived(name?.[0]?.toUpperCase() || (did ? initials(did) : ''))
   let imgError = $state(false)
   $effect(() => {
     void url
@@ -47,9 +46,14 @@
         onerror={() => (imgError = true)}
       />
     {:else}
-      {#if fallback}
-        <span class="avatar fallback">{fallback}</span>
-      {/if}
+      <!-- No photo: a grey silhouette, as on iOS. Plenty of accounts have no
+           avatar, and a letter made every one of them look like a brand badge. -->
+      <span class="avatar fallback" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <circle cx="12" cy="8" r="4.5" />
+          <path d="M3.5 21.5c0-4.6 3.8-7.8 8.5-7.8s8.5 3.2 8.5 7.8z" />
+        </svg>
+      </span>
     {/if}
   </span>
 {/snippet}
@@ -109,15 +113,16 @@
     background: color-mix(in srgb, var(--text-secondary) 14%, var(--bg-surface));
   }
   .fallback {
-    background: linear-gradient(135deg, var(--grain), var(--grain-dim));
+    background: color-mix(in srgb, var(--text-secondary) 24%, var(--bg-surface));
+    color: color-mix(in srgb, var(--text-secondary) 70%, var(--bg-surface));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: var(--font-display);
-    font-weight: 700;
-    color: var(--on-grain);
-    /* Tracks the avatar rather than a JS-computed inner size. */
-    font-size: calc(var(--avatar-size, 34px) * 0.32);
+  }
+  /* Tracks the avatar rather than a JS-computed inner size. */
+  .fallback svg {
+    width: calc(var(--avatar-size, 34px) * 0.5);
+    height: calc(var(--avatar-size, 34px) * 0.5);
   }
 
   /* Band ~3% of the diameter, gap ~3.7%, leaving the photo around 87%.
