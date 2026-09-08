@@ -26,16 +26,10 @@
 
   const url = $derived(src || blobUrl(did, blob))
   const fallback = $derived(name?.[0]?.toUpperCase() || (did ? initials(did) : ''))
-  let loaded = $state(false)
   let imgError = $state(false)
-  let imgEl: HTMLImageElement | undefined = $state(undefined)
   $effect(() => {
     void url
-    loaded = false
     imgError = false
-    // A cached image may have finished loading before hydration attached the
-    // onload handler; if so, reveal it immediately instead of staying hidden.
-    if (imgEl?.complete && imgEl.naturalWidth > 0) loaded = true
   })
 
   // Only pin the size when one was given; otherwise inherit.
@@ -44,16 +38,12 @@
 
 {#snippet avatarContent()}
   <span class="ring-inner">
-    <span class="avatar bg"></span>
     {#if url && !imgError}
       <img
-        bind:this={imgEl}
         src={url}
         alt=""
         class="avatar img"
-        class:loaded={loaded}
         loading="lazy"
-        onload={() => (loaded = true)}
         onerror={() => (imgError = true)}
       />
     {:else}
@@ -111,19 +101,15 @@
     border-radius: 50%;
     object-fit: cover;
   }
-  /* Neutral placeholder behind the image so first paint has no text or empty
-     hole: the photo fades in over it once loaded. */
-  .avatar.bg {
-    background: linear-gradient(135deg, var(--grain), var(--grain-dim));
-  }
+  /* The image is never hidden behind client state: the server renders it
+     visible, the browser paints nothing until it has decoded, and the quiet
+     grey behind it shows through in the meantime. A cached photo is there on
+     the first frame with no wait for hydration. */
   .avatar.img {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-  }
-  .avatar.img.loaded {
-    opacity: 1;
+    background: color-mix(in srgb, var(--text-secondary) 14%, var(--bg-surface));
   }
   .fallback {
+    background: linear-gradient(135deg, var(--grain), var(--grain-dim));
     display: flex;
     align-items: center;
     justify-content: center;
