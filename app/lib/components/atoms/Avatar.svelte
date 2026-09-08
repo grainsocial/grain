@@ -79,6 +79,8 @@
     border-radius: 50%;
     line-height: 0;
     display: inline-flex;
+    /* Photo and fallback have different baselines; middle ignores them. */
+    vertical-align: middle;
     flex: none;
     padding: 0;
     border: none;
