@@ -76,7 +76,7 @@
 {#if isGrouped}
   <!-- Grouped notification -->
   <div class="notif grouped" role="group">
-    <div class="notif-icon icon-grain">
+    <div class="notif-icon" class:icon-heart={isFavorite} class:icon-grain={!isFavorite}>
       {#if isFavorite}<Heart size={18} fill="currentColor" />
       {:else if isFollow}<UserPlus size={18} fill="currentColor" />
       {:else if isComment}<MessageSquare size={16} fill="currentColor" />
@@ -135,7 +135,7 @@
 {:else}
   <!-- Single notification -->
   <div class="notif" role="group">
-    <div class="notif-icon icon-grain">
+    <div class="notif-icon" class:icon-heart={isFavorite} class:icon-grain={!isFavorite}>
       {#if isFavorite}<Heart size={18} fill="currentColor" />
       {:else if isFollow}<UserPlus size={18} fill="currentColor" />
       {:else if isComment}<MessageSquare size={16} fill="currentColor" />
@@ -194,6 +194,10 @@
   }
   .grouped .notif-icon {
     height: 34px;
+  }
+  /* Favourites take the heart colour, everything else the accent, as on iOS. */
+  .icon-heart {
+    color: var(--heart);
   }
   .icon-grain {
     color: var(--grain);
