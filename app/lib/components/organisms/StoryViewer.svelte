@@ -277,9 +277,12 @@
     if (e.key === 'ArrowLeft') prev()
   }
 
-  // Restart timer when the current story changes (including after refetch)
+  // Restart the timer when the story changes. Keyed on the URI, not the story
+  // object: marking a story viewed patches the query cache with a new object
+  // for the same story, and that must not send the progress bar back to zero.
+  const currentStoryUri = $derived(currentStory?.uri ?? '')
   $effect(() => {
-    if (currentStory?.uri) startTimer()
+    if (currentStoryUri) startTimer()
     return () => stopTimer()
   })
 
