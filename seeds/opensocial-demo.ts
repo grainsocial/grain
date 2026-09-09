@@ -1,7 +1,7 @@
-// Demo data for the groups branch against the opensocial dev stack. Every
-// account here already exists there — packages/cli's seed-demo makes the
-// generic ones, apps/community's seed makes the cycling club's — so this only
-// gives them Grain profiles, galleries, and offers of a gallery to a group.
+// Demo data for the groups branch against the opensocial dev stack: the
+// cycling club, in Grain. The riders already exist there — apps/community's
+// seed founds the club and its members — so this only gives them a Grain
+// profile, a gallery of ride photos, and an offer of one to the club's pool.
 //
 // The club (Peninsula Riders) is looked up on the host by handle. Without it
 // the ride galleries still get written; only the offers are skipped.
@@ -15,39 +15,17 @@ import exifr from "exifr";
 import { seed } from "@hatk/hatk/seed";
 
 const { createAccount, createRecord, uploadBlob } = seed({
-  pds: process.env.PDS_URL ?? "http://localhost:2683",
+  pds: process.env.PDS_URL ?? "http://localhost:2583",
   password: process.env.SEED_PASSWORD ?? "demo-pass",
 });
 
 const now = Date.now();
 const ago = (minutes: number) => new Date(now - minutes * 60_000).toISOString();
 
-const mia = await createAccount("member-mia.test");
-const fay = await createAccount("founder-fay.test");
-
-const miaAvatar = await uploadBlob(mia, "./seeds/images/alice.png");
-await createRecord(
-  mia,
-  "social.grain.actor.profile",
-  {
-    displayName: "Mia",
-    description: "Rides, mostly. Sometimes the coast.",
-    avatar: miaAvatar,
-    createdAt: ago(300),
-  },
-  { rkey: "self" },
-);
-await createRecord(
-  fay,
-  "social.grain.actor.profile",
-  { displayName: "Fay", description: "Founded Open House. Trees and trails.", createdAt: ago(300) },
-  { rkey: "self" },
-);
-
 // What the app records when you upload a photo, read here from the file
 // instead of the browser: make, model, lens, exposure. Every number is scaled
 // by a million, the way social.grain.photo.exif asks for it. Photos without
-// EXIF — the older placeholder images — simply get no record.
+// EXIF simply get no record.
 const SCALE = 1_000_000;
 async function exifOf(path: string) {
   const raw = await exifr
@@ -90,8 +68,10 @@ async function exifOf(path: string) {
   return Object.keys(out).length ? out : null;
 }
 
+type Rider = Awaited<ReturnType<typeof createAccount>>;
+
 async function gallery(
-  who: typeof mia,
+  who: Rider,
   rkey: string,
   title: string,
   description: string,
@@ -136,65 +116,6 @@ async function gallery(
   console.log(`[seed] ${who.handle}: ${title} (${photos.length} photos) ${g.uri}`);
   return g;
 }
-
-await gallery(
-  mia,
-  "skyline-loop",
-  "Skyline Loop, the foggy bit",
-  "Got dropped on the climb, got these instead.",
-  [
-    { file: "skyline.jpg", alt: "Skyline at dusk from the bridge", ratio: [4, 3] },
-    {
-      file: "skyline-portrait.jpg",
-      alt: "Vertical view of the skyline through an alley",
-      ratio: [3, 4],
-    },
-  ],
-  180,
-);
-await gallery(
-  mia,
-  "night-market",
-  "Night market",
-  "Clement St after the ride.",
-  [{ file: "city-night.jpg", alt: "Neon signs reflecting on wet pavement", ratio: [4, 3] }],
-  90,
-);
-await gallery(
-  mia,
-  "film-cafe",
-  "Film café",
-  "Half a roll, one table.",
-  [{ file: "film-cafe.jpg", alt: "A café table on expired film", ratio: [4, 3] }],
-  30,
-);
-await gallery(
-  mia,
-  "coast-ride",
-  "Coast ride",
-  "Pescadero and back before the fog.",
-  [{ file: "film-portrait.jpg", alt: "A rider at the turnaround, on film", ratio: [3, 4] }],
-  20,
-);
-await gallery(
-  mia,
-  "deer",
-  "The deer again",
-  "Same clearing, same deer, better light.",
-  [{ file: "wildlife.jpg", alt: "A deer at the edge of the clearing", ratio: [4, 3] }],
-  10,
-);
-await gallery(
-  fay,
-  "forest-trail",
-  "Forest trail",
-  "Sunday, no plan.",
-  [
-    { file: "forest.jpg", alt: "Sunlight filtering through tall trees", ratio: [4, 3] },
-    { file: "wildlife.jpg", alt: "A deer at the edge of the clearing", ratio: [4, 3] },
-  ],
-  240,
-);
 
 // ------------------------------------------------- the club and its riders
 //
@@ -245,12 +166,7 @@ async function rider(handle: string, displayName: string, description: string, a
  * member's own repo — it is a request, not a change to the club — and stays
  * pending until whoever holds the club's admit answers with a group.item.
  */
-async function offer(
-  who: Awaited<ReturnType<typeof createAccount>>,
-  g: { uri: string },
-  rkey: string,
-  minutesAgo: number,
-) {
+async function offer(who: Rider, g: { uri: string }, rkey: string, minutesAgo: number) {
   if (!club) return;
   await createRecord(
     who,
