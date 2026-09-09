@@ -11,6 +11,7 @@
 //
 // Ride photos are Bryan Newbold's, from bnewbold.net — see
 // seeds/images/rides/CREDITS.md.
+import exifr from "exifr";
 import { seed } from "@hatk/hatk/seed";
 
 const { createAccount, createRecord, uploadBlob } = seed({
@@ -42,6 +43,52 @@ await createRecord(
   { displayName: "Fay", description: "Founded Open House. Trees and trails.", createdAt: ago(300) },
   { rkey: "self" },
 );
+
+// What the app records when you upload a photo, read here from the file
+// instead of the browser: make, model, lens, exposure. Every number is scaled
+// by a million, the way social.grain.photo.exif asks for it. Photos without
+// EXIF — the older placeholder images — simply get no record.
+const SCALE = 1_000_000;
+async function exifOf(path: string) {
+  const raw = await exifr
+    .parse(path, {
+      pick: [
+        "Make",
+        "Model",
+        "LensMake",
+        "LensModel",
+        "ExposureTime",
+        "FNumber",
+        "ISO",
+        "FocalLengthIn35mmFormat",
+        "Flash",
+        "DateTimeOriginal",
+      ],
+    })
+    .catch(() => null);
+  if (!raw) return null;
+  const out: Record<string, string | number> = {};
+  for (const [from, to] of [
+    ["Make", "make"],
+    ["Model", "model"],
+    ["LensMake", "lensMake"],
+    ["LensModel", "lensModel"],
+  ] as const) {
+    if (raw[from]) out[to] = String(raw[from]).trim();
+  }
+  for (const [from, to] of [
+    ["ExposureTime", "exposureTime"],
+    ["FNumber", "fNumber"],
+    ["ISO", "iSO"],
+    ["FocalLengthIn35mmFormat", "focalLengthIn35mmFormat"],
+  ] as const) {
+    if (raw[from]) out[to] = Math.round(raw[from] * SCALE);
+  }
+  if (raw.Flash != null) out.flash = String(raw.Flash);
+  if (raw.DateTimeOriginal instanceof Date)
+    out.dateTimeOriginal = raw.DateTimeOriginal.toISOString();
+  return Object.keys(out).length ? out : null;
+}
 
 async function gallery(
   who: typeof mia,
@@ -76,6 +123,15 @@ async function gallery(
       { gallery: g.uri, item: photo.uri, position: i, createdAt: ago(minutesAgo) },
       { rkey: `${rkey}-i${i}` },
     );
+    const exif = await exifOf(`./seeds/images/${p.file}`);
+    if (exif) {
+      await createRecord(
+        who,
+        "social.grain.photo.exif",
+        { photo: photo.uri, ...exif, createdAt: ago(minutesAgo) },
+        { rkey: `${rkey}-x${i}` },
+      );
+    }
   }
   console.log(`[seed] ${who.handle}: ${title} (${photos.length} photos) ${g.uri}`);
   return g;
