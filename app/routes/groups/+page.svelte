@@ -30,7 +30,7 @@
         <span class="av"><Avatar did={group.did} src={group.avatar ?? null} name={group.displayName ?? group.handle} size={48} /></span>
         <span class="t">
           <b>{group.displayName ?? group.handle} <span class="group-mark"><UsersRound size={14} /></span></b>
-          <span class="meta">{group.poolCount ?? 0} in the pool · @{group.handle}</span>
+          <span class="meta">{group.poolCount ?? 0} {group.poolCount === 1 ? 'gallery' : 'galleries'} · @{group.handle}</span>
           {#if group.description}<span class="desc">{group.description}</span>{/if}
         </span>
       </a>
