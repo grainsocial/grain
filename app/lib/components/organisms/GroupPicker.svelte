@@ -78,7 +78,7 @@
             <span class="av"><Avatar did={group.did} src={group.avatar ?? null} name={group.displayName ?? group.handle} size={36} /></span>
             <span class="t">
               <b>{group.displayName ?? group.handle}</b>
-              <span>{group.memberCount ?? 0} {group.memberCount === 1 ? 'member' : 'members'} · {group.poolCount ?? 0} in the pool</span>
+              <span>{group.memberCount ?? 0} {group.memberCount === 1 ? 'member' : 'members'} · {group.poolCount ?? 0} {group.poolCount === 1 ? 'gallery' : 'galleries'}</span>
             </span>
             {#if standing?.status === 'accepted'}
               <span class="chip ok"><Check size={12} /> In the pool</span>

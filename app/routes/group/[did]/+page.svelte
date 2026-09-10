@@ -152,7 +152,7 @@
 {:else}
   {@const g = group.data}
   {@const name = g.displayName || g.handle}
-  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description="{g.poolCount ?? 0} galleries in the pool" />
+  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description="{g.poolCount ?? 0} galleries" />
 
   <div class="mobile-back"><DetailHeader label={name} /></div>
 
@@ -176,7 +176,10 @@
         <span class="profile-handle">@{g.handle}</span>
       </div>
       <div class="stat-row">
-        <span><strong>{(g.poolCount ?? 0).toLocaleString()}</strong> in the pool</span>
+        <span
+          ><strong>{(g.poolCount ?? 0).toLocaleString()}</strong>
+          {(g.poolCount ?? 0) === 1 ? 'gallery' : 'galleries'}</span
+        >
         <span><strong>{(g.memberCount ?? 0).toLocaleString()}</strong> {g.memberCount === 1 ? 'member' : 'members'}</span>
         {#if acting}
           <button class="stat-link" type="button" onclick={() => setTab('queue')}><strong>{pendingCount.toLocaleString()}</strong> waiting for review</button>
@@ -267,7 +270,7 @@
     <GalleryGrid
       items={items}
       loading={feed.isLoading}
-      emptyText="Nothing in the pool yet."
+      emptyText="No galleries yet."
       hasMore={feed.hasNextPage}
       loadingMore={feed.isFetchingNextPage}
       onLoadMore={() => feed.fetchNextPage()}
