@@ -13,7 +13,7 @@
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import { ArrowLeft, AlertTriangle, Info, MapPin, ChevronRight } from 'lucide-svelte'
+  import { ArrowLeft, AlertTriangle, Info, MapPin } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { relativeTime } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
@@ -304,9 +304,9 @@
     <section class="more">
       <a class="more-head" href="/profile/{did}">
         <h2 class="more-title">
-          More galleries from {creatorHandle ? `@${creatorHandle}` : 'this account'}
+          More galleries from
+          <strong>{creatorHandle ? `@${creatorHandle}` : 'this account'}</strong>
         </h2>
-        <ChevronRight size={18} />
       </a>
       <GalleryGrid items={moreGalleries} />
     </section>
@@ -519,36 +519,27 @@
     gap: 16px;
   }
 
-  /* Mirrors GallerySectionRow's heading so the section reads as the same
-     kind of thing the explore page shows. */
   .more {
     max-width: 600px;
     margin: 0 auto;
     padding: 24px 0 32px;
   }
   .more-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0 16px 14px;
+    display: block;
+    padding: 0 16px 12px;
     text-decoration: none;
     color: inherit;
   }
   .more-title {
-    flex: 1;
-    min-width: 0;
     margin: 0;
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .more-head :global(svg) {
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
+  .more-title strong { font-weight: 700; }
   .more-head:hover .more-title { text-decoration: underline; }
   @media (min-width: 900px) {
     /* The split runs the full 935px column, so the strip below it does too.
@@ -556,7 +547,8 @@
     .more {
       max-width: none;
       margin-top: 8px;
-      border-top: 1px solid var(--border);
     }
+    /* Flush with the column, in line with the photo's left edge above it. */
+    .more-head { padding-inline: 0; }
   }
 </style>
