@@ -1,9 +1,16 @@
 import { browser } from "$app/environment";
+import { resolveRouteActor } from "$lib/actor";
 import { knownFollowersQuery, actorProfileQuery } from "$lib/queries";
+import type { PageLoad } from "./$types";
 
-export async function load({ params, parent, fetch }: any) {
-  const did = decodeURIComponent(params.did);
+export const load: PageLoad = async ({ params, parent, fetch }) => {
   const { queryClient, viewer } = await parent();
+  const did = await resolveRouteActor(
+    queryClient,
+    decodeURIComponent(params.actor),
+    viewer?.did,
+    fetch,
+  );
   if (viewer) {
     const prefetch = Promise.all([
       queryClient.prefetchQuery(knownFollowersQuery(did, viewer.did, fetch)),
@@ -12,4 +19,4 @@ export async function load({ params, parent, fetch }: any) {
     if (!browser) await prefetch;
   }
   return { did };
-}
+};

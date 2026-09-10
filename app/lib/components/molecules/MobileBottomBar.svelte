@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { Image, Compass, ImagePlus, Bell } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { page } from '$app/state'
@@ -54,7 +55,7 @@
       <button
         class="mobile-tab"
         class:active={page.url.pathname.startsWith('/profile/')}
-        onclick={() => goto(`/profile/${encodeURIComponent($viewer!.did)}`)}
+        onclick={() => goto(profilePath($viewer))}
       >
         <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />
       </button>

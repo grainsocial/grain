@@ -303,6 +303,13 @@ describe("getActorFavorites", () => {
     expect(ids(items)).toEqual(["g1", "g3", "g2"]);
   });
 
+  test("accepts the actor's handle, and still only shows the actor", async () => {
+    // The owner check compares DIDs, so the handle has to resolve first.
+    const byHandle = "/xrpc/social.grain.unspecced.getActorFavorites?actor=alice.test";
+    expect(ids((await get(byHandle, ALICE)).items)).toEqual(["g1", "g3", "g2"]);
+    expect((await get(byHandle, BOB)).items).toEqual([]);
+  });
+
   test("lists a gallery once even when favorited twice", async () => {
     // Duplicate favorite records for one gallery are real and present in prod.
     const { items } = await get(path(), ALICE);

@@ -14,6 +14,7 @@
   import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import ReportButton from './ReportButton.svelte'
   import { isAuthenticated, viewer } from '$lib/stores'
+  import { profilePath, galleryPath } from '$lib/utils'
 
   let { gallery }: { gallery: GalleryView } = $props()
 
@@ -32,7 +33,7 @@
     try {
       await callXrpc('social.grain.unspecced.deleteGallery', { rkey })
       queryClient.invalidateQueries({ queryKey: ['getFeed'] })
-      goto(`/profile/${gallery.creator?.did}`)
+      goto(profilePath(gallery.creator))
     } catch (err) {
       console.error('Failed to delete gallery:', err)
       alert('Failed to delete gallery. Please try again.')
@@ -51,7 +52,7 @@
     {#if isOwner}
       <div class="menu-divider"></div>
       {#if $viewer?.did === 'did:plc:bcgltzqazw5tb6k2g3ttenbj'}
-        <a class="menu-item" href="/profile/{gallery.creator?.did}/gallery/{rkey}/edit">
+        <a class="menu-item" href="{galleryPath(gallery)}/edit">
           <Pencil size={15} />
           Edit gallery
         </a>

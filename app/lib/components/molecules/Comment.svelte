@@ -4,7 +4,7 @@
   import { createMutation, useQueryClient } from '@tanstack/svelte-query'
   import Avatar from '../atoms/Avatar.svelte'
   import RichText from '../atoms/RichText.svelte'
-  import { relativeTime, compactCount } from '$lib/utils'
+  import { relativeTime, compactCount, profilePath } from '$lib/utils'
   import { viewer, requireAuth } from '$lib/stores'
   import { VolumeX, Heart } from 'lucide-svelte'
 
@@ -86,7 +86,7 @@
     <Avatar did={comment.author?.did ?? ''} src={comment.author?.avatar ?? null} name={comment.author?.displayName ?? comment.author?.handle} size={28} />
     <div class="content">
       <div class="text-line">
-        <a href="/profile/{comment.author?.did}" class="handle">{comment.author?.handle ?? comment.author?.did}</a>
+        <a href={profilePath(comment.author)} class="handle">{comment.author?.handle ?? comment.author?.did}</a>
         <span class="text"><RichText text={comment.text} /></span>
       </div>
       <div class="meta">

@@ -5,7 +5,7 @@
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import GalleryCardSkeleton from '$lib/components/molecules/GalleryCardSkeleton.svelte'
   import PageHeading from '$lib/components/molecules/PageHeading.svelte'
-  import { truncDid } from '$lib/utils'
+  import { truncDid, profilePath } from '$lib/utils'
   import { page } from '$app/state'
   import { searchGalleriesQuery, searchProfilesQuery } from '$lib/queries'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
@@ -55,7 +55,7 @@
     <div class="empty-state">No people found for "{query}"</div>
   {:else}
     {#each people.data?.items ?? [] as person (person.did)}
-      <a href="/profile/{person.did}" class="profile-result">
+      <a href={profilePath(person)} class="profile-result">
         <Avatar did={person.did} src={person.avatar ?? null} name={person.displayName ?? person.handle} size={40} />
         <div class="profile-result-info">
           <div class="profile-result-name">{person.displayName || (person.handle ? `@${person.handle}` : truncDid(person.did))}</div>

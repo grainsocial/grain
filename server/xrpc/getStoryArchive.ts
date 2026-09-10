@@ -1,9 +1,10 @@
 import { defineQuery } from "$hatk";
 import { hydrateStories, type StoryRow } from "../hydrate/stories.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getStoryArchive", async (ctx) => {
   const { db, ok } = ctx;
-  const actor = ctx.params.actor;
+  const actor = ctx.params.actor ? await resolveHandle(db, ctx.params.actor) : null;
   if (!actor) return ok({ stories: [] });
 
   const limit = Math.min(Number(ctx.params.limit) || 50, 100);

@@ -15,13 +15,13 @@
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
   import { ArrowLeft, AlertTriangle, Info, MapPin } from 'lucide-svelte'
   import { goto } from '$app/navigation'
-  import { relativeTime } from '$lib/utils'
+  import { relativeTime, profilePath } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
 
   let { data } = $props()
 
-  const did = $derived(data.did)
+  const actor = $derived(data.actor)
   const rkey = $derived(data.rkey)
   const galleryUri = $derived(data.galleryUri)
   const galleryQ = createQuery(() => galleryQuery(galleryUri))
@@ -47,7 +47,7 @@
   // so the two share a cache entry. Only the first page is wanted: this is a
   // taste of the rest of the profile, not a second copy of it.
   const MORE_COUNT = 6
-  const actorFeed = createInfiniteQuery(() => actorFeedQuery(did))
+  const actorFeed = createInfiniteQuery(() => actorFeedQuery(actor))
   const moreGalleries = $derived(
     ((actorFeed.data?.pages[0]?.items ?? []) as GalleryView[])
       .filter((g) => g.uri !== galleryUri)
@@ -149,7 +149,7 @@
 <OGMeta
   title={gallery ? `${gallery.title} by @${gallery.creator.handle} — Grain` : 'Gallery — Grain'}
   description={gallery ? (gallery.description || `Photo gallery on Grain`) : 'Photo gallery on Grain'}
-  image="/og/profile/{did}/gallery/{rkey}"
+  image="/og/profile/{actor}/gallery/{rkey}"
 />
 
 {#if galleryQ.isLoading}
@@ -234,7 +234,7 @@
            it: both are links, and the card only gets away with nesting them
            because it silences the SSR placement check. -->
       <div class="identity">
-        <a class="author" href="/profile/{gallery.creator?.did}">
+        <a class="author" href={profilePath(gallery.creator)}>
           <Avatar
             did={gallery.creator?.did ?? ''}
             src={gallery.creator?.avatar ?? null}
@@ -290,7 +290,7 @@
               galleryUri={gallery.uri}
               viewerFav={gallery.viewer?.fav ?? null}
               favCount={gallery.favCount ?? 0}
-              countHref="/profile/{did}/gallery/{rkey}/favorited-by"
+              countHref="/profile/{actor}/gallery/{rkey}/favorited-by"
               bind:favorite={doFavorite}
             />
                 </div>
@@ -302,7 +302,7 @@
 
   {#if moreGalleries.length > 0}
     <section class="more">
-      <a class="more-head" href="/profile/{did}">
+      <a class="more-head" href="/profile/{actor}">
         <h2 class="more-title">
           More galleries from
           <strong>{creatorHandle ? `@${creatorHandle}` : 'this account'}</strong>

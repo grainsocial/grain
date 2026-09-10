@@ -1,5 +1,7 @@
 import { defineQuery, type GrainActorProfile, type Photo, type Gallery } from "$hatk";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { actorSegment } from "../helpers/resolveHandle.ts";
 
 const isProd = process.env.NODE_ENV === "production";
 // See hatk.config.ts. Undefined here degrades quietly to localhost URLs in
@@ -21,18 +23,22 @@ export default defineQuery("parts.page.mention.search", async (ctx) => {
 });
 
 async function searchUsers(ctx: any, query: string, limit: number) {
-  const { search, blobUrl, ok } = ctx;
+  const { search, blobUrl, ok, db } = ctx;
 
   if (!query.trim()) return ok({ results: [] });
 
   const result = await search("social.grain.actor.profile", query, { limit, fuzzy: true });
   const items = await ctx.resolve(result.records.map((r: any) => r.uri));
+  const handles = await lookupHandles(
+    db,
+    items.map((i: any) => i.did),
+  );
 
   const results = items.map((item: any) => ({
     uri: `at://${item.did}/social.grain.actor.profile/self`,
     name: item.value.displayName || item.handle || item.did,
     description: item.value.description || undefined,
-    href: `${baseUrl}/profile/${item.did}`,
+    href: `${baseUrl}/profile/${actorSegment(item.did, item.handle ?? handles.get(item.did))}`,
     icon: blobUrl(item.did, item.value.avatar, "avatar") || undefined,
     subscope: {
       scope: item.did,
@@ -105,12 +111,17 @@ async function searchGalleries(ctx: any, query: string, did: string, limit: numb
   const photos =
     photoUris.length > 0 ? await ctx.getRecords("social.grain.photo", photoUris) : new Map();
 
+  // The link is by handle, like every link the app draws. The embed src stays
+  // on the DID: it is pasted into an iframe and never read, and a handle
+  // change should not blank an embed on someone else's page.
+  const owner = actorSegment(did, (await lookupHandles(db, [did])).get(did));
+
   const results = galleryRows.map((gallery) => {
     const photoUri = firstPhotoUri.get(gallery.uri);
     const photo = photoUri ? photos.get(photoUri) : null;
     const thumb = photo ? blobUrl(photo.did, photo.value.photo, "feed_thumbnail") : undefined;
     const rkey = gallery.uri.split("/").pop();
-    const galleryUrl = `${baseUrl}/profile/${gallery.did}/gallery/${rkey}`;
+    const galleryUrl = `${baseUrl}/profile/${owner}/gallery/${rkey}`;
     const embedUrl = `${baseUrl}/embed/gallery/${gallery.did}/${rkey}`;
 
     return {

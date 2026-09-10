@@ -1,9 +1,9 @@
 import type { RequestHandler } from "@sveltejs/kit";
 
 export const GET: RequestHandler = async ({ params, url }) => {
-  const { did, rkey } = params;
-  const galleryUrl = `/profile/${did}/gallery/${rkey}`;
-  const ogImageUrl = `${url.origin}/og/profile/${did}/gallery/${rkey}`;
+  const { actor, rkey } = params;
+  const galleryUrl = `/profile/${actor}/gallery/${rkey}`;
+  const ogImageUrl = `${url.origin}/og/profile/${actor}/gallery/${rkey}`;
 
   const html = `<!DOCTYPE html>
 <html>

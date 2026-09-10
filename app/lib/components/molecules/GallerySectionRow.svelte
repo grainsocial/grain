@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath, galleryPath } from '$lib/utils'
   import { createQuery } from '@tanstack/svelte-query'
   import { cameraFeedQuery, locationFeedQuery } from '$lib/queries'
   import type { GalleryView, PhotoView } from '$hatk/client'
@@ -70,7 +71,7 @@
         <div class="card">
           <a
             class="thumb-link"
-            href="/profile/{g.creator?.did}/gallery/{rkey(g.uri)}"
+            href={galleryPath(g)}
             aria-label={linkLabel}
           >
             <div class="thumb">
@@ -79,7 +80,7 @@
               {/if}
             </div>
           </a>
-          <a class="author-row" href="/profile/{g.creator?.did}">
+          <a class="author-row" href={profilePath(g.creator)}>
             <Avatar
               did={g.creator?.did ?? ''}
               src={g.creator?.avatar ?? null}

@@ -43,6 +43,18 @@ afterAll(async () => {
 describe("getFollowers", () => {
   const path = (query = "") => `/xrpc/social.grain.unspecced.getFollowers?actor=${ALICE}${query}`;
 
+  test("accepts a handle in place of a did", async () => {
+    const res = await server.fetch("/xrpc/social.grain.unspecced.getFollowers?actor=alice.test");
+    const body = (await res.json()) as { items: { did: string }[]; totalCount: number };
+    expect(body.items.map((i) => i.did)).toEqual([BOB, CAROL]);
+    expect(body.totalCount).toBe(2);
+  });
+
+  test("has nothing for a handle nobody holds", async () => {
+    const res = await server.fetch("/xrpc/social.grain.unspecced.getFollowers?actor=nobody.test");
+    expect(await res.json()).toEqual({ items: [], totalCount: 0 });
+  });
+
   test("lists active followers and counts them", async () => {
     const res = await server.fetchAs(ALICE, path());
     const body = (await res.json()) as { items: { did: string }[]; totalCount: number };
@@ -100,6 +112,13 @@ describe("getFollowers", () => {
 
 describe("getFollowing", () => {
   const path = (query = "") => `/xrpc/social.grain.unspecced.getFollowing?actor=${ALICE}${query}`;
+
+  test("accepts a handle in place of a did", async () => {
+    const res = await server.fetch("/xrpc/social.grain.unspecced.getFollowing?actor=alice.test");
+    const body = (await res.json()) as { items: { did: string }[]; totalCount: number };
+    expect(body.items.map((i) => i.did)).toEqual([CAROL, BOB]);
+    expect(body.totalCount).toBe(2);
+  });
 
   test("lists active following and counts them", async () => {
     const res = await server.fetchAs(ALICE, path());

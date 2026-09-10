@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { Home, ImagePlus, Settings, Bell, Search, LogOut, Compass } from 'lucide-svelte'
   import Avatar from '../atoms/Avatar.svelte'
   import Button from '../atoms/Button.svelte'
@@ -73,7 +74,7 @@
         <span class="nav-label">Notifications</span>
       </a>
       {#if $viewer}
-        <a href="/profile/{$viewer.did}" class="nav-item" class:active={page.url.pathname === `/profile/${$viewer.did}`}>
+        <a href={profilePath($viewer)} class="nav-item" class:active={page.url.pathname === profilePath($viewer) || page.url.pathname === `/profile/${$viewer.did}`}>
           <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />
           <span class="nav-label">Profile</span>
         </a>

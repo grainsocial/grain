@@ -2,13 +2,15 @@ import { defineQuery } from "$hatk";
 import type { Gallery } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getActorFavorites", async (ctx) => {
   const { db, ok, getRecords } = ctx;
-  const actor = ctx.params.actor;
+  const actor = ctx.params.actor ? await resolveHandle(db, ctx.params.actor) : null;
   if (!actor) return ok({ items: [] });
 
-  // Only the actor themselves can view their favorites
+  // Only the actor themselves can view their favorites. Compared after
+  // resolution, so asking by handle works for the owner too.
   if (ctx.viewer?.did !== actor) return ok({ items: [] });
 
   const limit = Math.min(Number(ctx.params.limit) || 30, 100);

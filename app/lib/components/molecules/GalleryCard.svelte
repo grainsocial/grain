@@ -10,7 +10,7 @@
   import FavoriteButton from './FavoriteButton.svelte'
   import GalleryMenu from './GalleryMenu.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
-  import { relativeTime } from '$lib/utils'
+  import { relativeTime, profilePath, galleryPath } from '$lib/utils'
   import { MessageCircle, Send, ChevronLeft, ChevronRight, Heart } from 'lucide-svelte'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
@@ -58,8 +58,7 @@
   const photos = $derived((gallery.items ?? []) as PhotoView[])
   const favCount = $derived(gallery.favCount ?? 0)
   const commentCount = $derived(gallery.commentCount ?? 0)
-  const galleryRkey = $derived(gallery.uri.split('/').pop())
-  const galleryHref = $derived(`/profile/${gallery.creator?.did}/gallery/${galleryRkey}`)
+  const galleryHref = $derived(galleryPath(gallery))
   const favedByFollowing = $derived(gallery.favedByFollowing ?? [])
   const favedByNames = $derived(
     favedByFollowing.slice(0, 2).map((p) => p.displayName || (p.handle ? `@${p.handle}` : '')),
@@ -69,8 +68,7 @@
   let showToast = $state(false)
 
   async function handleShare() {
-    const rkey = gallery.uri.split('/').pop()
-    const url = `${window.location.origin}/profile/${gallery.creator?.did}/gallery/${rkey}`
+    const url = `${window.location.origin}${galleryHref}`
     const result = await share(url)
     if (result.success && result.method === 'clipboard') {
       showToast = true
@@ -114,7 +112,7 @@
   <div>
   <header class="card-header">
     <ProfilePopover did={gallery.creator?.did ?? ''}>
-      <a href="/profile/{gallery.creator?.did}" class="author-chip">
+      <a href={profilePath(gallery.creator)} class="author-chip">
         <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} name={displayName} size={40} hasStory={creatorHasStory} storyViewed={creatorStoryViewed} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
         <div class="author-info">
           <span class="author-name-row">
@@ -186,7 +184,7 @@
   {/if}
 
   <div class="card-content">
-    <a href="/profile/{gallery.creator?.did}/gallery/{gallery.uri.split('/').pop()}" class="title-link">
+    <a href={galleryHref} class="title-link">
       <p class="title">{gallery.title}</p>
     </a>
     {#if gallery.description}

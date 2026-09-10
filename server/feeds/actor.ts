@@ -1,6 +1,7 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineFeed({
   collection: "social.grain.gallery",
@@ -11,19 +12,9 @@ export default defineFeed({
   async generate(ctx) {
     const { params, ok, isTakendown } = ctx;
 
-    let actor = params.actor;
+    const actor = params.actor ? await resolveHandle(ctx.db, params.actor) : null;
     if (!actor) {
       return ok({ uris: [], cursor: undefined });
-    }
-
-    // Resolve handle to DID if needed
-    if (!actor.startsWith("did:")) {
-      const rows = (await ctx.db.query(`SELECT did FROM _repos WHERE handle = $1`, [actor])) as {
-        did: string;
-      }[];
-      if (rows[0]?.did) {
-        actor = rows[0].did;
-      }
     }
 
     if (await isTakendown(actor)) {

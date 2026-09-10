@@ -215,7 +215,7 @@ describe("mentionSearch, searching users", () => {
       uri: `at://${ALICE}/social.grain.actor.profile/self`,
       name: "Alice Anders",
       description: "landscape photographer in Portland",
-      href: `http://127.0.0.1:3000/profile/${ALICE}`,
+      href: `http://127.0.0.1:3000/profile/alice.test`,
       subscope: { scope: ALICE, label: "Galleries" },
     });
   });

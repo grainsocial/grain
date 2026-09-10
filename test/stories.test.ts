@@ -183,6 +183,16 @@ beforeAll(async () => {
       `look at this https://grain.social/profile/${ALICE}/story/a2`,
     ],
   );
+  // And a3 by handle. Both forms must match.
+  await db.run(
+    `INSERT INTO "app.bsky.feed.post" (uri, cid, did, indexed_at, text, created_at)
+     VALUES ($1, 'cid-post2', $2, 'i', $3, '2026-01-02')`,
+    [
+      `at://${ALICE}/app.bsky.feed.post/post2`,
+      ALICE,
+      `and this https://grain.social/profile/alice.test/story/a3`,
+    ],
+  );
 });
 
 afterAll(async () => await server?.close());
@@ -253,6 +263,22 @@ describe("getStories", () => {
     expect(a1.crossPost).toBeUndefined();
   });
 
+  test("finds a cross-post that links the story by handle", async () => {
+    const { stories } = await get(`/xrpc/social.grain.unspecced.getStories?actor=${ALICE}`);
+    const a3 = stories.find((s: any) => s.uri.endsWith("/a3"));
+    expect(a3.crossPost).toEqual({ url: `https://bsky.app/profile/${ALICE}/post/post2` });
+  });
+
+  test("accepts a handle in place of a did", async () => {
+    const { stories } = await get("/xrpc/social.grain.unspecced.getStories?actor=alice.test");
+    expect(ids(stories)).toEqual(["a3", "a-bad", "a2", "a1"]);
+  });
+
+  test("has nothing for a handle nobody holds", async () => {
+    const { stories } = await get("/xrpc/social.grain.unspecced.getStories?actor=nobody.test");
+    expect(stories).toEqual([]);
+  });
+
   test("falls back to 4:3 when the stored aspect ratio is not valid JSON", async () => {
     const { stories } = await get(`/xrpc/social.grain.unspecced.getStories?actor=${ALICE}`);
     const bad = stories.find((s: any) => s.uri.endsWith("/a-bad"));
@@ -276,6 +302,11 @@ describe("getStories", () => {
 describe("getStoryArchive", () => {
   test("returns every story newest first, expiry included", async () => {
     const { stories } = await get(`/xrpc/social.grain.unspecced.getStoryArchive?actor=${ALICE}`);
+    expect(ids(stories)).toEqual(["a1", "a2", "a-bad", "a3", "a-old"]);
+  });
+
+  test("accepts a handle in place of a did", async () => {
+    const { stories } = await get("/xrpc/social.grain.unspecced.getStoryArchive?actor=alice.test");
     expect(ids(stories)).toEqual(["a1", "a2", "a-bad", "a3", "a-old"]);
   });
 

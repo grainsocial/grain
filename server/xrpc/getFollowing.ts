@@ -1,11 +1,16 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 import { blockFilter } from "../filters/blockMute.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getFollowing", async (ctx) => {
   const { ok, params, lookup, blobUrl, packCursor, unpackCursor } = ctx;
-  const { actor, limit = 50, cursor } = params;
+  const { limit = 50, cursor } = params;
   const viewer = params.viewer ?? ctx.viewer?.did;
+
+  // A handle in place of a DID resolves; one nobody holds has no followers.
+  const actor = await resolveHandle(ctx.db, params.actor);
+  if (!actor) return ok({ totalCount: 0, items: [] });
 
   const offset = cursor ? Number(unpackCursor(cursor)?.primary ?? 0) : 0;
 

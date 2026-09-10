@@ -70,6 +70,11 @@ const path = (actor = ALICE, viewer = VIC, query = "") =>
 const dids = async (res: Response) => (await res.json()).items.map((i: any) => i.did);
 
 describe("getKnownFollowers", () => {
+  test("accepts a handle in place of a did", async () => {
+    const res = await server.fetchAs(VIC, path("alice.test"));
+    expect(await dids(res)).toEqual([BOB, CAROL]);
+  });
+
   test("returns Alice's followers that Vic also follows, most recent follow first", async () => {
     const res = await server.fetchAs(VIC, path());
 

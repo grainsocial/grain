@@ -1,22 +1,13 @@
 import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile, Declaration } from "$hatk";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx) => {
   const { ok, params, isTakendown, lookup, count, blobUrl, viewer: authViewer } = ctx;
   const viewer = authViewer?.did ?? params.viewer;
 
-  // Resolve handle to DID if needed
-  let actor = params.actor;
-  if (!actor.startsWith("did:")) {
-    const rows = (await ctx.db.query(`SELECT did FROM _repos WHERE handle = $1`, [actor])) as {
-      did: string;
-    }[];
-    if (rows[0]?.did) {
-      actor = rows[0].did;
-    } else {
-      throw new InvalidRequestError("Actor not found");
-    }
-  }
+  const actor = await resolveHandle(ctx.db, params.actor);
+  if (!actor) throw new InvalidRequestError("Actor not found");
 
   if (await isTakendown(actor)) {
     return ok({ did: actor, handle: actor, cid: "" });

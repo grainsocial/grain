@@ -4,10 +4,15 @@ import { views } from "$hatk";
 import { NOT_ORPHANED } from "../hydrate/comments.ts";
 import { blockFilter } from "../filters/blockMute.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
+import { resolveAtUri } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx) => {
   const { ok, params, db, lookup, blobUrl, getRecords, viewer } = ctx;
-  const { subject, limit = 20, cursor } = params;
+  const { limit = 20, cursor } = params;
+
+  // A gallery or story reached by a handle link carries the handle in its AT
+  // URI; comments are stored against the DID form.
+  const subject = (await resolveAtUri(db, params.subject)) ?? params.subject;
 
   const viewerDid = viewer?.did;
 

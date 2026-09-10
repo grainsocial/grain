@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { Home, Search, Compass, Bell, ImagePlus, User, Settings } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { isAuthenticated, viewer } from '$lib/stores'
@@ -55,8 +56,7 @@
       <span class="drawer-link-icon"><Bell size={18} /></span> Notifications
     </button>
     {#if $viewer}
-      {@const viewerDid = $viewer.did}
-      <button class="drawer-link" onclick={() => nav(`/profile/${viewerDid}`)}>
+      <button class="drawer-link" onclick={() => nav(profilePath($viewer))}>
         <span class="drawer-link-icon"><User size={18} /></span> Profile
       </button>
     {/if}

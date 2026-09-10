@@ -1,10 +1,13 @@
 import { defineOG } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
 import { allFonts } from "./fonts.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
-export default defineOG("/og/profile/:did/story/:rkey", async (ctx) => {
+export default defineOG("/og/profile/:actor/story/:rkey", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
-  const { did, rkey } = params;
+  const { rkey } = params;
+  // The page links itself by handle, so the crawler arrives with one.
+  const did = (await resolveHandle(db, params.actor)) ?? params.actor;
 
   const storyUri = `at://${did}/social.grain.story/${rkey}`;
 

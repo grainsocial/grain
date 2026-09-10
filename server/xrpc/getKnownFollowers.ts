@@ -4,11 +4,13 @@
 import { defineQuery, type GrainActorProfile } from "$hatk";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 import { blockFilter } from "../filters/blockMute.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getKnownFollowers", async (ctx) => {
   const { ok, params, lookup, blobUrl } = ctx;
-  const { actor, viewer, limit = 50 } = params;
+  const { viewer, limit = 50 } = params;
 
+  const actor = params.actor ? await resolveHandle(ctx.db, params.actor) : null;
   if (!actor || !viewer || actor === viewer) return ok({ items: [] });
 
   // Find DIDs that follow `actor` AND are followed by `viewer`.

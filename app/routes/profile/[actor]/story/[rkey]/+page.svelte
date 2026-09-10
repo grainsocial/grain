@@ -7,6 +7,7 @@
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import { MapPin, MessageCircle, Send } from 'lucide-svelte'
   import { share } from '$lib/utils/share'
+  import { profilePath, storyPath } from '$lib/utils'
   import { requireAuth } from '$lib/stores'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import type { StoryView } from '$hatk/client'
@@ -23,7 +24,7 @@
   let showToast = $state(false)
 
   async function handleShare() {
-    const url = `${window.location.origin}/profile/${data.did}/story/${data.rkey}`
+    const url = `${window.location.origin}${story ? storyPath(story) : `/profile/${data.actor}/story/${data.rkey}`}`
     const result = await share(url)
     if (result.success && result.method === 'clipboard') {
       showToast = true
@@ -34,7 +35,7 @@
 <OGMeta
   title={story ? `Story by @${story.creator.handle} — Grain` : 'Story — Grain'}
   description="Photo story on Grain"
-  image="/og/profile/{data.did}/story/{data.rkey}"
+  image="/og/profile/{data.actor}/story/{data.rkey}"
 />
 <DetailHeader label="Story">
   {#snippet actions()}
@@ -52,7 +53,7 @@
     <p class="status">Story not found</p>
   {:else}
     <div class="story-card">
-      <a class="creator" href="/profile/{story.creator.did}">
+      <a class="creator" href={profilePath(story.creator)}>
         {#if story.creator.avatar}
           <img class="avatar" src={story.creator.avatar} alt="" />
         {/if}

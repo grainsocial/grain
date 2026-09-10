@@ -170,7 +170,7 @@ afterAll(async () => await server?.close());
 
 describe("gallery card", () => {
   test("shows the gallery's title and its author's handle", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "g1" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "g1" });
     const { element } = await galleryOg.generate(ctx);
     const text = textOf(element);
     expect(text).toContain("Portland Sunsets");
@@ -178,8 +178,15 @@ describe("gallery card", () => {
     expect(text).toContain("grain");
   });
 
+  test("accepts a handle in place of a did", async () => {
+    const byHandle = await galleryOg.generate(ctxFor({ actor: "alice.test", rkey: "g1" }).ctx);
+    const byDid = await galleryOg.generate(ctxFor({ actor: ALICE, rkey: "g1" }).ctx);
+    expect(textOf(byHandle.element)).toEqual(textOf(byDid.element));
+    expect(byHandle.meta).toEqual(byDid.meta);
+  });
+
   test("gives a crawler a title and description", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "g1" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "g1" });
     const { meta } = await galleryOg.generate(ctx);
     expect(meta).toEqual({
       title: "Portland Sunsets by @alice.test — Grain",
@@ -188,13 +195,13 @@ describe("gallery card", () => {
   });
 
   test("falls back to a generic description when the gallery has none", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "g2" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "g2" });
     const { meta } = await galleryOg.generate(ctx);
     expect(meta!.description).toBe("Photo gallery on Grain");
   });
 
   test("lays out at most six photos, however many the gallery holds", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "g1" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "g1" });
     const { element } = await galleryOg.generate(ctx);
     const srcs = imgSrcs(element);
     // One <img> per collage placement, plus the author's avatar.
@@ -203,7 +210,7 @@ describe("gallery card", () => {
   });
 
   test("fetches the photo bytes and the avatar, not the CDN urls verbatim", async () => {
-    const { ctx, fetched } = ctxFor({ did: ALICE, rkey: "g1" });
+    const { ctx, fetched } = ctxFor({ actor: ALICE, rkey: "g1" });
     const { element } = await galleryOg.generate(ctx);
     expect(fetched.some((u) => u.includes("bafy-avatar"))).toBe(true);
     expect(fetched.filter((u) => u.includes("bafy-p")).length).toBe(6);
@@ -212,13 +219,13 @@ describe("gallery card", () => {
   });
 
   test("says so when the gallery does not exist", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "nope" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "nope" });
     const { element } = await galleryOg.generate(ctx);
     expect(textOf(element)).toEqual(["Gallery not found"]);
   });
 
   test("ships the fonts it needs to draw the title", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "g1" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "g1" });
     const { options } = await galleryOg.generate(ctx);
     expect(options!.fonts!.map((f: any) => f.name)).toEqual(allFonts().map((f) => f.name));
   });
@@ -226,7 +233,7 @@ describe("gallery card", () => {
 
 describe("profile card", () => {
   test("shows the display name and handle", async () => {
-    const { ctx } = ctxFor({ did: ALICE });
+    const { ctx } = ctxFor({ actor: ALICE });
     const { element } = await profileOg.generate(ctx);
     // The description goes to the crawler in `meta` but is deliberately not
     // drawn on the card — the card is name, handle and branding.
@@ -234,13 +241,13 @@ describe("profile card", () => {
   });
 
   test("accepts a handle in place of a did", async () => {
-    const byHandle = await profileOg.generate(ctxFor({ did: "alice.test" }).ctx);
-    const byDid = await profileOg.generate(ctxFor({ did: ALICE }).ctx);
+    const byHandle = await profileOg.generate(ctxFor({ actor: "alice.test" }).ctx);
+    const byDid = await profileOg.generate(ctxFor({ actor: ALICE }).ctx);
     expect(byHandle.meta).toEqual(byDid.meta);
   });
 
   test("gives a crawler a title and description", async () => {
-    const { ctx } = ctxFor({ did: ALICE });
+    const { ctx } = ctxFor({ actor: ALICE });
     const { meta } = await profileOg.generate(ctx);
     expect(meta).toEqual({
       title: "Alice Anders (@alice.test) — Grain",
@@ -249,7 +256,7 @@ describe("profile card", () => {
   });
 
   test("falls back to the did when there is no profile record", async () => {
-    const { ctx } = ctxFor({ did: BARE });
+    const { ctx } = ctxFor({ actor: BARE });
     const { meta } = await profileOg.generate(ctx);
     // No profile means no handle either — the truncated did stands in for both.
     expect(meta!.title).toBe(`${BARE.slice(0, 24)} (@${BARE.slice(0, 24)}) — Grain`);
@@ -257,7 +264,7 @@ describe("profile card", () => {
   });
 
   test("draws a cover photo from each recent gallery", async () => {
-    const { ctx, fetched } = ctxFor({ did: ALICE });
+    const { ctx, fetched } = ctxFor({ actor: ALICE });
     await profileOg.generate(ctx);
     // Only position 0 of g1 qualifies; g2 has no items.
     expect(fetched.filter((u) => u.includes("bafy-p")).length).toBe(1);
@@ -267,7 +274,7 @@ describe("profile card", () => {
 
 describe("story card", () => {
   test("shows the author and draws the story image", async () => {
-    const { ctx, fetched } = ctxFor({ did: ALICE, rkey: "s1" });
+    const { ctx, fetched } = ctxFor({ actor: ALICE, rkey: "s1" });
     const { element } = await storyOg.generate(ctx);
     // The card names the author; the handle appears only in the meta title.
     expect(textOf(element)).toEqual(["Alice Anders", "grain"]);
@@ -275,8 +282,15 @@ describe("story card", () => {
     expect(imgSrcs(element).every((s) => s.startsWith("data:"))).toBe(true);
   });
 
+  test("accepts a handle in place of a did", async () => {
+    const byHandle = await storyOg.generate(ctxFor({ actor: "alice.test", rkey: "s1" }).ctx);
+    const byDid = await storyOg.generate(ctxFor({ actor: ALICE, rkey: "s1" }).ctx);
+    expect(textOf(byHandle.element)).toEqual(textOf(byDid.element));
+    expect(byHandle.meta).toEqual(byDid.meta);
+  });
+
   test("gives a crawler a title", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "s1" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "s1" });
     const { meta } = await storyOg.generate(ctx);
     expect(meta).toEqual({
       title: "Story by @alice.test — Grain",
@@ -285,7 +299,7 @@ describe("story card", () => {
   });
 
   test("says so when the story does not exist", async () => {
-    const { ctx } = ctxFor({ did: ALICE, rkey: "nope" });
+    const { ctx } = ctxFor({ actor: ALICE, rkey: "nope" });
     const { element } = await storyOg.generate(ctx);
     expect(textOf(element)).toEqual(["Story not found"]);
   });
