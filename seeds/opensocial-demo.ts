@@ -1,7 +1,7 @@
 // Demo data for the groups branch against the opensocial dev stack: the
 // cycling club, in Grain. The riders already exist there — apps/community's
 // seed founds the club and its members — so this only gives them a Grain
-// profile, a gallery of ride photos, and an offer of one to the club's pool.
+// profile, galleries of ride photos, and offers of them to the club's pool.
 //
 // The club (Peninsula Riders) is looked up on the host by handle. Without it
 // the ride galleries still get written; only the offers are skipped.
@@ -212,11 +212,17 @@ const WIDE: [number, number] = [3, 2];
 const PHONE: [number, number] = [4, 3];
 const TALL: [number, number] = [3, 4];
 
-const olympics = await gallery(
+// The galleries are dated to the club's rides — apps/community's seed puts a
+// past ride at each of these distances — because the club's site files a
+// gallery under the ride it came from by when it was made. Titles say which
+// ride; the photos are members' own.
+const DAY = 60 * 24;
+
+const century = await gallery(
   priya,
-  "around-the-olympics",
-  "Around the Olympics",
-  "Seven days round the peninsula with four others. Loaded, slow, and worth it.",
+  "century-from-the-sweep",
+  "Century, from the sweep",
+  "Riding sweep on the spring century: everything behind the second group, at the second group's pace. Loaded, slow, and worth it.",
   [
     {
       file: "rides/olympics-loaded-bike.jpg",
@@ -235,24 +241,24 @@ const olympics = await gallery(
     },
     {
       file: "rides/olympics-lake-camp.jpg",
-      alt: "A lake under cloud and mountains, from the camp beach",
+      alt: "A lake under cloud and mountains, from the second aid stop",
       ratio: WIDE,
     },
     {
       file: "rides/olympics-ferry-deck.jpg",
-      alt: "Loaded bikes strapped to the rail on a ferry car deck",
+      alt: "Loaded bikes strapped to the rail on the ferry home",
       ratio: WIDE,
     },
   ],
-  60 * 24 * 9,
+  23 * DAY,
 );
-await offer(priya, olympics, "pool-around-the-olympics", 60 * 24 * 8);
+await offer(priya, century, "pool-century-from-the-sweep", 22 * DAY);
 
-const yakima = await gallery(
+const tunnel = await gallery(
   marcus,
-  "the-long-way-to-the-river",
-  "The long way to the river",
-  "Six days, a tunnel, and about a hundred miles of nothing. Ask me about the headwind.",
+  "tunnel-hill-the-long-way",
+  "Tunnel Hill, the long way",
+  "Six hours, a tunnel, and about a hundred miles of nothing. Ask me about the headwind.",
   [
     {
       file: "rides/yakima-autumn-hillside.jpg",
@@ -261,7 +267,7 @@ const yakima = await gallery(
     },
     {
       file: "rides/yakima-tunnel-arches.jpg",
-      alt: "The ribbed arches of an old railway tunnel, lit at the far end",
+      alt: "The ribbed arches of the old railway tunnel, lit at the far end",
       ratio: TALL,
     },
     {
@@ -280,15 +286,15 @@ const yakima = await gallery(
       ratio: WIDE,
     },
   ],
-  60 * 24 * 6,
+  51 * DAY,
 );
-await offer(marcus, yakima, "pool-the-long-way-to-the-river", 60 * 24 * 5);
+await offer(marcus, tunnel, "pool-tunnel-hill-the-long-way", 50 * DAY);
 
 const errands = await gallery(
   jo,
   "club-errands",
   "Club errands",
-  "Everything the club needs, delivered by bike. The keg was the hard one.",
+  "Everything the century after-party needed, delivered by bike. The keg was the hard one.",
   [
     {
       file: "rides/errand-beer-run.jpg",
@@ -306,10 +312,100 @@ const errands = await gallery(
       ratio: PHONE,
     },
   ],
-  60 * 24 * 3,
+  26 * DAY,
 );
-await offer(jo, errands, "pool-club-errands", 60 * 24 * 3);
+await offer(jo, errands, "pool-club-errands", 25 * DAY);
 
+const ferry = await gallery(
+  tom,
+  "ferry-loop-and-a-flat",
+  "Ferry loop, and a flat",
+  "Two ways a ride ends up on the ground.",
+  [
+    {
+      file: "rides/ferry-bike-deck.jpg",
+      alt: "A single bike leaning on the rail of an empty ferry deck",
+      ratio: PHONE,
+    },
+    {
+      file: "rides/roadside-strip-down.jpg",
+      alt: "A bike stripped down at a roadside pullout, bags spread on the tarmac",
+      ratio: PHONE,
+    },
+  ],
+  79 * DAY,
+);
+await offer(tom, ferry, "pool-ferry-loop-and-a-flat", 79 * DAY);
+
+const rain = await gallery(
+  tom,
+  "rain-or-shine",
+  "Rain or shine",
+  "It said rain or shine. It was not shine.",
+  [
+    {
+      file: "rides/rain-bridge-bikes.jpg",
+      alt: "Loaded bikes leaning on a wet stone bridge wall, the river grey behind",
+      ratio: PHONE,
+    },
+    {
+      file: "rides/rain-highway-bridge.jpg",
+      alt: "An empty highway bridge over the river, seen from the hill above in the rain",
+      ratio: PHONE,
+    },
+    {
+      file: "rides/rain-dam-cloud.jpg",
+      alt: "Low cloud over the dam and the river, everything one shade of grey",
+      ratio: PHONE,
+    },
+    {
+      file: "rides/rain-wet-panniers.jpg",
+      alt: "Yellow and red panniers stacked on a porch to dry",
+      ratio: TALL,
+    },
+  ],
+  107 * DAY,
+);
+await offer(tom, rain, "pool-rain-or-shine", 107 * DAY);
+
+const wind = await gallery(
+  lena,
+  "wind-farm-loop",
+  "Wind farm loop",
+  "Tailwind home for once. The turbines were pointing the way we were going.",
+  [
+    {
+      file: "rides/wind-pass-sign.jpg",
+      alt: "A loaded bike with yellow panniers beside a summit sign on an empty road",
+      ratio: WIDE,
+    },
+    {
+      file: "rides/wind-viewpoint.jpg",
+      alt: "A viewpoint sign naming the mountains, brown grass to the horizon",
+      ratio: WIDE,
+    },
+    {
+      file: "rides/wind-turbine-road.jpg",
+      alt: "The road climbing toward a ridge of wind turbines",
+      ratio: WIDE,
+    },
+    {
+      file: "rides/wind-golden-hills.jpg",
+      alt: "Golden hills and yellow rabbitbrush under a clear sky",
+      ratio: WIDE,
+    },
+    {
+      file: "rides/wind-old-road.jpg",
+      alt: "A cracked old road running out toward the turbines",
+      ratio: WIDE,
+    },
+  ],
+  149 * DAY,
+);
+await offer(lena, wind, "pool-wind-farm-loop", 148 * DAY);
+
+// Offered half an hour ago, so it is still sitting in the queue a moderator
+// sees — the club has not answered this one yet.
 const gorge = await gallery(
   lena,
   "rain-on-the-gorge",
@@ -334,30 +430,6 @@ const gorge = await gallery(
   ],
   45,
 );
-// Offered half an hour ago, so it is still sitting in the queue a moderator
-// sees — the club has not answered this one yet.
 await offer(lena, gorge, "pool-rain-on-the-gorge", 30);
-
-// Not offered to anyone — a member's gallery is theirs first, and the club's
-// pool only holds what someone chose to put in it.
-await gallery(
-  tom,
-  "ferry-and-a-flat",
-  "Ferry, and a flat",
-  "Two ways a ride ends up on the ground.",
-  [
-    {
-      file: "rides/ferry-bike-deck.jpg",
-      alt: "A single bike leaning on the rail of an empty ferry deck",
-      ratio: PHONE,
-    },
-    {
-      file: "rides/roadside-strip-down.jpg",
-      alt: "A bike stripped down at a roadside pullout, bags spread on the tarmac",
-      ratio: PHONE,
-    },
-  ],
-  60 * 5,
-);
 
 console.log("[seed] done");
