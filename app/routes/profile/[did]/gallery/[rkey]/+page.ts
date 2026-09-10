@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import { galleryQuery } from "$lib/queries";
+import { galleryQuery, actorFeedQuery } from "$lib/queries";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ params, parent, fetch }) => {
@@ -7,7 +7,12 @@ export const load: PageLoad = async ({ params, parent, fetch }) => {
   const rkey = params.rkey;
   const galleryUri = `at://${did}/social.grain.gallery/${rkey}`;
   const { queryClient } = await parent();
-  const prefetch = queryClient.prefetchQuery(galleryQuery(galleryUri, fetch));
+  const prefetch = Promise.all([
+    queryClient.prefetchQuery(galleryQuery(galleryUri, fetch)),
+    // The "more galleries" strip below the detail; the profile page keys the
+    // same query, so a visit either way warms the other.
+    queryClient.prefetchInfiniteQuery(actorFeedQuery(did, fetch)),
+  ]);
   if (!browser) await prefetch;
   return { did, rkey, galleryUri, wide: true };
 };

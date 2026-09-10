@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { createQuery } from '@tanstack/svelte-query'
-  import { galleryQuery } from '$lib/queries'
+  import { createQuery, createInfiniteQuery } from '@tanstack/svelte-query'
+  import { galleryQuery, actorFeedQuery } from '$lib/queries'
   import GalleryMedia from '$lib/components/molecules/GalleryMedia.svelte'
   import GalleryCard from '$lib/components/molecules/GalleryCard.svelte'
+  import GalleryMenu from '$lib/components/molecules/GalleryMenu.svelte'
+  import GalleryGrid from '$lib/components/organisms/GalleryGrid.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import CommentSheet from '$lib/components/organisms/CommentSheet.svelte'
   import ExifInfo from '$lib/components/atoms/ExifInfo.svelte'
@@ -11,7 +13,7 @@
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import { ArrowLeft, AlertTriangle, Info, MapPin } from 'lucide-svelte'
+  import { ArrowLeft, AlertTriangle, Info, MapPin, ChevronRight } from 'lucide-svelte'
   import { goto } from '$app/navigation'
   import { relativeTime } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
@@ -40,6 +42,18 @@
   )
 
   const photos = $derived((gallery?.items ?? []) as PhotoView[])
+
+  // The author's other galleries, from the same feed the profile page shows,
+  // so the two share a cache entry. Only the first page is wanted: this is a
+  // taste of the rest of the profile, not a second copy of it.
+  const MORE_COUNT = 6
+  const actorFeed = createInfiniteQuery(() => actorFeedQuery(did))
+  const moreGalleries = $derived(
+    ((actorFeed.data?.pages[0]?.items ?? []) as GalleryView[])
+      .filter((g) => g.uri !== galleryUri)
+      .slice(0, MORE_COUNT),
+  )
+  const creatorHandle = $derived(gallery?.creator?.handle ?? null)
   let currentIndex = $state(0)
   const currentExif = $derived(photos[currentIndex]?.exif as ExifView | undefined)
   let doFavorite: (() => void) | undefined = $state(undefined)
@@ -206,11 +220,14 @@
         <button class="icon-btn" type="button" onclick={back} aria-label="Back">
           <ArrowLeft size={20} />
         </button>
-        {#if bskyUrl}
-          <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky">
-            <BskyIcon />
-          </a>
-        {/if}
+        <div class="meta-actions">
+          {#if bskyUrl}
+            <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky">
+              <BskyIcon />
+            </a>
+          {/if}
+          <GalleryMenu {gallery} />
+        </div>
       </div>
 
       <!-- The location is a sibling of the author link rather than nested in
@@ -283,6 +300,18 @@
     </aside>
   </div>
 
+  {#if moreGalleries.length > 0}
+    <section class="more">
+      <a class="more-head" href="/profile/{did}">
+        <h2 class="more-title">
+          More galleries from {creatorHandle ? `@${creatorHandle}` : 'this account'}
+        </h2>
+        <ChevronRight size={18} />
+      </a>
+      <GalleryGrid items={moreGalleries} />
+    </section>
+  {/if}
+
   <CommentSheet
     open={commentSheetOpen}
     subjectUri={gallery.uri}
@@ -345,6 +374,11 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+  .meta-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
   .icon-btn {
     display: flex;
@@ -483,5 +517,46 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  /* Mirrors GallerySectionRow's heading so the section reads as the same
+     kind of thing the explore page shows. */
+  .more {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px 0 32px;
+  }
+  .more-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px 14px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .more-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .more-head :global(svg) {
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .more-head:hover .more-title { text-decoration: underline; }
+  @media (min-width: 900px) {
+    /* The split runs the full 935px column, so the strip below it does too.
+       The grid itself stays three across, the same grid as the profile. */
+    .more {
+      max-width: none;
+      margin-top: 8px;
+      border-top: 1px solid var(--border);
+    }
   }
 </style>

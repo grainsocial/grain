@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
-  import { callXrpc } from '$hatk/client'
   import { isCaughtUp } from '$lib/stories'
-  import { goto } from '$app/navigation'
   import Avatar from '../atoms/Avatar.svelte'
   import Facepile from '../atoms/Facepile.svelte'
   import RichText from '../atoms/RichText.svelte'
@@ -10,16 +8,15 @@
   import ExifInfo from '../atoms/ExifInfo.svelte'
   import GalleryMedia from './GalleryMedia.svelte'
   import FavoriteButton from './FavoriteButton.svelte'
-  import ReportButton from './ReportButton.svelte'
+  import GalleryMenu from './GalleryMenu.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag, Pencil } from 'lucide-svelte'
-  import OverflowMenu from '../atoms/OverflowMenu.svelte'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Heart } from 'lucide-svelte'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
-  import { isAuthenticated, requireAuth, viewer } from '$lib/stores'
+  import { requireAuth, viewer } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
-  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
+  import { createQuery } from '@tanstack/svelte-query'
   import { storyAuthorsQuery } from '$lib/queries'
   import { EyeOff, AlertTriangle, Info } from 'lucide-svelte'
 
@@ -41,7 +38,6 @@
     privateGallery?: boolean
   } = $props()
 
-  const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
   const storyAuthors = createQuery(() => storyAuthorsQuery())
   const creatorStoryAuthor = $derived(
@@ -51,28 +47,7 @@
   const creatorStoryViewed = $derived(
     !isOwner && !!creatorStoryAuthor && isCaughtUp(creatorStoryAuthor)
   )
-  let deleting = $state(false)
-  let reportOpen = $state(false)
   let doFavorite: (() => void) | undefined = $state(undefined)
-
-  async function deleteGallery() {
-    if (deleting) return
-    if (!confirm('Delete this gallery? This cannot be undone.')) return
-
-    const rkey = gallery.uri.split('/').pop()
-    deleting = true
-    try {
-      await callXrpc('social.grain.unspecced.deleteGallery', { rkey: rkey! })
-      queryClient.invalidateQueries({ queryKey: ['getFeed'] })
-      goto(`/profile/${gallery.creator?.did}`)
-    } catch (err) {
-      console.error('Failed to delete gallery:', err)
-      alert('Failed to delete gallery. Please try again.')
-    } finally {
-      deleting = false
-    }
-  }
-
 
   const displayName = $derived(
     gallery.creator?.displayName || (gallery.creator?.handle ? `@${gallery.creator.handle}` : gallery.creator?.did?.slice(0, 18) + '\u2026')
@@ -156,28 +131,8 @@
         </div>
       </a>
     </ProfilePopover>
-    {#if !privateGallery && ($isAuthenticated || isOwner)}
-    <OverflowMenu horizontal>
-      {#if $isAuthenticated}
-        <button class="menu-item" type="button" onclick={() => (reportOpen = true)}>
-          <Flag size={15} />
-          Report
-        </button>
-      {/if}
-      {#if isOwner}
-        <div class="menu-divider"></div>
-        {#if $viewer?.did === 'did:plc:bcgltzqazw5tb6k2g3ttenbj'}
-          <a class="menu-item" href="/profile/{gallery.creator?.did}/gallery/{gallery.uri.split('/').pop()}/edit">
-            <Pencil size={15} />
-            Edit gallery
-          </a>
-        {/if}
-        <button class="menu-item delete" type="button" onclick={deleteGallery} disabled={deleting}>
-          <Trash2 size={15} />
-          Delete gallery
-        </button>
-      {/if}
-    </OverflowMenu>
+    {#if !privateGallery}
+      <GalleryMenu {gallery} />
     {/if}
   </header>
 
@@ -222,9 +177,6 @@
         {/if}
       </span>
     </a>
-  {/if}
-  {#if $isAuthenticated}
-    <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} showButton={false} bind:open={reportOpen} />
   {/if}
 
   <Toast message="Link copied" bind:visible={showToast} />
@@ -305,33 +257,6 @@
   }
 .card-header :global(.overflow-menu) {
     margin-left: auto;
-  }
-/* Menu items (inside OverflowMenu) */
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 12px;
-    border: none;
-    background: none;
-    color: var(--text-primary);
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: background 0.15s;
-  }
-.menu-item:hover {
-    background: var(--bg-hover);
-  }
-.menu-item.delete {
-    color: var(--danger);
-  }
-.menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
-.menu-item:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 /* Engagement */
   .engagement {
