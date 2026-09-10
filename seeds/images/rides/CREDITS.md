@@ -9,7 +9,10 @@ it's only expected, not mandated."
 They stand in for a cycling club's ride photos in `seeds/opensocial-demo.ts`.
 Downscaled to 1400px and re-encoded from the originals; EXIF (camera, date,
 GPS where present) is kept, which is what makes Grain's camera and location
-pages show something. The `avatar-*.jpg` files are square crops of the photos
+pages show something. The rotation is baked into the pixels and the
+Orientation tag is normalised to 1 — carrying the original tag over an
+already-rotated image turns it a second time, which is how three of these
+first arrived on their sides. The `avatar-*.jpg` files are square crops of the photos
 beside them.
 
 | file                          | source                                                                                                                                                                                                        |
