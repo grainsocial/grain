@@ -344,6 +344,42 @@ export const privateGalleryQuery = (space: string, f?: Fetch) =>
     retry: false,
   });
 
+/**
+ * A community's pool: every member's galleries, read from their repos through
+ * the community's space on every call. No index stands behind it — nothing in a
+ * space reaches a firehose — and a viewer who is not a member gets an error
+ * rather than an empty pool, so this never retries into a refusal.
+ */
+export const poolGalleriesQuery = (group: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["poolGalleries", group],
+    queryFn: () => callXrpc("social.grain.unspecced.listPoolGalleries", { group }, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
+/**
+ * Every pool the viewer is in, as one feed. Per viewer, per request — there is
+ * no index behind it and no cursor to page with, so it asks for a page's worth
+ * and stops.
+ */
+export const poolFeedQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["poolFeed"],
+    queryFn: () => callXrpc("social.grain.unspecced.listPoolFeed", {}, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
+/** One gallery from a community's pool. */
+export const poolGalleryQuery = (group: string, did: string, rkey: string, f?: Fetch) =>
+  queryOptions({
+    queryKey: ["poolGallery", group, did, rkey],
+    queryFn: () => callXrpc("social.grain.unspecced.getPoolGallery", { group, did, rkey }, f),
+    staleTime: 30_000,
+    retry: false,
+  });
+
 export const knownFollowersQuery = (did: string, viewer: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["knownFollowers", did, viewer],

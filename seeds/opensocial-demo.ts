@@ -1,10 +1,16 @@
 // Demo data for the groups branch against the opensocial dev stack: the
 // cycling club, in Grain. The riders already exist there — apps/community's
 // seed founds the club and its members — so this only gives them a Grain
-// profile, galleries of ride photos, and offers of them to the club's pool.
+// profile and their galleries of ride photos.
 //
-// The club (Peninsula Riders) is looked up on the host by handle. Without it
-// the ride galleries still get written; only the offers are skipped.
+// Most of those go straight into the club's pool, which is a permissioned
+// space the club owns: the records are the rider's, in the rider's own repo,
+// but only the club's members can read them. Nothing is offered and nothing is
+// accepted — being a member is the whole permission. One gallery is published
+// the ordinary public way, so the difference is visible in one seed.
+//
+// The club (Rain Shadow Riders) is looked up on the host by handle. Without it
+// every gallery falls back to public.
 //
 //   PDS_URL=http://localhost:2583 HOST_URL=http://localhost:4000 \
 //     npx tsx seeds/opensocial-demo.ts
@@ -14,8 +20,9 @@
 import exifr from "exifr";
 import { seed } from "@hatk/hatk/seed";
 
+const PDS = process.env.PDS_URL ?? "http://localhost:2583";
 const { createAccount, createRecord, uploadBlob } = seed({
-  pds: process.env.PDS_URL ?? "http://localhost:2583",
+  pds: PDS,
   password: process.env.SEED_PASSWORD ?? "demo-pass",
 });
 
@@ -70,6 +77,47 @@ async function exifOf(path: string) {
 
 type Rider = Awaited<ReturnType<typeof createAccount>>;
 
+/**
+ * Write records into a space, as the account whose repo they land in.
+ *
+ * Not `createRecord`: that writes to the public repo, and the whole point of a
+ * pool gallery is that it does not go there. A space write is the same commit
+ * through a different door — `com.atproto.space.applyWrites`, naming the space
+ * — and the PDS asks the space's authority whether this account may.
+ */
+async function applyWrites(who: Rider, space: string, writes: Record<string, unknown>[]) {
+  const call = (nsid: string, body: unknown) =>
+    fetch(`${PDS}/xrpc/${nsid}`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${who.accessJwt}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+  const res = await call("com.atproto.space.applyWrites", { space, repo: who.did, writes });
+  if (res.ok) return;
+  const body = await res.text();
+  // Everything here has a stable rkey, so a second run finds its own records
+  // already there. One commit is the nice path; re-runnability is the one that
+  // matters, so fall back to overwriting them one at a time.
+  if (!body.includes("RecordAlreadyExists")) {
+    throw new Error(`space.applyWrites ${res.status}: ${body}`);
+  }
+  for (const w of writes) {
+    const put = await call("com.atproto.space.putRecord", {
+      space,
+      repo: who.did,
+      collection: w.collection,
+      rkey: w.rkey,
+      validate: false,
+      record: w.value,
+    });
+    if (!put.ok) throw new Error(`space.putRecord ${put.status}: ${await put.text()}`);
+  }
+}
+
 async function gallery(
   who: Rider,
   rkey: string,
@@ -119,13 +167,13 @@ async function gallery(
 
 // ------------------------------------------------- the club and its riders
 //
-// Peninsula Riders is founded by apps/community's seed on the opensocial host:
+// Rain Shadow Riders is founded by apps/community's seed on the opensocial host:
 // its members, roles, events and rules all live there. Grain knows it only as
 // a DID with a community.opensocial.declaration — the one discoverable fact a
 // third-party app gates on — so all it needs from the host is that DID.
 
 const HOST = process.env.HOST_URL ?? "http://localhost:4000";
-const CLUB_HANDLE = process.env.CLUB_HANDLE ?? "peninsula-riders.opensocial.test";
+const CLUB_HANDLE = process.env.CLUB_HANDLE ?? "rain-shadow-riders.opensocial.test";
 
 /** The club's DID, or null if this network has no such community. */
 async function findClub(handle: string): Promise<string | null> {
@@ -145,7 +193,7 @@ const club = await findClub(CLUB_HANDLE);
 console.log(
   club
     ? `[seed] club ${CLUB_HANDLE} ${club}`
-    : `[seed] no ${CLUB_HANDLE} on ${HOST} — offers skipped`,
+    : `[seed] no ${CLUB_HANDLE} on ${HOST} — every gallery falls back to public`,
 );
 
 /** A club member with a Grain face: display name, bio, and an avatar. */
@@ -161,26 +209,150 @@ async function rider(handle: string, displayName: string, description: string, a
   return who;
 }
 
+/** The club's pool, by the convention every app here uses: one space, skey `self`. */
+const POOL = club ? `at://${club}/space/social.grain.group/self` : null;
+
 /**
- * Offer one of your galleries to the club's pool. The submission lives in the
- * member's own repo — it is a request, not a change to the club — and stays
- * pending until whoever holds the club's admit answers with a group.item.
+ * The same gallery, written into the club's pool instead of the public repo.
+ *
+ * Records in a space have no uri of their own — the address is the space, the
+ * repo, the collection and the rkey — so an item names its gallery and its
+ * photo by the uri each would have had in this rider's public repo. Every
+ * reader, here and in apps/community, puts them back together that way.
+ *
+ * No EXIF record: the space declares the three collections a gallery is made
+ * of, and a camera's serial number is not one of the things the club asked to
+ * keep for its members.
  */
-async function offer(who: Rider, g: { uri: string }, rkey: string, minutesAgo: number) {
-  if (!club) return;
-  await createRecord(
-    who,
-    "social.grain.group.submission",
-    { group: club, gallery: g.uri, createdAt: ago(minutesAgo) },
-    { rkey },
-  );
-  console.log(`[seed] ${who.handle} offered ${g.uri} to the pool`);
+async function poolGallery(
+  who: Rider,
+  rkey: string,
+  title: string,
+  description: string,
+  photos: { file: string; alt: string; ratio: [number, number] }[],
+  minutesAgo: number,
+) {
+  if (!POOL) return gallery(who, rkey, title, description, photos, minutesAgo);
+  const createdAt = ago(minutesAgo);
+  const self = (collection: string, key: string) => `at://${who.did}/${collection}/${key}`;
+  const writes: Record<string, unknown>[] = [
+    {
+      $type: "com.atproto.space.applyWrites#create",
+      collection: "social.grain.gallery",
+      rkey,
+      value: { $type: "social.grain.gallery", title, description, createdAt },
+    },
+  ];
+  for (const [i, p] of photos.entries()) {
+    const blob = await uploadBlob(who, `./seeds/images/${p.file}`);
+    const photoRkey = `${rkey}-p${i}`;
+    writes.push({
+      $type: "com.atproto.space.applyWrites#create",
+      collection: "social.grain.photo",
+      rkey: photoRkey,
+      value: {
+        $type: "social.grain.photo",
+        photo: blob,
+        alt: p.alt,
+        aspectRatio: { width: p.ratio[0], height: p.ratio[1] },
+        createdAt,
+      },
+    });
+    writes.push({
+      $type: "com.atproto.space.applyWrites#create",
+      collection: "social.grain.gallery.item",
+      rkey: photoRkey,
+      value: {
+        $type: "social.grain.gallery.item",
+        gallery: self("social.grain.gallery", rkey),
+        item: self("social.grain.photo", photoRkey),
+        position: i,
+        createdAt,
+      },
+    });
+  }
+  await applyWrites(who, POOL, writes);
+  console.log(`[seed] ${who.handle}: ${title} (${photos.length} photos) → the club's pool`);
+  return { uri: self("social.grain.gallery", rkey) };
 }
+
+/**
+ * A favourite and a comment on somebody else's pool gallery.
+ *
+ * Both are the reader's own records, and both go into the pool rather than
+ * their public repo — in the public repo they would name a private gallery to
+ * the whole network, which is what the pool exists to prevent. It also means a
+ * thread is spread across the repos of everyone in it: your reply to my gallery
+ * was never mine to hold.
+ */
+async function poolFavorite(who: Rider, g: { uri: string }, rkey: string, minutesAgo: number) {
+  if (!POOL) return;
+  await applyWrites(who, POOL, [
+    {
+      $type: "com.atproto.space.applyWrites#create",
+      collection: "social.grain.favorite",
+      rkey,
+      value: {
+        $type: "social.grain.favorite",
+        subject: g.uri,
+        createdAt: ago(minutesAgo),
+      },
+    },
+  ]);
+}
+
+async function poolComment(
+  who: Rider,
+  g: { uri: string },
+  rkey: string,
+  text: string,
+  minutesAgo: number,
+) {
+  if (!POOL) return;
+  await applyWrites(who, POOL, [
+    {
+      $type: "com.atproto.space.applyWrites#create",
+      collection: "social.grain.comment",
+      rkey,
+      value: {
+        $type: "social.grain.comment",
+        subject: g.uri,
+        text,
+        createdAt: ago(minutesAgo),
+      },
+    },
+  ]);
+  console.log(`[seed] ${who.handle} commented on ${g.uri.split("/").pop()}`);
+}
+
+// Everyone on the club's roster gets a face, not just the riders whose photos
+// are in the pool: the club's own site reads member avatars from this same
+// `social.grain.actor.profile` record, so an organiser without one is a grey
+// circle in both apps.
+const alex = await rider(
+  "alex-kim.test",
+  "Alex Kim",
+  "Founded Rain Shadow Riders in 2019. Still sweeps the Saturday loop.",
+  "avatar-alex.jpg",
+);
+const dana = await rider(
+  "dana-whitfield.test",
+  "Dana Whitfield",
+  "Moderates the club. Fixes your derailleur at the roadside, unasked.",
+  "avatar-dana.jpg",
+);
+
+const sam = await rider(
+  "sam-ortiz.test",
+  "Sam Ortiz",
+  "Newest on the Tuesday spin. Asks the tyre questions everyone else is thinking.",
+  "avatar-sam.jpg",
+);
 
 const priya = await rider(
   "priya-nair.test",
   "Priya Nair",
-  "Organizer and moderator at Peninsula Riders. Tours when the club is off.",
+  "Organizer and moderator at Rain Shadow Riders. Tours when the club is off.",
   "avatar-priya.jpg",
 );
 const marcus = await rider(
@@ -218,7 +390,7 @@ const TALL: [number, number] = [3, 4];
 // ride; the photos are members' own.
 const DAY = 60 * 24;
 
-const century = await gallery(
+const century = await poolGallery(
   priya,
   "century-from-the-sweep",
   "Century, from the sweep",
@@ -252,9 +424,8 @@ const century = await gallery(
   ],
   23 * DAY,
 );
-await offer(priya, century, "pool-century-from-the-sweep", 22 * DAY);
 
-const tunnel = await gallery(
+const tunnel = await poolGallery(
   marcus,
   "tunnel-hill-the-long-way",
   "Tunnel Hill, the long way",
@@ -288,9 +459,8 @@ const tunnel = await gallery(
   ],
   51 * DAY,
 );
-await offer(marcus, tunnel, "pool-tunnel-hill-the-long-way", 50 * DAY);
 
-const errands = await gallery(
+await poolGallery(
   jo,
   "club-errands",
   "Club errands",
@@ -314,9 +484,8 @@ const errands = await gallery(
   ],
   26 * DAY,
 );
-await offer(jo, errands, "pool-club-errands", 25 * DAY);
 
-const ferry = await gallery(
+const ferry = await poolGallery(
   tom,
   "ferry-loop-and-a-flat",
   "Ferry loop, and a flat",
@@ -335,9 +504,8 @@ const ferry = await gallery(
   ],
   79 * DAY,
 );
-await offer(tom, ferry, "pool-ferry-loop-and-a-flat", 79 * DAY);
 
-const rain = await gallery(
+await poolGallery(
   tom,
   "rain-or-shine",
   "Rain or shine",
@@ -366,9 +534,8 @@ const rain = await gallery(
   ],
   107 * DAY,
 );
-await offer(tom, rain, "pool-rain-or-shine", 107 * DAY);
 
-const wind = await gallery(
+await poolGallery(
   lena,
   "wind-farm-loop",
   "Wind farm loop",
@@ -402,11 +569,12 @@ const wind = await gallery(
   ],
   149 * DAY,
 );
-await offer(lena, wind, "pool-wind-farm-loop", 148 * DAY);
 
-// Offered half an hour ago, so it is still sitting in the queue a moderator
-// sees — the club has not answered this one yet.
-const gorge = await gallery(
+// The one that did not go to the club: an ordinary public gallery in Lena's
+// own repo, on the same afternoon, from the same app. Anyone can see this one,
+// including people who have never heard of Rain Shadow Riders — which is what
+// the six above are not.
+await gallery(
   lena,
   "rain-on-the-gorge",
   "Rain on the gorge",
@@ -430,6 +598,51 @@ const gorge = await gallery(
   ],
   45,
 );
-await offer(lena, gorge, "pool-rain-on-the-gorge", 30);
+
+// What members say to each other inside the pool. Every one of these is the
+// speaker's own record, written into the club's space: members see them, the
+// network never does, and there is no public count of any of it anywhere.
+await poolFavorite(jo, century, "fav-century", 21 * DAY);
+await poolFavorite(tom, century, "fav-century", 20 * DAY);
+await poolFavorite(lena, century, "fav-century", 19 * DAY);
+await poolComment(
+  jo,
+  century,
+  "comment-century",
+  "The alder tunnel shot. That is exactly what it looked like from the back.",
+  20 * DAY,
+);
+await poolComment(
+  marcus,
+  century,
+  "comment-century",
+  "Sweep is the best seat on the century and nobody believes me.",
+  19 * DAY,
+);
+await poolFavorite(priya, tunnel, "fav-tunnel", 49 * DAY);
+await poolComment(
+  priya,
+  tunnel,
+  "comment-tunnel",
+  "Lights checked at the start because of this ride, for the record.",
+  49 * DAY,
+);
+await poolFavorite(jo, ferry, "fav-ferry", 78 * DAY);
+await poolFavorite(alex, ferry, "fav-ferry", 77 * DAY);
+await poolFavorite(sam, tunnel, "fav-tunnel", 47 * DAY);
+await poolComment(
+  dana,
+  tunnel,
+  "comment-tunnel",
+  "Every light checked, nobody in the dark. Good ride.",
+  48 * DAY,
+);
+await poolComment(
+  lena,
+  ferry,
+  "comment-ferry",
+  "Fixed it in nine minutes flat and still made the 10:40.",
+  78 * DAY,
+);
 
 console.log("[seed] done");

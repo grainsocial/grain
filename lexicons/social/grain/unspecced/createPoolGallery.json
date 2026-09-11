@@ -1,0 +1,66 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.createPoolGallery",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Add a gallery to a community's pool: one permissioned space (social.grain.group) anchored on the community, holding every member's galleries. The gallery, its photos and its items are the author's own records in their own repo, written inside that space — so only the community's members can read them, and they leave with the author.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["group", "rkey", "title"],
+          "properties": {
+            "group": {
+              "type": "string",
+              "format": "did",
+              "description": "The community whose pool this goes into."
+            },
+            "rkey": {
+              "type": "string",
+              "description": "Record key for the gallery, in the author's repo.",
+              "maxLength": 64
+            },
+            "title": { "type": "string", "maxLength": 100 },
+            "description": { "type": "string", "maxLength": 1000 },
+            "photos": {
+              "type": "array",
+              "maxLength": 100,
+              "items": { "type": "ref", "ref": "#photoInput" }
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["space", "uri"],
+          "properties": {
+            "space": { "type": "string", "description": "The pool space it was written into." },
+            "uri": { "type": "string", "format": "at-uri" }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "SpacesUnsupported",
+          "description": "The author's PDS does not serve permissioned spaces."
+        },
+        {
+          "name": "NotAuthorized",
+          "description": "The viewer is not a member of this community's pool."
+        }
+      ]
+    },
+    "photoInput": {
+      "type": "object",
+      "required": ["photo", "aspectRatio"],
+      "properties": {
+        "photo": { "type": "blob", "accept": ["image/*"], "maxSize": 1000000 },
+        "alt": { "type": "string" },
+        "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" }
+      }
+    }
+  }
+}

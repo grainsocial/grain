@@ -1,0 +1,64 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.createPoolComment",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Comment on a gallery in a community's pool. The comment is the viewer's own record, written into the pool beside the gallery it answers, so only that community's members can read it.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["group", "gallery", "text"],
+          "properties": {
+            "group": {
+              "type": "string",
+              "format": "did"
+            },
+            "gallery": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "facets": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "app.bsky.richtext.facet"
+              }
+            },
+            "replyTo": {
+              "type": "string",
+              "format": "at-uri"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri", "rkey"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "at-uri"
+            },
+            "rkey": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotAuthorized",
+          "description": "The viewer is not a member of this pool."
+        }
+      ]
+    }
+  }
+}

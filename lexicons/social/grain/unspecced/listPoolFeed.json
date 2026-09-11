@@ -1,0 +1,113 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.listPoolFeed",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Every gallery in every pool the viewer is a member of, newest first. Assembled per viewer at request time: which communities they belong to is a public fact in the index, but what is in each pool is a permissioned space, read with a credential that community's host issues. Nothing here is shared between viewers or cached.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 30
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["galleries", "groups"],
+          "properties": {
+            "galleries": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#poolFeedItem"
+              }
+            },
+            "groups": {
+              "type": "array",
+              "description": "The pools these came out of, so a card can say whose it is.",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.group.defs#groupView"
+              }
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotAuthorized",
+          "description": "No pool the viewer belongs to would answer."
+        }
+      ]
+    },
+    "poolFeedItem": {
+      "type": "object",
+      "required": ["space", "group", "did", "rkey", "title", "photoCount", "items"],
+      "properties": {
+        "space": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string",
+          "format": "did",
+          "description": "Whose pool it is in."
+        },
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "Whose gallery it is."
+        },
+        "handle": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "rkey": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "photoCount": {
+          "type": "integer"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "social.grain.unspecced.getPrivateGallery#privateItem"
+          }
+        },
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "What a favourite or a comment names."
+        },
+        "favCount": {
+          "type": "integer"
+        },
+        "viewerFav": {
+          "type": "string"
+        },
+        "commentCount": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

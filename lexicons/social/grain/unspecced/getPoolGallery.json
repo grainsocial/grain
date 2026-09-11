@@ -1,0 +1,144 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getPoolGallery",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "One gallery from a community's pool, read from the repo that holds it through a credential the community's host issues.",
+      "parameters": {
+        "type": "params",
+        "required": ["group", "did", "rkey"],
+        "properties": {
+          "group": {
+            "type": "string",
+            "format": "did"
+          },
+          "did": {
+            "type": "string",
+            "format": "did",
+            "description": "Whose gallery it is."
+          },
+          "rkey": {
+            "type": "string"
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["space", "did", "items"],
+          "properties": {
+            "space": {
+              "type": "string"
+            },
+            "did": {
+              "type": "string",
+              "format": "did"
+            },
+            "handle": {
+              "type": "string"
+            },
+            "displayName": {
+              "type": "string"
+            },
+            "viewerIsAuthor": {
+              "type": "boolean"
+            },
+            "gallery": {
+              "type": "ref",
+              "ref": "social.grain.unspecced.getPrivateGallery#privateGallery"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "social.grain.unspecced.getPrivateGallery#privateItem"
+              }
+            },
+            "avatar": {
+              "type": "string"
+            },
+            "favCount": {
+              "type": "integer"
+            },
+            "viewerFav": {
+              "type": "string",
+              "description": "The rkey of the viewer's own favourite, when they have one."
+            },
+            "commentCount": {
+              "type": "integer"
+            },
+            "comments": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#poolComment"
+              }
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotAuthorized",
+          "description": "The viewer is not a member of this pool."
+        }
+      ]
+    },
+    "poolComment": {
+      "type": "object",
+      "required": ["uri", "rkey", "text", "author"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "rkey": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "facets": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "app.bsky.richtext.facet"
+          }
+        },
+        "replyTo": {
+          "type": "string",
+          "format": "at-uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "author": {
+          "type": "ref",
+          "ref": "#poolAuthor"
+        }
+      }
+    },
+    "poolAuthor": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "handle": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "avatar": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

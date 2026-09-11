@@ -15,6 +15,11 @@ const devOrigin = `http://127.0.0.1:${devPort}`;
 // the opensocial dev stack, for one — the whole login fails with
 // invalid_scope, so GRAIN_SPACE_SCOPES=0 leaves them out.
 const devSpaceScopes = process.env.GRAIN_SPACE_SCOPES !== "0";
+// The pool scopes, likewise: a network whose PDS cannot dereference
+// `social.grain.group` fails every login if we ask for them. The opensocial dev
+// stack publishes that declaration and turns these on; set GRAIN_POOL_SCOPES=0
+// against one that does not.
+const devPoolScopes = process.env.GRAIN_POOL_SCOPES !== "0";
 
 const grainScopes = [
   "atproto",
@@ -73,6 +78,28 @@ const spaceScopes = [
   "manage=create&manage=update&manage=delete",
 ].join("&");
 
+// A community's pool is a space too, but not one of ours to make: the community
+// creates it, and a member only reads it and writes their own galleries into
+// it. So no `manage=` — and `authority=*` because the space is anchored on the
+// community, never on the member.
+//
+// Requested separately from the gallery scopes above, and separately gated,
+// because the two need different things of a PDS: this one only needs
+// `social.grain.group` to resolve as a space declaration, which is a lexicon a
+// community host publishes. A network that serves one may not serve the other.
+const poolScopes = [
+  "space:social.grain.group?authority=*&skey=*",
+  "collection=social.grain.gallery",
+  "collection=social.grain.gallery.item",
+  "collection=social.grain.photo",
+  // A favourite and a comment on a pooled gallery belong in the pool too. In
+  // the public repo they would name a private gallery to the whole network,
+  // which is the one thing the space is for.
+  "collection=social.grain.favorite",
+  "collection=social.grain.comment",
+  "action=read&action=create&action=update&action=delete",
+].join("&");
+
 export default defineConfig({
   relay: isProd ? "wss://bsky.network" : "ws://localhost:2583",
   // Jetstream filters server-side, so we stop decoding the whole network to
@@ -126,7 +153,13 @@ export default defineConfig({
     // Dev asks for the space scopes outright, and has to ask here too: the
     // server-initiated login builds its request from this list, and it must
     // match what the loopback client_id encodes or the PDS grants neither.
-    scopes: (isProd || !devSpaceScopes ? grainScopes : `${grainScopes} ${spaceScopes}`).split(" "),
+    scopes: [
+      grainScopes,
+      ...(!isProd && devSpaceScopes ? [spaceScopes] : []),
+      ...(!isProd && devPoolScopes ? [poolScopes] : []),
+    ]
+      .join(" ")
+      .split(" "),
     conditionalScopes: [
       { whenMethod: "com.atproto.simplespace.createSpace", scopes: [spaceScopes] },
     ],
@@ -136,7 +169,7 @@ export default defineConfig({
             {
               client_id: `https://${prodDomain}/oauth-client-metadata.json`,
               client_name: "grain",
-              scope: `${grainScopes} ${legacyScopes} ${spaceScopes}`,
+              scope: `${grainScopes} ${legacyScopes} ${spaceScopes} ${poolScopes}`,
               redirect_uris: [
                 `https://${prodDomain}/oauth/callback`,
                 `https://${prodDomain}/admin`,
@@ -151,15 +184,18 @@ export default defineConfig({
         // token exchange rebuilds from this config, so the two would disagree.
         client_id: `${devOrigin}/oauth-client-metadata.json`,
         client_name: "grain",
-        scope: devSpaceScopes
-          ? `${grainScopes} ${legacyScopes} ${spaceScopes}`
-          : `${grainScopes} ${legacyScopes}`,
+        scope: [
+          grainScopes,
+          legacyScopes,
+          ...(devSpaceScopes ? [spaceScopes] : []),
+          ...(devPoolScopes ? [poolScopes] : []),
+        ].join(" "),
         redirect_uris: [`${devOrigin}/oauth/callback`, `${devOrigin}/admin`],
       },
       {
         client_id: "grain-native://app",
         client_name: "Grain for iOS",
-        scope: `${grainScopes} ${legacyScopes} ${spaceScopes}`,
+        scope: `${grainScopes} ${legacyScopes} ${spaceScopes} ${poolScopes}`,
         redirect_uris: ["grain://oauth/callback"],
       },
     ],

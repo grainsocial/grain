@@ -11,7 +11,7 @@
 // they cannot come from the CDN.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
-import { listSpaceRecords, parseSpaceUri } from "../spaces/client.ts";
+import { blobCid, listSpaceRecords, parseSpaceUri } from "../spaces/client.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 interface PhotoValue {
@@ -56,7 +56,7 @@ export default defineQuery("social.grain.unspecced.getPrivateGallery", async (ct
         const photo = value.item ? byUri.get(value.item) : undefined;
         if (!photo) return null;
         const photoValue = photo.value as PhotoValue;
-        const cid = photoValue.photo?.ref?.$link;
+        const cid = blobCid(photoValue.photo);
         if (!cid) return null;
         return {
           uri: `at://${authority}/social.grain.photo/${photo.rkey}`,

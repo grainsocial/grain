@@ -8,24 +8,24 @@
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
   import Toast from '$lib/components/atoms/Toast.svelte'
-  import { Grid3x3, Inbox, Check, X, LoaderCircle, Share, UsersRound, LogOut } from 'lucide-svelte'
-  import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { groupQuery, groupFeedQuery, groupSubmissionsQuery } from '$lib/queries'
-  import { acceptSubmission, declineSubmission, joinGroup, leaveGroup } from '$lib/mutations'
+  import { Check, ImagePlus, Lock, Share, UsersRound, LogOut } from 'lucide-svelte'
+  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
+  import { groupQuery, poolGalleriesQuery } from '$lib/queries'
+  import { joinGroup, leaveGroup } from '$lib/mutations'
   import { viewer, requireAuth } from '$lib/stores'
   import { share } from '$lib/utils/share'
-  import { relativeTime } from '$lib/utils'
-  import { page } from '$app/state'
-  import { goto } from '$app/navigation'
-  import type { PhotoView, SubmissionView } from '$hatk/client'
+  import type { GalleryView } from '$hatk/client'
 
-  // The profile page with the nouns swapped: same header, same tabs, same
-  // grid. A group is an account like any other; what makes it a group is that
-  // its pool is other people's galleries. "Acting" — the viewer signed in *as*
-  // the group through its community host — is the only moderator signal
-  // Grain needs: that session can write the group's repo, so it can accept.
-  const validTabs = ['pool', 'queue'] as const
-  type ViewMode = (typeof validTabs)[number]
+  // The profile page with the nouns swapped: same header, same grid. A group is
+  // an account like any other; what makes it a group is that its pool is other
+  // people's galleries.
+  //
+  // The pool is a permissioned space the community owns, so there is no queue
+  // and nothing to accept: a member writes their gallery straight into it, and
+  // membership is the whole permission. Nothing in it is indexed either — it is
+  // read from each member's repo, on every visit, with a credential the
+  // community's host issues to whoever is asking. A visitor gets a refusal,
+  // which is the honest shape of a private pool rather than an empty grid.
 
   let { data } = $props()
   const did = $derived(data.did)
@@ -33,24 +33,52 @@
   let lightboxSrc: string | null = $state(null)
 
   const group = createQuery(() => groupQuery(did))
-  const feed = createInfiniteQuery(() => groupFeedQuery(did))
-  const items = $derived(feed.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const acting = $derived(!!group.data?.viewer?.acting)
-  const queue = createQuery(() => ({ ...groupSubmissionsQuery(did), enabled: acting }))
-  const pending = $derived(queue.data ?? [])
-  const pendingCount = $derived(group.data?.pendingCount ?? 0)
+  const pool = createQuery(() => ({ ...poolGalleriesQuery(did), enabled: !!$viewer }))
+  const space = $derived(pool.data?.space ?? '')
 
-  const viewMode: ViewMode = $derived.by(() => {
-    page.url.href
-    const t = page.url.searchParams.get('tab')
-    return t === 'queue' && acting ? 'queue' : 'pool'
-  })
-  function setTab(tab: ViewMode) {
-    const url = new URL(page.url)
-    if (tab === 'pool') url.searchParams.delete('tab')
-    else url.searchParams.set('tab', tab)
-    goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+  // Never the CDN: the space hands a blob only to a credential holder, so these
+  // come back through grain itself and are cached nowhere in between.
+  function blobSrc(photoDid: string, cid: string): string {
+    return `/xrpc/social.grain.unspecced.getPrivateBlob?${new URLSearchParams({ space, did: photoDid, cid })}`
   }
+
+  // Shaped into the view GalleryGrid renders, so a pool gallery looks like
+  // every other one. Counts are absent rather than zero: favorites and comments
+  // are public records, and these galleries are not.
+  const items = $derived(
+    (pool.data?.galleries ?? []).map(
+      (g) =>
+        ({
+          uri: `at://${g.did}/social.grain.gallery/${g.rkey}`,
+          cid: '',
+          title: g.title,
+          description: g.description,
+          createdAt: g.createdAt,
+          creator: { did: g.did, handle: g.handle, displayName: g.displayName },
+          items: g.cover
+            ? [
+                {
+                  uri: g.cover.uri,
+                  cid: g.cover.cid,
+                  thumb: blobSrc(g.cover.did, g.cover.cid),
+                  fullsize: blobSrc(g.cover.did, g.cover.cid),
+                  alt: g.cover.alt,
+                  aspectRatio: g.cover.aspectRatio,
+                },
+                // The tile's "more than one" mark counts items, and only the
+                // cover is fetched here. The rest stand in as empties.
+                ...Array.from({ length: Math.max(0, g.photoCount - 1) }, () => ({ uri: '', cid: '' })),
+              ]
+            : [],
+        }) as unknown as GalleryView,
+    ),
+  )
+  // The ordinary gallery page, told which pool to read it from: a pooled
+  // gallery is still the author's record at the author's rkey, so it keeps the
+  // address every other gallery has.
+  const poolHref = (g: GalleryView) =>
+    `/profile/${encodeURIComponent(g.creator?.did ?? '')}/gallery/${(g.uri ?? '').split('/').pop()}?group=${encodeURIComponent(did)}`
 
   let showToast = $state(false)
   let toastMessage = $state('Link copied')
@@ -93,42 +121,6 @@
     }
   }
 
-  let accepting: string | null = $state(null)
-  async function accept(s: SubmissionView) {
-    if (accepting) return
-    accepting = s.uri
-    try {
-      await acceptSubmission(s.gallery.uri, s.uri, queryClient)
-      toastMessage = `Added "${s.gallery.title}" to the pool`
-    } catch (err) {
-      console.error('accept failed', err)
-      toastMessage = 'Could not accept — is this session allowed to write the group?'
-    } finally {
-      accepting = null
-      showToast = true
-    }
-  }
-  let declining: string | null = $state(null)
-  async function decline(s: SubmissionView) {
-    if (declining) return
-    declining = s.uri
-    try {
-      await declineSubmission(s.gallery.uri, s.uri, queryClient)
-      toastMessage = `Declined "${s.gallery.title}"`
-    } catch (err) {
-      console.error('decline failed', err)
-      toastMessage = 'Could not decline'
-    } finally {
-      declining = null
-      showToast = true
-    }
-  }
-  function thumb(s: SubmissionView): string | undefined {
-    return ((s.gallery.items ?? []) as PhotoView[])[0]?.thumb
-  }
-  function photoCount(s: SubmissionView): number {
-    return ((s.gallery.items ?? []) as PhotoView[]).length
-  }
 </script>
 
 <div class="page-wrapper">
@@ -152,7 +144,8 @@
 {:else}
   {@const g = group.data}
   {@const name = g.displayName || g.handle}
-  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description="{g.poolCount ?? 0} galleries" />
+  <!-- The card that goes out to anyone: members, never the pool's size. -->
+  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description="{g.memberCount ?? 0} members" />
 
   <div class="mobile-back"><DetailHeader label={name} /></div>
 
@@ -176,14 +169,14 @@
         <span class="profile-handle">@{g.handle}</span>
       </div>
       <div class="stat-row">
-        <span
-          ><strong>{(g.poolCount ?? 0).toLocaleString()}</strong>
-          {(g.poolCount ?? 0) === 1 ? 'gallery' : 'galleries'}</span
-        >
-        <span><strong>{(g.memberCount ?? 0).toLocaleString()}</strong> {g.memberCount === 1 ? 'member' : 'members'}</span>
-        {#if acting}
-          <button class="stat-link" type="button" onclick={() => setTab('queue')}><strong>{pendingCount.toLocaleString()}</strong> waiting for review</button>
+        <!-- Counted from the pool itself, and only by someone who can read it.
+             There is no public number to fall back on: that is what private
+             means here. -->
+        {#if pool.isSuccess}
+          {@const n = pool.data?.galleries?.length ?? 0}
+          <span><strong>{n.toLocaleString()}</strong> {n === 1 ? 'gallery' : 'galleries'}</span>
         {/if}
+        <span><strong>{(g.memberCount ?? 0).toLocaleString()}</strong> {g.memberCount === 1 ? 'member' : 'members'}</span>
       </div>
       {#if g.description}
         <div class="bio"><RichText text={g.description} /></div>
@@ -217,63 +210,27 @@
   {/if}
 
   <div class="view-toggle">
-    <div class="toggle-tabs">
-      <button class="toggle-btn" class:active={viewMode === 'pool'} onclick={() => setTab('pool')} aria-label="Pool">
-        <Grid3x3 size={20} />
-      </button>
-      {#if acting}
-        <button class="toggle-btn" class:active={viewMode === 'queue'} onclick={() => setTab('queue')} aria-label="Queue">
-          <Inbox size={20} />
-          {#if pendingCount > 0}<span class="count">{pendingCount}</span>{/if}
-        </button>
-      {/if}
-    </div>
-    {#if acting && viewMode === 'pool' && pendingCount > 0}
-      <button class="select-text-btn" onclick={() => setTab('queue')}>Review</button>
+    <div class="pool-label"><Lock size={14} /> Members' pool</div>
+    {#if member}
+      <a class="select-text-btn" href="/group/{did}/create"><ImagePlus size={15} /> Add a gallery</a>
     {/if}
   </div>
 
-  {#if viewMode === 'queue' && acting}
-    {#if queue.isLoading}
-      <div class="empty-state">Loading…</div>
-    {:else if pending.length === 0}
-      <div class="empty-state">Nothing waiting for review.</div>
-    {:else}
-      <div class="queue">
-        {#each pending as s (s.uri)}
-          {@const rkey = s.gallery.uri.split('/').pop()}
-          <div class="qrow">
-            <a class="qthumb" href="/profile/{s.gallery.creator.did}/gallery/{rkey}">
-              {#if thumb(s)}<img src={thumb(s)} alt={s.gallery.title ?? ''} />{/if}
-            </a>
-            <div class="qt">
-              <a class="qtitle" href="/profile/{s.gallery.creator.did}/gallery/{rkey}">{s.gallery.title}</a>
-              <span class="qmeta">
-                <a href="/profile/{s.gallery.creator.did}">{s.gallery.creator.displayName || `@${s.gallery.creator.handle}`}</a>
-                · {photoCount(s)} {photoCount(s) === 1 ? 'photo' : 'photos'}
-                · submitted {relativeTime(s.createdAt)}
-              </span>
-            </div>
-            <button class="decline" type="button" onclick={() => decline(s)} disabled={declining === s.uri || accepting === s.uri} aria-label="Decline">
-              {#if declining === s.uri}<LoaderCircle size={14} class="spin" />{:else}<X size={14} />{/if}
-              Decline
-            </button>
-            <button class="accept" type="button" onclick={() => accept(s)} disabled={accepting === s.uri || declining === s.uri}>
-              {#if accepting === s.uri}<LoaderCircle size={14} class="spin" />{:else}<Check size={14} />{/if}
-              Accept
-            </button>
-          </div>
-        {/each}
-      </div>
-    {/if}
+  {#if !$viewer}
+    <div class="empty-state">
+      This pool is the club's, not the network's. Sign in as a member to see it.
+    </div>
+  {:else if pool.isError}
+    <div class="empty-state">
+      Only members can open this pool. If you have just joined, reload — the
+      credential is minted fresh each time.
+    </div>
   {:else}
     <GalleryGrid
-      items={items}
-      loading={feed.isLoading}
-      emptyText="No galleries yet."
-      hasMore={feed.hasNextPage}
-      loadingMore={feed.isFetchingNextPage}
-      onLoadMore={() => feed.fetchNextPage()}
+      {items}
+      loading={pool.isLoading}
+      emptyText="Nothing in the pool yet."
+      hrefFor={poolHref}
       showAuthor
     />
   {/if}
@@ -283,7 +240,7 @@
 <Toast message={toastMessage} bind:visible={showToast} />
 
 <style>
-  /* Everything down to .toggle-btn mirrors /profile/[did] — same header grid,
+  /* Everything down to .rules mirrors /profile/[did] — same header grid,
      same responsive avatar, same stat band, same pill tabs — so a group reads
      as what it is: an author whose galleries happen to be other people's. */
   .mobile-back { display: none; }
@@ -361,8 +318,6 @@
     .stat-row :global(strong) { font-size: inherit; }
   }
   .stat-row strong { color: var(--text-primary); font-weight: 600; }
-  .stat-link { text-decoration: none; color: inherit; background: none; border: none; padding: 0; font: inherit; cursor: pointer; }
-  .stat-link:hover { text-decoration: underline; }
   .bio { margin-top: 8px; font-size: 14px; color: var(--text-secondary); white-space: pre-wrap; }
   .links-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .link-pill {
@@ -382,49 +337,25 @@
   .view-toggle {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 8px 16px;
-    position: relative;
-  }
-  .toggle-tabs {
-    display: flex;
-    gap: 6px;
   }
   .select-text-btn {
-    position: absolute;
-    right: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: none;
     border: none;
     font-size: 13px;
     font-weight: 500;
     font-family: inherit;
     color: var(--grain);
+    text-decoration: none;
     cursor: pointer;
     padding: 4px 0;
   }
   .select-text-btn:hover { opacity: 0.8; }
-  .toggle-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 9px 18px;
-    border-radius: 999px;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: color 0.15s, background-color 0.15s, box-shadow 0.15s;
-  }
-  .toggle-btn:hover { color: var(--text-secondary); background: var(--bg-hover); }
-  .toggle-btn.active {
-    color: var(--text-primary);
-    background: var(--bg-surface);
-  }
-  .count {
-    font-size: 11px; font-weight: 700; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
-    background: var(--grain); color: var(--on-grain); display: inline-flex; align-items: center; justify-content: center;
-  }
   .not-found { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .bsky-link { display: inline-flex; align-items: center; gap: 4px; color: var(--grain); text-decoration: none; font-size: 13px; font-weight: 500; }
   .bsky-link:hover { text-decoration: underline; }
@@ -446,24 +377,10 @@
   .menu-item:hover { background: var(--bg-hover); }
   .empty-state { text-align: center; color: var(--text-muted); padding: 48px 16px; font-size: 14px; }
 
-  /* The queue has no profile equivalent: one row per submission. */
-  .queue { display: flex; flex-direction: column; }
-  .qrow { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-  .qthumb { width: 64px; height: 64px; border-radius: 8px; overflow: hidden; background: var(--bg-elevated); flex-shrink: 0; }
-  .qthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .qt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-  .qtitle { font-weight: 600; font-size: 14px; color: var(--text-primary); text-decoration: none; }
-  .qmeta { font-size: 12px; color: var(--text-muted); }
-  .qmeta a { color: inherit; }
-  .accept {
-    display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 999px; border: none;
-    background: var(--grain); color: var(--on-grain); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  /* The pool's own band, where the profile has its tab bar: what this grid is,
+     and the one thing a member can do to it. */
+  .pool-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-secondary);
   }
-  .accept:disabled { opacity: 0.6; cursor: default; }
-  .decline {
-    display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px;
-    border: 1px solid var(--border); background: none; color: var(--text-secondary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  }
-  .decline:hover { background: var(--bg-hover); color: var(--text-primary); }
-  .decline:disabled { opacity: 0.6; cursor: default; }
 </style>

@@ -13,8 +13,7 @@
   import ReportButton from './ReportButton.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag, Pencil, UsersRound, CircleMinus } from 'lucide-svelte'
-  import GroupPicker from '../organisms/GroupPicker.svelte'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag, Pencil, CircleMinus } from 'lucide-svelte'
   import { removeFromPool } from '$lib/mutations'
   import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import { share } from '$lib/utils/share'
@@ -36,10 +35,18 @@
     onCommentClick,
     onStoryTap,
     privateGallery = false,
+    pool = undefined,
   }: {
     gallery: GalleryView
     onCommentClick?: () => void
     onStoryTap?: (did: string) => void
+    /**
+     * The community whose pool this gallery is in. Favouriting and commenting
+     * stay on — they simply go into that space, as the viewer's own records,
+     * rather than into their public repo where they would name a private
+     * gallery to everyone.
+     */
+    pool?: string
     privateGallery?: boolean
   } = $props()
 
@@ -55,7 +62,6 @@
   )
   let deleting = $state(false)
   let reportOpen = $state(false)
-  let groupPickerOpen = $state(false)
   // Signed in as the group whose pool this is — the one viewer who may take it out.
   const actingForPool = $derived(!!gallery.group && $viewer?.did === gallery.group.did)
   let removing = $state(false)
@@ -100,7 +106,13 @@
   const favCount = $derived(gallery.favCount ?? 0)
   const commentCount = $derived(gallery.commentCount ?? 0)
   const galleryRkey = $derived(gallery.uri.split('/').pop())
-  const galleryHref = $derived(`/profile/${gallery.creator?.did}/gallery/${galleryRkey}`)
+  // A gallery in a community's pool keeps the author's address and adds which
+  // pool to read it from — it is not in the public repo, so the page cannot
+  // find it otherwise.
+  const galleryHref = $derived(
+    `/profile/${gallery.creator?.did}/gallery/${galleryRkey}` +
+      (privateGallery && gallery.group ? `?group=${encodeURIComponent(gallery.group.did)}` : ''),
+  )
   const favedByFollowing = $derived(gallery.favedByFollowing ?? [])
   const favedByNames = $derived(
     favedByFollowing.slice(0, 2).map((p) => p.displayName || (p.handle ? `@${p.handle}` : '')),
@@ -110,8 +122,7 @@
   let showToast = $state(false)
 
   async function handleShare() {
-    const rkey = gallery.uri.split('/').pop()
-    const url = `${window.location.origin}/profile/${gallery.creator?.did}/gallery/${rkey}`
+    const url = `${window.location.origin}${galleryHref}`
     const result = await share(url)
     if (result.success && result.method === 'clipboard') {
       showToast = true
@@ -200,10 +211,6 @@
       {/if}
       {#if isOwner}
         <div class="menu-divider"></div>
-        <button class="menu-item" type="button" onclick={() => (groupPickerOpen = true)}>
-          <UsersRound size={15} />
-          Add to a group
-        </button>
         {#if $viewer?.did === 'did:plc:bcgltzqazw5tb6k2g3ttenbj'}
           <a class="menu-item" href="/profile/{gallery.creator?.did}/gallery/{gallery.uri.split('/').pop()}/edit">
             <Pencil size={15} />
@@ -229,12 +236,13 @@
   />
 
   <div class="engagement">
-    {#if !privateGallery}
+    {#if !privateGallery || pool}
     <FavoriteButton
       galleryUri={gallery.uri}
       viewerFav={gallery.viewer?.fav ?? null}
       {favCount}
-      countHref="{galleryHref}/favorited-by"
+      {pool}
+      countHref={pool ? undefined : `${galleryHref}/favorited-by`}
       bind:favorite={doFavorite}
     />
     <button class="stat" type="button" onclick={() => requireAuth() && onCommentClick?.()}>
@@ -264,9 +272,6 @@
   {#if $isAuthenticated}
     <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} showButton={false} bind:open={reportOpen} />
   {/if}
-  {#if isOwner && !privateGallery}
-    <GroupPicker bind:open={groupPickerOpen} galleryUri={gallery.uri} />
-  {/if}
 
   <Toast message="Link copied" bind:visible={showToast} />
 
@@ -275,7 +280,7 @@
   {/if}
 
   <div class="card-content">
-    <a href="/profile/{gallery.creator?.did}/gallery/{gallery.uri.split('/').pop()}" class="title-link">
+    <a href={galleryHref} class="title-link">
       <p class="title">{gallery.title}</p>
     </a>
     {#if gallery.description}

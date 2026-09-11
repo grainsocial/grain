@@ -14,12 +14,21 @@
     onClose,
     contained = false,
     inline = false,
+    pool = undefined,
     before,
     footer,
   }: {
     open: boolean
     subjectUri: string
     onClose: () => void
+    /**
+     * The community whose pool the subject is in, when it is in one. The thread
+     * then lives in that space: every comment is its author's own record inside
+     * it, read across the members' repos at request time and readable by nobody
+     * else. There is no index behind it, so there is no cursor either — the
+     * pool hands over the whole thread or none of it.
+     */
+    pool?: string
     /** Absolute panel over the story viewer's own dark surface. */
     contained?: boolean
     /** Sits in normal flow as a column of the page — no overlay, no close. */
@@ -87,10 +96,27 @@
     }
   })
 
+  /** A pooled subject is `at://<author>/social.grain.gallery/<rkey>`. */
+  const poolTarget = $derived.by(() => {
+    if (!pool) return null
+    const m = subjectUri.match(/^at:\/\/([^/]+)\/[^/]+\/([^/]+)$/)
+    return m ? { group: pool, did: m[1], rkey: m[2] } : null
+  })
+
   async function loadComments() {
     loading = true
     error = null
     try {
+      if (poolTarget) {
+        const res: any = await callXrpc(
+          'social.grain.unspecced.getPoolGallery',
+          poolTarget as never,
+        )
+        comments = res?.comments ?? []
+        cursor = undefined
+        totalCount = res?.commentCount ?? comments.length
+        return
+      }
       const res = await callXrpc('social.grain.unspecced.getCommentThread', {
         subject: subjectUri,
         limit: 20,
@@ -139,16 +165,24 @@
       const parsed = await parseTextToFacets(text)
       const facets = parsed.facets.length > 0 ? parsed.facets : undefined
 
-      const result = await callXrpc('dev.hatk.createRecord', {
-        collection: 'social.grain.comment',
-        record: {
-          text,
-          subject: subjectUri,
-          ...(facets ? { facets } : {}),
-          ...(replyToUri ? { replyTo: replyToUri } : {}),
-          createdAt: now,
-        },
-      })
+      const result = poolTarget
+        ? await callXrpc('social.grain.unspecced.createPoolComment', {
+            group: poolTarget.group,
+            gallery: subjectUri,
+            text,
+            ...(facets ? { facets } : {}),
+            ...(replyToUri ? { replyTo: replyToUri } : {}),
+          } as never)
+        : await callXrpc('dev.hatk.createRecord', {
+            collection: 'social.grain.comment',
+            record: {
+              text,
+              subject: subjectUri,
+              ...(facets ? { facets } : {}),
+              ...(replyToUri ? { replyTo: replyToUri } : {}),
+              createdAt: now,
+            },
+          })
 
       // Optimistic add
       const newComment: CommentView = {
@@ -175,6 +209,7 @@
 
       // Invalidate feed queries to update comment counts
       queryClient.invalidateQueries({ queryKey: ['getFeed'], refetchType: 'none' })
+      if (poolTarget) queryClient.invalidateQueries({ queryKey: ['poolGallery'] })
     } catch (err: any) {
       error = 'Failed to post comment'
       console.error(err)
@@ -186,13 +221,21 @@
   async function handleDelete(uri: string) {
     const rkey = uri.split('/').pop()!
     try {
-      await callXrpc('dev.hatk.deleteRecord', {
-        collection: 'social.grain.comment',
-        rkey,
-      })
+      if (poolTarget) {
+        await callXrpc('social.grain.unspecced.deletePoolComment', {
+          group: poolTarget.group,
+          rkey,
+        } as never)
+      } else {
+        await callXrpc('dev.hatk.deleteRecord', {
+          collection: 'social.grain.comment',
+          rkey,
+        })
+      }
       comments = comments.filter((c) => c.uri !== uri)
       totalCount--
       queryClient.invalidateQueries({ queryKey: ['getFeed'], refetchType: 'none' })
+      if (poolTarget) queryClient.invalidateQueries({ queryKey: ['poolGallery'] })
     } catch (err: any) {
       console.error('Failed to delete comment:', err)
     }

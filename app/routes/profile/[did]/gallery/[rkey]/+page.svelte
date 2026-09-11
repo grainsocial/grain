@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query'
-  import { galleryQuery } from '$lib/queries'
+  import { galleryQuery, groupQuery, poolGalleryQuery } from '$lib/queries'
+  import { page } from '$app/state'
   import GalleryMedia from '$lib/components/molecules/GalleryMedia.svelte'
   import GalleryCard from '$lib/components/molecules/GalleryCard.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
@@ -11,9 +12,8 @@
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
-  import { ArrowLeft, AlertTriangle, Info, MapPin, UsersRound, CircleMinus } from 'lucide-svelte'
+  import { ArrowLeft, AlertTriangle, Info, MapPin, CircleMinus } from 'lucide-svelte'
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
-  import GroupPicker from '$lib/components/organisms/GroupPicker.svelte'
   import { viewer } from '$lib/stores'
   import { removeFromPool } from '$lib/mutations'
   import { useQueryClient } from '@tanstack/svelte-query'
@@ -27,14 +27,74 @@
   const did = $derived(data.did)
   const rkey = $derived(data.rkey)
   const galleryUri = $derived(data.galleryUri)
-  const galleryQ = createQuery(() => galleryQuery(galleryUri))
-  const gallery = $derived((galleryQ.data as GalleryView) ?? null)
+
+  // A gallery in a community's pool has the same address as any other — it is
+  // the author's record, at their DID and rkey — but it is not in the public
+  // repo, so it cannot be read the public way. `?group=` says which pool to
+  // ask, and from there this is the same page: same split, same media, same
+  // author line. What it is not is a second page for private galleries.
+  const group = $derived(page.url.searchParams.get('group'))
+  const galleryQ = createQuery(() => ({ ...galleryQuery(galleryUri), enabled: !group }))
+  const poolQ = createQuery(() => ({
+    ...poolGalleryQuery(group ?? '', did, rkey),
+    enabled: !!group,
+  }))
+  // Which group it is, is public and indexed; what is in its pool is not. So
+  // the name under the author comes from the ordinary group read, and arrives
+  // whether or not the credentialed one does.
+  const groupQ = createQuery(() => ({ ...groupQuery(group ?? ''), enabled: !!group }))
+
+  // Never the CDN: the space hands a blob only to a credential holder, so these
+  // come back through grain itself and are cached nowhere in between.
+  const blobSrc = (space: string, photoDid: string, cid: string) =>
+    `/xrpc/social.grain.unspecced.getPrivateBlob?${new URLSearchParams({ space, did: photoDid, cid })}`
+
+  // Shaped into the view the rest of this page reads. Counts are absent rather
+  // than zero: a favorite or a comment is a public record naming the gallery,
+  // and this gallery is not public, so there is nothing to count and nothing
+  // offered — see `pooled` below.
+  const poolView = $derived.by((): GalleryView | null => {
+    const d = poolQ.data
+    if (!d || !group) return null
+    return {
+      uri: galleryUri,
+      cid: '',
+      title: d.gallery?.title ?? 'Untitled',
+      description: d.gallery?.description,
+      createdAt: d.gallery?.createdAt,
+      creator: { did, handle: d.handle, displayName: d.displayName, avatar: d.avatar },
+      favCount: d.favCount ?? 0,
+      commentCount: d.commentCount ?? 0,
+      viewer: d.viewerFav ? { fav: d.viewerFav } : undefined,
+      group: {
+        did: group,
+        handle: groupQ.data?.handle,
+        displayName: groupQ.data?.displayName,
+      },
+      items: (d.items ?? []).map((item) => ({
+        uri: item.uri,
+        cid: item.cid,
+        thumb: blobSrc(d.space, item.did, item.cid),
+        fullsize: blobSrc(d.space, item.did, item.cid),
+        alt: item.alt,
+        aspectRatio: item.aspectRatio,
+      })),
+    } as unknown as GalleryView
+  })
+
+  const gallery = $derived(group ? poolView : ((galleryQ.data as GalleryView) ?? null))
+  /**
+   * In a pool, the public-repo actions stay off — a report, an edit or a delete
+   * all act on a record that is not there. Favouriting and commenting are on,
+   * and go into the pool: `pool` is what routes them there.
+   */
+  const pooled = $derived(!!group)
+  const loading = $derived(group ? poolQ.isLoading : galleryQ.isLoading)
   // Groups: the owner may offer this gallery to a group; whoever is signed in
   // as the pooling group may take it back out. Same menu the feed card has.
   const queryClient = useQueryClient()
   const isOwner = $derived(!!gallery && $viewer?.did === gallery.creator?.did)
   const actingForPool = $derived(!!gallery?.group && $viewer?.did === gallery.group.did)
-  let groupPickerOpen = $state(false)
   let removing = $state(false)
   async function handleRemoveFromPool() {
     if (!gallery?.group || removing) return
@@ -160,7 +220,7 @@
   image="/og/profile/{did}/gallery/{rkey}"
 />
 
-{#if galleryQ.isLoading}
+{#if loading}
   <p class="state">Loading...</p>
 {:else if !gallery}
   <p class="state">Gallery not found</p>
@@ -186,7 +246,12 @@
         {/if}
       {/snippet}
     </DetailHeader>
-    <GalleryCard {gallery} onCommentClick={() => (commentSheetOpen = true)} />
+    <GalleryCard
+      {gallery}
+      privateGallery={pooled}
+      pool={group ?? undefined}
+      onCommentClick={() => (commentSheetOpen = true)}
+    />
   </div>
 
   <!-- The floor is a panorama guard, not a layout target: it is the smallest
@@ -233,15 +298,9 @@
             <BskyIcon />
           </a>
         {/if}
-        {#if isOwner || actingForPool}
+        {#if actingForPool}
           <span class="menu-slot">
             <OverflowMenu>
-              {#if isOwner}
-                <button class="menu-item" type="button" onclick={() => (groupPickerOpen = true)}>
-                  <UsersRound size={15} />
-                  Add to a group
-                </button>
-              {/if}
               {#if actingForPool}
                 <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
                   <CircleMinus size={15} />
@@ -283,47 +342,60 @@
           </a>
         {/if}
       </div>
-      {#if isOwner}
-        <GroupPicker bind:open={groupPickerOpen} galleryUri={gallery.uri} />
-      {/if}
+
+      <!-- The title, caption and EXIF, one block, whether or not a comment
+           thread is wrapped around them. -->
+      {#snippet body()}
+        <div class="body">
+          <h1>{gallery.title}</h1>
+          {#if gallery.description}
+            <div
+              class="description"
+              class:clamped={!captionExpanded}
+              bind:this={captionEl}
+            >
+              <RichText text={gallery.description} />
+            </div>
+            {#if captionOverflows && !captionExpanded}
+              <button class="more" type="button" onclick={() => (captionExpanded = true)}>
+                more
+              </button>
+            {/if}
+          {/if}
+          {#if labelResult.action === 'badge'}
+            <span class="label-badge"><AlertTriangle size={12} /> {labelResult.name}</span>
+          {/if}
+          {#if currentExif}
+            <div class="exif"><ExifInfo exif={currentExif} /></div>
+          {/if}
+        </div>
+      {/snippet}
 
       <div class="thread">
-        <CommentSheet open={isSplit} inline subjectUri={gallery.uri} onClose={() => {}}>
+        <!-- The same thread either way. In a pool it is read from the members'
+             own repos inside the space and written back into it, so it reaches
+             exactly the people the gallery does. -->
+        <CommentSheet
+          open={isSplit}
+          inline
+          subjectUri={gallery.uri}
+          pool={group ?? undefined}
+          onClose={() => {}}
+        >
           {#snippet before()}
-            <div class="body">
-            <h1>{gallery.title}</h1>
-            {#if gallery.description}
-              <div
-                class="description"
-                class:clamped={!captionExpanded}
-                bind:this={captionEl}
-              >
-                <RichText text={gallery.description} />
-              </div>
-              {#if captionOverflows && !captionExpanded}
-                <button class="more" type="button" onclick={() => (captionExpanded = true)}>
-                  more
-                </button>
-              {/if}
-            {/if}
-            {#if labelResult.action === 'badge'}
-              <span class="label-badge"><AlertTriangle size={12} /> {labelResult.name}</span>
-            {/if}
-            {#if currentExif}
-              <div class="exif"><ExifInfo exif={currentExif} /></div>
-            {/if}
-                </div>
+            {@render body()}
           {/snippet}
           {#snippet footer()}
             <div class="actions">
-            <FavoriteButton
-              galleryUri={gallery.uri}
-              viewerFav={gallery.viewer?.fav ?? null}
-              favCount={gallery.favCount ?? 0}
-              countHref="/profile/{did}/gallery/{rkey}/favorited-by"
-              bind:favorite={doFavorite}
-            />
-                </div>
+              <FavoriteButton
+                galleryUri={gallery.uri}
+                viewerFav={gallery.viewer?.fav ?? null}
+                favCount={gallery.favCount ?? 0}
+                pool={group ?? undefined}
+                countHref={pooled ? undefined : `/profile/${did}/gallery/${rkey}/favorited-by`}
+                bind:favorite={doFavorite}
+              />
+            </div>
           {/snippet}
         </CommentSheet>
       </div>
@@ -333,6 +405,7 @@
   <CommentSheet
     open={commentSheetOpen}
     subjectUri={gallery.uri}
+    pool={group ?? undefined}
     onClose={() => { commentSheetOpen = false }}
   />
 {/if}

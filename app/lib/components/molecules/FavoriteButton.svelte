@@ -10,6 +10,7 @@
     viewerFav = null,
     favCount = 0,
     countHref = undefined,
+    pool = undefined,
     favorite = $bindable(undefined),
   }: {
     galleryUri: string
@@ -17,6 +18,13 @@
     favCount?: number
     /** When set, the count links here instead of being part of the toggle. */
     countHref?: string
+    /**
+     * The community whose pool this gallery is in, when it is in one. The
+     * favourite then goes into that space rather than the viewer's public repo
+     * — where it would name a private gallery to the whole network — and there
+     * is no public list of who favourited it to link to.
+     */
+    pool?: string
     favorite?: () => void
   } = $props()
 
@@ -31,6 +39,16 @@
 
   const createFavMut = createMutation(() => ({
     mutationFn: async () => {
+      if (pool) {
+        const res: any = await callXrpc('social.grain.unspecced.putPoolFavorite', {
+          group: pool,
+          gallery: galleryUri,
+          on: true,
+        } as never)
+        // The page reads its favourite state back out of the pool, so the rkey
+        // stands in for the uri a public favourite would have returned.
+        return { uri: res?.rkey ?? 'pooled' }
+      }
       return await callXrpc('dev.hatk.createRecord', {
         collection: 'social.grain.favorite',
         record: { subject: galleryUri, createdAt: new Date().toISOString() },
@@ -42,6 +60,7 @@
     onSuccess: (data: any) => {
       favOverride = data.uri ?? null
       queryClient.invalidateQueries({ queryKey: ['getFeed'], refetchType: 'none' })
+      if (pool) queryClient.invalidateQueries({ queryKey: ['poolGallery'] })
     },
     onError: () => {
       favOverride = undefined
@@ -50,6 +69,14 @@
 
   const deleteFavMut = createMutation<void, Error, string, { prev: string | null }>(() => ({
     mutationFn: async (uri) => {
+      if (pool) {
+        await callXrpc('social.grain.unspecced.putPoolFavorite', {
+          group: pool,
+          gallery: galleryUri,
+          on: false,
+        } as never)
+        return
+      }
       const rkey = uri.split('/').pop()!
       await callXrpc('dev.hatk.deleteRecord', {
         collection: 'social.grain.favorite',
@@ -63,6 +90,7 @@
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['getFeed'], refetchType: 'none' })
+      if (pool) queryClient.invalidateQueries({ queryKey: ['poolGallery'] })
     },
     onError: (_err, _vars, context) => {
       favOverride = context?.prev ?? undefined

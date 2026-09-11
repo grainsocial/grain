@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.deletePoolComment",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete one of your own comments from a community's pool.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["group", "rkey"],
+          "properties": {
+            "group": { "type": "string", "format": "did" },
+            "rkey": { "type": "string" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": { "deleted": { "type": "boolean" } } }
+      }
+    }
+  }
+}

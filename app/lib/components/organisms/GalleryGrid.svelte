@@ -22,6 +22,7 @@
     selectedUris = new Set<string>(),
     onToggle,
     showAuthor = false,
+    hrefFor,
   }: {
     items: GalleryView[]
     loading?: boolean
@@ -34,6 +35,8 @@
     onToggle?: (uri: string) => void
     /** Tiles carry the author's face — for grids that are many people's work, like a group pool. */
     showAuthor?: boolean
+    /** Where a tile goes, when it is not the author's public gallery page — a pool's is not. */
+    hrefFor?: (gallery: GalleryView) => string
   } = $props()
 
   function thumb(gallery: GalleryView): string | undefined {
@@ -65,7 +68,9 @@
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
       <a
         class="cell"
-        href={selectMode ? undefined : `/profile/${gallery.creator?.did}/gallery/${rkey(gallery.uri)}`}
+        href={selectMode
+          ? undefined
+          : (hrefFor?.(gallery) ?? `/profile/${gallery.creator?.did}/gallery/${rkey(gallery.uri)}`)}
         role={selectMode ? 'button' : undefined}
         tabindex={selectMode ? 0 : undefined}
         onclick={selectMode ? (e) => { e.preventDefault(); onToggle?.(gallery.uri) } : undefined}
@@ -130,6 +135,13 @@
     color: #fff;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     pointer-events: none;
+    transition: opacity 0.15s;
+  }
+  /* The author and the title want the same corner, so they take turns: at rest
+     the tile says whose it is, and under the cursor it says which it is. */
+  .cell:hover .who,
+  .cell:focus-visible .who {
+    opacity: 0;
   }
   .who :global(img), .who :global(.avatar) { border: 1.5px solid #fff; }
   .grid {
@@ -173,7 +185,8 @@
     opacity: 0;
     transition: opacity 0.15s;
   }
-  .cell:hover .overlay {
+  .cell:hover .overlay,
+  .cell:focus-visible .overlay {
     opacity: 1;
   }
   .overlay-title {

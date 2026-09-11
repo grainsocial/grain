@@ -30,7 +30,10 @@
         <span class="av"><Avatar did={group.did} src={group.avatar ?? null} name={group.displayName ?? group.handle} size={48} /></span>
         <span class="t">
           <b>{group.displayName ?? group.handle} <span class="group-mark"><UsersRound size={14} /></span></b>
-          <span class="meta">{group.poolCount ?? 0} {group.poolCount === 1 ? 'gallery' : 'galleries'} · @{group.handle}</span>
+          <!-- No gallery count: a group's pool is a permissioned space now, and
+               how much is in it is not a public fact. Members see the number on
+               the group's own page, counted from the pool they can read. -->
+          <span class="meta">{group.memberCount ?? 0} {group.memberCount === 1 ? 'member' : 'members'} · @{group.handle}</span>
           {#if group.description}<span class="desc">{group.description}</span>{/if}
         </span>
       </a>

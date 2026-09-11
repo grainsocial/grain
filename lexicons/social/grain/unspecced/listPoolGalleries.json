@@ -1,0 +1,105 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.listPoolGalleries",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Every gallery in a community's pool, newest first. Assembled at request time from the repos of the members who wrote them \u2014 a pool space never reaches a firehose, so none of it is in the index \u2014 and readable only by a member the community's host issues a credential to.",
+      "parameters": {
+        "type": "params",
+        "required": ["group"],
+        "properties": {
+          "group": {
+            "type": "string",
+            "format": "did"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 50
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["space", "galleries"],
+          "properties": {
+            "space": {
+              "type": "string"
+            },
+            "galleries": {
+              "type": "array",
+              "items": {
+                "type": "ref",
+                "ref": "#poolGallery"
+              }
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotAuthorized",
+          "description": "The viewer is not a member of this pool."
+        }
+      ]
+    },
+    "poolGallery": {
+      "type": "object",
+      "required": ["space", "did", "rkey", "title", "photoCount"],
+      "properties": {
+        "space": {
+          "type": "string"
+        },
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "Whose gallery it is."
+        },
+        "handle": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "rkey": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "datetime"
+        },
+        "photoCount": {
+          "type": "integer"
+        },
+        "cover": {
+          "type": "ref",
+          "ref": "social.grain.unspecced.getPrivateGallery#privateItem"
+        },
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "What a favourite or a comment names."
+        },
+        "favCount": {
+          "type": "integer"
+        },
+        "viewerFav": {
+          "type": "string"
+        },
+        "commentCount": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
