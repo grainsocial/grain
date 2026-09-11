@@ -40,7 +40,13 @@ export default defineQuery("social.grain.unspecced.listPoolGalleries", async (ct
     return ok({
       space: poolUri(group),
       galleries: galleries.map((g) => {
-        const name = profiles.get(g.did)?.value.displayName;
+        const profile = profiles.get(g.did);
+        const name = profile?.value.displayName;
+        // Their Grain profile picture, which is a public record of their own:
+        // being in a private pool says nothing about a person's face.
+        const avatar = profile?.value.avatar
+          ? ctx.blobUrl(g.did, profile.value.avatar, "avatar")
+          : undefined;
         const cover = g.photos[0];
         return {
           space: g.space,
@@ -57,6 +63,7 @@ export default defineQuery("social.grain.unspecced.listPoolGalleries", async (ct
           ...(cover ? { cover } : {}),
           ...(handles.get(g.did) ? { handle: handles.get(g.did) } : {}),
           ...(name ? { displayName: name } : {}),
+          ...(avatar ? { avatar } : {}),
         };
       }),
     });

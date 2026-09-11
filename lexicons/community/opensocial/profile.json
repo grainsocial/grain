@@ -30,6 +30,11 @@
             "accept": ["image/png", "image/jpeg"],
             "maxSize": 1000000
           },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "The community's own site, if it keeps one. A third-party app that shows the community can link back to it."
+          },
           "joinPolicy": {
             "type": "string",
             "knownValues": [

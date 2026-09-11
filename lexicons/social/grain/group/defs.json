@@ -19,6 +19,11 @@
         "description": {
           "type": "string"
         },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The community's own site, from its opensocial profile. Where the group is actually run."
+        },
         "avatar": {
           "type": "string",
           "format": "uri"

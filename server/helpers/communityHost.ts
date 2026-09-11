@@ -27,6 +27,35 @@ export async function communityHostFor(did: string): Promise<{ url: string; did:
   return out;
 }
 
+/**
+ * The community's own site, as its host publishes it.
+ *
+ * Not from the index: a community's profile record is not always indexable
+ * here — one carrying an avatar does not survive strict validation — and this
+ * is one field on a public, unauthenticated read. Asking the host is also the
+ * honest shape of the question. Cached, because a website does not move often
+ * and a group page asks on every visit.
+ */
+const siteCache = new Map<string, { url?: string; at: number }>();
+const SITE_TTL_MS = 10 * 60_000;
+
+export async function communitySite(did: string): Promise<string | undefined> {
+  const hit = siteCache.get(did);
+  if (hit && Date.now() - hit.at < SITE_TTL_MS) return hit.url;
+  let url: string | undefined;
+  try {
+    const host = await communityHostFor(did);
+    const res = await fetch(`${host.url}/xrpc/community.opensocial.listCommunities`);
+    const body = (await res.json()) as { communities?: { did: string; url?: string }[] };
+    url = body.communities?.find((c) => c.did === did)?.url;
+  } catch {
+    // A host that will not answer is not an error worth a page for: the link
+    // simply does not appear.
+  }
+  siteCache.set(did, { url, at: Date.now() });
+  return url;
+}
+
 /** Call a community.opensocial.* procedure on the group's host as the viewer,
  *  with service auth minted by the viewer's own PDS. */
 export async function callCommunityHost(

@@ -8,7 +8,7 @@
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
   import Toast from '$lib/components/atoms/Toast.svelte'
-  import { Check, ImagePlus, Lock, Share, UsersRound, LogOut } from 'lucide-svelte'
+  import { Check, ExternalLink, ImagePlus, Lock, Share, UsersRound, LogOut } from 'lucide-svelte'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import { groupQuery, poolGalleriesQuery } from '$lib/queries'
   import { joinGroup, leaveGroup } from '$lib/mutations'
@@ -55,7 +55,7 @@
           title: g.title,
           description: g.description,
           createdAt: g.createdAt,
-          creator: { did: g.did, handle: g.handle, displayName: g.displayName },
+          creator: { did: g.did, handle: g.handle, displayName: g.displayName, avatar: g.avatar },
           items: g.cover
             ? [
                 {
@@ -92,6 +92,15 @@
 
   const member = $derived(!!group.data?.viewer?.member)
   const joinPolicy = $derived(group.data?.joinPolicy)
+  // The host and nothing else: a full URL in a pill is noise, and the path is
+  // not the point.
+  const siteLabel = $derived.by(() => {
+    try {
+      return new URL(group.data?.url ?? '').host
+    } catch {
+      return group.data?.url ?? ''
+    }
+  })
   let joining = $state(false)
   async function handleJoin() {
     if (!requireAuth() || joining || !group.data) return
@@ -181,6 +190,17 @@
       {#if g.description}
         <div class="bio"><RichText text={g.description} /></div>
       {/if}
+      <div class="links-row">
+        {#if g.url}
+          <!-- The group is run somewhere else: Grain holds its pool, the
+               community's own site holds its calendar, its boards and the
+               moderation. Nothing here would tell you that but its profile. -->
+          <a class="link-pill site" href={g.url} target="_blank" rel="noopener noreferrer">
+            <ExternalLink size={14} />
+            {siteLabel}
+          </a>
+        {/if}
+      </div>
       {#if !acting}
         <div class="links-row">
           {#if member}
@@ -328,6 +348,7 @@
   .link-pill:hover { background: var(--bg-hover); color: var(--text-primary); }
   .link-pill.primary { background: var(--grain); color: var(--on-grain); }
   .link-pill.member { color: var(--grain); cursor: default; }
+  .link-pill.site { text-decoration: none; }
   .link-pill.muted { cursor: default; }
   .link-pill:disabled { opacity: 0.6; }
   .rules { margin-top: 10px; font-size: 13px; color: var(--text-secondary); }

@@ -16,6 +16,13 @@ CREATE TABLE _labels (
   exp TEXT
 );
 
+CREATE TABLE _mutes (
+  did TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (did, subject)
+);
+
 CREATE TABLE _oauth_codes (
   code TEXT PRIMARY KEY,
   request_uri TEXT NOT NULL,
@@ -113,6 +120,28 @@ CREATE TABLE _repos (
   rev TEXT,
   retry_count INTEGER NOT NULL DEFAULT 0,
   retry_after INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE _space_invites (
+  space TEXT NOT NULL,
+  member_did TEXT NOT NULL,
+  author_did TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (space, member_did)
+);
+
+CREATE TABLE _space_support (
+  pds_endpoint TEXT PRIMARY KEY,
+  supported INTEGER NOT NULL,
+  missing TEXT NOT NULL,
+  checked_at TEXT NOT NULL
+);
+
+CREATE TABLE _story_views (
+  did TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (did, subject)
 );
 
 CREATE TABLE "app.bsky.actor.profile" (
@@ -267,6 +296,7 @@ CREATE TABLE "community.opensocial.profile" (
   description TEXT,
   avatar TEXT,
   banner TEXT,
+  url TEXT,
   join_policy TEXT NOT NULL,
   created_at TEXT NOT NULL
 );

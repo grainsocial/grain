@@ -70,6 +70,10 @@
         "displayName": {
           "type": "string"
         },
+        "avatar": {
+          "type": "string",
+          "description": "The author's Grain profile picture, a public record of their own."
+        },
         "rkey": {
           "type": "string"
         },

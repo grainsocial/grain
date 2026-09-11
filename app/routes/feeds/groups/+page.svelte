@@ -47,7 +47,7 @@
           title: g.title,
           description: g.description,
           createdAt: g.createdAt,
-          creator: { did: g.did, handle: g.handle, displayName: g.displayName },
+          creator: { did: g.did, handle: g.handle, displayName: g.displayName, avatar: g.avatar },
           // The card already knows how to say which pool a gallery is in — the
           // "in <group>" line under the author. No `item`: that is the accept
           // record a public pool has and this one does not, which is also what

@@ -54,7 +54,11 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
 
   return ok({
     galleries: galleries.map((g) => {
-      const name = profiles.get(g.did)?.value.displayName;
+      const profile = profiles.get(g.did);
+      const name = profile?.value.displayName;
+      const avatar = profile?.value.avatar
+        ? ctx.blobUrl(g.did, profile.value.avatar, "avatar")
+        : undefined;
       return {
         space: g.space,
         group: g.group,
@@ -70,6 +74,7 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
         commentCount: g.commentCount,
         items: g.photos,
         ...(handles.get(g.did) ? { handle: handles.get(g.did) } : {}),
+        ...(avatar ? { avatar } : {}),
         ...(name ? { displayName: name } : {}),
       };
     }),

@@ -1,5 +1,6 @@
 import { views } from "$hatk";
 import type { BaseContext, GrainActorProfile, GroupView } from "$hatk";
+import { communitySite } from "../helpers/communityHost.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 /** The SQL for "did is on group's public roster". Both sides are DIDs. */
@@ -25,6 +26,14 @@ export async function hydrateGroups(
   const ph = dids.map((_, i) => `$${i + 1}`).join(",");
   const viewer = ctx.viewer?.did;
 
+  // One public read per community, cached for ten minutes: where the community
+  // keeps its own site is a fact its host publishes, and not every profile
+  // record reaches the index to carry it.
+  const siteEntries = await Promise.all(
+    dids.map(async (did) => [did, await communitySite(did)] as const),
+  );
+  const sites = new Map(siteEntries.filter((e): e is [string, string] => !!e[1]));
+
   const [
     profiles,
     communityProfiles,
@@ -40,7 +49,7 @@ export async function hydrateGroups(
   ] = await Promise.all([
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
     ctx.db.query(
-      `SELECT did, display_name, description, avatar, join_policy FROM "community.opensocial.profile" WHERE did IN (${ph})`,
+      `SELECT did, display_name, description, avatar, join_policy, url FROM "community.opensocial.profile" WHERE did IN (${ph})`,
       dids,
     ) as Promise<
       {
@@ -49,6 +58,7 @@ export async function hydrateGroups(
         description: string | null;
         avatar: string | null;
         join_policy: string;
+        url: string | null;
       }[]
     >,
     lookupHandles(ctx.db, dids),
@@ -148,6 +158,10 @@ export async function hydrateGroups(
       avatar:
         (p ? ctx.blobUrl(did, p.value.avatar, "avatar") : undefined) ??
         (cp?.avatar ? ctx.blobUrl(did, cp.avatar, "avatar") : undefined),
+      // Where the community is actually run. Grain shows a group; the
+      // community's own site is where its calendar, its boards and its
+      // moderation live, and this is the only place that fact is published.
+      ...((cp?.url ?? sites.get(did)) ? { url: cp?.url ?? sites.get(did) } : {}),
       poolCount: Number(pool.get(did)?.count ?? 0),
       memberCount: members.get(did) ?? 0,
       ...(joinPolicy ? { joinPolicy } : {}),
