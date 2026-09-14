@@ -2,6 +2,7 @@
 export const HIDE_LABELS = new Set([
   "!hide",
   "!takedown",
+  "csae",
   "spam",
   "copyright",
   "gore",

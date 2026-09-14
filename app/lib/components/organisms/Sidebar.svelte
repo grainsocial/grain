@@ -105,6 +105,7 @@
       <a href="/support/privacy">Privacy</a>
       <a href="/support/copyright">Copyright</a>
       <a href="/support/community-guidelines">Guidelines</a>
+      <a href="/support/child-safety">Child Safety</a>
       <a href="https://atproto.com" target="_blank" rel="noopener noreferrer">AT Protocol</a>
     </div>
   </div>

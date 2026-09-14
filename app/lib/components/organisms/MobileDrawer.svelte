@@ -74,6 +74,7 @@
     <a href="/support/privacy" onclick={() => (open = false)}>Privacy</a>
     <a href="/support/copyright" onclick={() => (open = false)}>Copyright</a>
     <a href="/support/community-guidelines" onclick={() => (open = false)}>Guidelines</a>
+    <a href="/support/child-safety" onclick={() => (open = false)}>Child Safety</a>
     <a href="https://atproto.com" target="_blank" rel="noopener noreferrer">AT Protocol</a>
   </div>
 
