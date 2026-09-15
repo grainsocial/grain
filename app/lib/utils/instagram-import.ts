@@ -4,6 +4,7 @@ import { resizeImage } from "./image-resize";
 export interface InstagramMedia {
   uri: string;
   creation_timestamp: number;
+  title?: string;
   media_metadata?: {
     camera_metadata?: { has_camera_metadata: boolean };
   };
@@ -11,8 +12,8 @@ export interface InstagramMedia {
 
 export interface InstagramPost {
   media: InstagramMedia[];
-  title: string;
-  creation_timestamp: number;
+  title?: string;
+  creation_timestamp?: number;
 }
 
 export interface ParsedPost {
@@ -122,10 +123,13 @@ export async function parseInstagramExport(
 
     if (photos.length === 0) continue;
 
+    const sourceMedia = post.media[0];
+    const creationTimestamp = post.creation_timestamp ?? sourceMedia.creation_timestamp;
+
     parsed.push({
       index: i,
-      description: decodeInstagramText(post.title || "").slice(0, 1000),
-      createdAt: new Date(post.creation_timestamp * 1000),
+      description: decodeInstagramText(post.title || sourceMedia.title || "").slice(0, 1000),
+      createdAt: new Date(creationTimestamp * 1000),
       photos,
       selected: true,
       labels: [],
