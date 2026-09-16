@@ -1,6 +1,10 @@
 # Server test coverage
 
-**Goal: 80% statement coverage of `server/**/*.ts`. Met — 81.97%.**
+**Goal: 80% statement coverage of `server/**/*.ts`. Met — 81.97%, then 75.02%
+after groups landed.**
+
+That drop is a denominator, not a regression: excluding spaces the server is at
+**87.67%**, up from the 81.97% that met the goal. See the last ledger row.
 Baseline when this started, 2026-09-03: **30.68%** (623/2030 statements).
 
 Spaces is out of scope (see below); excluding it the rest of `server/` is at
@@ -255,19 +259,20 @@ Recorded as they are hit, so a later pass does not rediscover them.
 
 ## Ledger
 
-| date       | statements | delta | what landed                                                                                                                                                     |
-| ---------- | ---------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                                                             |
-| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                                                      |
-| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                                                                |
-| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                                                         |
-| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage                                  |
-| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`                                      |
-| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                                   |
-| 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications             |
-| 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                                           |
-| 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                                         |
-| 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                                 |
-| 2026-09-03 | **80.14%** | +4.38 | the three OG cards and the font loader — `test/ogCards.test.ts`. **Goal met.** Excluding spaces, 92.1%                                                          |
-| 2026-09-04 | 81.62%     | +1.48 | resolveActor and the country helpers — `test/resolveAndCountry.test.ts`; getGallery and EXIF formatting — `test/galleryDetail.test.ts`. Excluding spaces, 93.8% |
-| 2026-09-04 | 81.97%     | +0.35 | mentionSearch scoped to one account's galleries, the last search path left                                                                                      |
+| date       | statements | delta | what landed                                                                                                                                                                                                                                                                                      |
+| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-09-03 | 30.68%     | —     | baseline; coverage tooling wired up                                                                                                                                                                                                                                                              |
+| 2026-09-03 | 33.34%     | +2.66 | `recent`, `following`, `hashtag`, `actor` and `camera` feeds — `test/galleryFeeds.test.ts`                                                                                                                                                                                                       |
+| 2026-09-03 | 37.88%     | +4.54 | the `location` feed, all three of its lookup paths — `test/locationFeed.test.ts`                                                                                                                                                                                                                 |
+| 2026-09-03 | 42.61%     | +4.73 | the `foryou` feed: scoring, cold start, windowing — `test/foryouFeed.test.ts`. `server/feeds` now 92.6%                                                                                                                                                                                          |
+| 2026-09-03 | 48.17%     | +5.56 | the three on-commit hooks and their four helpers — `test/commitHooks.test.ts`. Found and fixed a live push-notification outage                                                                                                                                                                   |
+| 2026-09-03 | 54.48%     | +6.31 | the story surface: getStories, getStoryArchive, getStoryAuthors, getStory and the shared hydrator — `test/stories.test.ts`                                                                                                                                                                       |
+| 2026-09-03 | 62.95%     | +8.47 | the collage layout — `test/collageLayout.test.ts`; blocks, mutes, favorites and suggested follows — `test/actorLists.test.ts`                                                                                                                                                                    |
+| 2026-09-03 | 66.79%     | +3.84 | every getNotifications source, its preference filters and paging — `test/notificationSources.test.ts`. Found and fixed silent mention notifications                                                                                                                                              |
+| 2026-09-03 | 70.24%     | +3.45 | getActorProfile and the mute procedures — `test/actorProfile.test.ts`; the on-login hook — `test/onLoginHook.test.ts`                                                                                                                                                                            |
+| 2026-09-03 | 74.23%     | +3.99 | mentionSearch — `test/mentionSearch.test.ts`; deleteGallery and deleteAccount — `test/deletion.test.ts`                                                                                                                                                                                          |
+| 2026-09-03 | 75.76%     | +1.53 | the four search-backed endpoints, once hatk alpha.82 made them testable — `test/search.test.ts`                                                                                                                                                                                                  |
+| 2026-09-03 | **80.14%** | +4.38 | the three OG cards and the font loader — `test/ogCards.test.ts`. **Goal met.** Excluding spaces, 92.1%                                                                                                                                                                                           |
+| 2026-09-04 | 81.62%     | +1.48 | resolveActor and the country helpers — `test/resolveAndCountry.test.ts`; getGallery and EXIF formatting — `test/galleryDetail.test.ts`. Excluding spaces, 93.8%                                                                                                                                  |
+| 2026-09-04 | 81.97%     | +0.35 | mentionSearch scoped to one account's galleries, the last search path left                                                                                                                                                                                                                       |
+| 2026-09-16 | 75.02%     | −6.95 | groups merged in: +438 statements of space-credential code, none of it testable from here. Nothing regressed — excluding spaces the server is at **87.67%**, up from 81.97%. `test/groups.test.ts` covers the indexed half: declarations, roster, profile, rules, the groups feed and `groupsOf` |
