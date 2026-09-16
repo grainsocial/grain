@@ -43,6 +43,24 @@ export function calculateCollageLayout(
   containerHeight: number,
   gap = 12,
 ): Placement[] {
+  // A lone photo is not a collage. Scale it to fit the frame whole, centred, so
+  // a landscape stays landscape and a portrait stays portrait.
+  if (imageData.length === 1) {
+    const item = imageData[0];
+    const scale = Math.min(containerWidth / item.aspectRatio, containerHeight);
+    const width = scale * item.aspectRatio;
+    const height = scale;
+    return [
+      {
+        item,
+        x: Math.round((containerWidth - width) / 2),
+        y: Math.round((containerHeight - height) / 2),
+        width: Math.round(width),
+        height: Math.round(height),
+      },
+    ];
+  }
+
   const seedString = imageData
     .map((item) => `${item.url}_${item.aspectRatio.toFixed(3)}`)
     .join("|");

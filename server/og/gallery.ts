@@ -62,12 +62,14 @@ export default defineOG("/og/profile/:actor/gallery/:rkey", async (ctx) => {
       ? await ctx.getRecords<Photo>("social.grain.photo", photoUris)
       : new Map<string, { uri: string; did: string; cid: string; value: Photo }>();
 
-  // Fetch images as base64
+  // Fetch images as base64. A lone photo is drawn across the whole frame, so it
+  // needs more pixels than a thumbnail has.
+  const photoSize = photoUris.length === 1 ? "feed_fullsize" : "feed_thumbnail";
   const imageData: Array<{ url: string; aspectRatio: number }> = [];
   for (const uri of photoUris) {
     const rec = photoRecords.get(uri);
     if (!rec) continue;
-    const url = blobUrl(rec.did, rec.value.photo, "feed_thumbnail");
+    const url = blobUrl(rec.did, rec.value.photo, photoSize);
     if (!url) continue;
     const dataUrl = await fetchImage(url);
     if (!dataUrl) continue;
