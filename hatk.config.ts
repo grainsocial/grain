@@ -145,19 +145,14 @@ export default defineConfig({
     // What makes a repo worth tracking. A grain profile is the obvious signal
     // for a person; a community declaration is the equivalent for a community,
     // and it is the record that literally says "this account is one".
+    //
+    // It discovers nothing today, and that is fine: signals are resolved by
+    // asking a PDS `listReposByCollection`, and `bsky.network` answers
+    // `{"repos":[]}` for this collection. Communities arrive by the ordinary
+    // route instead — the relay crawls their host and the firehose carries
+    // both its existing records and everything after. Kept because it is the
+    // right signal if that ever stops being true.
     signalCollections: ["social.grain.actor.profile", "fyi.opensocial.declaration"],
-    // Community hosts, pinned by DID.
-    //
-    // Signal collections are discovered by asking a PDS `listReposByCollection`,
-    // and the PDS grain asks has never heard of an independent community host —
-    // so a community would never be found that way however it is declared.
-    // Pinning fetches the repo directly: `backfillRepo` resolves the DID through
-    // PLC, which names the host, and reads it there.
-    //
-    // This is also what makes a community appear at all. Its records reach the
-    // firehose correctly, but grain drops events for repos it does not track,
-    // so the first sighting has to come from somewhere other than the stream.
-    repos: ["did:plc:idmhyhx3335jt2vin45xauu5"],
     fullNetwork: false,
     parallelism: 5,
   },
