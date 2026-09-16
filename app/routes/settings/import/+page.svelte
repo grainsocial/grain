@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { goto } from '$app/navigation'
   import { applyWrites, atUri, createWrite, nextTid, uploadPhotoBlobs } from '$lib/utils/records'
   import { useQueryClient } from '@tanstack/svelte-query'
@@ -261,7 +262,7 @@
     <div class="step-done">
       <div class="done-icon"><Check size={32} /></div>
       <p class="done-text">Imported {importedCount} {importedCount === 1 ? 'gallery' : 'galleries'}</p>
-      <Button onclick={() => goto(`/profile/${$viewer?.did}`)}>View Profile</Button>
+      <Button onclick={() => goto(profilePath($viewer))}>View Profile</Button>
     </div>
   {/if}
 </div>

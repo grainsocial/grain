@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { galleryPath } from '$lib/utils'
   import type { GalleryView, PhotoView } from '$hatk/client'
   import Skeleton from '../atoms/Skeleton.svelte'
   import Spinner from '../atoms/Spinner.svelte'
@@ -68,9 +69,7 @@
       <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
       <a
         class="cell"
-        href={selectMode
-          ? undefined
-          : (hrefFor?.(gallery) ?? `/profile/${gallery.creator?.did}/gallery/${rkey(gallery.uri)}`)}
+        href={selectMode ? undefined : (hrefFor?.(gallery) ?? galleryPath(gallery))}
         role={selectMode ? 'button' : undefined}
         tabindex={selectMode ? 0 : undefined}
         onclick={selectMode ? (e) => { e.preventDefault(); onToggle?.(gallery.uri) } : undefined}

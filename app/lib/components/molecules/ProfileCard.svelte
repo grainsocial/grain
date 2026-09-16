@@ -1,7 +1,7 @@
 <script lang="ts">
   import Avatar from '../atoms/Avatar.svelte'
   import RichText from '../atoms/RichText.svelte'
-  import { truncDid } from '$lib/utils'
+  import { truncDid, profilePath } from '$lib/utils'
 
   let { profile }: {
     profile: {
@@ -17,7 +17,7 @@
 <div class="profile-card">
   <Avatar did={profile.did} src={profile.avatar ?? null} name={profile.displayName ?? profile.handle} size={40} />
   <div class="profile-card-info">
-    <a href="/profile/{profile.did}" class="profile-card-name"
+    <a href={profilePath(profile)} class="profile-card-name"
       >{profile.displayName || (profile.handle ? `@${profile.handle}` : truncDid(profile.did))}</a
     >
     {#if profile.handle}<div class="profile-card-handle">@{profile.handle}</div>{/if}

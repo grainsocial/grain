@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { createQuery } from '@tanstack/svelte-query'
-  import { galleryQuery, groupQuery, poolGalleryQuery } from '$lib/queries'
+  import { createQuery, createInfiniteQuery } from '@tanstack/svelte-query'
+  import { galleryQuery, actorFeedQuery, groupQuery, poolGalleryQuery } from '$lib/queries'
   import { page } from '$app/state'
   import GalleryMedia from '$lib/components/molecules/GalleryMedia.svelte'
   import GalleryCard from '$lib/components/molecules/GalleryCard.svelte'
+  import GalleryMenu from '$lib/components/molecules/GalleryMenu.svelte'
+  import GalleryGrid from '$lib/components/organisms/GalleryGrid.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import CommentSheet from '$lib/components/organisms/CommentSheet.svelte'
   import ExifInfo from '$lib/components/atoms/ExifInfo.svelte'
@@ -18,13 +20,13 @@
   import { removeFromPool } from '$lib/mutations'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { goto } from '$app/navigation'
-  import { relativeTime } from '$lib/utils'
+  import { relativeTime, profilePath } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
 
   let { data } = $props()
 
-  const did = $derived(data.did)
+  const actor = $derived(data.actor)
   const rkey = $derived(data.rkey)
   const galleryUri = $derived(data.galleryUri)
 
@@ -36,7 +38,9 @@
   const group = $derived(page.url.searchParams.get('group'))
   const galleryQ = createQuery(() => ({ ...galleryQuery(galleryUri), enabled: !group }))
   const poolQ = createQuery(() => ({
-    ...poolGalleryQuery(group ?? '', did, rkey),
+    // `actor` is the author's DID on a pooled link — see GalleryCard, which
+    // builds those in DID form precisely because this read matches on it.
+    ...poolGalleryQuery(group ?? '', actor, rkey),
     enabled: !!group,
   }))
   // Which group it is, is public and indexed; what is in its pool is not. So
@@ -62,7 +66,7 @@
       title: d.gallery?.title ?? 'Untitled',
       description: d.gallery?.description,
       createdAt: d.gallery?.createdAt,
-      creator: { did, handle: d.handle, displayName: d.displayName, avatar: d.avatar },
+      creator: { did: actor, handle: d.handle, displayName: d.displayName, avatar: d.avatar },
       favCount: d.favCount ?? 0,
       commentCount: d.commentCount ?? 0,
       viewer: d.viewerFav ? { fav: d.viewerFav } : undefined,
@@ -122,6 +126,18 @@
   )
 
   const photos = $derived((gallery?.items ?? []) as PhotoView[])
+
+  // The author's other galleries, from the same feed the profile page shows,
+  // so the two share a cache entry. Only the first page is wanted: this is a
+  // taste of the rest of the profile, not a second copy of it.
+  const MORE_COUNT = 6
+  const actorFeed = createInfiniteQuery(() => actorFeedQuery(actor))
+  const moreGalleries = $derived(
+    ((actorFeed.data?.pages[0]?.items ?? []) as GalleryView[])
+      .filter((g) => g.uri !== galleryUri)
+      .slice(0, MORE_COUNT),
+  )
+  const creatorHandle = $derived(gallery?.creator?.handle ?? null)
   let currentIndex = $state(0)
   const currentExif = $derived(photos[currentIndex]?.exif as ExifView | undefined)
   let doFavorite: (() => void) | undefined = $state(undefined)
@@ -217,7 +233,7 @@
 <OGMeta
   title={gallery ? `${gallery.title} by @${gallery.creator.handle} — Grain` : 'Gallery — Grain'}
   description={gallery ? (gallery.description || `Photo gallery on Grain`) : 'Photo gallery on Grain'}
-  image="/og/profile/{did}/gallery/{rkey}"
+  image="/og/profile/{actor}/gallery/{rkey}"
 />
 
 {#if loading}
@@ -293,30 +309,21 @@
         <button class="icon-btn" type="button" onclick={back} aria-label="Back">
           <ArrowLeft size={20} />
         </button>
-        {#if bskyUrl}
-          <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky">
-            <BskyIcon />
-          </a>
-        {/if}
-        {#if actingForPool}
-          <span class="menu-slot">
-            <OverflowMenu>
-              {#if actingForPool}
-                <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
-                  <CircleMinus size={15} />
-                  Remove from pool
-                </button>
-              {/if}
-            </OverflowMenu>
-          </span>
-        {/if}
+        <div class="meta-actions">
+          {#if bskyUrl}
+            <a class="bsky-link" href={bskyUrl} target="_blank" rel="noopener noreferrer" title="View on Bluesky">
+              <BskyIcon />
+            </a>
+          {/if}
+          <GalleryMenu {gallery} extra={actingForPool ? removeFromPoolItem : undefined} />
+        </div>
       </div>
 
       <!-- The location is a sibling of the author link rather than nested in
            it: both are links, and the card only gets away with nesting them
            because it silences the SSR placement check. -->
       <div class="identity">
-        <a class="author" href="/profile/{gallery.creator?.did}">
+        <a class="author" href={profilePath(gallery.creator)}>
           <Avatar
             did={gallery.creator?.did ?? ''}
             src={gallery.creator?.avatar ?? null}
@@ -392,7 +399,7 @@
                 viewerFav={gallery.viewer?.fav ?? null}
                 favCount={gallery.favCount ?? 0}
                 pool={group ?? undefined}
-                countHref={pooled ? undefined : `/profile/${did}/gallery/${rkey}/favorited-by`}
+                countHref={pooled ? undefined : `/profile/${actor}/gallery/${rkey}/favorited-by`}
                 bind:favorite={doFavorite}
               />
             </div>
@@ -402,6 +409,18 @@
     </aside>
   </div>
 
+  {#if moreGalleries.length > 0}
+    <section class="more">
+      <a class="more-head" href="/profile/{actor}">
+        <h2 class="more-title">
+          More galleries from
+          <strong>{creatorHandle ? `@${creatorHandle}` : 'this account'}</strong>
+        </h2>
+      </a>
+      <GalleryGrid items={moreGalleries} />
+    </section>
+  {/if}
+
   <CommentSheet
     open={commentSheetOpen}
     subjectUri={gallery.uri}
@@ -409,6 +428,13 @@
     onClose={() => { commentSheetOpen = false }}
   />
 {/if}
+
+{#snippet removeFromPoolItem()}
+  <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
+    <CircleMinus size={15} />
+    Remove from pool
+  </button>
+{/snippet}
 
 <style>
   .state {
@@ -466,8 +492,13 @@
     align-items: center;
     gap: 4px;
   }
-  /* Back stays left; whatever follows (Bluesky link, the ⋯ menu) sits right. */
+  /* Back stays left; the actions sit right. */
   .meta-top > :nth-child(2) { margin-left: auto; }
+  .meta-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
   .icon-btn {
     display: flex;
     align-items: center;
@@ -615,5 +646,38 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  .more {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 24px 0 32px;
+  }
+  .more-head {
+    display: block;
+    padding: 0 16px 12px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .more-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .more-title strong { font-weight: 700; }
+  .more-head:hover .more-title { text-decoration: underline; }
+  @media (min-width: 900px) {
+    /* The split runs the full 935px column, so the strip below it does too.
+       The grid itself stays three across, the same grid as the profile. */
+    .more {
+      max-width: none;
+      margin-top: 8px;
+    }
+    /* Flush with the column, in line with the photo's left edge above it. */
+    .more-head { padding-inline: 0; }
   }
 </style>

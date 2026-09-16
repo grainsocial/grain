@@ -13,6 +13,7 @@
     type Write,
   } from '$lib/utils/records'
   import { galleryQuery } from '$lib/queries'
+  import { galleryPath } from '$lib/utils'
   import type { GalleryView, PhotoView } from '$hatk/client'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { parseTextToFacets } from '$lib/utils/rich-text'
@@ -135,10 +136,8 @@
           height: photo.aspectRatio?.height ?? 3,
         }))
       )
-      const did = gallery.creator?.did!
-      const rkey = gallery.uri.split('/').pop()!
       await createBskyPost({
-        url: `${window.location.origin}/profile/${did}/gallery/${rkey}`,
+        url: `${window.location.origin}${galleryPath(gallery)}`,
         title: title.trim() || undefined,
         location: gallery.location
           ? { name: gallery.location.name, address: (gallery as any).address }
@@ -433,7 +432,7 @@
       await applyWrites(writes)
 
       queryClient.invalidateQueries({ queryKey: ['gallery', data.galleryUri] })
-      goto(`/profile/${did}/gallery/${galleryRkey}`)
+      goto(galleryPath(gallery))
     } catch (err: any) {
       error = err.message || 'Failed to save. Please try again.'
     } finally {
@@ -452,7 +451,7 @@
   bind:active={fileDragging}
 />
 
-<DetailHeader label="Edit gallery" onback={() => goto(`/profile/${data.did}/gallery/${data.rkey}`)}>
+<DetailHeader label="Edit gallery" onback={() => goto(`/profile/${data.actor}/gallery/${data.rkey}`)}>
   {#snippet actions()}
     <Button disabled={!canSave} onclick={save}>
       {#if saving}<LoaderCircle size={16} class="spin" /> Saving...{:else}Save{/if}

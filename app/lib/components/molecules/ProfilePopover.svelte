@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { createQuery } from '@tanstack/svelte-query'
   import type { GrainActorDefsProfileViewDetailed, GetKnownFollowersFollowerItem } from '$hatk/client'
   import { actorProfileQuery, knownFollowersQuery, storyAuthorsQuery } from '$lib/queries'
@@ -76,7 +77,7 @@
   {#if hovering && p}
     <div class="popover" onmouseenter={handleEnter} onmouseleave={handleLeave}>
       <div class="popover-header">
-        <a href="/profile/{p.did}" class="popover-avatar-link">
+        <a href={profilePath(p)} class="popover-avatar-link">
           <Avatar did={p.did} src={p.avatar ?? null} name={p.displayName ?? p.handle} size={48} {hasStory} {storyViewed} />
         </a>
         {#if !isOwnProfile && $viewer}
@@ -84,7 +85,7 @@
         {/if}
       </div>
 
-      <a href="/profile/{p.did}" class="popover-name-link">
+      <a href={profilePath(p)} class="popover-name-link">
         <span class="popover-name">{p.displayName || p.handle || p.did}</span>
       </a>
 
@@ -102,14 +103,14 @@
       {/if}
 
       <div class="popover-stats">
-        <a href="/profile/{p.did}/followers" class="stat-link">
+        <a href="{profilePath(p)}/followers" class="stat-link">
           <strong>{formatCount(p.followersCount ?? 0)}</strong> <span>followers</span>
         </a>
-        <a href="/profile/{p.did}/following" class="stat-link">
+        <a href="{profilePath(p)}/following" class="stat-link">
           <strong>{formatCount(p.followsCount ?? 0)}</strong> <span>following</span>
         </a>
         {#if (p.galleryCount ?? 0) > 0}
-          <a href="/profile/{p.did}" class="stat-link">
+          <a href={profilePath(p)} class="stat-link">
             <strong>{formatCount(p.galleryCount ?? 0)}</strong> <span>galleries</span>
           </a>
         {/if}

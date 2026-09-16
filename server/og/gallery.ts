@@ -2,10 +2,13 @@ import { defineOG } from "$hatk";
 import type { GrainActorProfile, Photo } from "$hatk";
 import { allFonts } from "./fonts.ts";
 import { calculateCollageLayout } from "./collage.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
-export default defineOG("/og/profile/:did/gallery/:rkey", async (ctx) => {
+export default defineOG("/og/profile/:actor/gallery/:rkey", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
-  const { did, rkey } = params;
+  const { rkey } = params;
+  // The page links itself by handle, so the crawler arrives with one.
+  const did = (await resolveHandle(db, params.actor)) ?? params.actor;
 
   const galleryUri = `at://${did}/social.grain.gallery/${rkey}`;
 

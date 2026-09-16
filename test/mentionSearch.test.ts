@@ -137,7 +137,7 @@ describe("browsing an account's galleries", () => {
     expect(sunset).toMatchObject({
       uri: `at://${ALICE}/social.grain.gallery/g1`,
       description: "orange",
-      href: `http://127.0.0.1:3000/profile/${ALICE}/gallery/g1`,
+      href: `http://127.0.0.1:3000/profile/alice.test/gallery/g1`,
       embed: {
         src: `http://127.0.0.1:3000/embed/gallery/${ALICE}/g1`,
         aspectRatio: { width: 16, height: 9 },

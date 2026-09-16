@@ -12,6 +12,7 @@
   import { ArrowUpRight, Grid3x3, Heart, Clock, Ban, VolumeX, Share, Trash2, X, LoaderCircle, UsersRound } from 'lucide-svelte'
   import { callXrpc } from '$hatk/client'
   import { share } from '$lib/utils/share'
+  import { profilePath } from '$lib/utils'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
   import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery, groupQuery } from '$lib/queries'
@@ -58,6 +59,9 @@
   const isOwnProfile = $derived(viewerDid === did)
 
   const profile = createQuery(() => actorProfileQuery(did, viewerDid))
+  // Links out of this page use the handle once the profile has one; until
+  // then the DID is what the route already accepts.
+  const profileHref = $derived(profilePath(profile.data ?? { did }))
   const feed = createInfiniteQuery(() => actorFeedQuery(did))
   const feedItems = $derived(feed.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const favorites = createInfiniteQuery(() => ({
@@ -153,7 +157,7 @@
   }
 
   async function handleShare() {
-    const url = `${window.location.origin}/profile/${did}`
+    const url = `${window.location.origin}${profileHref}`
     const result = await share(url)
     if (result.success && result.method === 'clipboard') {
       toastMessage = 'Link copied'
@@ -254,8 +258,8 @@
       {:else}
         <div class="stat-row">
           <span><strong>{(p.galleryCount ?? 0).toLocaleString()}</strong> {Number(p.galleryCount) === 1 ? 'gallery' : 'galleries'}</span>
-          <a href="/profile/{did}/followers" class="stat-link"><strong>{((p.followersCount ?? 0) + followersOffset).toLocaleString()}</strong> followers</a>
-          <a href="/profile/{did}/following" class="stat-link"><strong>{(p.followsCount ?? 0).toLocaleString()}</strong> following</a>
+          <a href="{profileHref}/followers" class="stat-link"><strong>{((p.followersCount ?? 0) + followersOffset).toLocaleString()}</strong> followers</a>
+          <a href="{profileHref}/following" class="stat-link"><strong>{(p.followsCount ?? 0).toLocaleString()}</strong> following</a>
         </div>
         {#if p.description}
           <div class="bio"><RichText text={p.description} /></div>
@@ -276,7 +280,7 @@
         {/if}
         {#if (knownFollowers.data?.items ?? []).length > 0}
           {@const known = knownFollowers.data?.items ?? []}
-          <a href="/profile/{did}/known-followers" class="known-followers">
+          <a href="{profileHref}/known-followers" class="known-followers">
             <Facepile people={known} size={20} />
             <span class="known-text">
               Followed by {known.slice(0, 2).map((k) => k.displayName || k.handle).join(', ')}{#if known.length > 2}{' '}and {known.length - 2} other{known.length - 2 !== 1 ? 's' : ''} you follow{/if}

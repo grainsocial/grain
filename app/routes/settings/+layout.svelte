@@ -52,6 +52,7 @@
     { href: '/support/terms', label: 'Terms of Service' },
     { href: '/support/copyright', label: 'Copyright Policy' },
     { href: '/support/community-guidelines', label: 'Community Guidelines' },
+    { href: '/support/child-safety', label: 'Child Safety Standards' },
   ]
 
   function isActive(href: string) {

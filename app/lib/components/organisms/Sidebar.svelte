@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { Home, ImagePlus, Settings, Bell, Search, LogOut, Compass, UsersRound } from 'lucide-svelte'
   import Avatar from '../atoms/Avatar.svelte'
   import Button from '../atoms/Button.svelte'
@@ -85,7 +86,7 @@
         </a>
       {/if}
       {#if $viewer}
-        <a href="/profile/{$viewer.did}" class="nav-item" class:active={page.url.pathname === `/profile/${$viewer.did}`}>
+        <a href={profilePath($viewer)} class="nav-item" class:active={page.url.pathname === profilePath($viewer) || page.url.pathname === `/profile/${$viewer.did}`}>
           <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />
           <span class="nav-label">Profile</span>
         </a>
@@ -116,6 +117,7 @@
       <a href="/support/privacy">Privacy</a>
       <a href="/support/copyright">Copyright</a>
       <a href="/support/community-guidelines">Guidelines</a>
+      <a href="/support/child-safety">Child Safety</a>
       <a href="https://atproto.com" target="_blank" rel="noopener noreferrer">AT Protocol</a>
     </div>
   </div>

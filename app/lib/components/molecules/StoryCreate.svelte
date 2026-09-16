@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { storyPath } from '$lib/utils'
   import { X, MapPin, LoaderCircle } from 'lucide-svelte'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { callXrpc } from '$hatk/client'
@@ -113,8 +114,7 @@
       // Post to Bluesky if opted in
       if (postToBluesky && $viewer) {
         const storyUri = (result as any).uri as string
-        const storyRkey = storyUri.split('/').pop()
-        const storyUrl = `${window.location.origin}/profile/${$viewer.did}/story/${storyRkey}`
+        const storyUrl = `${window.location.origin}${storyPath({ uri: storyUri, creator: $viewer })}`
         await createBskyPost({
           url: storyUrl,
           location: location ? { name: location.name, address: location.address } : null,

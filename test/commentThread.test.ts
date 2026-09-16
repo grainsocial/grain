@@ -59,6 +59,18 @@ const path = (query = "") =>
   )}${query}`;
 
 describe("getCommentThread", () => {
+  test("accepts a handle in the subject uri", async () => {
+    const byHandle = `/xrpc/social.grain.unspecced.getCommentThread?subject=${encodeURIComponent(
+      "at://alice.test/social.grain.gallery/g1",
+    )}`;
+    const body = (await (await server.fetchAs(ALICE, byHandle)).json()) as {
+      comments: { author: { did: string } }[];
+      totalCount: number;
+    };
+    expect(body.comments.map((c) => c.author.did)).toEqual([BOB, CAROL]);
+    expect(body.totalCount).toBe(2);
+  });
+
   test("lists comments from active accounts", async () => {
     const res = await server.fetchAs(ALICE, path());
     const body = (await res.json()) as {

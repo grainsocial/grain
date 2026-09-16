@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
-  import { callXrpc } from '$hatk/client'
   import { isCaughtUp } from '$lib/stories'
-  import { goto } from '$app/navigation'
   import Avatar from '../atoms/Avatar.svelte'
   import Facepile from '../atoms/Facepile.svelte'
   import RichText from '../atoms/RichText.svelte'
@@ -10,17 +8,17 @@
   import ExifInfo from '../atoms/ExifInfo.svelte'
   import GalleryMedia from './GalleryMedia.svelte'
   import FavoriteButton from './FavoriteButton.svelte'
-  import ReportButton from './ReportButton.svelte'
+  import GalleryMenu from './GalleryMenu.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
-  import { relativeTime } from '$lib/utils'
-  import { MessageCircle, Send, ChevronLeft, ChevronRight, Trash2, Heart, Flag, Pencil, CircleMinus } from 'lucide-svelte'
+  import { relativeTime, profilePath, galleryPath } from '$lib/utils'
+  import { MessageCircle, Send, ChevronLeft, ChevronRight, Heart, CircleMinus } from 'lucide-svelte'
   import { removeFromPool } from '$lib/mutations'
-  import OverflowMenu from '../atoms/OverflowMenu.svelte'
+  import { useQueryClient } from '@tanstack/svelte-query'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
-  import { isAuthenticated, requireAuth, viewer } from '$lib/stores'
+  import { requireAuth, viewer } from '$lib/stores'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
-  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
+  import { createQuery } from '@tanstack/svelte-query'
   import { storyAuthorsQuery } from '$lib/queries'
   import { EyeOff, AlertTriangle, Info } from 'lucide-svelte'
 
@@ -50,7 +48,6 @@
     privateGallery?: boolean
   } = $props()
 
-  const queryClient = useQueryClient()
   const isOwner = $derived($viewer?.did === gallery.creator?.did)
   const storyAuthors = createQuery(() => storyAuthorsQuery())
   const creatorStoryAuthor = $derived(
@@ -60,8 +57,7 @@
   const creatorStoryViewed = $derived(
     !isOwner && !!creatorStoryAuthor && isCaughtUp(creatorStoryAuthor)
   )
-  let deleting = $state(false)
-  let reportOpen = $state(false)
+  const queryClient = useQueryClient()
   // Signed in as the group whose pool this is — the one viewer who may take it out.
   const actingForPool = $derived(!!gallery.group && $viewer?.did === gallery.group.did)
   let removing = $state(false)
@@ -77,25 +73,6 @@
   }
   let doFavorite: (() => void) | undefined = $state(undefined)
 
-  async function deleteGallery() {
-    if (deleting) return
-    if (!confirm('Delete this gallery? This cannot be undone.')) return
-
-    const rkey = gallery.uri.split('/').pop()
-    deleting = true
-    try {
-      await callXrpc('social.grain.unspecced.deleteGallery', { rkey: rkey! })
-      queryClient.invalidateQueries({ queryKey: ['getFeed'] })
-      goto(`/profile/${gallery.creator?.did}`)
-    } catch (err) {
-      console.error('Failed to delete gallery:', err)
-      alert('Failed to delete gallery. Please try again.')
-    } finally {
-      deleting = false
-    }
-  }
-
-
   const displayName = $derived(
     gallery.creator?.displayName || (gallery.creator?.handle ? `@${gallery.creator.handle}` : gallery.creator?.did?.slice(0, 18) + '\u2026')
   )
@@ -105,13 +82,18 @@
   const photos = $derived((gallery.items ?? []) as PhotoView[])
   const favCount = $derived(gallery.favCount ?? 0)
   const commentCount = $derived(gallery.commentCount ?? 0)
-  const galleryRkey = $derived(gallery.uri.split('/').pop())
   // A gallery in a community's pool keeps the author's address and adds which
   // pool to read it from — it is not in the public repo, so the page cannot
   // find it otherwise.
+  // `galleryPath` prefers the author's handle, which is right for a public
+  // gallery and wrong for a pooled one: getPoolGallery matches the author by
+  // DID against what the space reports, and a handle never equals a DID. So a
+  // pooled link addresses the author the way the pool read will.
   const galleryHref = $derived(
-    `/profile/${gallery.creator?.did}/gallery/${galleryRkey}` +
-      (privateGallery && gallery.group ? `?group=${encodeURIComponent(gallery.group.did)}` : ''),
+    privateGallery && gallery.group
+      ? `/profile/${gallery.creator?.did}/gallery/${gallery.uri.split('/').pop()}` +
+        `?group=${encodeURIComponent(gallery.group.did)}`
+      : galleryPath(gallery),
   )
   const favedByFollowing = $derived(gallery.favedByFollowing ?? [])
   const favedByNames = $derived(
@@ -166,7 +148,7 @@
   <div>
   <header class="card-header">
     <ProfilePopover did={gallery.creator?.did ?? ''}>
-      <a href="/profile/{gallery.creator?.did}" class="author-chip">
+      <a href={profilePath(gallery.creator)} class="author-chip">
         <Avatar did={gallery.creator?.did ?? ''} src={avatarSrc} name={displayName} size={40} hasStory={creatorHasStory} storyViewed={creatorStoryViewed} onclick={creatorHasStory && onStoryTap ? () => { onStoryTap!(gallery.creator!.did) } : undefined} />
         <div class="author-info">
           <span class="author-name-row">
@@ -194,35 +176,8 @@
         </div>
       </a>
     </ProfilePopover>
-    {#if !privateGallery && ($isAuthenticated || isOwner)}
-    <OverflowMenu horizontal>
-      {#if $isAuthenticated}
-        <button class="menu-item" type="button" onclick={() => (reportOpen = true)}>
-          <Flag size={15} />
-          Report
-        </button>
-      {/if}
-      {#if actingForPool}
-        <div class="menu-divider"></div>
-        <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
-          <CircleMinus size={15} />
-          Remove from pool
-        </button>
-      {/if}
-      {#if isOwner}
-        <div class="menu-divider"></div>
-        {#if $viewer?.did === 'did:plc:bcgltzqazw5tb6k2g3ttenbj'}
-          <a class="menu-item" href="/profile/{gallery.creator?.did}/gallery/{gallery.uri.split('/').pop()}/edit">
-            <Pencil size={15} />
-            Edit gallery
-          </a>
-        {/if}
-        <button class="menu-item delete" type="button" onclick={deleteGallery} disabled={deleting}>
-          <Trash2 size={15} />
-          Delete gallery
-        </button>
-      {/if}
-    </OverflowMenu>
+    {#if !privateGallery}
+      <GalleryMenu {gallery} extra={actingForPool ? removeFromPoolItem : undefined} />
     {/if}
   </header>
 
@@ -269,9 +224,6 @@
       </span>
     </a>
   {/if}
-  {#if $isAuthenticated}
-    <ReportButton subjectUri={gallery.uri} subjectCid={gallery.cid} showButton={false} bind:open={reportOpen} />
-  {/if}
 
   <Toast message="Link copied" bind:visible={showToast} />
 
@@ -296,6 +248,13 @@
   </div>
 </article>
 {/if}
+
+{#snippet removeFromPoolItem()}
+  <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
+    <CircleMinus size={15} />
+    Remove from pool
+  </button>
+{/snippet}
 
 <style>
 .gallery-card {
@@ -370,33 +329,6 @@
 
   .card-header :global(.overflow-menu) {
     margin-left: auto;
-  }
-/* Menu items (inside OverflowMenu) */
-  .menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 12px;
-    border: none;
-    background: none;
-    color: var(--text-primary);
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: background 0.15s;
-  }
-.menu-item:hover {
-    background: var(--bg-hover);
-  }
-.menu-item.delete {
-    color: var(--danger);
-  }
-.menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
-.menu-item:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 /* Engagement */
   .engagement {

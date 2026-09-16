@@ -40,3 +40,34 @@ export function compactCount(n: number): string {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
   return String(n);
 }
+
+// ─── Links ──────────────────────────────────────────────────────────
+
+type Actor = { did?: string | null; handle?: string | null } | null | undefined;
+
+const rkeyOf = (uri: string) => uri.split("/").pop() ?? "";
+
+/**
+ * The segment that names an account in a URL. Handles are what people read
+ * and share, so an account with one is linked by it. An account without one,
+ * or with Bluesky's `handle.invalid` placeholder, or whose view fell back to
+ * echoing its DID as the handle, is linked by DID instead. Every profile route
+ * accepts either.
+ */
+export function actorSegment(p: Actor): string {
+  const handle = p?.handle;
+  if (handle && handle !== "handle.invalid" && !handle.startsWith("did:")) return handle;
+  return p?.did ?? "";
+}
+
+export const profilePath = (p: Actor) => `/profile/${actorSegment(p)}`;
+
+/** `/profile/:actor/gallery/:rkey`. Falls back to the DID in the URI when no creator view came along. */
+export function galleryPath(g: { uri: string; creator?: Actor }): string {
+  return `${profilePath(g.creator ?? { did: g.uri.split("/")[2] })}/gallery/${rkeyOf(g.uri)}`;
+}
+
+/** `/profile/:actor/story/:rkey`, same shape as `galleryPath`. */
+export function storyPath(s: { uri: string; creator?: Actor }): string {
+  return `${profilePath(s.creator ?? { did: s.uri.split("/")[2] })}/story/${rkeyOf(s.uri)}`;
+}

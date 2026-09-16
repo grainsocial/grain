@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   // Desktop search. Slides out beside the nav so search is reachable from every
   // route — the typeahead used to live in the right rail, which is gone.
   import { Search, X } from 'lucide-svelte'
@@ -60,7 +61,7 @@
 
   function selectActor(actor: any) {
     open = false
-    goto(`/profile/${actor.did}`)
+    goto(profilePath(actor))
   }
 
   function onKeydown(e: KeyboardEvent) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
   import { X, MapPin, Trash2, AlertTriangle, Info, Heart } from 'lucide-svelte'
   import { goto } from '$app/navigation'
@@ -377,7 +378,7 @@
     {#if currentStory}
       <div class="story-header">
         <div class="author-info">
-          <a class="author-link" href="/profile/{currentStory.creator.did}" onclick={(e) => { e.stopPropagation(); onclose(); goto(`/profile/${currentStory.creator.did}`) }}>
+          <a class="author-link" href={profilePath(currentStory.creator)} onclick={(e) => { e.stopPropagation(); onclose(); goto(profilePath(currentStory.creator)) }}>
             {#if currentStory.creator.avatar}
               <img class="author-avatar" src={currentStory.creator.avatar} alt="" />
             {/if}

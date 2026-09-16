@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { profilePath } from '$lib/utils'
   import { createQuery } from '@tanstack/svelte-query'
   import { callXrpc } from '$hatk/client'
   import { viewer } from '$lib/stores'
@@ -52,7 +53,7 @@
           <button class="dismiss-btn" onclick={() => dismiss(profile.did)} aria-label="Dismiss">
             <X size={14} />
           </button>
-          <a href="/profile/{profile.did}" class="card-link">
+          <a href={profilePath(profile)} class="card-link">
             <Avatar did={profile.did} src={profile.avatar ?? null} name={profile.displayName} size={64} />
             <span class="card-name">{profile.displayName || profile.handle}</span>
             {#if profile.description}

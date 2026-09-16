@@ -164,6 +164,11 @@ describe("getActorProfile", () => {
     expect((await profile("bob.test")).did).toBe(BOB);
   });
 
+  test("ignores case and a leading @ in a handle", async () => {
+    expect((await profile("Bob.Test")).did).toBe(BOB);
+    expect((await profile("@bob.test")).did).toBe(BOB);
+  });
+
   test("rejects a handle nobody holds", async () => {
     const res = await server.fetch(profilePath("nobody.test"));
     expect(res.status).toBe(400);

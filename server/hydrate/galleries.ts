@@ -65,7 +65,14 @@ function buildExifView(row: ExifRow): ExifView {
   });
 }
 
-/** Look up Bluesky cross-posts for a set of grain URIs by searching bsky post text. */
+/**
+ * Look up Bluesky cross-posts for a set of grain URIs by searching bsky post text.
+ *
+ * A post may name the gallery by the author's handle or by DID. Matching on
+ * the `/gallery/<rkey>` tail within the author's own posts covers both: an
+ * rkey is unique inside one account's collection, and only that account's
+ * posts are searched.
+ */
 export async function lookupCrossPosts(
   db: BaseContext["db"],
   items: Array<{ uri: string; did: string }>,
@@ -74,10 +81,10 @@ export async function lookupCrossPosts(
   const map = new Map<string, string>();
   for (const item of items) {
     const rkey = item.uri.split("/").pop();
-    const url = `/profile/${item.did}/${collection}/${rkey}`;
+    const tail = `/${collection}/${rkey}`;
     const rows = (await db.query(
-      `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%' || $2 || '%' LIMIT 1`,
-      [item.did, url],
+      `SELECT uri FROM "app.bsky.feed.post" WHERE did = $1 AND "text" LIKE '%/profile/%' || $2 || '%' LIMIT 1`,
+      [item.did, tail],
     )) as Array<{ uri: string }>;
     if (rows.length) {
       const postRkey = rows[0].uri.split("/").pop();

@@ -1,7 +1,8 @@
 <script lang="ts">
   import Avatar from './Avatar.svelte'
   import { Heart, UserPlus, MessageSquare, AtSign, CornerDownRight, ChevronDown, ChevronUp } from 'lucide-svelte'
-  import { relativeTime } from '$lib/utils'
+  import { relativeTime, profilePath, galleryPath, storyPath } from '$lib/utils'
+  import { viewer } from '$lib/stores'
   import type { GroupedNotification } from '$lib/notifications'
 
   let { group }: { group: GroupedNotification } = $props()
@@ -35,14 +36,24 @@
   const authorHandle = $derived(notif.author?.handle ?? authorDid.slice(0, 18))
   const authorAvatar = $derived(notif.author?.avatar ?? null)
   const thumb = $derived(notif.galleryThumb ?? notif.storyThumb ?? null)
+  const profileHref = $derived(profilePath(notif.author))
+  // A notification names the gallery by URI and never its owner's handle. The
+  // owner is the viewer for most reasons (someone favorited or commented on
+  // your gallery) and the author for a mention, so both handles are to hand;
+  // anyone else is linked by DID, which the route accepts.
+  function ownerOf(uri: string) {
+    const did = uri.split('/')[2]
+    if (did === $viewer?.did) return $viewer
+    if (did === notif.author?.did) return notif.author
+    return { did }
+  }
   const contentHref = $derived(
     notif.galleryUri
-      ? `/profile/${notif.galleryUri.split('/')[2]}/gallery/${notif.galleryUri.split('/').pop()}`
+      ? galleryPath({ uri: notif.galleryUri, creator: ownerOf(notif.galleryUri) })
       : notif.storyUri
-        ? `/profile/${notif.storyUri.split('/')[2]}/story/${notif.storyUri.split('/').pop()}`
-        : `/profile/${authorDid}`
+        ? storyPath({ uri: notif.storyUri, creator: ownerOf(notif.storyUri) })
+        : profileHref
   )
-  const profileHref = $derived(`/profile/${authorDid}`)
 
 
   // All unique authors for grouped display
@@ -92,7 +103,7 @@
         </button>
         <div class="expanded-authors">
           {#each allAuthors as author (author.did)}
-            <a href="/profile/{author.did}" class="expanded-author-row">
+            <a href={profilePath(author)} class="expanded-author-row">
               <Avatar did={author.did} src={author.avatar} name={author.name} size={34} />
               <div class="expanded-author-info">
                 <span class="expanded-author-name">{author.name}</span>
@@ -104,7 +115,7 @@
       {:else}
         <div class="grouped-avatars">
           {#each allAuthors.slice(0, 5) as author (author.did)}
-            <a href="/profile/{author.did}" class="grouped-avatar-link" onclick={(e) => e.stopPropagation()}>
+            <a href={profilePath(author)} class="grouped-avatar-link" onclick={(e) => e.stopPropagation()}>
               <Avatar did={author.did} src={author.avatar} name={author.name} size={34} />
             </a>
           {/each}

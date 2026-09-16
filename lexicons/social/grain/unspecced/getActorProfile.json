@@ -9,7 +9,7 @@
         "type": "params",
         "required": ["actor"],
         "properties": {
-          "actor": { "type": "string", "format": "did" },
+          "actor": { "type": "string", "format": "at-identifier" },
           "viewer": { "type": "string", "format": "did" }
         }
       },

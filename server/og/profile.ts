@@ -4,9 +4,9 @@ import { allFonts } from "./fonts.ts";
 import { calculateCollageLayout } from "./collage.ts";
 import { resolveHandle } from "../helpers/resolveHandle.ts";
 
-export default defineOG("/og/profile/:did", async (ctx) => {
+export default defineOG("/og/profile/:actor", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
-  const did = (await resolveHandle(db, params.did)) ?? params.did;
+  const did = (await resolveHandle(db, params.actor)) ?? params.actor;
 
   const profiles = await lookup<GrainActorProfile>("social.grain.actor.profile", "did", [did]);
   const author = profiles.get(did);

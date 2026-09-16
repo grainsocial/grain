@@ -1,11 +1,12 @@
 import { defineQuery } from "$hatk";
 import { hydrateStories, type StoryRow } from "../hydrate/stories.ts";
+import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
 export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
   const { db, ok } = ctx;
-  const actor = ctx.params.actor;
+  const actor = ctx.params.actor ? await resolveHandle(db, ctx.params.actor) : null;
   if (!actor) return ok({ stories: [] });
 
   const cutoff = new Date(Date.now() - TWENTY_FOUR_HOURS).toISOString();
