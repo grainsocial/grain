@@ -142,7 +142,22 @@ export default defineConfig({
   databaseEngine: "sqlite",
   database: isProd ? "/data/grain.db" : "data/grain.db",
   backfill: {
-    signalCollections: ["social.grain.actor.profile"],
+    // What makes a repo worth tracking. A grain profile is the obvious signal
+    // for a person; a community declaration is the equivalent for a community,
+    // and it is the record that literally says "this account is one".
+    signalCollections: ["social.grain.actor.profile", "fyi.opensocial.declaration"],
+    // Community hosts, pinned by DID.
+    //
+    // Signal collections are discovered by asking a PDS `listReposByCollection`,
+    // and the PDS grain asks has never heard of an independent community host —
+    // so a community would never be found that way however it is declared.
+    // Pinning fetches the repo directly: `backfillRepo` resolves the DID through
+    // PLC, which names the host, and reads it there.
+    //
+    // This is also what makes a community appear at all. Its records reach the
+    // firehose correctly, but grain drops events for repos it does not track,
+    // so the first sighting has to come from somewhere other than the stream.
+    repos: ["did:plc:idmhyhx3335jt2vin45xauu5"],
     fullNetwork: false,
     parallelism: 5,
   },
