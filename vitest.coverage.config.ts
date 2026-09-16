@@ -39,10 +39,10 @@ export default defineConfig({
       // from sliding.
       thresholds: {
         autoUpdate: true,
-        statements: 75.02,
-        branches: 66.07,
+        statements: 75.1,
+        branches: 66.12,
         functions: 68.29,
-        lines: 76.13,
+        lines: 76.22,
       },
     },
   },

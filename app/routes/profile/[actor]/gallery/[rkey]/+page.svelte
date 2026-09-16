@@ -315,7 +315,19 @@
               <BskyIcon />
             </a>
           {/if}
-          <GalleryMenu {gallery} extra={actingForPool ? removeFromPoolItem : undefined} />
+          <!-- A pooled gallery gets only the pool action. GalleryMenu offers
+               report, edit and delete, and all three assume a record in the
+               author's public repo: deleteGallery resolves the gallery through
+               grain's index, and a gallery in a space is never indexed, so it
+               answers "not found" and the UI reports a failure the viewer can
+               do nothing about. -->
+          {#if !pooled}
+            <GalleryMenu {gallery} />
+          {:else if actingForPool}
+            <span class="menu-slot">
+              <OverflowMenu>{@render removeFromPoolItem()}</OverflowMenu>
+            </span>
+          {/if}
         </div>
       </div>
 
