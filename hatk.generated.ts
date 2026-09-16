@@ -80,6 +80,7 @@ const createPrivateGalleryLex = {"lexicon":1,"id":"social.grain.unspecced.create
 const deleteAccountLex = {"lexicon":1,"id":"social.grain.unspecced.deleteAccount","defs":{"main":{"type":"procedure","description":"Delete the authenticated user's Grain account. Removes all of their Grain records from their PDS and clears supporting server-side state (mutes, preferences, push tokens, OAuth session). Reports and labels are preserved.","output":{"encoding":"application/json","schema":{"type":"object","properties":{}}}}}} as const
 const deleteGalleryLex = {"lexicon":1,"id":"social.grain.unspecced.deleteGallery","defs":{"main":{"type":"procedure","description":"Delete a gallery and all associated records (items, photos, EXIF, favorites, comments).","input":{"encoding":"application/json","schema":{"type":"object","required":["rkey"],"properties":{"rkey":{"type":"string","description":"Record key of the gallery to delete."}}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{}}}}}} as const
 const deletePoolCommentLex = {"lexicon":1,"id":"social.grain.unspecced.deletePoolComment","defs":{"main":{"type":"procedure","description":"Delete one of your own comments from a community's pool.","input":{"encoding":"application/json","schema":{"type":"object","required":["group","rkey"],"properties":{"group":{"type":"string","format":"did"},"rkey":{"type":"string"}}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"deleted":{"type":"boolean"}}}}}}} as const
+const deletePoolGalleryLex = {"lexicon":1,"id":"social.grain.unspecced.deletePoolGallery","defs":{"main":{"type":"procedure","description":"Withdraw the viewer's own gallery from a community's pool. The gallery, its photos and the items joining them are the viewer's records in the viewer's repo, held inside the community's space, so this removes them from that space and nothing else. Only the author's own repo is touched: whoever acts as the group evicts by a different route.","input":{"encoding":"application/json","schema":{"type":"object","required":["group","rkey"],"properties":{"group":{"type":"string","format":"did","description":"The community whose pool holds it."},"rkey":{"type":"string","description":"The gallery's rkey in the author's repo."}}}},"output":{"encoding":"application/json","schema":{"type":"object","required":["deleted"],"properties":{"deleted":{"type":"integer","description":"Records removed: the gallery, its items and its photos."}}}}}}} as const
 const getActorFavoritesLex = {"lexicon":1,"id":"social.grain.unspecced.getActorFavorites","defs":{"main":{"type":"query","description":"Get galleries favorited by the authenticated actor. Only the actor themselves can view their favorites.","parameters":{"type":"params","required":["actor"],"properties":{"actor":{"type":"string","format":"at-identifier"},"limit":{"type":"integer","minimum":1,"maximum":100,"default":30},"cursor":{"type":"string"}}},"output":{"encoding":"application/json","schema":{"type":"object","required":["items"],"properties":{"items":{"type":"array","items":{"type":"ref","ref":"social.grain.gallery.defs#galleryView"}},"cursor":{"type":"string"}}}}}}} as const
 const getActorProfileLex = {"lexicon":1,"id":"social.grain.unspecced.getActorProfile","defs":{"main":{"type":"query","description":"Get an actor's profile with gallery stats and follow relationships.","parameters":{"type":"params","required":["actor"],"properties":{"actor":{"type":"string","format":"at-identifier"},"viewer":{"type":"string","format":"did"}}},"output":{"encoding":"application/json","schema":{"type":"ref","ref":"social.grain.actor.defs#profileViewDetailed"}}}}} as const
 const getBlocksLex = {"lexicon":1,"id":"social.grain.unspecced.getBlocks","defs":{"main":{"type":"query","description":"Get the viewer's blocked users.","parameters":{"type":"params","properties":{"limit":{"type":"integer","minimum":1,"maximum":100,"default":50},"cursor":{"type":"string"}}},"output":{"encoding":"application/json","schema":{"type":"object","properties":{"items":{"type":"array","items":{"type":"ref","ref":"social.grain.unspecced.getBlocks#blockItem"}},"cursor":{"type":"string"}}}}},"blockItem":{"type":"object","required":["did","blockUri"],"properties":{"did":{"type":"string","format":"did"},"handle":{"type":"string"},"displayName":{"type":"string"},"avatar":{"type":"string"},"blockUri":{"type":"string","format":"at-uri"}}}}} as const
@@ -194,6 +195,7 @@ type Registry = {
   'social.grain.unspecced.deleteAccount': typeof deleteAccountLex
   'social.grain.unspecced.deleteGallery': typeof deleteGalleryLex
   'social.grain.unspecced.deletePoolComment': typeof deletePoolCommentLex
+  'social.grain.unspecced.deletePoolGallery': typeof deletePoolGalleryLex
   'social.grain.unspecced.getActorFavorites': typeof getActorFavoritesLex
   'social.grain.unspecced.getActorProfile': typeof getActorProfileLex
   'social.grain.unspecced.getBlocks': typeof getBlocksLex
@@ -280,6 +282,7 @@ export type CreatePrivateGallery = Prettify<LexProcedure<typeof createPrivateGal
 export type DeleteAccount = Prettify<LexProcedure<typeof deleteAccountLex, Registry>>
 export type DeleteGallery = Prettify<LexProcedure<typeof deleteGalleryLex, Registry>>
 export type DeletePoolComment = Prettify<LexProcedure<typeof deletePoolCommentLex, Registry>>
+export type DeletePoolGallery = Prettify<LexProcedure<typeof deletePoolGalleryLex, Registry>>
 export type GetActorFavorites = Prettify<LexQuery<typeof getActorFavoritesLex, Registry>>
 export type GetActorProfile = Prettify<LexQuery<typeof getActorProfileLex, Registry>>
 export type GetBlocks = Prettify<LexQuery<typeof getBlocksLex, Registry>>
@@ -556,6 +559,7 @@ export type XrpcSchema = {
   'social.grain.unspecced.deleteAccount': DeleteAccount
   'social.grain.unspecced.deleteGallery': DeleteGallery
   'social.grain.unspecced.deletePoolComment': DeletePoolComment
+  'social.grain.unspecced.deletePoolGallery': DeletePoolGallery
   'social.grain.unspecced.getActorFavorites': GetActorFavorites
   'social.grain.unspecced.getActorProfile': GetActorProfile
   'social.grain.unspecced.getBlocks': GetBlocks

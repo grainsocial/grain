@@ -89,6 +89,19 @@ export async function removeFromPool(itemUri: string, queryClient: QueryClient) 
   invalidateGroups(queryClient);
 }
 
+/**
+ * Take your own gallery back out of a pool.
+ *
+ * Distinct from `removeFromPool`, which deletes the group's item record and is
+ * the group's act. This deletes the author's own records from the community's
+ * space — their gallery, its photos, the items joining them — and can only ever
+ * reach their own repo.
+ */
+export async function withdrawFromPool(group: string, rkey: string, queryClient: QueryClient) {
+  await callXrpc("social.grain.unspecced.deletePoolGallery", { group, rkey });
+  invalidateGroups(queryClient);
+}
+
 /** Decline = the group's "no", as its own record. The submission stays the member's. */
 export async function declineSubmission(
   gallery: string,

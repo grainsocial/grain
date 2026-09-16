@@ -17,7 +17,7 @@
   import { ArrowLeft, AlertTriangle, Info, MapPin, CircleMinus } from 'lucide-svelte'
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import { viewer } from '$lib/stores'
-  import { removeFromPool } from '$lib/mutations'
+  import { removeFromPool, withdrawFromPool} from '$lib/mutations'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { goto } from '$app/navigation'
   import { relativeTime, profilePath } from '$lib/utils'
@@ -100,6 +100,23 @@
   const isOwner = $derived(!!gallery && $viewer?.did === gallery.creator?.did)
   const actingForPool = $derived(!!gallery?.group && $viewer?.did === gallery.group.did)
   let removing = $state(false)
+  // Your own gallery, out of somebody else's space. Deletes your records
+  // there; the community keeps everything of its own.
+  let withdrawing = $state(false)
+  async function handleWithdraw() {
+    if (!group || !gallery || withdrawing) return
+    if (!confirm('Take this gallery out of the pool? Your photos stay yours either way.')) return
+    withdrawing = true
+    try {
+      await withdrawFromPool(group, rkey, queryClient)
+      goto(profilePath(gallery.creator))
+    } catch (e) {
+      alert('Could not take it out of the pool. Please try again.')
+    } finally {
+      withdrawing = false
+    }
+  }
+
   async function handleRemoveFromPool() {
     if (!gallery?.group || removing) return
     if (!confirm(`Remove this gallery from ${gallery.group.displayName ?? gallery.group.handle}'s pool?`)) return
@@ -323,9 +340,12 @@
                do nothing about. -->
           {#if !pooled}
             <GalleryMenu {gallery} />
-          {:else if actingForPool}
+          {:else if actingForPool || isOwner}
             <span class="menu-slot">
-              <OverflowMenu>{@render removeFromPoolItem()}</OverflowMenu>
+              <OverflowMenu>
+                {#if actingForPool}{@render removeFromPoolItem()}{/if}
+                {#if isOwner}{@render withdrawItem()}{/if}
+              </OverflowMenu>
             </span>
           {/if}
         </div>
@@ -440,6 +460,13 @@
     onClose={() => { commentSheetOpen = false }}
   />
 {/if}
+
+{#snippet withdrawItem()}
+  <button class="menu-item" type="button" onclick={handleWithdraw} disabled={withdrawing}>
+    <CircleMinus size={15} />
+    Take out of the pool
+  </button>
+{/snippet}
 
 {#snippet removeFromPoolItem()}
   <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>

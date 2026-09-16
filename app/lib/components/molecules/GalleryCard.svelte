@@ -9,10 +9,11 @@
   import GalleryMedia from './GalleryMedia.svelte'
   import FavoriteButton from './FavoriteButton.svelte'
   import GalleryMenu from './GalleryMenu.svelte'
+  import OverflowMenu from '../atoms/OverflowMenu.svelte'
   import ProfilePopover from './ProfilePopover.svelte'
   import { relativeTime, profilePath, galleryPath } from '$lib/utils'
   import { MessageCircle, Send, ChevronLeft, ChevronRight, Heart, CircleMinus } from 'lucide-svelte'
-  import { removeFromPool } from '$lib/mutations'
+  import { removeFromPool, withdrawFromPool} from '$lib/mutations'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { share } from '$lib/utils/share'
   import { browser } from '$app/environment'
@@ -61,6 +62,20 @@
   // Signed in as the group whose pool this is — the one viewer who may take it out.
   const actingForPool = $derived(!!gallery.group && $viewer?.did === gallery.group.did)
   let removing = $state(false)
+  let withdrawing = $state(false)
+  async function handleWithdraw() {
+    if (!gallery.group || withdrawing) return
+    if (!confirm('Take this gallery out of the pool? Your photos stay yours either way.')) return
+    withdrawing = true
+    try {
+      await withdrawFromPool(gallery.group.did, gallery.uri.split('/').pop()!, queryClient)
+    } catch {
+      alert('Could not take it out of the pool. Please try again.')
+    } finally {
+      withdrawing = false
+    }
+  }
+
   async function handleRemoveFromPool() {
     if (!gallery.group || removing) return
     if (!confirm(`Remove this gallery from ${gallery.group.displayName ?? gallery.group.handle}'s pool?`)) return
@@ -178,6 +193,12 @@
     </ProfilePopover>
     {#if !privateGallery}
       <GalleryMenu {gallery} extra={actingForPool ? removeFromPoolItem : undefined} />
+    {:else if isOwner && gallery.group}
+      <!-- A pooled gallery is the author's record in the community's space, so
+           the only action the card offers on one is taking it back out. The
+           rest of GalleryMenu reaches for a public-repo record that is not
+           there. -->
+      <OverflowMenu horizontal>{@render withdrawItem()}</OverflowMenu>
     {/if}
   </header>
 
@@ -248,6 +269,13 @@
   </div>
 </article>
 {/if}
+
+{#snippet withdrawItem()}
+  <button class="menu-item" type="button" onclick={handleWithdraw} disabled={withdrawing}>
+    <CircleMinus size={15} />
+    Take out of the pool
+  </button>
+{/snippet}
 
 {#snippet removeFromPoolItem()}
   <button class="menu-item" type="button" onclick={handleRemoveFromPool} disabled={removing}>
