@@ -7,13 +7,24 @@
   import StoryViewer from '$lib/components/organisms/StoryViewer.svelte'
   import StoryCreate from '$lib/components/molecules/StoryCreate.svelte'
   import { recentFeedQuery, followingFeedQuery, forYouFeedQuery, groupsFeedQuery } from '$lib/queries'
-  import { pinnedFeeds } from '$lib/preferences'
+  import { pinnedFeeds, SPACES_ONLY_FEEDS } from '$lib/preferences'
+  import { spaceSupportQuery } from '$lib/queries'
   import { viewer } from '$lib/stores'
   import { goto } from '$app/navigation'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   const CORE_FEEDS = new Set(['recent', 'following', 'foryou', 'groups'])
-  const first = $derived($pinnedFeeds[0])
+
+  // The home feed is whichever is pinned first, so a feed the viewer's PDS
+  // cannot serve has to be skipped here too — hiding it from the tabs is not
+  // enough when it is also what `/` renders. Reordering pins is the only way
+  // to land here, but landing here would mean a blank home page.
+  const spaces = createQuery(() => ({ ...spaceSupportQuery(), enabled: !!$viewer?.did }))
+  const hasSpaces = $derived(spaces.data?.supported === true)
+  const usableFeeds = $derived(
+    $pinnedFeeds.filter((f) => !SPACES_ONLY_FEEDS.has(f.id) || hasSpaces)
+  )
+  const first = $derived(usableFeeds[0])
   const firstFeed = $derived(first?.id ?? 'recent')
   const needsActor = $derived(firstFeed === 'following' || firstFeed === 'foryou')
   const actorDid = $derived($viewer?.did ?? '')

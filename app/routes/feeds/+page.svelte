@@ -2,12 +2,21 @@
   import { GripVertical } from 'lucide-svelte'
   import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import PinButton from '$lib/components/atoms/PinButton.svelte'
-  import { pinnedFeeds, DEFAULT_PINNED, feedIcon, reorderFeeds } from '$lib/preferences'
+  import { pinnedFeeds, DEFAULT_PINNED, SPACES_ONLY_FEEDS, feedIcon, reorderFeeds } from '$lib/preferences'
+  import { createQuery } from '@tanstack/svelte-query'
+  import { spaceSupportQuery } from '$lib/queries'
   import { isAuthenticated } from '$lib/stores'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
 
   const pinnedIds = $derived(new Set($pinnedFeeds.map((f) => f.id)))
-  const unpinnedDefaults = $derived(DEFAULT_PINNED.filter((f) => !pinnedIds.has(f.id)))
+  // A feed the viewer's PDS cannot serve is not offered to pin. The stored
+  // pins keep it either way — see SPACES_ONLY_FEEDS.
+  const spaces = createQuery(() => spaceSupportQuery())
+  const hasSpaces = $derived(spaces.data?.supported === true)
+  const usable = (f: { id: string }) => !SPACES_ONLY_FEEDS.has(f.id) || hasSpaces
+  const unpinnedDefaults = $derived(
+    DEFAULT_PINNED.filter((f) => !pinnedIds.has(f.id) && usable(f))
+  )
 
   // Drag state
   let dragIndex: number | null = $state(null)
@@ -89,7 +98,7 @@
 <PageHeading title="My Feeds" back />
 
 <div class="feeds-page" bind:this={listEl}>
-  {#each $pinnedFeeds as feed, i (feed.id)}
+  {#each $pinnedFeeds.filter(usable) as feed, i (feed.id)}
     {@const Icon = feedIcon(feed)}
     <a
       href={feed.path}

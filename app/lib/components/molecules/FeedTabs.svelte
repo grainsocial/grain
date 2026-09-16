@@ -1,21 +1,30 @@
 <script lang="ts">
   import { Plus } from 'lucide-svelte'
   import { page } from '$app/state'
-  import { pinnedFeeds, DEFAULT_PINNED } from '$lib/preferences'
+  import { pinnedFeeds, DEFAULT_PINNED, SPACES_ONLY_FEEDS } from '$lib/preferences'
   import { isAuthenticated } from '$lib/stores'
+  import { createQuery } from '@tanstack/svelte-query'
+  import { spaceSupportQuery } from '$lib/queries'
 
   const authOnlyFeeds = new Set(['following', 'foryou'])
+
+  // Same shape as authOnlyFeeds: a feed the viewer's account cannot use is not
+  // offered. Unknown counts as no, so the tab does not flash in and out.
+  const spaces = createQuery(() => ({ ...spaceSupportQuery(), enabled: $isAuthenticated }))
+  const hasSpaces = $derived(spaces.data?.supported === true)
+  const usable = (f: { id: string }) => !SPACES_ONLY_FEEDS.has(f.id) || hasSpaces
   const pinnedIds = $derived(new Set($pinnedFeeds.map((f) => f.id)))
 
   // Include unpinned default feed if user is currently viewing it
   const currentUnpinned = $derived(
-    DEFAULT_PINNED.find((f) => !pinnedIds.has(f.id) && page.url.pathname === f.path)
+    DEFAULT_PINNED.find((f) => !pinnedIds.has(f.id) && page.url.pathname === f.path && usable(f))
   )
 
   const tabFeeds = $derived.by(() => {
     const pinned = $isAuthenticated ? $pinnedFeeds : $pinnedFeeds.filter((f) => !authOnlyFeeds.has(f.id))
-    if (currentUnpinned && $isAuthenticated) return [...pinned, currentUnpinned]
-    return pinned
+    const shown = pinned.filter(usable)
+    if (currentUnpinned && $isAuthenticated) return [...shown, currentUnpinned]
+    return shown
   })
 </script>
 

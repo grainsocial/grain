@@ -7,7 +7,8 @@
   import Textarea from '$lib/components/atoms/Textarea.svelte'
   import { callXrpc } from '$hatk/client'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { groupQuery } from '$lib/queries'
+  import { groupQuery, spaceSupportQuery } from '$lib/queries'
+  import SpacesRequired from '$lib/components/molecules/SpacesRequired.svelte'
   import { viewer } from '$lib/stores'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { nextTid, uploadPhotoBlobs } from '$lib/utils/records'
@@ -24,6 +25,10 @@
 
   const did = $derived(decodeURIComponent(page.params.did ?? ''))
   const group = createQuery(() => groupQuery(did))
+  // Writing into a pool needs a delegation token from the viewer's own PDS, so
+  // this form cannot publish without spaces however they reached it.
+  const spaces = createQuery(() => spaceSupportQuery())
+  const noSpaces = $derived(spaces.isSuccess && spaces.data?.supported !== true)
   const queryClient = useQueryClient()
 
   let photos = $state<ProcessedPhoto[]>([])
@@ -114,6 +119,9 @@
 
 <DetailHeader label="Add to the pool" />
 
+{#if noSpaces}
+  <SpacesRequired what="Pools" />
+{:else}
 <div class="page">
   <p class="lede">
     <Lock size={13} />
@@ -171,6 +179,7 @@
     {publishing ? 'Adding…' : 'Add to the pool'}
   </Button>
 </div>
+{/if}
 
 <style>
   .page {

@@ -5,17 +5,24 @@
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import { createQuery } from '@tanstack/svelte-query'
   import { UsersRound } from 'lucide-svelte'
-  import { groupsQuery } from '$lib/queries'
+  import { groupsQuery, spaceSupportQuery } from '$lib/queries'
+  import SpacesRequired from '$lib/components/molecules/SpacesRequired.svelte'
 
   // The "places worth browsing" surface: every account that declared itself a
   // community, most recently active pool first.
   const groups = createQuery(() => groupsQuery())
+  // Reachable by direct link even with the nav entry hidden, so the page has to
+  // answer for itself.
+  const spaces = createQuery(() => spaceSupportQuery())
+  const blocked = $derived(spaces.isSuccess && spaces.data?.supported !== true)
 </script>
 
 <OGMeta title="Groups — grain" />
 <DetailHeader label="Groups" />
 
-{#if groups.isLoading}
+{#if blocked}
+  <SpacesRequired />
+{:else if groups.isLoading}
   <div class="list">
     {#each { length: 3 } as _}
       <div class="row"><Skeleton circle height="48px" /><div style="flex:1"><Skeleton width="160px" height="16px" /></div></div>

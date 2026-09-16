@@ -10,7 +10,8 @@
   import Toast from '$lib/components/atoms/Toast.svelte'
   import { Check, ExternalLink, ImagePlus, Lock, Share, UsersRound, LogOut } from 'lucide-svelte'
   import { createQuery, useQueryClient } from '@tanstack/svelte-query'
-  import { groupQuery, poolGalleriesQuery } from '$lib/queries'
+  import { groupQuery, poolGalleriesQuery, spaceSupportQuery } from '$lib/queries'
+  import SpacesRequired from '$lib/components/molecules/SpacesRequired.svelte'
   import { joinGroup, leaveGroup } from '$lib/mutations'
   import { viewer, requireAuth } from '$lib/stores'
   import { share } from '$lib/utils/share'
@@ -35,6 +36,11 @@
   const group = createQuery(() => groupQuery(did))
   const acting = $derived(!!group.data?.viewer?.acting)
   const pool = createQuery(() => ({ ...poolGalleriesQuery(did), enabled: !!$viewer }))
+  // Distinguished from the error below on purpose: a member on a PDS without
+  // spaces gets an error here too, and telling them "only members can open this
+  // pool" would be false and unactionable.
+  const spaces = createQuery(() => ({ ...spaceSupportQuery(), enabled: !!$viewer }))
+  const noSpaces = $derived(spaces.isSuccess && spaces.data?.supported !== true)
   const space = $derived(pool.data?.space ?? '')
 
   // Never the CDN: the space hands a blob only to a credential holder, so these
@@ -231,7 +237,7 @@
 
   <div class="view-toggle">
     <div class="pool-label"><Lock size={14} /> Members' pool</div>
-    {#if member}
+    {#if member && !noSpaces}
       <a class="select-text-btn" href="/group/{did}/create"><ImagePlus size={15} /> Add a gallery</a>
     {/if}
   </div>
@@ -240,6 +246,8 @@
     <div class="empty-state">
       This pool is the club's, not the network's. Sign in as a member to see it.
     </div>
+  {:else if noSpaces}
+    <SpacesRequired what="Pools" />
   {:else if pool.isError}
     <div class="empty-state">
       Only members can open this pool. If you have just joined, reload — the

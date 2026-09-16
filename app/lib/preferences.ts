@@ -10,6 +10,19 @@ export interface PinnedFeed {
   path: string;
 }
 
+/**
+ * Feeds that only work on a PDS serving permissioned spaces.
+ *
+ * Groups are pools, pools are spaces, and every read of one mints a delegation
+ * token on the viewer's own PDS — so a viewer whose server has no spaces cannot
+ * see a pool however they arrive at it. Hidden rather than shown-and-broken.
+ *
+ * Filtered where feeds are rendered, never removed from the stored pins: a
+ * server can gain spaces, and someone who had Groups pinned before should find
+ * it there again rather than having quietly lost it.
+ */
+export const SPACES_ONLY_FEEDS = new Set(["groups"]);
+
 export const DEFAULT_PINNED: PinnedFeed[] = [
   { id: "recent", label: "Recent", type: "feed", path: "/feeds/recent" },
   { id: "following", label: "Following", type: "feed", path: "/feeds/following" },

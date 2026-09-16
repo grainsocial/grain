@@ -8,7 +8,7 @@
   import { resetPreferences } from '$lib/preferences'
   import { page } from '$app/state'
   import { createQuery } from '@tanstack/svelte-query'
-  import { unseenNotificationCountQuery } from '$lib/queries'
+  import { spaceSupportQuery, unseenNotificationCountQuery } from '$lib/queries'
 
   let {
     rail = false,
@@ -22,6 +22,12 @@
     ...unseenNotificationCountQuery($viewer?.did ?? ''),
     enabled: !!$viewer?.did,
   }))
+
+  // Groups need a PDS that serves spaces. Shown only once we know it does —
+  // appearing a moment late is kinder than appearing and then vanishing, and
+  // the answer is cached, so it is only ever late once.
+  const spaces = createQuery(() => ({ ...spaceSupportQuery(), enabled: !!$viewer?.did }))
+  const showGroups = $derived(spaces.data?.supported === true)
 
   async function doLogout() {
     await logout()
@@ -72,10 +78,12 @@
         </span>
         <span class="nav-label">Notifications</span>
       </a>
-      <a href="/groups" class="nav-item" class:active={page.url.pathname === '/groups' || page.url.pathname.startsWith('/group/')}>
-        <UsersRound size={24} />
-        <span class="nav-label">Groups</span>
-      </a>
+      {#if showGroups}
+        <a href="/groups" class="nav-item" class:active={page.url.pathname === '/groups' || page.url.pathname.startsWith('/group/')}>
+          <UsersRound size={24} />
+          <span class="nav-label">Groups</span>
+        </a>
+      {/if}
       {#if $viewer}
         <a href="/profile/{$viewer.did}" class="nav-item" class:active={page.url.pathname === `/profile/${$viewer.did}`}>
           <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={24} />

@@ -6,7 +6,8 @@
   import FeedTabs from '$lib/components/molecules/FeedTabs.svelte'
   import PullToRefresh from '$lib/components/molecules/PullToRefresh.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
-  import { poolFeedQuery } from '$lib/queries'
+  import { poolFeedQuery, spaceSupportQuery } from '$lib/queries'
+  import SpacesRequired from '$lib/components/molecules/SpacesRequired.svelte'
   import { viewer } from '$lib/stores'
   import { Lock } from 'lucide-svelte'
   import type { GalleryView, GroupView } from '$hatk/client'
@@ -18,6 +19,9 @@
   // infinite scroll, and nothing here that could be served to anyone else.
   const queryClient = useQueryClient()
   const feed = createQuery(() => ({ ...poolFeedQuery(), enabled: !!$viewer }))
+  // The tab is hidden without spaces, but the URL is still a URL.
+  const spaces = createQuery(() => ({ ...spaceSupportQuery(), enabled: !!$viewer }))
+  const blocked = $derived(spaces.isSuccess && spaces.data?.supported !== true)
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ['poolFeed'] })
@@ -85,6 +89,8 @@
       <Lock size={15} />
       <p>These pools are their communities', not the network's. Sign in to see the ones you are in.</p>
     </div>
+  {:else if blocked}
+    <SpacesRequired />
   {:else if feed.isLoading}
     <GalleryCardSkeleton />
     <GalleryCardSkeleton />
