@@ -48,6 +48,13 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/xrpc/")) return;
 
+  // Sign-in endpoints belong to the server: they set cookies, and /oauth/callback
+  // answers with a 302 to the client's redirect_uri, which for the mobile apps is
+  // the grain:// scheme. fetch() here is a subresource load, and the network stack
+  // fails a redirect to a non-HTTP(S) scheme, so the catch below would answer the
+  // sign-in with the offline page. Let the browser navigate these itself.
+  if (url.pathname.startsWith("/oauth/") || url.pathname.startsWith("/auth/")) return;
+
   // For navigation requests, try network first (so new deploys are picked up)
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => fromCache(event.request)));
