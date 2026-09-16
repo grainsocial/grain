@@ -47,7 +47,7 @@
         },
         "memberCount": {
           "type": "integer",
-          "description": "Members, as the community publicly attests (community.opensocial.member records)."
+          "description": "Members, as the community publicly attests (fyi.opensocial.member records)."
         },
         "joinPolicy": {
           "type": "string",

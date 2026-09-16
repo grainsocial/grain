@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "community.opensocial.member",
+  "id": "fyi.opensocial.member",
   "defs": {
     "main": {
       "type": "record",

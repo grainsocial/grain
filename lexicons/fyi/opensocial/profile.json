@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "community.opensocial.profile",
+  "id": "fyi.opensocial.profile",
   "defs": {
     "main": {
       "type": "record",
@@ -38,9 +38,9 @@
           "joinPolicy": {
             "type": "string",
             "knownValues": [
-              "community.opensocial.profile#open",
-              "community.opensocial.profile#request",
-              "community.opensocial.profile#invite"
+              "fyi.opensocial.profile#open",
+              "fyi.opensocial.profile#request",
+              "fyi.opensocial.profile#invite"
             ],
             "description": "How new members get in: anyone may join, requests are reviewed, or invite only."
           },

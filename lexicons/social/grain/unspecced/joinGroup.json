@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Ask a group's community host to admit the viewer: Grain mints service auth for the host from the viewer's PDS and calls community.opensocial.requestJoin. Admitted immediately when the group is open; queued for its moderators when it takes requests.",
+      "description": "Ask a group's community host to admit the viewer: Grain mints service auth for the host from the viewer's PDS and calls fyi.opensocial.requestJoin. Admitted immediately when the group is open; queued for its moderators when it takes requests.",
       "input": {
         "encoding": "application/json",
         "schema": {

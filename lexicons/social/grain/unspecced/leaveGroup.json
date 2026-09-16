@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Leave a group: community.opensocial.leaveCommunity on its host, with service auth from the viewer's PDS.",
+      "description": "Leave a group: fyi.opensocial.leaveCommunity on its host, with service auth from the viewer's PDS.",
       "input": {
         "encoding": "application/json",
         "schema": {

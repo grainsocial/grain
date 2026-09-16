@@ -269,7 +269,7 @@ CREATE TABLE "com.germnetwork.declaration" (
   continuity_proofs TEXT
 );
 
-CREATE TABLE "community.opensocial.declaration" (
+CREATE TABLE "fyi.opensocial.declaration" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
@@ -278,7 +278,7 @@ CREATE TABLE "community.opensocial.declaration" (
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE "community.opensocial.member" (
+CREATE TABLE "fyi.opensocial.member" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
@@ -287,7 +287,7 @@ CREATE TABLE "community.opensocial.member" (
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE "community.opensocial.profile" (
+CREATE TABLE "fyi.opensocial.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
@@ -301,7 +301,7 @@ CREATE TABLE "community.opensocial.profile" (
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE "community.opensocial.rule" (
+CREATE TABLE "fyi.opensocial.rule" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,

@@ -5,7 +5,7 @@ import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 /** The SQL for "did is on group's public roster". Both sides are DIDs. */
 export const memberOf = (memberDid: string, groupDid: string) =>
-  `EXISTS (SELECT 1 FROM "community.opensocial.member" m WHERE m.did = ${groupDid} AND m.member = ${memberDid})`;
+  `EXISTS (SELECT 1 FROM "fyi.opensocial.member" m WHERE m.did = ${groupDid} AND m.member = ${memberDid})`;
 
 /**
  * Build group views for a set of community DIDs.
@@ -13,7 +13,7 @@ export const memberOf = (memberDid: string, groupDid: string) =>
  * A group is an account that (a) declared itself a community and (b) reads
  * like any other author. Its Grain profile is its identity (falling back to
  * the community's own public profile), its `social.grain.group.item` records
- * are its pool, and its `community.opensocial.member` records — the roster
+ * are its pool, and its `fyi.opensocial.member` records — the roster
  * the host publishes for a discoverable community — say who belongs. Nothing
  * here talks to the host: every fact is a public record already indexed.
  */
@@ -49,7 +49,7 @@ export async function hydrateGroups(
   ] = await Promise.all([
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
     ctx.db.query(
-      `SELECT did, display_name, description, avatar, join_policy, url FROM "community.opensocial.profile" WHERE did IN (${ph})`,
+      `SELECT did, display_name, description, avatar, join_policy, url FROM "fyi.opensocial.profile" WHERE did IN (${ph})`,
       dids,
     ) as Promise<
       {
@@ -71,17 +71,17 @@ export async function hydrateGroups(
       dids,
     ) as Promise<{ did: string; count: number; last: string }[]>,
     ctx.db.query(
-      `SELECT did, COUNT(*) AS count FROM "community.opensocial.member" WHERE did IN (${ph}) GROUP BY did`,
+      `SELECT did, COUNT(*) AS count FROM "fyi.opensocial.member" WHERE did IN (${ph}) GROUP BY did`,
       dids,
     ) as Promise<{ did: string; count: number }[]>,
     viewer
       ? (ctx.db.query(
-          `SELECT did FROM "community.opensocial.member" WHERE member = $1 AND did IN (${dids.map((_, i) => `$${i + 2}`).join(",")})`,
+          `SELECT did FROM "fyi.opensocial.member" WHERE member = $1 AND did IN (${dids.map((_, i) => `$${i + 2}`).join(",")})`,
           [viewer, ...dids],
         ) as Promise<{ did: string }[]>)
       : Promise.resolve([]),
     ctx.db.query(
-      `SELECT did, uri, title, text FROM "community.opensocial.rule" WHERE did IN (${ph}) ORDER BY created_at ASC`,
+      `SELECT did, uri, title, text FROM "fyi.opensocial.rule" WHERE did IN (${ph}) ORDER BY created_at ASC`,
       dids,
     ) as Promise<{ did: string; uri: string; title: string; text: string | null }[]>,
     // The queue only matters to whoever is acting as the group — the one
@@ -192,7 +192,7 @@ export async function resolveGroupActor(ctx: BaseContext, actor: string): Promis
     did = rows[0].did;
   }
   const declared = (await ctx.db.query(
-    `SELECT 1 AS v FROM "community.opensocial.declaration" WHERE did = $1 LIMIT 1`,
+    `SELECT 1 AS v FROM "fyi.opensocial.declaration" WHERE did = $1 LIMIT 1`,
     [did],
   )) as { v: number }[];
   return declared.length ? did : null;

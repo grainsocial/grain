@@ -5,7 +5,7 @@ import { callCommunityHost } from "../helpers/communityHost.ts";
 export default defineProcedure("social.grain.unspecced.joinGroup", async (ctx) => {
   const { input, ok, viewer } = ctx;
   if (!viewer) throw new InvalidRequestError("Sign in to join a group");
-  const r = await callCommunityHost(ctx.pds, input.group, "community.opensocial.requestJoin", {
+  const r = await callCommunityHost(ctx.pds, input.group, "fyi.opensocial.requestJoin", {
     community: input.group,
     ...(input.message ? { message: input.message } : {}),
   });

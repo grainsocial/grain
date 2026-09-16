@@ -1,5 +1,5 @@
 // Where a community is run. A community's DID document names its PDS, and on
-// the opensocial design the host *is* that PDS: the community.opensocial.*
+// the opensocial design the host *is* that PDS: the fyi.opensocial.*
 // methods are served from the same origin, and the host's own identity — the
 // audience a service-auth token must name — is its did:web at that origin.
 // Nothing here is opensocial-specific beyond that convention: resolve the DID,
@@ -45,7 +45,7 @@ export async function communitySite(did: string): Promise<string | undefined> {
   let url: string | undefined;
   try {
     const host = await communityHostFor(did);
-    const res = await fetch(`${host.url}/xrpc/community.opensocial.listCommunities`);
+    const res = await fetch(`${host.url}/xrpc/fyi.opensocial.listCommunities`);
     const body = (await res.json()) as { communities?: { did: string; url?: string }[] };
     url = body.communities?.find((c) => c.did === did)?.url;
   } catch {
@@ -56,7 +56,7 @@ export async function communitySite(did: string): Promise<string | undefined> {
   return url;
 }
 
-/** Call a community.opensocial.* procedure on the group's host as the viewer,
+/** Call a fyi.opensocial.* procedure on the group's host as the viewer,
  *  with service auth minted by the viewer's own PDS. */
 export async function callCommunityHost(
   pds: (

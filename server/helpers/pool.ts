@@ -213,7 +213,7 @@ export async function groupsOf(
   viewerDid: string,
 ): Promise<string[]> {
   const rows = (await db.query(
-    `SELECT DISTINCT did FROM "community.opensocial.member" WHERE member = $1`,
+    `SELECT DISTINCT did FROM "fyi.opensocial.member" WHERE member = $1`,
     [viewerDid],
   )) as { did: string }[];
   return rows.map((r) => r.did);

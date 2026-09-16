@@ -169,7 +169,7 @@ async function gallery(
 //
 // Rain Shadow Riders is founded by apps/community's seed on the opensocial host:
 // its members, roles, events and rules all live there. Grain knows it only as
-// a DID with a community.opensocial.declaration — the one discoverable fact a
+// a DID with a fyi.opensocial.declaration — the one discoverable fact a
 // third-party app gates on — so all it needs from the host is that DID.
 
 const HOST = process.env.HOST_URL ?? "http://localhost:4000";
@@ -178,7 +178,7 @@ const CLUB_HANDLE = process.env.CLUB_HANDLE ?? "rain-shadow-riders.opensocial.te
 /** The club's DID, or null if this network has no such community. */
 async function findClub(handle: string): Promise<string | null> {
   try {
-    const res = await fetch(`${HOST}/xrpc/community.opensocial.listCommunities`);
+    const res = await fetch(`${HOST}/xrpc/fyi.opensocial.listCommunities`);
     if (!res.ok) return null;
     const { communities } = (await res.json()) as {
       communities: { handle: string; did: string }[];

@@ -34,15 +34,6 @@ const grainScopes = [
   "repo:social.grain.comment",
   "repo:social.grain.story",
   "repo:social.grain.graph.block",
-  // Groups: a member offers a gallery (submission, their repo); whoever acts
-  // as the group answers (item, the group's repo).
-  "repo:social.grain.group.submission",
-  "repo:social.grain.group.item",
-  "repo:social.grain.group.decline",
-  // Joining and leaving a group is a call to its community host, made with
-  // service auth the member's PDS mints for that host — any host, hence `*`.
-  "rpc:community.opensocial.requestJoin?aud=*",
-  "rpc:community.opensocial.leaveCommunity?aud=*",
   // Both actions, not just create: the gallery cross-post is written with
   // com.atproto.repo.putRecord so a resumed publish overwrites its own post
   // instead of posting twice, and putRecord asserts create *and* update.
@@ -87,6 +78,31 @@ const spaceScopes = [
 // because the two need different things of a PDS: this one only needs
 // `social.grain.group` to resolve as a space declaration, which is a lexicon a
 // community host publishes. A network that serves one may not serve the other.
+// Groups, as a whole. Asked for only where they can be used.
+//
+// A pool is a space, and every read of one mints a delegation token on the
+// member's own PDS — so on a server without spaces none of this can work, and
+// a permission nobody can honor has no business on their consent screen. The
+// same argument the space scopes above make for themselves.
+//
+// It includes joining and leaving, which technically need no spaces at all:
+// they are calls to the community host with service auth, and any PDS can mint
+// those. They are gated anyway because groups are currently only meant to work
+// for spaces-capable accounts, and offering someone a Join button whose pool
+// they could never open would be the worse shape. Revisit when a group is
+// worth being a member of without one.
+const groupScopes = [
+  // A member offers a gallery (submission, their repo); whoever acts as the
+  // group answers (item, the group's repo).
+  "repo:social.grain.group.submission",
+  "repo:social.grain.group.item",
+  "repo:social.grain.group.decline",
+  // Joining and leaving a group is a call to its community host, made with
+  // service auth the member's PDS mints for that host — any host, hence `*`.
+  "rpc:fyi.opensocial.requestJoin?aud=*",
+  "rpc:fyi.opensocial.leaveCommunity?aud=*",
+];
+
 const poolScopes = [
   "space:social.grain.group?authority=*&skey=*",
   "collection=social.grain.gallery",
@@ -156,12 +172,23 @@ export default defineConfig({
     scopes: [
       grainScopes,
       ...(!isProd && devSpaceScopes ? [spaceScopes] : []),
-      ...(!isProd && devPoolScopes ? [poolScopes] : []),
+      ...(!isProd && devPoolScopes ? [poolScopes, ...groupScopes] : []),
     ]
       .join(" ")
       .split(" "),
     conditionalScopes: [
       { whenMethod: "com.atproto.simplespace.createSpace", scopes: [spaceScopes] },
+      // Pools, gated on reading one rather than on creating a space: a member
+      // never creates the pool — the community does — so `getDelegationToken`
+      // is the method that actually decides whether they can take part.
+      //
+      // The pool scope was previously dev-only and named in no conditional, so
+      // production never asked for it at all. A pool write would have failed
+      // even on a PDS that could have served it.
+      {
+        whenMethod: "com.atproto.space.getDelegationToken",
+        scopes: [poolScopes, ...groupScopes],
+      },
     ],
     clients: [
       ...(prodDomain
