@@ -118,6 +118,35 @@ describe("calculateCollageLayout", () => {
     expect(placements[0].width).toBeGreaterThan(0);
   });
 
+  test("fits a single photo to the frame at its own shape, centred", () => {
+    // One photo is not a collage: no random size, no crop. Whichever side runs
+    // out first pins the photo to the frame, and the slack on the other side is
+    // split evenly so the photo sits in the middle.
+    const wide = calculateCollageLayout([item("wide", 3)], W, H, GAP)[0];
+    expect(wide.width).toBe(W);
+    expect(wide.height).toBe(Math.round(W / 3));
+    expect(wide.x).toBe(0);
+    expect(wide.y).toBe(Math.round((H - wide.height) / 2));
+
+    const tall = calculateCollageLayout([item("tall", 2 / 3)], W, H, GAP)[0];
+    expect(tall.height).toBe(H);
+    expect(tall.width).toBe(Math.round(H * (2 / 3)));
+    expect(tall.y).toBe(0);
+    expect(tall.x).toBe(Math.round((W - tall.width) / 2));
+
+    // A 3:2 photo is taller than this frame allows, so height decides.
+    const landscape = calculateCollageLayout([item("solo", 3 / 2)], W, H, GAP)[0];
+    expect(landscape.height).toBe(H);
+
+    for (const p of [wide, tall, landscape]) {
+      expect(p.width / p.height).toBeCloseTo(p.item.aspectRatio, 2);
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.x + p.width).toBeLessThanOrEqual(W);
+      expect(p.y + p.height).toBeLessThanOrEqual(H);
+    }
+  });
+
   test("returns nothing for no photos", () => {
     expect(calculateCollageLayout([], W, H, GAP)).toEqual([]);
   });

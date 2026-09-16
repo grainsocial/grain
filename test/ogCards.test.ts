@@ -38,6 +38,14 @@ function imgSrcs(node: any): string[] {
   return [...here, ...imgSrcs(node.props?.children)];
 }
 
+/** Every <img>'s style, in document order. */
+function imgStyles(node: any): any[] {
+  if (node == null || typeof node !== "object") return [];
+  if (Array.isArray(node)) return node.flatMap(imgStyles);
+  const here = node.type === "img" ? [node.props?.style ?? {}] : [];
+  return [...here, ...imgStyles(node.props?.children)];
+}
+
 /** Builds the context an OG handler expects, and records what it asked for. */
 function ctxFor(params: Record<string, string>) {
   const fetched: string[] = [];
@@ -152,6 +160,28 @@ beforeAll(async () => {
     );
   }
 
+  // A one-photo gallery, portrait, for the single-photo card.
+  await db.run(
+    `INSERT INTO "social.grain.gallery" (uri, cid, did, indexed_at, title, created_at)
+     VALUES ($1, 'cid-g3', $2, 'i', 'One Tall Tree', '2026-03-03')`,
+    [`at://${ALICE}/social.grain.gallery/g3`, ALICE],
+  );
+  await db.run(
+    `INSERT INTO "social.grain.photo" (uri, cid, did, indexed_at, photo, aspect_ratio, created_at)
+     VALUES ($1, 'cid-solo', $2, 'i', $3, '{"width":2,"height":3}', '2026-03-03')`,
+    [`at://${ALICE}/social.grain.photo/solo`, ALICE, JSON.stringify(blob("bafy-solo"))],
+  );
+  await db.run(
+    `INSERT INTO "social.grain.gallery.item" (uri, cid, did, indexed_at, created_at, gallery, item, position)
+     VALUES ($1, 'cid-isolo', $2, 'i', '2026-03-03', $3, $4, 0)`,
+    [
+      `at://${ALICE}/social.grain.gallery.item/isolo`,
+      ALICE,
+      `at://${ALICE}/social.grain.gallery/g3`,
+      `at://${ALICE}/social.grain.photo/solo`,
+    ],
+  );
+
   // A gallery with no title text worth speaking of, for the description fallback.
   await db.run(
     `INSERT INTO "social.grain.gallery" (uri, cid, did, indexed_at, title, created_at)
@@ -216,6 +246,18 @@ describe("gallery card", () => {
     expect(fetched.filter((u) => u.includes("bafy-p")).length).toBe(6);
     // Nothing in the rendered tree points at the CDN — satori gets data URLs.
     expect(imgSrcs(element).every((s) => s.startsWith("data:"))).toBe(true);
+  });
+
+  test("draws a lone photo at its own shape rather than cropping it", async () => {
+    const { ctx, fetched } = ctxFor({ actor: ALICE, rkey: "g3" });
+    const { element } = await galleryOg.generate(ctx);
+    // The avatar is drawn after the collage, so the photo is the first <img>.
+    const [photo] = imgStyles(element);
+    const width = parseFloat(photo.width);
+    const height = parseFloat(photo.height);
+    expect(width / height).toBeCloseTo(2 / 3, 2);
+    // And it is asked for at full size, since it fills the frame.
+    expect(fetched.some((u) => u.includes("bafy-solo") && u.includes("feed_fullsize"))).toBe(true);
   });
 
   test("says so when the gallery does not exist", async () => {

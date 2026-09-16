@@ -30,10 +30,13 @@ export default defineOG("/og/profile/:actor", async (ctx) => {
   if (recentRows.length > 0) {
     const photoUris = recentRows.map((r) => r.item);
     const photoRecords = await ctx.getRecords<Photo>("social.grain.photo", photoUris);
+    // A lone cover is drawn across the whole frame, so it needs more pixels
+    // than a thumbnail has.
+    const photoSize = photoUris.length === 1 ? "feed_fullsize" : "feed_thumbnail";
     for (const uri of photoUris) {
       const rec = photoRecords.get(uri);
       if (!rec) continue;
-      const url = blobUrl(rec.did, rec.value.photo, "feed_thumbnail");
+      const url = blobUrl(rec.did, rec.value.photo, photoSize);
       if (!url) continue;
       const dataUrl = await fetchImage(url);
       if (!dataUrl) continue;
