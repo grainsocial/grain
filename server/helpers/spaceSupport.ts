@@ -1,10 +1,27 @@
 // Does a PDS serve permissioned spaces (proposal 0016)?
 //
-// `community.lexicon.service.describe` is the only way to ask. atproto
-// publishes no method list, so the alternative — call a space method and read
-// the failure — cannot tell a server without the feature apart from one that is
-// broken. A PDS that doesn't answer describe at all is read as "no", which is
-// the right answer for every PDS that doesn't implement spaces anyway.
+// Asked two ways, because one is not enough yet.
+//
+// `community.lexicon.service.describe` is the direct question and the answer to
+// trust when it comes. It is also still a proposal, and the reference spaces
+// implementation does not serve it — the alpha `@atproto/pds` build does not
+// contain the NSID at all. Treating a missing describe as "no spaces" therefore
+// mislabels every alpha deployment, which is the opposite of the intent.
+//
+// So when describe is absent we ask the server about the methods themselves.
+// The trick is a control: probe an NSID that certainly does not exist, learn
+// how that server says "I do not have this", then probe each method we need and
+// see whether the answer differs. It differs for a method the server knows,
+// because it gets far enough to complain about something else — missing
+// parameters, missing auth. Three real servers, three different shapes:
+//
+//   alpha @atproto/pds   unknown -> 401 AuthMissing       space -> 400 InvalidRequest
+//   pds.js with spaces   unknown -> 501 MethodNotImplem.  space -> 401 AuthRequired
+//   bsky.social          unknown -> 401 AuthMissing       space -> 401 AuthMissing
+//
+// The last is the point: a server with no spaces answers identically either
+// way, so it reads as "no". The fallback can fail to recognise support it
+// cannot see, but it cannot invent support that is not there.
 
 const DESCRIBE_NSID = "community.lexicon.service.describe";
 const PROBE_TIMEOUT_MS = 5000;
@@ -17,7 +34,9 @@ const PROBE_TIMEOUT_MS = 5000;
  */
 const REQUIRED_METHODS: string[][] = [
   ["com.atproto.simplespace.createSpace"],
-  ["com.atproto.simplespace.addMember"],
+  // The alpha spells this `putMember` and pairs it with `removeMember`; pds.js
+  // says `addMember`. Same operation, and either is enough.
+  ["com.atproto.simplespace.addMember", "com.atproto.simplespace.putMember"],
   ["com.atproto.simplespace.listMembers"],
   ["com.atproto.simplespace.getSpace", "com.atproto.space.getSpace"],
   ["com.atproto.space.createRecord"],
@@ -86,13 +105,59 @@ async function fetchMethods(pdsEndpoint: string): Promise<Set<string> | null> {
   return names;
 }
 
+/**
+ * An NSID no server implements, used to learn how this one says "no such
+ * method". Namespaced under grain so it cannot collide with something real.
+ */
+const CONTROL_NSID = "social.grain.unspecced.methodThatDoesNotExist";
+
+/**
+ * How a server answered, as a comparable string. Status and error code
+ * together: some servers vary the status, some only the error name.
+ */
+async function signature(pdsEndpoint: string, nsid: string): Promise<string | null> {
+  const url = `${pdsEndpoint.replace(/\/$/, "")}/xrpc/${nsid}`;
+  try {
+    const res = await fetch(url, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+    });
+    const body = (await res.json().catch(() => null)) as { error?: string } | null;
+    return `${res.status}:${body?.error ?? ""}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Which of the methods we need this server appears to serve, judged against how
+ * it answers for a method that does not exist. Null when the server could not
+ * be reached at all, which is not evidence about the server.
+ */
+async function probeMethods(pdsEndpoint: string): Promise<Set<string> | null> {
+  const control = await signature(pdsEndpoint, CONTROL_NSID);
+  if (control === null) return null;
+
+  const spellings = REQUIRED_METHODS.flat();
+  const answers = await Promise.all(spellings.map((n) => signature(pdsEndpoint, n)));
+  const found = new Set<string>();
+  spellings.forEach((nsid, i) => {
+    const a = answers[i];
+    // Same answer as a method that does not exist tells us nothing, so it
+    // counts as absent. Only a different answer is evidence of the method.
+    if (a !== null && a !== control) found.add(nsid);
+  });
+  return found;
+}
+
 /** Probe a PDS directly, bypassing the cache. */
 export async function probeSpaceSupport(pdsEndpoint: string): Promise<SpaceSupport> {
-  const methods = await fetchMethods(pdsEndpoint);
+  // describe first: an explicit list beats inference whenever it is offered.
+  const methods = (await fetchMethods(pdsEndpoint)) ?? (await probeMethods(pdsEndpoint));
   const checkedAt = new Date().toISOString();
 
-  // No describe endpoint means no spaces — a server that implements the
-  // proposal implements the discovery method with it.
+  // Neither question got an answer — the server is unreachable, or it says
+  // nothing that distinguishes a method it has from one it does not.
   if (!methods) {
     return {
       supported: false,
