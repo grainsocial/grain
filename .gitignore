@@ -12,3 +12,4 @@ certs/
 public/
 *.tsbuildinfo
 coverage/
+.dev-logs/
