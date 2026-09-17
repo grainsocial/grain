@@ -5,6 +5,9 @@ import { actorProfileQuery } from "./queries";
 
 type Fetch = typeof globalThis.fetch;
 
+/** What a handle resolves to, so a revisit costs nothing. */
+const handleDidKey = (handle: string) => ["handleDid", handle] as const;
+
 /**
  * Resolve the `:actor` route segment, a handle or a DID, to a DID.
  *
@@ -16,6 +19,14 @@ type Fetch = typeof globalThis.fetch;
  * a handle there; the answer is seeded under the DID key so the page's own
  * query starts warm instead of fetching the same profile a second time.
  *
+ * Only one copy of a profile may survive that fetch. The read is keyed by the
+ * handle, and nothing else in the app touches that key — a follow invalidates
+ * `["actorProfile", did]` — so a handle-keyed copy left behind would sit there
+ * going quietly out of date and overwrite the live profile the next time the
+ * route was visited. The handle's DID is remembered instead, which is the only
+ * part of that answer this is asking for, and a revisit resolves from it
+ * without a request.
+ *
  * A DID passes straight through without a request.
  */
 export async function resolveRouteActor(
@@ -25,6 +36,9 @@ export async function resolveRouteActor(
   f?: Fetch,
 ): Promise<string> {
   if (actor.startsWith("did:")) return actor;
+
+  const known = queryClient.getQueryData<string>(handleDidKey(actor));
+  if (known) return known;
 
   let profile: GrainActorDefsProfileViewDetailed;
   try {
@@ -40,6 +54,8 @@ export async function resolveRouteActor(
     }
     throw err;
   }
+  queryClient.removeQueries({ queryKey: actorProfileQuery(actor).queryKey, exact: true });
+  queryClient.setQueryData(handleDidKey(actor), profile.did);
   queryClient.setQueryData(actorProfileQuery(profile.did, viewer).queryKey, profile);
   return profile.did;
 }
