@@ -12,6 +12,7 @@
   import Avatar from '$lib/components/atoms/Avatar.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
   import FavoriteButton from '$lib/components/molecules/FavoriteButton.svelte'
+  import FavedByFollowing from '$lib/components/molecules/FavedByFollowing.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import BskyIcon from '$lib/components/atoms/BskyIcon.svelte'
   import { ArrowLeft, AlertTriangle, Info, MapPin, CircleMinus } from 'lucide-svelte'
@@ -128,6 +129,9 @@
     }
   }
   const bskyUrl = $derived((gallery as any)?.crossPost?.url ?? null)
+  // A pooled gallery's favorites live in the space, so nobody's public
+  // favorites name it and there is no facepile to show.
+  const favedByFollowing = $derived(pooled ? [] : (gallery?.favedByFollowing ?? []))
 
   // Same fallback chain the card uses, so a gallery reads the same place name
   // in either layout.
@@ -435,6 +439,14 @@
                 bind:favorite={doFavorite}
               />
             </div>
+            {#if favedByFollowing.length > 0}
+              <div class="faved-by-row">
+                <FavedByFollowing
+                  people={favedByFollowing}
+                  href="/profile/{actor}/gallery/{rkey}/favorited-by"
+                />
+              </div>
+            {/if}
           {/snippet}
         </CommentSheet>
       </div>
@@ -685,6 +697,11 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  /* "Favorited by people you follow", under the favorite button it summarizes. */
+  .faved-by-row {
+    padding-top: 8px;
   }
 
   .more {

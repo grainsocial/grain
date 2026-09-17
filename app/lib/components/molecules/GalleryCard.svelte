@@ -2,7 +2,7 @@
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
   import { isCaughtUp } from '$lib/stories'
   import Avatar from '../atoms/Avatar.svelte'
-  import Facepile from '../atoms/Facepile.svelte'
+  import FavedByFollowing from './FavedByFollowing.svelte'
   import RichText from '../atoms/RichText.svelte'
   import Toast from '../atoms/Toast.svelte'
   import ExifInfo from '../atoms/ExifInfo.svelte'
@@ -111,9 +111,6 @@
       : galleryPath(gallery),
   )
   const favedByFollowing = $derived(gallery.favedByFollowing ?? [])
-  const favedByNames = $derived(
-    favedByFollowing.slice(0, 2).map((p) => p.displayName || (p.handle ? `@${p.handle}` : '')),
-  )
 
 
   let showToast = $state(false)
@@ -232,18 +229,9 @@
   </div>
 
   {#if favedByFollowing.length > 0 && !privateGallery}
-    <a class="faved-by" href="{galleryHref}/favorited-by">
-      <Facepile people={favedByFollowing} size={20} />
-      <span class="faved-by-text">
-        {#if favedByNames.length === 1}
-          Favorited by <strong>{favedByNames[0]}</strong>
-        {:else if favedByFollowing.length > 2}
-          Favorited by <strong>{favedByNames[0]}</strong>, <strong>{favedByNames[1]}</strong> and others you follow
-        {:else}
-          Favorited by <strong>{favedByNames[0]}</strong> and <strong>{favedByNames[1]}</strong>
-        {/if}
-      </span>
-    </a>
+    <div class="faved-by-row">
+      <FavedByFollowing people={favedByFollowing} href="{galleryHref}/favorited-by" />
+    </div>
   {/if}
 
   <Toast message="Link copied" bind:visible={showToast} />
@@ -381,24 +369,8 @@
 .stat:hover { opacity: 0.7; }
 .stat-count { color: var(--text-secondary); }
 /* "Favorited by people you follow" facepile */
-  .faved-by {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .faved-by-row {
     padding: 0 0 10px;
-    text-decoration: none;
-    color: inherit;
-  }
-.faved-by:hover .faved-by-text {
-    text-decoration: underline;
-  }
-.faved-by-text {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-.faved-by-text strong {
-    color: var(--text-secondary);
-    font-weight: 600;
   }
 /* Content */
   .card-content { padding: 0 0 14px; }
