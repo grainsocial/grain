@@ -153,6 +153,12 @@ export default defineConfig({
     // both its existing records and everything after. Kept because it is the
     // right signal if that ever stops being true.
     signalCollections: ["social.grain.actor.profile", "fyi.opensocial.declaration"],
+    // A community's roster names people who write nothing into a signal
+    // collection of ours — someone can belong to a group without ever having
+    // made a grain profile. Their repo is what puts a handle and a face on a
+    // member row and on every gallery they pool; without it the group reads as
+    // a column of DIDs.
+    references: [{ collection: "fyi.opensocial.member", field: "member" }],
     fullNetwork: false,
     parallelism: 5,
   },
