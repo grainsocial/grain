@@ -7,7 +7,7 @@
 // when the author is asking, and through a credential the space's authority
 // issues when anyone else is.
 //
-// `cid` rides along per item so the client can ask getPrivateBlob for the bytes;
+// `cid` rides along per item so the client can ask /space-blob for the bytes;
 // they cannot come from the CDN.
 
 import { defineQuery, InvalidRequestError } from "$hatk";

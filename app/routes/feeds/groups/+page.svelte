@@ -11,6 +11,7 @@
   import { viewer } from '$lib/stores'
   import { Lock } from 'lucide-svelte'
   import type { GalleryView, GroupView } from '$hatk/client'
+  import { spaceBlobViews } from '$lib/spaceBlob'
 
   // The pools you are in, in one column. Not a feed in grain's usual sense:
   // every other one is SQL over the index with a cursor, and none of this is
@@ -28,11 +29,6 @@
   }
 
   const groups = $derived(new Map((feed.data?.groups ?? []).map((g: GroupView) => [g.did, g])))
-
-  // Never the CDN: the space hands a blob only to a credential holder, so these
-  // come back through grain itself and are cached nowhere in between.
-  const blobSrc = (space: string, did: string, cid: string) =>
-    `/xrpc/social.grain.unspecced.getPrivateBlob?${new URLSearchParams({ space, did, cid })}`
 
   // The sheet a card's comment button opens, carrying which pool to read the
   // thread from — it is not in any index to be looked up by subject alone.
@@ -69,8 +65,7 @@
           items: (g.items ?? []).map((item) => ({
             uri: item.uri,
             cid: item.cid,
-            thumb: blobSrc(g.space, item.did, item.cid),
-            fullsize: blobSrc(g.space, item.did, item.cid),
+            ...spaceBlobViews(g.space, item.did, item.cid),
             alt: item.alt,
             aspectRatio: item.aspectRatio,
           })),

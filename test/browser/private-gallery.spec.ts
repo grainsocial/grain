@@ -74,7 +74,7 @@ test("publish a private gallery and read it back", async ({ page }) => {
   // By what the src has to be, not by a layout class — the assertion below is
   // about the photo coming through the space endpoint, and that shouldn't
   // break when the page is restyled.
-  const image = page.locator('img[src*="getPrivateBlob"]').first();
+  const image = page.locator('img[src*="/space-blob"]').first();
   await expect(image).toBeVisible({ timeout: 30_000 });
 
   const src = await image.getAttribute("src");

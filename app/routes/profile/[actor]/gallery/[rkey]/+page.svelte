@@ -24,6 +24,7 @@
   import { relativeTime, profilePath } from '$lib/utils'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
+  import { spaceBlobViews } from '$lib/spaceBlob'
 
   let { data } = $props()
 
@@ -48,11 +49,6 @@
   // the name under the author comes from the ordinary group read, and arrives
   // whether or not the credentialed one does.
   const groupQ = createQuery(() => ({ ...groupQuery(group ?? ''), enabled: !!group }))
-
-  // Never the CDN: the space hands a blob only to a credential holder, so these
-  // come back through grain itself and are cached nowhere in between.
-  const blobSrc = (space: string, photoDid: string, cid: string) =>
-    `/xrpc/social.grain.unspecced.getPrivateBlob?${new URLSearchParams({ space, did: photoDid, cid })}`
 
   // Shaped into the view the rest of this page reads. Counts are absent rather
   // than zero: a favorite or a comment is a public record naming the gallery,
@@ -79,8 +75,7 @@
       items: (d.items ?? []).map((item) => ({
         uri: item.uri,
         cid: item.cid,
-        thumb: blobSrc(d.space, item.did, item.cid),
-        fullsize: blobSrc(d.space, item.did, item.cid),
+        ...spaceBlobViews(d.space, item.did, item.cid),
         alt: item.alt,
         aspectRatio: item.aspectRatio,
       })),

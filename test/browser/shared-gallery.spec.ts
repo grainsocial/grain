@@ -56,5 +56,5 @@ test("a reader sees a gallery shared with them", async ({ page }) => {
   // author's PDS issued for this reader.
   await link.click();
   await page.waitForURL(/\/private\/did(:|%3A)/i, { timeout: 30_000 });
-  await expect(page.locator('img[src*="getPrivateBlob"]').first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('img[src*="/space-blob"]').first()).toBeVisible({ timeout: 30_000 });
 });

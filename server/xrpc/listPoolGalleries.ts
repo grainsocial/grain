@@ -8,7 +8,7 @@
 // viewer who is not one gets a 401 and no gallery at all, which is the whole
 // feature.
 //
-// `cid` rides along per cover so the client can ask getPrivateBlob for the
+// `cid` rides along per cover so the client can ask /space-blob for the
 // bytes; they cannot come from the CDN.
 
 import { defineQuery, InvalidRequestError } from "$hatk";

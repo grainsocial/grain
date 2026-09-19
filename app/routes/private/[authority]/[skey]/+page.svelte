@@ -14,6 +14,7 @@
   import { page } from '$app/state'
   import { goto } from '$app/navigation'
   import { viewer } from '$lib/stores'
+  import { spaceBlobViews } from '$lib/spaceBlob'
 
   const authority = $derived(page.params.authority ?? '')
   const skey = $derived(page.params.skey ?? '')
@@ -27,12 +28,6 @@
     enabled: isAuthor && gallery.isSuccess,
   }))
   const queryClient = useQueryClient()
-
-  // Never the CDN: the space hands a blob only to a credential holder, so these
-  // come back through grain itself and are cached nowhere in between.
-  function blobSrc(did: string, cid: string): string {
-    return `/xrpc/social.grain.unspecced.getPrivateBlob?${new URLSearchParams({ space, did, cid })}`
-  }
 
   /**
    * Shape the space's records into the view GalleryCard renders, so a private
@@ -53,8 +48,7 @@
       items: data.items.map((item) => ({
         uri: item.uri,
         cid: item.cid,
-        thumb: blobSrc(item.did, item.cid),
-        fullsize: blobSrc(item.did, item.cid),
+        ...spaceBlobViews(space, item.did, item.cid),
         alt: item.alt,
         aspectRatio: item.aspectRatio,
       })),

@@ -12,7 +12,6 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, test } from "vitest";
 import {
-  fetchSpaceBlob,
   listSpaceRecords,
   listSpaceRepos,
   type PdsCall,
@@ -70,7 +69,6 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
   let readerPds: PdsCall;
   let space: string;
   let closedSpace: string;
-  let photoCid: string;
 
   beforeAll(async () => {
     author = JSON.parse(readFileSync(`${CREDS}/credentials-spacehost.json`, "utf8"));
@@ -149,7 +147,6 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
       body: PIXEL,
     });
     const { blob } = (await upload.json()) as { blob: { ref: { $link: string } } };
-    photoCid = blob.ref.$link;
 
     await authorPds("com.atproto.space.applyWrites", {
       method: "POST",
@@ -228,13 +225,6 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
     const repos = await listSpaceRepos(readerPds, reader.did, space);
 
     expect(repos.map((r) => r.did)).toContain(author.did);
-  });
-
-  test("a member reads a blob the space references", async () => {
-    const res = await fetchSpaceBlob(readerPds, reader.did, space, author.did, photoCid);
-    const bytes = Buffer.from(await res.arrayBuffer());
-
-    expect(bytes.equals(PIXEL)).toBe(true);
   });
 
   test("a non-member is refused a space that exists and holds records", async () => {

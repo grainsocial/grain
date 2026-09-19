@@ -16,6 +16,7 @@
   import { viewer, requireAuth } from '$lib/stores'
   import { share } from '$lib/utils/share'
   import type { GalleryView } from '$hatk/client'
+  import { spaceBlobViews } from '$lib/spaceBlob'
 
   // The profile page with the nouns swapped: same header, same grid. A group is
   // an account like any other; what makes it a group is that its pool is other
@@ -43,12 +44,6 @@
   const noSpaces = $derived(spaces.isSuccess && spaces.data?.supported !== true)
   const space = $derived(pool.data?.space ?? '')
 
-  // Never the CDN: the space hands a blob only to a credential holder, so these
-  // come back through grain itself and are cached nowhere in between.
-  function blobSrc(photoDid: string, cid: string): string {
-    return `/xrpc/social.grain.unspecced.getPrivateBlob?${new URLSearchParams({ space, did: photoDid, cid })}`
-  }
-
   // Shaped into the view GalleryGrid renders, so a pool gallery looks like
   // every other one. Counts are absent rather than zero: favorites and comments
   // are public records, and these galleries are not.
@@ -67,8 +62,7 @@
                 {
                   uri: g.cover.uri,
                   cid: g.cover.cid,
-                  thumb: blobSrc(g.cover.did, g.cover.cid),
-                  fullsize: blobSrc(g.cover.did, g.cover.cid),
+                  ...spaceBlobViews(space, g.cover.did, g.cover.cid),
                   alt: g.cover.alt,
                   aspectRatio: g.cover.aspectRatio,
                 },

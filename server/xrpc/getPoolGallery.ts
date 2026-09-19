@@ -7,7 +7,7 @@
 // those people. All of it comes back together because all of it is in the same
 // space — there is no index to ask separately.
 //
-// Photos come back as CIDs for getPrivateBlob; a space's blob has no public
+// Photos come back as CIDs for /space-blob; a space's blob has no public
 // URL, which is the point of putting it there.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
