@@ -13,7 +13,7 @@
     "test:browser": "npx playwright test"
   },
   "dependencies": {
-    "@hatk/hatk": "^0.0.1-alpha.83",
+    "@hatk/hatk": "^0.0.1-alpha.95",
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.55.0",
     "@tanstack/svelte-query": "^6.1.0",
@@ -23,7 +23,8 @@
     "lucide-svelte": "^0.576.0",
     "maplibre-gl": "^5.24.0",
     "pmtiles": "^4.5.0",
-    "protomaps-themes-base": "^4.5.0"
+    "protomaps-themes-base": "^4.5.0",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@playwright/test": "^1",

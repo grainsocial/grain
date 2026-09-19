@@ -63,6 +63,8 @@ CREATE TABLE _oauth_requests (
   dpop_jkt TEXT NOT NULL,
   pds_request_uri TEXT,
   pds_auth_server TEXT,
+  pds_authorization_endpoint TEXT,
+  pds_token_endpoint TEXT,
   pds_endpoint TEXT,
   pds_code_verifier TEXT,
   pds_state TEXT,
@@ -75,6 +77,7 @@ CREATE TABLE _oauth_sessions (
   did TEXT PRIMARY KEY,
   pds_endpoint TEXT NOT NULL,
   pds_auth_server TEXT,
+  pds_token_endpoint TEXT,
   access_token TEXT NOT NULL,
   refresh_token TEXT,
   dpop_jkt TEXT NOT NULL,
@@ -130,11 +133,30 @@ CREATE TABLE _space_invites (
   PRIMARY KEY (space, member_did)
 );
 
+CREATE TABLE _space_repos (
+  space TEXT NOT NULL,
+  did TEXT NOT NULL,
+  pds TEXT,
+  rev TEXT,
+  synced_at TEXT,
+  PRIMARY KEY (space, did)
+);
+
 CREATE TABLE _space_support (
   pds_endpoint TEXT PRIMARY KEY,
   supported INTEGER NOT NULL,
   missing TEXT NOT NULL,
   checked_at TEXT NOT NULL
+);
+
+CREATE TABLE _space_watch (
+  space TEXT PRIMARY KEY,
+  authority TEXT NOT NULL,
+  space_type TEXT NOT NULL,
+  reader_did TEXT,
+  registered_until TEXT,
+  last_error TEXT,
+  updated_at TEXT NOT NULL
 );
 
 CREATE TABLE _story_views (
@@ -148,6 +170,7 @@ CREATE TABLE "app.bsky.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   display_name TEXT,
   description TEXT,
@@ -160,6 +183,7 @@ CREATE TABLE "app.bsky.feed.post" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   tags TEXT,
   text TEXT NOT NULL,
@@ -174,25 +198,25 @@ CREATE TABLE "app.bsky.feed.post" (
 CREATE TABLE "app.bsky.feed.post__embed_external" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
-  uri TEXT,
+  uri TEXT NOT NULL,
   thumb TEXT,
-  title TEXT,
-  description TEXT
+  title TEXT NOT NULL,
+  description TEXT NOT NULL
 );
 
 CREATE TABLE "app.bsky.feed.post__embed_images" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
-  alt TEXT,
-  image TEXT,
+  alt TEXT NOT NULL,
+  image TEXT NOT NULL,
   aspect_ratio TEXT
 );
 
 CREATE TABLE "app.bsky.feed.post__embed_record" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
-  uri TEXT,
-  cid TEXT
+  uri TEXT NOT NULL,
+  cid TEXT NOT NULL
 );
 
 CREATE TABLE "app.bsky.feed.post__embed_recordWithMedia" (
@@ -223,13 +247,14 @@ CREATE TABLE "app.bsky.feed.post__entities" (
 CREATE TABLE "app.bsky.feed.post__labels_self_labels" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
-  val TEXT
+  val TEXT NOT NULL
 );
 
 CREATE TABLE "app.bsky.feed.postgate" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   post TEXT NOT NULL,
   created_at TEXT NOT NULL,
@@ -241,6 +266,7 @@ CREATE TABLE "app.bsky.feed.threadgate" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   post TEXT NOT NULL,
   allow TEXT,
@@ -252,6 +278,7 @@ CREATE TABLE "app.bsky.graph.follow" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   subject TEXT NOT NULL,
   created_at TEXT NOT NULL
@@ -261,6 +288,7 @@ CREATE TABLE "com.germnetwork.declaration" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   version TEXT NOT NULL,
   current_key BLOB NOT NULL,
@@ -273,6 +301,7 @@ CREATE TABLE "fyi.opensocial.declaration" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   about TEXT NOT NULL,
   created_at TEXT NOT NULL
@@ -282,6 +311,7 @@ CREATE TABLE "fyi.opensocial.member" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   member TEXT NOT NULL,
   created_at TEXT NOT NULL
@@ -291,6 +321,7 @@ CREATE TABLE "fyi.opensocial.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   display_name TEXT NOT NULL,
   description TEXT,
@@ -305,6 +336,7 @@ CREATE TABLE "fyi.opensocial.rule" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   title TEXT NOT NULL,
   text TEXT,
@@ -315,6 +347,7 @@ CREATE TABLE "social.grain.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   display_name TEXT,
   description TEXT,
@@ -326,6 +359,7 @@ CREATE TABLE "social.grain.comment" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   text TEXT NOT NULL,
   facets TEXT,
@@ -339,6 +373,7 @@ CREATE TABLE "social.grain.favorite" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   created_at TEXT NOT NULL,
   subject TEXT NOT NULL
@@ -348,6 +383,7 @@ CREATE TABLE "social.grain.gallery" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
@@ -363,6 +399,7 @@ CREATE TABLE "social.grain.gallery.item" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   created_at TEXT NOT NULL,
   gallery TEXT NOT NULL,
@@ -373,13 +410,14 @@ CREATE TABLE "social.grain.gallery.item" (
 CREATE TABLE "social.grain.gallery__labels_self_labels" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
-  val TEXT
+  val TEXT NOT NULL
 );
 
 CREATE TABLE "social.grain.graph.block" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   subject TEXT NOT NULL,
   created_at TEXT NOT NULL
@@ -389,6 +427,7 @@ CREATE TABLE "social.grain.graph.follow" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   subject TEXT NOT NULL,
   created_at TEXT NOT NULL
@@ -398,6 +437,7 @@ CREATE TABLE "social.grain.group.decline" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   submission TEXT NOT NULL,
   gallery TEXT NOT NULL,
@@ -408,6 +448,7 @@ CREATE TABLE "social.grain.group.item" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   gallery TEXT NOT NULL,
   submission TEXT,
@@ -418,6 +459,7 @@ CREATE TABLE "social.grain.group.submission" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   group TEXT NOT NULL,
   gallery TEXT NOT NULL,
@@ -428,6 +470,7 @@ CREATE TABLE "social.grain.photo" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   photo TEXT NOT NULL,
   alt TEXT,
@@ -439,6 +482,7 @@ CREATE TABLE "social.grain.photo.exif" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   photo TEXT NOT NULL,
   created_at TEXT NOT NULL,
@@ -458,6 +502,7 @@ CREATE TABLE "social.grain.story" (
   uri TEXT PRIMARY KEY,
   cid TEXT,
   did TEXT NOT NULL,
+  space TEXT,
   indexed_at TEXT NOT NULL,
   media TEXT NOT NULL,
   aspect_ratio TEXT NOT NULL,
@@ -470,5 +515,5 @@ CREATE TABLE "social.grain.story" (
 CREATE TABLE "social.grain.story__labels_self_labels" (
   parent_uri TEXT NOT NULL,
   parent_did TEXT NOT NULL,
-  val TEXT
+  val TEXT NOT NULL
 );
