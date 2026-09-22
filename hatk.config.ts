@@ -103,6 +103,14 @@ const groupScopes = [
   "rpc:fyi.opensocial.leaveCommunity?aud=*",
 ];
 
+// Registered on every client, for the reason the space scopes are: a client
+// metadata document's `scope` bounds what the client may ask for, and a PDS
+// that checks the request against it rejects the whole authorization when a
+// conditional widens the request past the document. blacksky.app does, and
+// left out of the documents below these scopes failed its users' logins
+// outright — not groups, the login.
+const groupScopeList = groupScopes.join(" ");
+
 const poolScopes = [
   "space:social.grain.group?authority=*&skey=*",
   "collection=social.grain.gallery",
@@ -212,7 +220,7 @@ export default defineConfig({
             {
               client_id: `https://${prodDomain}/oauth-client-metadata.json`,
               client_name: "grain",
-              scope: `${grainScopes} ${legacyScopes} ${spaceScopes} ${poolScopes}`,
+              scope: `${grainScopes} ${legacyScopes} ${spaceScopes} ${poolScopes} ${groupScopeList}`,
               redirect_uris: [
                 `https://${prodDomain}/oauth/callback`,
                 `https://${prodDomain}/admin`,
@@ -231,14 +239,14 @@ export default defineConfig({
           grainScopes,
           legacyScopes,
           ...(devSpaceScopes ? [spaceScopes] : []),
-          ...(devPoolScopes ? [poolScopes] : []),
+          ...(devPoolScopes ? [poolScopes, groupScopeList] : []),
         ].join(" "),
         redirect_uris: [`${devOrigin}/oauth/callback`, `${devOrigin}/admin`],
       },
       {
         client_id: "grain-native://app",
         client_name: "Grain for iOS",
-        scope: `${grainScopes} ${legacyScopes} ${spaceScopes} ${poolScopes}`,
+        scope: `${grainScopes} ${legacyScopes} ${spaceScopes} ${poolScopes} ${groupScopeList}`,
         redirect_uris: ["grain://oauth/callback"],
       },
     ],
