@@ -153,8 +153,8 @@
 {:else}
   {@const g = group.data}
   {@const name = g.displayName || g.handle}
-  <!-- The card that goes out to anyone: members, never the pool's size. -->
-  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description="{g.memberCount ?? 0} members" />
+  <!-- The card that goes out to anyone: never the size of the pool or the roster. -->
+  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description={g.description ?? `${name} on Grain`} />
 
   <div class="mobile-back"><DetailHeader label={name} /></div>
 
@@ -185,7 +185,6 @@
           {@const n = pool.data?.galleries?.length ?? 0}
           <span><strong>{n.toLocaleString()}</strong> {n === 1 ? 'gallery' : 'galleries'}</span>
         {/if}
-        <span><strong>{(g.memberCount ?? 0).toLocaleString()}</strong> {g.memberCount === 1 ? 'member' : 'members'}</span>
       </div>
       {#if g.description}
         <div class="bio"><RichText text={g.description} /></div>

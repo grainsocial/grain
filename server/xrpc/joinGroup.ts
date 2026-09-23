@@ -1,5 +1,6 @@
 import { defineProcedure, InvalidRequestError } from "$hatk";
 import { callCommunityHost } from "../helpers/communityHost.ts";
+import { acceptMembership, forgetRefusal } from "../helpers/membership.ts";
 
 /** The first time Grain talks to a community host directly: ask to join. */
 export default defineProcedure("social.grain.unspecced.joinGroup", async (ctx) => {
@@ -11,5 +12,11 @@ export default defineProcedure("social.grain.unspecced.joinGroup", async (ctx) =
   });
   if (!r.ok)
     throw new InvalidRequestError(r.body?.message ?? `join failed (${r.status})`, r.body?.error);
-  return ok({ status: r.body.status === "admitted" ? "admitted" : "pending" });
+  if (r.body.status !== "admitted") return ok({ status: "pending" });
+  forgetRefusal(viewer.did, input.group);
+  // The member's half of membership, and what lets grain find this group
+  // again from their own PDS. A request that is still pending gets its
+  // acceptance when the group page next sees them admitted (getGroup).
+  await acceptMembership(ctx.pds, viewer.did, input.group).catch(() => {});
+  return ok({ status: "admitted" });
 });

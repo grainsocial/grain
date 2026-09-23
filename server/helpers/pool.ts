@@ -206,15 +206,3 @@ export async function readPool(
   out.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
   return out;
 }
-
-/** The communities whose roster the viewer is on — a public fact, already indexed. */
-export async function groupsOf(
-  db: { query: (sql: string, params?: unknown[]) => Promise<unknown[]> },
-  viewerDid: string,
-): Promise<string[]> {
-  const rows = (await db.query(
-    `SELECT DISTINCT did FROM "fyi.opensocial.member" WHERE member = $1`,
-    [viewerDid],
-  )) as { did: string }[];
-  return rows.map((r) => r.did);
-}

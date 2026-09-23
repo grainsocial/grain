@@ -6,7 +6,6 @@ import { countComments } from "./comments.ts";
 import { blockFilter } from "../filters/blockMute.ts";
 import { formatStoredLocation } from "../helpers/formatLocation.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
-import { memberOf } from "../hydrate/groups.ts";
 
 const SCALE = 1_000_000;
 
@@ -159,7 +158,6 @@ export async function hydrateGalleries(
       `SELECT gi.gallery, gi.did, gi.uri FROM "social.grain.group.item" gi
        JOIN "social.grain.gallery" g ON g.uri = gi.gallery
        WHERE gi.gallery IN (${galleryUris.map((_, i) => `$${i + 1}`).join(",")})
-         AND ${memberOf("g.did", "gi.did")}
        ORDER BY gi.created_at ASC`,
       galleryUris,
     )) as { gallery: string; did: string; uri: string }[];

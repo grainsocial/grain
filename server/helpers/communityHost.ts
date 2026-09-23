@@ -27,33 +27,59 @@ export async function communityHostFor(did: string): Promise<{ url: string; did:
   return out;
 }
 
-/**
- * The community's own site, as its host publishes it.
- *
- * Not from the index: a community's profile record is not always indexable
- * here — one carrying an avatar does not survive strict validation — and this
- * is one field on a public, unauthenticated read. Asking the host is also the
- * honest shape of the question. Cached, because a website does not move often
- * and a group page asks on every visit.
- */
-const siteCache = new Map<string, { url?: string; at: number }>();
-const SITE_TTL_MS = 10 * 60_000;
+/** What a community's host lists about it: the public part of its about space. */
+export interface CommunityListing {
+  displayName?: string;
+  description?: string;
+  url?: string;
+  joinPolicy?: string;
+  /** Present when the community has an avatar; see `avatarUrl`. */
+  avatar?: string;
+  avatarUrl?: string;
+  rules?: { rkey: string; title: string; text?: string }[];
+}
 
-export async function communitySite(did: string): Promise<string | undefined> {
-  const hit = siteCache.get(did);
-  if (hit && Date.now() - hit.at < SITE_TTL_MS) return hit.url;
-  let url: string | undefined;
+/**
+ * A community's profile and rules, as its host lists them.
+ *
+ * They live in the community's about space, and a space cannot be read without
+ * signing in as somebody — nor indexed, since nothing in a space reaches a
+ * firehose. The host reads the space as the community and lists what its
+ * access record makes public, unauthenticated, so this is the one read that
+ * works for every viewer. Not part of the standard: a host that does not list
+ * its communities yields nothing here, and the group falls back to its grain
+ * profile. Cached, because a profile does not move often and a group page asks
+ * on every visit.
+ */
+const listingCache = new Map<string, { listing?: CommunityListing; at: number }>();
+const LISTING_TTL_MS = 10 * 60_000;
+
+export async function communityListing(did: string): Promise<CommunityListing | undefined> {
+  const hit = listingCache.get(did);
+  if (hit && Date.now() - hit.at < LISTING_TTL_MS) return hit.listing;
+  let listing: CommunityListing | undefined;
   try {
     const host = await communityHostFor(did);
     const res = await fetch(`${host.url}/xrpc/fyi.opensocial.listCommunities`);
-    const body = (await res.json()) as { communities?: { did: string; url?: string }[] };
-    url = body.communities?.find((c) => c.did === did)?.url;
+    const body = (await res.json()) as { communities?: (CommunityListing & { did: string })[] };
+    const found = body.communities?.find((c) => c.did === did);
+    if (found) {
+      const { did: _, ...rest } = found;
+      // The host serves a community's images itself, renderably; the CID is
+      // only a cache-buster there.
+      listing = {
+        ...rest,
+        ...(rest.avatar
+          ? { avatarUrl: `${host.url}/img/${did}/avatar?v=${rest.avatar.slice(-12)}` }
+          : {}),
+      };
+    }
   } catch {
-    // A host that will not answer is not an error worth a page for: the link
-    // simply does not appear.
+    // A host that will not answer is not an error worth a page for: the group
+    // shows what grain itself knows.
   }
-  siteCache.set(did, { url, at: Date.now() });
-  return url;
+  listingCache.set(did, { listing, at: Date.now() });
+  return listing;
 }
 
 /** Call a fyi.opensocial.* procedure on the group's host as the viewer,

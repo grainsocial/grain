@@ -101,6 +101,16 @@ const groupScopes = [
   // service auth the member's PDS mints for that host — any host, hence `*`.
   "rpc:fyi.opensocial.requestJoin?aud=*",
   "rpc:fyi.opensocial.leaveCommunity?aud=*",
+  // Which groups the viewer is in is theirs to say, not a public roster's:
+  // `listSpaces` on their own PDS names the members spaces they hold an
+  // acceptance in, and a credential for each confirms the host still admits
+  // them — which is a read of the members space, the roster a member can
+  // already see. Writes are only ever their own acceptance, on join and leave.
+  [
+    "space:fyi.opensocial.members?authority=*&skey=*",
+    "collection=fyi.opensocial.acceptance",
+    "action=read&action=create&action=update&action=delete",
+  ].join("&"),
 ];
 
 // Registered on every client, for the reason the space scopes are: a client
@@ -161,12 +171,6 @@ export default defineConfig({
     // both its existing records and everything after. Kept because it is the
     // right signal if that ever stops being true.
     signalCollections: ["social.grain.actor.profile", "fyi.opensocial.declaration"],
-    // A community's roster names people who write nothing into a signal
-    // collection of ours — someone can belong to a group without ever having
-    // made a grain profile. Their repo is what puts a handle and a face on a
-    // member row and on every gallery they pool; without it the group reads as
-    // a column of DIDs.
-    references: [{ collection: "fyi.opensocial.member", field: "member" }],
     fullNetwork: false,
     parallelism: 5,
   },

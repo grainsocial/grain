@@ -1,7 +1,6 @@
 import { defineFeed } from "$hatk";
 import { hydrateGalleries } from "../hydrate/galleries.ts";
 import { hideLabelsFilter } from "../labels/_hidden.ts";
-import { memberOf } from "../hydrate/groups.ts";
 
 /** One group's pool, most recently pooled first. */
 export default defineFeed({
@@ -22,8 +21,7 @@ export default defineFeed({
        WHERE gi.did = $1
          AND (r.status IS NULL OR r.status != 'takendown')
          AND ${hideLabelsFilter("g.uri")}
-         AND (SELECT count(*) FROM "social.grain.gallery.item" x WHERE x.gallery = g.uri) > 0
-         AND ${memberOf("g.did", "gi.did")}`,
+         AND (SELECT count(*) FROM "social.grain.gallery.item" x WHERE x.gallery = g.uri) > 0`,
       { params: [group], orderBy: "gi.created_at" },
     );
 

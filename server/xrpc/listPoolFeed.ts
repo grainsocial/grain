@@ -5,18 +5,19 @@
 // no index here to page through. This is assembled per viewer, per request —
 // which is also why it cannot be shared, cached or handed to anyone else.
 //
-// Two halves, and only one of them is private. *Which* communities the viewer
-// belongs to is a public fact the host publishes and grain already indexes, so
-// that part is a table read. What is in each community's pool is not, so that
-// part is a credentialed read per pool, and a pool that refuses is dropped
-// rather than failing the feed: a roster row can outlive the access it implies,
-// and one stale membership should not empty somebody's feed.
+// Two halves, both private. *Which* communities the viewer belongs to comes
+// from their own PDS — the members spaces they have written an acceptance
+// into — each confirmed with the community's host (see helpers/membership.ts).
+// What is in each community's pool is a credentialed read per pool, and a pool
+// that refuses is dropped rather than failing the feed: a community need not
+// keep a pool at all.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
 import { hydrateGroups } from "../hydrate/groups.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
-import { groupsOf, type PoolGallery, readPool } from "../helpers/pool.ts";
+import { groupsOf } from "../helpers/membership.ts";
+import { type PoolGallery, readPool } from "../helpers/pool.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) => {
@@ -25,7 +26,7 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
 
   const limit = Math.min(Number(params.limit) || 30, 100);
 
-  const groups = await groupsOf(db, viewer.did);
+  const groups = await groupsOf(pds, viewer.did);
   if (groups.length === 0) return ok({ galleries: [], groups: [] });
 
   // One pool at a time would be one round trip to two hosts per group; they do
@@ -49,7 +50,7 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
   const [handles, profiles, groupViews] = await Promise.all([
     lookupHandles(db, dids),
     ctx.lookup<GrainActorProfile>("social.grain.actor.profile", "did", dids),
-    hydrateGroups(ctx, shown),
+    hydrateGroups(ctx, shown, { mine: groups }),
   ]);
 
   return ok({

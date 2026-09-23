@@ -307,42 +307,6 @@ CREATE TABLE "fyi.opensocial.declaration" (
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE "fyi.opensocial.member" (
-  uri TEXT PRIMARY KEY,
-  cid TEXT,
-  did TEXT NOT NULL,
-  space TEXT,
-  indexed_at TEXT NOT NULL,
-  member TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
-
-CREATE TABLE "fyi.opensocial.profile" (
-  uri TEXT PRIMARY KEY,
-  cid TEXT,
-  did TEXT NOT NULL,
-  space TEXT,
-  indexed_at TEXT NOT NULL,
-  display_name TEXT NOT NULL,
-  description TEXT,
-  avatar TEXT,
-  banner TEXT,
-  url TEXT,
-  join_policy TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
-
-CREATE TABLE "fyi.opensocial.rule" (
-  uri TEXT PRIMARY KEY,
-  cid TEXT,
-  did TEXT NOT NULL,
-  space TEXT,
-  indexed_at TEXT NOT NULL,
-  title TEXT NOT NULL,
-  text TEXT,
-  created_at TEXT NOT NULL
-);
-
 CREATE TABLE "social.grain.actor.profile" (
   uri TEXT PRIMARY KEY,
   cid TEXT,

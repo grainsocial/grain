@@ -268,7 +268,7 @@
           <div class="links-row">
             {#if group.data}
               <a class="link-pill group-pill" href="/group/{did}">
-                <UsersRound size={14} /> Group · {group.data.memberCount ?? 0} {group.data.memberCount === 1 ? 'member' : 'members'}
+                <UsersRound size={14} /> Group
               </a>
             {/if}
             {#if showGermButton && germUrl}

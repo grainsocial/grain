@@ -1,5 +1,6 @@
 import { defineQuery } from "$hatk";
 import { hydrateGroups } from "../hydrate/groups.ts";
+import { groupsOf } from "../helpers/membership.ts";
 
 export default defineQuery("social.grain.unspecced.listGroups", async (ctx) => {
   const { params, ok, db } = ctx;
@@ -15,10 +16,11 @@ export default defineQuery("social.grain.unspecced.listGroups", async (ctx) => {
      LIMIT $1`,
     [limit],
   )) as { did: string }[];
+  const mine = ctx.viewer ? await groupsOf(ctx.pds, ctx.viewer.did).catch(() => []) : [];
   const groups = await hydrateGroups(
     ctx,
     rows.map((r) => r.did),
-    { gallery: params.gallery },
+    { gallery: params.gallery, mine },
   );
   return ok({ groups });
 });

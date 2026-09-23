@@ -37,10 +37,10 @@
         <span class="av"><Avatar did={group.did} src={group.avatar ?? null} name={group.displayName ?? group.handle} size={48} /></span>
         <span class="t">
           <b>{group.displayName ?? group.handle} <span class="group-mark"><UsersRound size={14} /></span></b>
-          <!-- No gallery count: a group's pool is a permissioned space now, and
-               how much is in it is not a public fact. Members see the number on
-               the group's own page, counted from the pool they can read. -->
-          <span class="meta">{group.memberCount ?? 0} {group.memberCount === 1 ? 'member' : 'members'} · @{group.handle}</span>
+          <!-- No gallery or member count: the pool and the roster are both
+               permissioned spaces, and how much is in either is not a public
+               fact. -->
+          <span class="meta">@{group.handle}</span>
           {#if group.description}<span class="desc">{group.description}</span>{/if}
         </span>
       </a>
