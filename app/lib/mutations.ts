@@ -124,6 +124,15 @@ export async function joinGroup(
   return r.status === "admitted" ? "admitted" : "pending";
 }
 
+export async function createGroup(
+  input: { name: string; displayName: string; description?: string },
+  queryClient: QueryClient,
+): Promise<{ did: string; handle: string }> {
+  const r = await callXrpc("social.grain.unspecced.createGroup", input);
+  invalidateGroups(queryClient);
+  return r;
+}
+
 export async function leaveGroup(group: string, queryClient: QueryClient) {
   await callXrpc("social.grain.unspecced.leaveGroup", { group });
   invalidateGroups(queryClient);

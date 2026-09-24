@@ -5,7 +5,9 @@
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import { createQuery } from '@tanstack/svelte-query'
   import { UsersRound } from 'lucide-svelte'
-  import { groupsQuery, spaceSupportQuery } from '$lib/queries'
+  import { groupHostQuery, groupsQuery, spaceSupportQuery } from '$lib/queries'
+  import { isAuthenticated } from '$lib/stores'
+  import { Plus } from 'lucide-svelte'
   import SpacesRequired from '$lib/components/molecules/SpacesRequired.svelte'
 
   // The "places worth browsing" surface: every account that declared itself a
@@ -15,10 +17,19 @@
   // answer for itself.
   const spaces = createQuery(() => spaceSupportQuery())
   const blocked = $derived(spaces.isSuccess && spaces.data?.supported !== true)
+  // Starting one needs a host that provisions groups for this Grain.
+  const host = createQuery(() => groupHostQuery())
+  const canStart = $derived($isAuthenticated && !blocked && !!host.data?.handleDomain)
 </script>
 
 <OGMeta title="Groups — grain" />
-<DetailHeader label="Groups" />
+<DetailHeader label="Groups">
+  {#snippet actions()}
+    {#if canStart}
+      <a class="start" href="/groups/new"><Plus size={16} /> Start a group</a>
+    {/if}
+  {/snippet}
+</DetailHeader>
 
 {#if blocked}
   <SpacesRequired />
@@ -50,6 +61,10 @@
 
 <style>
   .list { display: flex; flex-direction: column; }
+  .start {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600;
+    color: var(--grain); text-decoration: none;
+  }
   .row {
     display: flex; align-items: center; gap: 14px; padding: 14px 16px;
     border-bottom: 1px solid var(--border); text-decoration: none; color: inherit;

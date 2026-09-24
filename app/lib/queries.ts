@@ -466,6 +466,14 @@ export const groupQuery = (actor: string, f?: Fetch) =>
     staleTime: 30_000,
   });
 
+/** The group host this Grain starts groups on; empty when it starts none. */
+export const groupHostQuery = (f?: Fetch) =>
+  queryOptions({
+    queryKey: ["groupHost"],
+    queryFn: () => callXrpc("social.grain.unspecced.getGroupHost", {}, f),
+    staleTime: 60 * 60_000,
+  });
+
 /** Every group; with `gallery`, each carries the viewer's standing for it. */
 export const groupsQuery = (gallery?: string, f?: Fetch) =>
   queryOptions({

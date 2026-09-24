@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.createGroup",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Start a group on Grain's group host. The host creates the group with the viewer as its founder and hands Grain its own session on it (fyi.opensocial.provisionGroup); Grain then gives the group its pool and its Grain profile. The viewer never leaves Grain.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["name", "displayName"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The first label of the group's handle; the host supplies its domain.",
+              "maxLength": 63
+            },
+            "displayName": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
+            "description": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did", "handle"],
+          "properties": {
+            "did": { "type": "string", "format": "did" },
+            "handle": { "type": "string", "format": "handle" }
+          }
+        }
+      }
+    }
+  }
+}

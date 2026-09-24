@@ -112,3 +112,33 @@ export async function callGroupHost(
   const json = await res.json().catch(() => ({}));
   return { ok: res.ok, status: res.status, body: json };
 }
+
+/**
+ * The group host this Grain creates groups on, if it creates any.
+ *
+ * Joining works with any host: a group's DID document says where it lives.
+ * Creating one needs a host that has agreed to provision groups for Grain,
+ * which is configuration — GROUP_HOST_URL — not something to discover. The
+ * domain a new handle ends in is the host's own answer, from describeServer.
+ */
+let provisioning:
+  | Promise<{ url: string; did: string; handleDomain: string } | undefined>
+  | undefined;
+export function provisioningHost() {
+  const url = process.env.GROUP_HOST_URL?.replace(/\/$/, "");
+  if (!url) return Promise.resolve(undefined);
+  provisioning ??= (async () => {
+    const [hostDoc, described] = await Promise.all([
+      fetch(`${url}/.well-known/did.json`).then((r) => (r.ok ? r.json() : null)),
+      fetch(`${url}/xrpc/com.atproto.server.describeServer`).then((r) => (r.ok ? r.json() : null)),
+    ]);
+    const did: string | undefined = hostDoc?.id;
+    const handleDomain: string | undefined = described?.availableUserDomains?.[0];
+    if (!did || !handleDomain) throw new Error(`${url} does not describe itself as a group host`);
+    return { url, did, handleDomain };
+  })().catch((err) => {
+    provisioning = undefined;
+    throw err;
+  });
+  return provisioning;
+}

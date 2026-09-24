@@ -1,0 +1,21 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.unspecced.getGroupHost",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "The group host this Grain creates groups on, and the domain a new group's handle ends in. Absent when this Grain creates none.",
+      "parameters": { "type": "params", "properties": {} },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string", "format": "uri" },
+            "handleDomain": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

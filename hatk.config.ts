@@ -101,6 +101,11 @@ const groupScopes = [
   // service auth the member's PDS mints for that host — any host, hence `*`.
   "rpc:fyi.opensocial.requestJoin?aud=*",
   "rpc:fyi.opensocial.leaveGroup?aud=*",
+  // Starting a group: the viewer asks Grain's group host to found it
+  // (provisionGroup, which also hands Grain its own session on the group) and
+  // then, as its founding admin, to open the group's pool (createSpace).
+  "rpc:fyi.opensocial.provisionGroup?aud=*",
+  "rpc:fyi.opensocial.createSpace?aud=*",
   // Which groups the viewer is in is theirs to say, not a public roster's:
   // `listSpaces` on their own PDS names the members spaces they hold an
   // acceptance in, and a credential for each confirms the host still admits
