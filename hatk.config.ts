@@ -153,7 +153,9 @@ export default defineConfig({
   // may well work from Hetzner now. Nothing is gained by finding out: us-west is
   // what the Jetstream docs use in their own example, and it works.
   jetstream: isProd ? { url: "wss://jetstream.us-west.bsky.network" } : null,
-  plc: isProd ? "https://plc.directory" : "http://localhost:2582",
+  // DID_PLC_URL is what the rest of the server reads too; a dev stack on
+  // other ports sets it, and reading 2582 regardless resolves nothing there.
+  plc: process.env.DID_PLC_URL ?? (isProd ? "https://plc.directory" : "http://localhost:2582"),
   port: devPort,
   cdn: isProd
     ? {
