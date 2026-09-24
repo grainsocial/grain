@@ -30,8 +30,12 @@ export default defineProcedure("social.grain.unspecced.createGroup", async (ctx)
   if (!host) throw new InvalidRequestError("This Grain does not start groups", "NotSupported");
 
   const name = input.name.trim().toLowerCase();
-  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(name))
-    throw new InvalidRequestError("Use letters, numbers and hyphens", "InvalidName");
+  // A PDS takes 3 to 18 characters before its own domain.
+  if (!/^[a-z0-9][a-z0-9-]{1,16}[a-z0-9]$/.test(name))
+    throw new InvalidRequestError(
+      "Use 3 to 18 letters, numbers and hyphens, not starting or ending with a hyphen",
+      "InvalidName",
+    );
   const handle = `${name}${host.handleDomain}`;
 
   const lxm = "fyi.opensocial.provisionGroup";
@@ -71,5 +75,18 @@ export default defineProcedure("social.grain.unspecced.createGroup", async (ctx)
 
   // The founder's half of membership, so the group is theirs on Grain at once.
   await acceptMembership(ctx.pds, viewer.did, did).catch(() => {});
+
+  // Grain knows a group by its declaration, which reaches the index from the
+  // host's firehose moments after the host writes it. The caller goes straight
+  // to the group's page, so answer once it is there — or after a few seconds,
+  // when the page's own retries take over.
+  for (let i = 0; i < 25; i++) {
+    const found = await ctx.db.query(
+      `SELECT 1 FROM "fyi.opensocial.declaration" WHERE did = $1 LIMIT 1`,
+      [did],
+    );
+    if (found.length) break;
+    await new Promise((r) => setTimeout(r, 200));
+  }
   return ok({ did, handle });
 });

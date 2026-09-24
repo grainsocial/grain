@@ -13,8 +13,9 @@
           "properties": {
             "name": {
               "type": "string",
-              "description": "The first label of the group's handle; the host supplies its domain.",
-              "maxLength": 63
+              "description": "The first label of the group's handle, 3 to 18 characters; the host supplies its domain.",
+              "minLength": 3,
+              "maxLength": 18
             },
             "displayName": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
             "description": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 }

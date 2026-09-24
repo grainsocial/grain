@@ -31,7 +31,8 @@
 
   // The handle follows the name until someone edits it.
   const slug = (s: string) =>
-    s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 63)
+    s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 18)
+      .replace(/-+$/, '')
   $effect(() => {
     if (!nameTouched) name = slug(displayName)
   })
@@ -73,7 +74,7 @@
 
   <Field label="Handle">
     <div class="handle">
-      <Input bind:value={name} oninput={() => (nameTouched = true)} maxlength={63} placeholder="coastal-film-club" />
+      <Input bind:value={name} oninput={() => (nameTouched = true)} maxlength={18} placeholder="coastal-film-club" />
       <span class="domain">{host.data?.handleDomain ?? ''}</span>
     </div>
   </Field>
