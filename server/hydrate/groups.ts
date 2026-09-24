@@ -24,9 +24,12 @@ export async function hydrateGroups(
   const viewer = ctx.viewer?.did;
 
   // One public read per group, cached: the profile and rules live in the
-  // group's meta space, which grain cannot read or index.
+  // group's meta space, which grain cannot read or index. Fresh for the
+  // group itself, which is who edits them.
   const listings = new Map(
-    await Promise.all(dids.map(async (did) => [did, await groupListing(did)] as const)),
+    await Promise.all(
+      dids.map(async (did) => [did, await groupListing(did, { fresh: did === viewer })] as const),
+    ),
   );
 
   const [profiles, handleMap, poolRows, pendingRows, submissionRows, itemRows, declineRows] =

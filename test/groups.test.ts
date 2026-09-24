@@ -234,6 +234,26 @@ describe("listGroups", () => {
   });
 });
 
+describe("a profile edited on the host", () => {
+  test("reaches whoever is acting as the group at once, and everyone else later", async () => {
+    await listGroups(); // warm the cache
+    const club = LISTING.find((g) => g.did === CLUB)!;
+    const before = club.url;
+    club.url = "https://moved.example";
+    try {
+      expect((await listGroups()).find((g) => g.did === CLUB).url).toBe(before);
+      expect((await listGroups(CLUB)).find((g) => g.did === CLUB).url).toBe(
+        "https://moved.example",
+      );
+      // The fresh read refills the cache for everyone.
+      expect((await listGroups()).find((g) => g.did === CLUB).url).toBe("https://moved.example");
+    } finally {
+      club.url = before;
+      await listGroups(CLUB); // and put the cache back
+    }
+  });
+});
+
 describe("viewer state", () => {
   test("a viewer whose PDS cannot be asked is not taken for a member", async () => {
     // No PDS stands behind a test session, so listSpaces fails — and a

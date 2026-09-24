@@ -50,13 +50,20 @@ export interface GroupListing {
  * its groups yields nothing here, and the group falls back to its grain
  * profile. Cached, because a profile does not move often and a group page asks
  * on every visit.
+ *
+ * `fresh` skips the cache and refills it. The profile is edited on the host,
+ * not here, so grain never learns it changed; whoever is acting as the group
+ * is the one who just changed it, and they should not see it stale.
  */
 const listingCache = new Map<string, { listing?: GroupListing; at: number }>();
 const LISTING_TTL_MS = 10 * 60_000;
 
-export async function groupListing(did: string): Promise<GroupListing | undefined> {
+export async function groupListing(
+  did: string,
+  opts: { fresh?: boolean } = {},
+): Promise<GroupListing | undefined> {
   const hit = listingCache.get(did);
-  if (hit && Date.now() - hit.at < LISTING_TTL_MS) return hit.listing;
+  if (!opts.fresh && hit && Date.now() - hit.at < LISTING_TTL_MS) return hit.listing;
   let listing: GroupListing | undefined;
   try {
     const host = await groupHostFor(did);
