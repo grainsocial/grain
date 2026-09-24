@@ -600,7 +600,6 @@ export { InvalidRequestError, NotFoundError } from '@hatk/hatk/xrpc'
 export { defineSetup } from '@hatk/hatk/setup'
 export { defineHook } from '@hatk/hatk/hooks'
 export { defineLabel } from '@hatk/hatk/labels'
-export { defineClassifier } from '@hatk/hatk/classifiers'
 export { defineOG } from '@hatk/hatk/opengraph'
 export { defineRenderer } from '@hatk/hatk/renderer'
 export type Ctx<K extends keyof XrpcSchema & keyof Registry> = XrpcContext<

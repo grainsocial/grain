@@ -20,7 +20,7 @@ export default defineQuery("social.grain.unspecced.getGalleryFavorites", async (
   // Blocked accounts (either direction) are hidden from the list and the count.
   // Mutes are not applied — a mute hides someone's content, not the fact that
   // they favorited something.
-  const takedowns = `AND (r.status IS NULL OR r.status != 'takendown')`;
+  const takedowns = `AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))`;
   const blocks = viewer ? `AND ${blockFilter("f.did", "$2")}` : "";
   const blockParams = viewer ? [viewer] : [];
 

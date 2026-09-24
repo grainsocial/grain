@@ -16,7 +16,7 @@ export default defineQuery("social.grain.unspecced.getStories", async (ctx) => {
        FROM "social.grain.story" s
        LEFT JOIN _repos r ON s.did = r.did
        WHERE s.did = $1 AND s.created_at > $2
-         AND (r.status IS NULL OR r.status != 'takendown')
+         AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        ORDER BY s.created_at ASC`,
     [actor, cutoff],
   )) as StoryRow[];

@@ -29,7 +29,7 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
   const countRows = (await db.query(
     `SELECT count(*) as cnt FROM "social.grain.comment" c
      LEFT JOIN _repos r ON r.did = c.did
-     WHERE c.subject = $1 AND (r.status IS NULL OR r.status != 'takendown')
+     WHERE c.subject = $1 AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND ${NOT_ORPHANED} ${countBmParam}`,
     countParams,
   )) as { cnt: number }[];
@@ -40,7 +40,7 @@ export default defineQuery("social.grain.unspecced.getCommentThread", async (ctx
   let query = `SELECT c.uri, c.did, c.cid, c.text, c.facets, c.focus, c.reply_to, c.created_at
     FROM "social.grain.comment" c
     LEFT JOIN _repos r ON r.did = c.did
-    WHERE c.subject = $1 AND (r.status IS NULL OR r.status != 'takendown') AND ${NOT_ORPHANED}`;
+    WHERE c.subject = $1 AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted')) AND ${NOT_ORPHANED}`;
 
   if (cursor) {
     query += ` AND c.created_at > $2`;

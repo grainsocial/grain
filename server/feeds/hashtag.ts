@@ -22,7 +22,7 @@ export default defineFeed({
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
        LEFT JOIN _repos r ON t.did = r.did
-       WHERE (r.status IS NULL OR r.status != 'takendown')
+       WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND (
            t.description LIKE $1
            OR EXISTS (SELECT 1 FROM "social.grain.comment" c WHERE c.subject = t.uri AND c.text LIKE $1)

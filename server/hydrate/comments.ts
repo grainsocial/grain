@@ -15,7 +15,7 @@ export async function countComments(
   const rows = (await db.query(
     `SELECT c.subject, COUNT(*) as count FROM "social.grain.comment" c
      LEFT JOIN _repos r ON r.did = c.did
-     WHERE c.subject IN (${placeholders}) AND (r.status IS NULL OR r.status != 'takendown')
+     WHERE c.subject IN (${placeholders}) AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND ${NOT_ORPHANED}
      GROUP BY c.subject`,
     subjectUris,

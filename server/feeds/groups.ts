@@ -20,7 +20,7 @@ export default defineFeed({
        FROM "social.grain.group.item" gi
        JOIN "social.grain.gallery" g ON g.uri = gi.gallery
        LEFT JOIN _repos r ON g.did = r.did
-       WHERE (r.status IS NULL OR r.status != 'takendown')
+       WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND ${hideLabelsFilter("g.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" x WHERE x.gallery = g.uri) > 0
          ${bmFilter}`,

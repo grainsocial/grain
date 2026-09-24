@@ -18,7 +18,7 @@ export default defineQuery("social.grain.unspecced.getFollowing", async (ctx) =>
   // Blocked accounts (either direction) are hidden from the list and count.
   // Mutes are not applied — a mute hides someone's content, not the fact
   // that they follow someone.
-  const takedowns = `AND (r.status IS NULL OR r.status != 'takendown')`;
+  const takedowns = `AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))`;
   const blocks = viewer ? `AND ${blockFilter("f.subject", "$2")}` : "";
   const blockParams = viewer ? [viewer] : [];
 

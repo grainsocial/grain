@@ -15,7 +15,7 @@ export default defineQuery("social.grain.unspecced.getGroupSubmissions", async (
     `SELECT s.uri, s.cid, s.gallery, s.created_at FROM "social.grain.group.submission" s
      LEFT JOIN _repos r ON r.did = s.did
      WHERE s."group" = $1
-       AND (r.status IS NULL OR r.status != 'takendown')
+       AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND NOT EXISTS (SELECT 1 FROM "social.grain.group.item" i WHERE i.did = s."group" AND i.gallery = s.gallery)
        AND NOT EXISTS (SELECT 1 FROM "social.grain.group.decline" d WHERE d.did = s."group" AND d.submission = s.uri)
      ORDER BY s.created_at DESC

@@ -33,7 +33,7 @@ export default defineQuery("social.grain.unspecced.getStoryAuthors", async (ctx)
        LEFT JOIN _repos r ON s.did = r.did
        ${viewJoin}
        WHERE s.created_at > $1
-         AND (r.status IS NULL OR r.status != 'takendown')
+         AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND ${hideLabelsFilter("s.uri")}
          AND ${hideSelfLabelsFilter("social.grain.story__labels_self_labels", "s.uri")}
          ${bmFilter}

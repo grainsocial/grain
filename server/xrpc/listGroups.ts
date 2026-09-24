@@ -11,7 +11,7 @@ export default defineQuery("social.grain.unspecced.listGroups", async (ctx) => {
     `SELECT d.did FROM "fyi.opensocial.declaration" d
      LEFT JOIN _repos r ON r.did = d.did
      LEFT JOIN (SELECT did, MAX(created_at) AS last FROM "social.grain.group.item" GROUP BY did) p ON p.did = d.did
-     WHERE (r.status IS NULL OR r.status != 'takendown')
+     WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
      ORDER BY p.last DESC NULLS LAST, d.created_at DESC
      LIMIT $1`,
     [limit],

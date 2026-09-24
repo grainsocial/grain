@@ -15,7 +15,7 @@ export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (
      LEFT JOIN _repos r ON bf.subject = r.did
      WHERE bf.did = $1
        AND bf.subject != $1
-       AND (r.status IS NULL OR r.status != 'takendown')
+       AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND bf.subject NOT IN (
          SELECT gf.subject FROM "social.grain.graph.follow" gf WHERE gf.did = $1
        )
@@ -38,7 +38,7 @@ export default defineQuery("social.grain.unspecced.getSuggestedFollows", async (
        FROM "social.grain.actor.profile" gp
        LEFT JOIN _repos r ON gp.did = r.did
        WHERE gp.did NOT IN (${placeholders})
-         AND (r.status IS NULL OR r.status != 'takendown')
+         AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND gp.did NOT IN (
            SELECT gf.subject FROM "social.grain.graph.follow" gf WHERE gf.did = $1
          )

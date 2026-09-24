@@ -68,7 +68,7 @@ async function searchGalleries(ctx: any, query: string, did: string, limit: numb
        FROM "social.grain.gallery" t
        LEFT JOIN _repos r ON t.did = r.did
        WHERE t.did = $1
-         AND (r.status IS NULL OR r.status != 'takendown')
+         AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
        ORDER BY t.created_at DESC

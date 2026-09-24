@@ -34,7 +34,7 @@ export default defineQuery("social.grain.unspecced.getActorFavorites", async (ct
      JOIN "social.grain.gallery" t ON t.uri = f.subject
      LEFT JOIN _repos r ON t.did = r.did
      WHERE f.did = $1
-       AND (r.status IS NULL OR r.status != 'takendown')
+       AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND ${hideLabelsFilter("t.uri")}
        AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
      GROUP BY f.subject

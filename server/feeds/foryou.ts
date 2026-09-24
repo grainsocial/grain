@@ -106,7 +106,7 @@ export default defineFeed({
          WHERE f.did IN (${colikerPlaceholders})
            AND f.subject NOT IN (${seedPlaceholders})
            AND t.did != $1
-           AND (r.status IS NULL OR r.status != 'takendown')
+           AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
            AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
            AND ${blockMuteFilter("t.did", "$1")}`,
@@ -237,7 +237,7 @@ async function coldStartFeed(
      FROM ${galleryFeedTable}
      LEFT JOIN "social.grain.favorite" f ON f.subject = t.uri
      LEFT JOIN _repos r ON t.did = r.did
-     WHERE (r.status IS NULL OR r.status != 'takendown')
+     WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND t.did != $1
        AND t.sort_at > $2
        AND ${hideLabelsFilter("t.uri")}

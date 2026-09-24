@@ -135,7 +135,7 @@ export async function hydrateGalleries(
            JOIN "social.grain.graph.follow" fo ON fo.did = $1 AND fo.subject = f.did
            LEFT JOIN _repos r ON r.did = f.did
            WHERE f.subject IN (${placeholders}) AND f.did <> $1
-             AND (r.status IS NULL OR r.status != 'takendown')
+             AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
              AND ${blockFilter("f.did", "$1")}
            GROUP BY f.subject, f.did
          ) distinct_favers

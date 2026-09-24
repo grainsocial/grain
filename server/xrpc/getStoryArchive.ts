@@ -22,7 +22,7 @@ export default defineQuery("social.grain.unspecced.getStoryArchive", async (ctx)
        FROM "social.grain.story" s
        LEFT JOIN _repos r ON s.did = r.did
        WHERE s.did = $1
-         AND (r.status IS NULL OR r.status != 'takendown')
+         AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          ${cursorClause}
        ORDER BY s.created_at DESC
        LIMIT $2`,

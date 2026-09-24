@@ -158,7 +158,7 @@ export default defineFeed({
       const { rows, cursor } = await ctx.paginate<{ uri: string }>(
         `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
          LEFT JOIN _repos r ON t.did = r.did
-         WHERE (r.status IS NULL OR r.status != 'takendown')
+         WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
            AND (${interpClauses.join(" OR ")})
            AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
@@ -193,7 +193,7 @@ export default defineFeed({
         `SELECT t.uri, t.sort_at, json_extract(t.location, '$.value') AS location
          FROM ${galleryFeedTable}
          LEFT JOIN _repos r ON t.did = r.did
-         WHERE (r.status IS NULL OR r.status != 'takendown')
+         WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
            AND t.location IS NOT NULL
            AND ${hideLabelsFilter("t.uri")}
            AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0
@@ -235,7 +235,7 @@ export default defineFeed({
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
        LEFT JOIN _repos r ON t.did = r.did
-       WHERE (r.status IS NULL OR r.status != 'takendown')
+       WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND json_extract(t.location, '$.value') = $1
          AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0

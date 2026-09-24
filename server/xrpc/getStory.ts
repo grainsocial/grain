@@ -20,7 +20,7 @@ export default defineQuery("social.grain.unspecced.getStory", async (ctx) => {
      FROM "social.grain.story" s
      LEFT JOIN _repos r ON r.did = s.did
      WHERE s.uri = $1
-       AND (r.status IS NULL OR r.status != 'takendown')`,
+       AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))`,
     [storyUri],
   )) as {
     uri: string;

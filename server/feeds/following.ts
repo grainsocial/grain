@@ -17,7 +17,7 @@ export default defineFeed({
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
        LEFT JOIN _repos r ON t.did = r.did
-       WHERE (r.status IS NULL OR r.status != 'takendown')
+       WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND t.did IN (SELECT subject FROM "social.grain.graph.follow" WHERE did = $1)
          AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0

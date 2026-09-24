@@ -30,7 +30,7 @@ export default defineQuery("social.grain.unspecced.getKnownFollowers", async (ct
      JOIN "social.grain.graph.follow" f2 ON f2.did = $2 AND f2.subject = f1.did
      LEFT JOIN _repos r ON r.did = f1.did
      WHERE f1.subject = $1
-       AND (r.status IS NULL OR r.status != 'takendown')
+       AND (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
        AND ${blockFilter("f1.did", "$2")}
      GROUP BY f1.did
      ORDER BY MAX(f1.created_at) DESC

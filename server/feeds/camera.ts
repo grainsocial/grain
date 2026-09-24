@@ -46,7 +46,7 @@ export default defineFeed({
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.sort_at FROM ${galleryFeedTable}
        LEFT JOIN _repos r ON t.did = r.did
-       WHERE (r.status IS NULL OR r.status != 'takendown')
+       WHERE (r.status IS NULL OR r.status NOT IN ('takendown', 'deactivated', 'deleted'))
          AND EXISTS (
            SELECT 1 FROM "social.grain.gallery.item" gi
            JOIN "social.grain.photo.exif" e ON e.photo = gi.item
