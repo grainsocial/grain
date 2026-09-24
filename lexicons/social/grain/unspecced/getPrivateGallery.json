@@ -11,7 +11,7 @@
         "properties": {
           "space": {
             "type": "string",
-            "description": "Space URI: at://<authority>/space/social.grain.gallery/<skey>"
+            "description": "Space URI: at://<authority>/space/social.grain.privateGallery/<skey>"
           }
         }
       },

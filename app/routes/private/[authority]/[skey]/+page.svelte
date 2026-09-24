@@ -18,7 +18,7 @@
 
   const authority = $derived(page.params.authority ?? '')
   const skey = $derived(page.params.skey ?? '')
-  const space = $derived(`at://${authority}/space/social.grain.gallery/${skey}`)
+  const space = $derived(`at://${authority}/space/social.grain.privateGallery/${skey}`)
 
   const gallery = createQuery(() => privateGalleryQuery(space))
   const author = createQuery(() => actorProfileQuery(authority))

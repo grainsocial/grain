@@ -11,7 +11,7 @@ const prodDomain = process.env.APP_DOMAIN;
 const devPort = Number(process.env.PORT ?? 3000);
 const devOrigin = `http://127.0.0.1:${devPort}`;
 // Dev asks for the space scopes outright (see spaceScopes). Against a network
-// whose PDS cannot dereference a `social.grain.gallery` space declaration —
+// whose PDS cannot dereference a `social.grain.privateGallery` space declaration —
 // the opensocial dev stack, for one — the whole login fails with
 // invalid_scope, so GRAIN_SPACE_SCOPES=0 leaves them out.
 const devSpaceScopes = process.env.GRAIN_SPACE_SCOPES !== "0";
@@ -61,7 +61,7 @@ const legacyScopes = "repo:app.bsky.feed.post?action=create";
 // does not — rejects the whole authorization with `invalid_scope` when
 // conditional scopes widen the request past what the document declares.
 const spaceScopes = [
-  "space:social.grain.gallery?authority=*&skey=*",
+  "space:social.grain.privateGallery?authority=*&skey=*",
   "collection=social.grain.gallery",
   "collection=social.grain.gallery.item",
   "collection=social.grain.photo",

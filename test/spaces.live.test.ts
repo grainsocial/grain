@@ -86,7 +86,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
       method: "POST",
       body: {
         did: author.did,
-        type: "social.grain.gallery",
+        type: "social.grain.privateGallery",
         skey,
         config: {
           policy: "member-list",
@@ -107,7 +107,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
       method: "POST",
       body: {
         did: author.did,
-        type: "social.grain.gallery",
+        type: "social.grain.privateGallery",
         skey: closedSkey,
         config: {
           policy: "member-list",
@@ -159,7 +159,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
             collection: "social.grain.gallery",
             rkey: skey,
             value: {
-              $type: "social.grain.gallery",
+              $type: "social.grain.privateGallery",
               title: "A private gallery",
               createdAt: new Date().toISOString(),
             },
