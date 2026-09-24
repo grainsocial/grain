@@ -1,10 +1,10 @@
-// Every gallery in a community's pool.
+// Every gallery in a group's pool.
 //   GET /xrpc/social.grain.unspecced.listPoolGalleries?group=did:...
 //
 // Nothing here comes from the index, because nothing in a space ever reaches a
 // firehose to be indexed from. The read is `readPool`: the space names the
 // repos that have written into it, each is read on the host that holds it, and
-// all of it needs a credential the community's host issues to a member — so a
+// all of it needs a credential the group's host issues to a member — so a
 // viewer who is not one gets a 401 and no gallery at all, which is the whole
 // feature.
 //

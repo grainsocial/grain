@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "One gallery from a community's pool, read from the repo that holds it through a credential the community's host issues.",
+      "description": "One gallery from a group's pool, read from the repo that holds it through a credential the group's host issues.",
       "parameters": {
         "type": "params",
         "required": ["group", "did", "rkey"],

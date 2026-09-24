@@ -69,15 +69,15 @@ const spaceScopes = [
   "manage=create&manage=update&manage=delete",
 ].join("&");
 
-// A community's pool is a space too, but not one of ours to make: the community
+// A group's pool is a space too, but not one of ours to make: the group
 // creates it, and a member only reads it and writes their own galleries into
 // it. So no `manage=` — and `authority=*` because the space is anchored on the
-// community, never on the member.
+// group, never on the member.
 //
 // Requested separately from the gallery scopes above, and separately gated,
 // because the two need different things of a PDS: this one only needs
 // `social.grain.group` to resolve as a space declaration, which is a lexicon a
-// community host publishes. A network that serves one may not serve the other.
+// group host publishes. A network that serves one may not serve the other.
 // Groups, as a whole. Asked for only where they can be used.
 //
 // A pool is a space, and every read of one mints a delegation token on the
@@ -86,7 +86,7 @@ const spaceScopes = [
 // same argument the space scopes above make for themselves.
 //
 // It includes joining and leaving, which technically need no spaces at all:
-// they are calls to the community host with service auth, and any PDS can mint
+// they are calls to the group host with service auth, and any PDS can mint
 // those. They are gated anyway because groups are currently only meant to work
 // for spaces-capable accounts, and offering someone a Join button whose pool
 // they could never open would be the worse shape. Revisit when a group is
@@ -97,10 +97,10 @@ const groupScopes = [
   "repo:social.grain.group.submission",
   "repo:social.grain.group.item",
   "repo:social.grain.group.decline",
-  // Joining and leaving a group is a call to its community host, made with
+  // Joining and leaving a group is a call to its group host, made with
   // service auth the member's PDS mints for that host — any host, hence `*`.
   "rpc:fyi.opensocial.requestJoin?aud=*",
-  "rpc:fyi.opensocial.leaveCommunity?aud=*",
+  "rpc:fyi.opensocial.leaveGroup?aud=*",
   // Which groups the viewer is in is theirs to say, not a public roster's:
   // `listSpaces` on their own PDS names the members spaces they hold an
   // acceptance in, and a credential for each confirms the host still admits
@@ -161,12 +161,12 @@ export default defineConfig({
   database: isProd ? "/data/grain.db" : "data/grain.db",
   backfill: {
     // What makes a repo worth tracking. A grain profile is the obvious signal
-    // for a person; a community declaration is the equivalent for a community,
+    // for a person; a group declaration is the equivalent for a group,
     // and it is the record that literally says "this account is one".
     //
     // It discovers nothing today, and that is fine: signals are resolved by
     // asking a PDS `listReposByCollection`, and `bsky.network` answers
-    // `{"repos":[]}` for this collection. Communities arrive by the ordinary
+    // `{"repos":[]}` for this collection. Groups arrive by the ordinary
     // route instead — the relay crawls their host and the firehose carries
     // both its existing records and everything after. Kept because it is the
     // right signal if that ever stops being true.
@@ -207,7 +207,7 @@ export default defineConfig({
     conditionalScopes: [
       { whenMethod: "com.atproto.simplespace.createSpace", scopes: [spaceScopes] },
       // Pools, gated on reading one rather than on creating a space: a member
-      // never creates the pool — the community does — so `getDelegationToken`
+      // never creates the pool — the group does — so `getDelegationToken`
       // is the method that actually decides whether they can take part.
       //
       // The pool scope was previously dev-only and named in no conditional, so

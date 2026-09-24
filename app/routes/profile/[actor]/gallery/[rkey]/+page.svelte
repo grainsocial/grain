@@ -32,7 +32,7 @@
   const rkey = $derived(data.rkey)
   const galleryUri = $derived(data.galleryUri)
 
-  // A gallery in a community's pool has the same address as any other — it is
+  // A gallery in a group's pool has the same address as any other — it is
   // the author's record, at their DID and rkey — but it is not in the public
   // repo, so it cannot be read the public way. `?group=` says which pool to
   // ask, and from there this is the same page: same split, same media, same
@@ -97,7 +97,7 @@
   const actingForPool = $derived(!!gallery?.group && $viewer?.did === gallery.group.did)
   let removing = $state(false)
   // Your own gallery, out of somebody else's space. Deletes your records
-  // there; the community keeps everything of its own.
+  // there; the group keeps everything of its own.
   let withdrawing = $state(false)
   async function handleWithdraw() {
     if (!group || !gallery || withdrawing) return

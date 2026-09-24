@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Comment on a gallery in a community's pool. The comment is the viewer's own record, written into the pool beside the gallery it answers, so only that community's members can read it.",
+      "description": "Comment on a gallery in a group's pool. The comment is the viewer's own record, written into the pool beside the gallery it answers, so only that group's members can read it.",
       "input": {
         "encoding": "application/json",
         "schema": {

@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Every gallery in a community's pool, newest first. Assembled at request time from the repos of the members who wrote them \u2014 a pool space never reaches a firehose, so none of it is in the index \u2014 and readable only by a member the community's host issues a credential to.",
+      "description": "Every gallery in a group's pool, newest first. Assembled at request time from the repos of the members who wrote them \u2014 a pool space never reaches a firehose, so none of it is in the index \u2014 and readable only by a member the group's host issues a credential to.",
       "parameters": {
         "type": "params",
         "required": ["group"],

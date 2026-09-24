@@ -22,7 +22,7 @@
         "url": {
           "type": "string",
           "format": "uri",
-          "description": "The community's own site, from its opensocial profile. Where the group is actually run."
+          "description": "The group's own site, from its opensocial profile. Where the group is actually run."
         },
         "avatar": {
           "type": "string",
@@ -48,7 +48,7 @@
         "joinPolicy": {
           "type": "string",
           "knownValues": ["open", "request", "invite"],
-          "description": "How to get in, from the community's public profile."
+          "description": "How to get in, from the group's public profile."
         },
         "rules": {
           "type": "array",

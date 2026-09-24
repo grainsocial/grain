@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Delete one of your own comments from a community's pool.",
+      "description": "Delete one of your own comments from a group's pool.",
       "input": {
         "encoding": "application/json",
         "schema": {

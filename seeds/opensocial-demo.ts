@@ -1,5 +1,5 @@
 // Demo data for the groups branch against the opensocial dev stack: the
-// cycling club, in Grain. The riders already exist there — apps/community's
+// cycling club, in Grain. The riders already exist there — apps/group's
 // seed founds the club and its members — so this only gives them a Grain
 // profile and their galleries of ride photos.
 //
@@ -167,7 +167,7 @@ async function gallery(
 
 // ------------------------------------------------- the club and its riders
 //
-// Rain Shadow Riders is founded by apps/community's seed on the opensocial host:
+// Rain Shadow Riders is founded by apps/group's seed on the opensocial host:
 // its members, roles, events and rules all live there. Grain knows it only as
 // a DID with a fyi.opensocial.declaration — the one discoverable fact a
 // third-party app gates on — so all it needs from the host is that DID.
@@ -175,15 +175,15 @@ async function gallery(
 const HOST = process.env.HOST_URL ?? "http://localhost:4000";
 const CLUB_HANDLE = process.env.CLUB_HANDLE ?? "rain-shadow-riders.opensocial.test";
 
-/** The club's DID, or null if this network has no such community. */
+/** The club's DID, or null if this network has no such group. */
 async function findClub(handle: string): Promise<string | null> {
   try {
-    const res = await fetch(`${HOST}/xrpc/fyi.opensocial.listCommunities`);
+    const res = await fetch(`${HOST}/xrpc/fyi.opensocial.listGroups`);
     if (!res.ok) return null;
-    const { communities } = (await res.json()) as {
-      communities: { handle: string; did: string }[];
+    const { groups } = (await res.json()) as {
+      groups: { handle: string; did: string }[];
     };
-    return communities.find((c) => c.handle === handle)?.did ?? null;
+    return groups.find((c) => c.handle === handle)?.did ?? null;
   } catch {
     return null;
   }
@@ -218,7 +218,7 @@ const POOL = club ? `at://${club}/space/social.grain.group/self` : null;
  * Records in a space have no uri of their own — the address is the space, the
  * repo, the collection and the rkey — so an item names its gallery and its
  * photo by the uri each would have had in this rider's public repo. Every
- * reader, here and in apps/community, puts them back together that way.
+ * reader, here and in apps/group, puts them back together that way.
  *
  * No EXIF record: the space declares the three collections a gallery is made
  * of, and a camera's serial number is not one of the things the club asked to
@@ -384,7 +384,7 @@ const WIDE: [number, number] = [3, 2];
 const PHONE: [number, number] = [4, 3];
 const TALL: [number, number] = [3, 4];
 
-// The galleries are dated to the club's rides — apps/community's seed puts a
+// The galleries are dated to the club's rides — apps/group's seed puts a
 // past ride at each of these distances — because the club's site files a
 // gallery under the ride it came from by when it was made. Titles say which
 // ride; the photos are members' own.

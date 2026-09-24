@@ -1,4 +1,4 @@
-// Delete one of your own comments from a community's pool.
+// Delete one of your own comments from a group's pool.
 //   POST /xrpc/social.grain.unspecced.deletePoolComment
 //
 // Only your own: the write names your repo, and a space write into somebody

@@ -17,7 +17,7 @@
   import { goto } from '$app/navigation'
 
   // Straight into the pool. There is no submission and nothing to accept: the
-  // gallery is written into the community's space, where being a member is the
+  // gallery is written into the group's space, where being a member is the
   // permission and stops being one the moment you leave.
   const MAX_PHOTOS = 25
   const MAX_TITLE = 100

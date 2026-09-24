@@ -1,14 +1,14 @@
 import { views } from "$hatk";
 import type { BaseContext, GrainActorProfile, GroupView } from "$hatk";
-import { communityListing } from "../helpers/communityHost.ts";
+import { groupListing } from "../helpers/groupHost.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
 
 /**
- * Build group views for a set of community DIDs.
+ * Build group views for a set of group DIDs.
  *
- * A group is an account that (a) declared itself a community and (b) reads
+ * A group is an account that (a) declared itself a group and (b) reads
  * like any other author. Its Grain profile is its identity, falling back to
- * the community's own profile as its host lists it (see communityListing);
+ * the group's own profile as its host lists it (see groupListing);
  * its `social.grain.group.item` records are its pool. Who belongs is not
  * public — the roster is members-only — so there is no member count, and
  * whether the viewer belongs is theirs to say: `opts.mine`, the groups their
@@ -23,10 +23,10 @@ export async function hydrateGroups(
   const ph = dids.map((_, i) => `$${i + 1}`).join(",");
   const viewer = ctx.viewer?.did;
 
-  // One public read per community, cached: the profile and rules live in the
-  // community's about space, which grain cannot read or index.
+  // One public read per group, cached: the profile and rules live in the
+  // group's meta space, which grain cannot read or index.
   const listings = new Map(
-    await Promise.all(dids.map(async (did) => [did, await communityListing(did)] as const)),
+    await Promise.all(dids.map(async (did) => [did, await groupListing(did)] as const)),
   );
 
   const [profiles, handleMap, poolRows, pendingRows, submissionRows, itemRows, declineRows] =
@@ -95,10 +95,10 @@ export async function hydrateGroups(
         ? { uri: item, status: "accepted", item }
         : undefined;
     const joinPolicy = cp?.joinPolicy?.split("#").pop();
-    // A rule's address is its record in the about space, which is what a
+    // A rule's address is its record in the meta space, which is what a
     // moderation label cites.
     const rules = cp?.rules?.map((r) => ({
-      uri: `at://${did}/space/fyi.opensocial.about/self/${did}/fyi.opensocial.rule/${r.rkey}`,
+      uri: `at://${did}/space/fyi.opensocial.meta/self/${did}/fyi.opensocial.rule/${r.rkey}`,
       title: r.title,
       ...(r.text ? { text: r.text } : {}),
     }));
@@ -108,8 +108,8 @@ export async function hydrateGroups(
       displayName: p?.value.displayName ?? cp?.displayName,
       description: p?.value.description ?? cp?.description,
       avatar: (p ? ctx.blobUrl(did, p.value.avatar, "avatar") : undefined) ?? cp?.avatarUrl,
-      // Where the community is actually run. Grain shows a group; the
-      // community's own site is where its calendar, its boards and its
+      // Where the group is actually run. Grain shows a group; the
+      // group's own site is where its calendar, its boards and its
       // moderation live, and this is the only place that fact is published.
       ...(cp?.url ? { url: cp.url } : {}),
       poolCount: Number(pool.get(did)?.count ?? 0),

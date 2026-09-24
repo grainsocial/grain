@@ -13,7 +13,7 @@
           "group": {
             "type": "string",
             "format": "did",
-            "description": "The group (a community DID)."
+            "description": "The group (a group DID)."
           },
           "gallery": {
             "type": "string",

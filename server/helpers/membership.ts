@@ -1,16 +1,16 @@
 // Which groups the viewer is in, and the viewer's half of being in one.
 //
-// A community's roster is members-only: it lives in the community's members
+// A group's roster is members-only: it lives in the group's members
 // space, which grain cannot index and a stranger cannot read. What grain can
-// read is the viewer's own side. Membership is bidirectional — the community
+// read is the viewer's own side. Membership is bidirectional — the group
 // writes a `membership`, the member writes an `acceptance` into the same space,
 // in their own repo — so the viewer's PDS holds a repo in the members space of
-// every community they have accepted, and `listSpaces` on that PDS lists them.
-// Private, and no probing every community on the network.
+// every group they have accepted, and `listSpaces` on that PDS lists them.
+// Private, and no probing every group on the network.
 //
 // That list is only candidates. A PDS keeps listing a space after the
 // acceptance in it is deleted — the repo stays, empty — and it stores an
-// acceptance from someone the community has not admitted, because the host is
+// acceptance from someone the group has not admitted, because the host is
 // told about the write only afterwards and refuses it there. So every
 // candidate is confirmed the way the host decides it: a credential for the
 // members space, which only members may read.
@@ -20,12 +20,12 @@ import { forgetCredential, type PdsCall, spaceCredential } from "../spaces/clien
 export const MEMBERS_SPACE_TYPE = "fyi.opensocial.members";
 const ACCEPTANCE = "fyi.opensocial.acceptance";
 
-/** `at://<community>/space/fyi.opensocial.members/self`. */
+/** `at://<group>/space/fyi.opensocial.members/self`. */
 export function membersSpaceOf(group: string): string {
   return `at://${group}/space/${MEMBERS_SPACE_TYPE}/self`;
 }
 
-/** Communities the viewer's PDS lists a members-space repo for. Unconfirmed. */
+/** Groups the viewer's PDS lists a members-space repo for. Unconfirmed. */
 export async function candidateGroups(pds: PdsCall): Promise<string[]> {
   const out = new Set<string>();
   let cursor: string | undefined;
@@ -49,7 +49,7 @@ const refused = new Map<string, number>();
 const REFUSED_TTL_MS = 2 * 60_000;
 
 /**
- * Whether the host admits the viewer to this community's members space.
+ * Whether the host admits the viewer to this group's members space.
  * `fresh` skips a remembered refusal: the group's own page is where someone
  * admitted elsewhere turns up, and it should not tell them no for two minutes.
  */
@@ -71,7 +71,7 @@ export async function isMember(
   }
 }
 
-/** The communities the viewer is in: their PDS's candidates, each confirmed with the host. */
+/** The groups the viewer is in: their PDS's candidates, each confirmed with the host. */
 export async function groupsOf(pds: PdsCall, viewerDid: string): Promise<string[]> {
   const candidates = await candidateGroups(pds);
   const confirmed = await Promise.all(candidates.map((g) => isMember(pds, viewerDid, g)));

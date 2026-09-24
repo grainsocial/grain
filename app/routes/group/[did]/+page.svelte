@@ -22,11 +22,11 @@
   // an account like any other; what makes it a group is that its pool is other
   // people's galleries.
   //
-  // The pool is a permissioned space the community owns, so there is no queue
+  // The pool is a permissioned space the group owns, so there is no queue
   // and nothing to accept: a member writes their gallery straight into it, and
   // membership is the whole permission. Nothing in it is indexed either — it is
   // read from each member's repo, on every visit, with a credential the
-  // community's host issues to whoever is asking. A visitor gets a refusal,
+  // group's host issues to whoever is asking. A visitor gets a refusal,
   // which is the honest shape of a private pool rather than an empty grid.
 
   let { data } = $props()
@@ -147,7 +147,7 @@
 {:else if group.isError || !group.data}
   <DetailHeader label="Not Found" />
   <div class="not-found">
-    <p>This account hasn't declared itself a community.</p>
+    <p>This account hasn't declared itself a group.</p>
     <a class="bsky-link" href="/profile/{did}">View as a profile</a>
   </div>
 {:else}
@@ -192,7 +192,7 @@
       <div class="links-row">
         {#if g.url}
           <!-- The group is run somewhere else: Grain holds its pool, the
-               community's own site holds its calendar, its boards and the
+               group's own site holds its calendar, its boards and the
                moderation. Nothing here would tell you that but its profile. -->
           <a class="link-pill site" href={g.url} target="_blank" rel="noopener noreferrer">
             <ExternalLink size={14} />

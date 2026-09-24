@@ -1,13 +1,13 @@
-// Groups: what a community looks like from grain's side.
+// Groups: what a group looks like from grain's side.
 //
-// A group is an ordinary atproto account that a community host has declared.
+// A group is an ordinary atproto account that a group host has declared.
 // The declaration is the one public record, and it reaches grain through the
-// index. The profile and rules live in the community's about space, which
+// index. The profile and rules live in the group's meta space, which
 // grain reads as its host lists it; the roster lives in the members space,
 // which grain never sees — the viewer's own PDS says which groups they are in.
 //
 // The declaration is read from its table by name. That is deliberate: the
-// namespace moved from `community.opensocial.*` on 2026-09-16, the table names
+// namespace moved from `group.opensocial.*` on 2026-09-16, the table names
 // follow the NSIDs, and a rename that misses one fails silently — an index that
 // matches nothing lists no groups, which reads as "none yet" rather than as a
 // fault. These tests are what makes that loud.
@@ -28,30 +28,26 @@ const BOB = "did:plc:bob";
 
 let server: Awaited<ReturnType<typeof startTestServer>>;
 
-/** Declare `did` a community, as its host's one public record would. */
-async function declareCommunity(
-  db: any,
-  did: string,
-  opts: { handle: string; createdAt?: string },
-) {
+/** Declare `did` a group, as its host's one public record would. */
+async function declareGroup(db: any, did: string, opts: { handle: string; createdAt?: string }) {
   await db.run(`INSERT INTO _repos (did, status, handle) VALUES ($1, 'active', $2)`, [
     did,
     opts.handle,
   ]);
   await db.run(
-    `INSERT INTO "fyi.opensocial.declaration" (uri, cid, did, indexed_at, about, created_at)
+    `INSERT INTO "fyi.opensocial.declaration" (uri, cid, did, indexed_at, meta, created_at)
      VALUES ($1, $2, $3, 'i', $4, $5)`,
     [
       `at://${did}/fyi.opensocial.declaration/self`,
       `cid-decl-${did}`,
       did,
-      `at://${did}/space/fyi.opensocial.about/self`,
+      `at://${did}/space/fyi.opensocial.meta/self`,
       opts.createdAt ?? "2026-09-01T00:00:00Z",
     ],
   );
 }
 
-/** What the community's host lists about it: the public half of its about space. */
+/** What the group's host lists about it: the public half of its meta space. */
 const LISTING = [
   {
     did: "did:plc:club",
@@ -128,8 +124,8 @@ beforeAll(async () => {
   server = await startTestServer();
   const { db } = server;
 
-  await declareCommunity(db, CLUB, { handle: "club.test", createdAt: "2026-09-01T00:00:00Z" });
-  await declareCommunity(db, QUIET, { handle: "quiet.test", createdAt: "2026-09-03T00:00:00Z" });
+  await declareGroup(db, CLUB, { handle: "club.test", createdAt: "2026-09-01T00:00:00Z" });
+  await declareGroup(db, QUIET, { handle: "quiet.test", createdAt: "2026-09-03T00:00:00Z" });
 
   for (const did of [ALICE, BOB]) {
     await db.run(`INSERT INTO _repos (did, status, handle) VALUES ($1, 'active', $2)`, [
@@ -152,7 +148,7 @@ describe("the groups feed", () => {
   });
 });
 
-// `communityListing` asks each community's host what it lists, and
+// `groupListing` asks each group's host what it lists, and
 // `resolveGroupActor` may resolve a DID. Both hosts are stood in for here: the
 // PLC directory names the club's PDS, the PDS names itself, and it lists the
 // club. Anything else outbound is refused; the harness drives the server over
@@ -164,7 +160,7 @@ beforeEach(() => {
     "fetch",
     vi.fn(async (input: any, init?: any) => {
       const url = typeof input === "string" ? input : (input?.url ?? String(input));
-      // A community's DID document, from whichever PLC directory is asked.
+      // A group's DID document, from whichever PLC directory is asked.
       const path = decodeURIComponent(url);
       if (path.endsWith(`/${CLUB}`) || path.endsWith(`/${QUIET}`)) {
         return json({ service: [{ id: "#atproto_pds", serviceEndpoint: "https://host.example" }] });
@@ -175,8 +171,8 @@ beforeEach(() => {
       if (url === "https://host.example/.well-known/did.json") {
         return json({ id: "did:web:host.example" });
       }
-      if (url === "https://host.example/xrpc/fyi.opensocial.listCommunities") {
-        return json({ communities: LISTING });
+      if (url === "https://host.example/xrpc/fyi.opensocial.listGroups") {
+        return json({ groups: LISTING });
       }
       // The host admits Alice to the club's members space and nobody else.
       if (url === "https://host.example/xrpc/com.atproto.space.getSpaceCredential") {
@@ -197,17 +193,17 @@ afterAll(async () => {
 });
 
 describe("listGroups", () => {
-  test("lists every declared community", async () => {
+  test("lists every declared group", async () => {
     const groups = await listGroups();
     expect(groups.map((g) => g.did).sort()).toEqual([CLUB, QUIET].sort());
   });
 
-  test("carries the community's profile as its host lists it", async () => {
+  test("carries the group's profile as its host lists it", async () => {
     const club = (await listGroups()).find((g) => g.did === CLUB);
     expect(club.displayName).toBe("The Club");
     expect(club.handle).toBe("club.test");
     expect(club.joinPolicy).toBe("request");
-    // How a third-party app finds the community's own site.
+    // How a third-party app finds the group's own site.
     expect(club.url).toBe("https://club.example");
   });
 
@@ -217,16 +213,16 @@ describe("listGroups", () => {
     expect(club).not.toHaveProperty("memberCount");
   });
 
-  test("carries the rules in order, addressed in the about space", async () => {
+  test("carries the rules in order, addressed in the meta space", async () => {
     const club = (await listGroups()).find((g) => g.did === CLUB);
     expect(club.rules.map((r: any) => r.title)).toEqual(["Be kind", "Ride safe"]);
     // The address a moderation label cites.
     expect(club.rules[0].uri).toBe(
-      `at://${CLUB}/space/fyi.opensocial.about/self/${CLUB}/fyi.opensocial.rule/1`,
+      `at://${CLUB}/space/fyi.opensocial.meta/self/${CLUB}/fyi.opensocial.rule/1`,
     );
   });
 
-  test("a community its host does not list shows by handle", async () => {
+  test("a group its host does not list shows by handle", async () => {
     const quiet = (await listGroups()).find((g) => g.did === QUIET);
     expect(quiet.handle).toBe("quiet.test");
     expect(quiet.displayName).toBeUndefined();
@@ -265,7 +261,7 @@ describe("getGroup", () => {
     expect((await res.json()).did).toBe(CLUB);
   });
 
-  test("an account that is not a community is not a group", async () => {
+  test("an account that is not a group is not a group", async () => {
     // Alice has a repo and a handle; what she does not have is a declaration.
     expect((await getGroup(ALICE)).status).toBe(400);
   });
@@ -276,7 +272,7 @@ describe("getGroup", () => {
 });
 
 // Which groups a viewer is in: candidates from their own PDS, each confirmed
-// with the community's host. Both halves matter — a PDS lists a members space
+// with the group's host. Both halves matter — a PDS lists a members space
 // after the acceptance in it is gone, and stores one nobody admitted.
 describe("groupsOf", () => {
   /** A viewer's PDS: `listSpaces` pages, and delegation tokens naming them. */

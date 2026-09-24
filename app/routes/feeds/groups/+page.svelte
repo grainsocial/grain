@@ -16,7 +16,7 @@
   // The pools you are in, in one column. Not a feed in grain's usual sense:
   // every other one is SQL over the index with a cursor, and none of this is
   // indexed — a pool is a permissioned space, so it is read live, per viewer,
-  // with a credential each community's host issues. Which means no cursor, no
+  // with a credential each group's host issues. Which means no cursor, no
   // infinite scroll, and nothing here that could be served to anyone else.
   const queryClient = useQueryClient()
   const feed = createQuery(() => ({ ...poolFeedQuery(), enabled: !!$viewer }))
@@ -82,7 +82,7 @@
   {#if !$viewer}
     <div class="empty">
       <Lock size={15} />
-      <p>These pools are their communities', not the network's. Sign in to see the ones you are in.</p>
+      <p>These pools are their groups', not the network's. Sign in to see the ones you are in.</p>
     </div>
   {:else if blocked}
     <SpacesRequired />

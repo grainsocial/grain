@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "Every gallery in every pool the viewer is a member of, newest first. Assembled per viewer at request time: which communities they belong to is a public fact in the index, but what is in each pool is a permissioned space, read with a credential that community's host issues. Nothing here is shared between viewers or cached.",
+      "description": "Every gallery in every pool the viewer is a member of, newest first. Assembled per viewer at request time: which groups they belong to is a public fact in the index, but what is in each pool is a permissioned space, read with a credential that group's host issues. Nothing here is shared between viewers or cached.",
       "parameters": {
         "type": "params",
         "properties": {

@@ -9,7 +9,7 @@
   import SpacesRequired from '$lib/components/molecules/SpacesRequired.svelte'
 
   // The "places worth browsing" surface: every account that declared itself a
-  // community, most recently active pool first.
+  // group, most recently active pool first.
   const groups = createQuery(() => groupsQuery())
   // Reachable by direct link even with the nav entry hidden, so the page has to
   // answer for itself.

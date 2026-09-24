@@ -1,4 +1,4 @@
-// Favourite, or unfavourite, a gallery in a community's pool.
+// Favourite, or unfavourite, a gallery in a group's pool.
 //   POST /xrpc/social.grain.unspecced.putPoolFavorite
 //
 // The record is the viewer's own, and it goes into the pool rather than their

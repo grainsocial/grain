@@ -345,8 +345,8 @@ export const privateGalleryQuery = (space: string, f?: Fetch) =>
   });
 
 /**
- * A community's pool: every member's galleries, read from their repos through
- * the community's space on every call. No index stands behind it — nothing in a
+ * A group's pool: every member's galleries, read from their repos through
+ * the group's space on every call. No index stands behind it — nothing in a
  * space reaches a firehose — and a viewer who is not a member gets an error
  * rather than an empty pool, so this never retries into a refusal.
  */
@@ -371,7 +371,7 @@ export const poolFeedQuery = (f?: Fetch) =>
     retry: false,
   });
 
-/** One gallery from a community's pool. */
+/** One gallery from a group's pool. */
 export const poolGalleryQuery = (group: string, did: string, rkey: string, f?: Fetch) =>
   queryOptions({
     queryKey: ["poolGallery", group, did, rkey],

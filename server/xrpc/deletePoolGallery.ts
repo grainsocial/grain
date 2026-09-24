@@ -1,9 +1,9 @@
-// Withdraw the viewer's own gallery from a community's pool.
+// Withdraw the viewer's own gallery from a group's pool.
 //   POST /xrpc/social.grain.unspecced.deletePoolGallery
 //
 // The counterpart to createPoolGallery, and the same shape in reverse: a
 // gallery in a pool is the author's own records — the gallery, its photos, the
-// items joining them — living in the community's space rather than the public
+// items joining them — living in the group's space rather than the public
 // repo. Putting them there should not mean being unable to take them back.
 //
 // Author-scoped by construction, not by a check: every write names

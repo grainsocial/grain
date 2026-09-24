@@ -5,7 +5,7 @@ import { groupsOf } from "../helpers/membership.ts";
 export default defineQuery("social.grain.unspecced.listGroups", async (ctx) => {
   const { params, ok, db } = ctx;
   const limit = params.limit ?? 50;
-  // Every declared community, the ones whose pool moved most recently first;
+  // Every declared group, the ones whose pool moved most recently first;
   // a group with an empty pool still lists, or nobody could ever submit to it.
   const rows = (await db.query(
     `SELECT d.did FROM "fyi.opensocial.declaration" d

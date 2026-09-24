@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Add a gallery to a community's pool: one permissioned space (social.grain.group) anchored on the community, holding every member's galleries. The gallery, its photos and its items are the author's own records in their own repo, written inside that space — so only the community's members can read them, and they leave with the author.",
+      "description": "Add a gallery to a group's pool: one permissioned space (social.grain.group) anchored on the group, holding every member's galleries. The gallery, its photos and its items are the author's own records in their own repo, written inside that space — so only the group's members can read them, and they leave with the author.",
       "input": {
         "encoding": "application/json",
         "schema": {
@@ -14,7 +14,7 @@
             "group": {
               "type": "string",
               "format": "did",
-              "description": "The community whose pool this goes into."
+              "description": "The group whose pool this goes into."
             },
             "rkey": {
               "type": "string",
@@ -49,7 +49,7 @@
         },
         {
           "name": "NotAuthorized",
-          "description": "The viewer is not a member of this community's pool."
+          "description": "The viewer is not a member of this group's pool."
         }
       ]
     },

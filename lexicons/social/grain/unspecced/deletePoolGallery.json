@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Withdraw the viewer's own gallery from a community's pool. The gallery, its photos and the items joining them are the viewer's records in the viewer's repo, held inside the community's space, so this removes them from that space and nothing else. Only the author's own repo is touched: whoever acts as the group evicts by a different route.",
+      "description": "Withdraw the viewer's own gallery from a group's pool. The gallery, its photos and the items joining them are the viewer's records in the viewer's repo, held inside the group's space, so this removes them from that space and nothing else. Only the author's own repo is touched: whoever acts as the group evicts by a different route.",
       "input": {
         "encoding": "application/json",
         "schema": {
@@ -14,7 +14,7 @@
             "group": {
               "type": "string",
               "format": "did",
-              "description": "The community whose pool holds it."
+              "description": "The group whose pool holds it."
             },
             "rkey": { "type": "string", "description": "The gallery's rkey in the author's repo." }
           }

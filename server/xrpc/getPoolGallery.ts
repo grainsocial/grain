@@ -1,7 +1,7 @@
-// One gallery from a community's pool.
+// One gallery from a group's pool.
 //   GET /xrpc/social.grain.unspecced.getPoolGallery?group=&did=&rkey=
 //
-// The same read as getPrivateGallery, pointed at a space the community owns:
+// The same read as getPrivateGallery, pointed at a space the group owns:
 // the author wrote the gallery, other members wrote the favourites and the
 // comments on it, and the viewer's credential is what proves they are one of
 // those people. All of it comes back together because all of it is in the same

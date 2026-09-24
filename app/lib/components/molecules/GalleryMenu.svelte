@@ -19,7 +19,7 @@
 
   /**
    * `extra` is for actions that belong to a context this component has no
-   * business knowing about — a community pool's "remove from pool", which only
+   * business knowing about — a group pool's "remove from pool", which only
    * whoever acts as the group may do. Rendered above the owner's items, since
    * it is somebody else's authority over the same gallery.
    */

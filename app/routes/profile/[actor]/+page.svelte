@@ -74,7 +74,7 @@
   const storyViewed = $derived(
     !isOwnProfile && hasStory && (stories.data?.every((s) => s.viewer?.viewed) ?? false)
   )
-  // A community shows up as an ordinary author; this is the one pointer to its group face.
+  // A group shows up as an ordinary author; this is the one pointer to its group face.
   const group = createQuery(() => ({ ...groupQuery(did), retry: false }))
   const knownFollowers = createQuery(() => ({
     ...knownFollowersQuery(did, viewerDid ?? ''),

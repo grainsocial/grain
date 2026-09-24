@@ -1,13 +1,13 @@
 import { defineProcedure, InvalidRequestError } from "$hatk";
-import { callCommunityHost } from "../helpers/communityHost.ts";
+import { callGroupHost } from "../helpers/groupHost.ts";
 import { acceptMembership, forgetRefusal } from "../helpers/membership.ts";
 
-/** The first time Grain talks to a community host directly: ask to join. */
+/** The first time Grain talks to a group host directly: ask to join. */
 export default defineProcedure("social.grain.unspecced.joinGroup", async (ctx) => {
   const { input, ok, viewer } = ctx;
   if (!viewer) throw new InvalidRequestError("Sign in to join a group");
-  const r = await callCommunityHost(ctx.pds, input.group, "fyi.opensocial.requestJoin", {
-    community: input.group,
+  const r = await callGroupHost(ctx.pds, input.group, "fyi.opensocial.requestJoin", {
+    group: input.group,
     ...(input.message ? { message: input.message } : {}),
   });
   if (!r.ok)

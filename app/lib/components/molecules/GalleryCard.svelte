@@ -40,7 +40,7 @@
     onCommentClick?: () => void
     onStoryTap?: (did: string) => void
     /**
-     * The community whose pool this gallery is in. Favouriting and commenting
+     * The group whose pool this gallery is in. Favouriting and commenting
      * stay on — they simply go into that space, as the viewer's own records,
      * rather than into their public repo where they would name a private
      * gallery to everyone.
@@ -97,7 +97,7 @@
   const photos = $derived((gallery.items ?? []) as PhotoView[])
   const favCount = $derived(gallery.favCount ?? 0)
   const commentCount = $derived(gallery.commentCount ?? 0)
-  // A gallery in a community's pool keeps the author's address and adds which
+  // A gallery in a group's pool keeps the author's address and adds which
   // pool to read it from — it is not in the public repo, so the page cannot
   // find it otherwise.
   // `galleryPath` prefers the author's handle, which is right for a public
@@ -191,7 +191,7 @@
     {#if !privateGallery}
       <GalleryMenu {gallery} extra={actingForPool ? removeFromPoolItem : undefined} />
     {:else if isOwner && gallery.group}
-      <!-- A pooled gallery is the author's record in the community's space, so
+      <!-- A pooled gallery is the author's record in the group's space, so
            the only action the card offers on one is taking it back out. The
            rest of GalleryMenu reaches for a public-repo record that is not
            there. -->

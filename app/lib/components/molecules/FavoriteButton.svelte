@@ -19,7 +19,7 @@
     /** When set, the count links here instead of being part of the toggle. */
     countHref?: string
     /**
-     * The community whose pool this gallery is in, when it is in one. The
+     * The group whose pool this gallery is in, when it is in one. The
      * favourite then goes into that space rather than the viewer's public repo
      * — where it would name a private gallery to the whole network — and there
      * is no public list of who favourited it to link to.

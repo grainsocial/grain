@@ -1,10 +1,10 @@
-// Add a gallery to a community's pool.
+// Add a gallery to a group's pool.
 //   POST /xrpc/social.grain.unspecced.createPoolGallery
 //
-// The pool is one space, anchored on the community, and the community made it.
+// The pool is one space, anchored on the group, and the group made it.
 // Nothing is created here and nothing is accepted: the member writes their own
 // gallery into it, in their own repo, and being a member is the whole
-// permission — their PDS asks the community's host whether they may write, and
+// permission — their PDS asks the group's host whether they may write, and
 // the host answers from the roster.
 //
 // That is also what makes leaving clean. The records are the author's, so a

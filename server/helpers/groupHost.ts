@@ -1,4 +1,4 @@
-// Where a community is run. A community's DID document names its PDS, and on
+// Where a group is run. A group's DID document names its PDS, and on
 // the opensocial design the host *is* that PDS: the fyi.opensocial.*
 // methods are served from the same origin, and the host's own identity — the
 // audience a service-auth token must name — is its did:web at that origin.
@@ -7,7 +7,7 @@
 const plcUrl = process.env.DID_PLC_URL ?? "https://plc.directory";
 const cache = new Map<string, { url: string; did: string }>();
 
-export async function communityHostFor(did: string): Promise<{ url: string; did: string }> {
+export async function groupHostFor(did: string): Promise<{ url: string; did: string }> {
   const hit = cache.get(did);
   if (hit) return hit;
   const doc = await fetch(
@@ -21,51 +21,51 @@ export async function communityHostFor(did: string): Promise<{ url: string; did:
   if (!url) throw new Error(`${did} has no PDS`);
   const hostDoc = await fetch(`${url}/.well-known/did.json`).then((r) => (r.ok ? r.json() : null));
   const hostDid: string | undefined = hostDoc?.id;
-  if (!hostDid) throw new Error(`${url} does not identify itself as a community host`);
+  if (!hostDid) throw new Error(`${url} does not identify itself as a group host`);
   const out = { url: url.replace(/\/$/, ""), did: hostDid };
   cache.set(did, out);
   return out;
 }
 
-/** What a community's host lists about it: the public part of its about space. */
-export interface CommunityListing {
+/** What a group's host lists about it: the public part of its meta space. */
+export interface GroupListing {
   displayName?: string;
   description?: string;
   url?: string;
   joinPolicy?: string;
-  /** Present when the community has an avatar; see `avatarUrl`. */
+  /** Present when the group has an avatar; see `avatarUrl`. */
   avatar?: string;
   avatarUrl?: string;
   rules?: { rkey: string; title: string; text?: string }[];
 }
 
 /**
- * A community's profile and rules, as its host lists them.
+ * A group's profile and rules, as its host lists them.
  *
- * They live in the community's about space, and a space cannot be read without
+ * They live in the group's meta space, and a space cannot be read without
  * signing in as somebody — nor indexed, since nothing in a space reaches a
- * firehose. The host reads the space as the community and lists what its
+ * firehose. The host reads the space as the group and lists what its
  * access record makes public, unauthenticated, so this is the one read that
  * works for every viewer. Not part of the standard: a host that does not list
- * its communities yields nothing here, and the group falls back to its grain
+ * its groups yields nothing here, and the group falls back to its grain
  * profile. Cached, because a profile does not move often and a group page asks
  * on every visit.
  */
-const listingCache = new Map<string, { listing?: CommunityListing; at: number }>();
+const listingCache = new Map<string, { listing?: GroupListing; at: number }>();
 const LISTING_TTL_MS = 10 * 60_000;
 
-export async function communityListing(did: string): Promise<CommunityListing | undefined> {
+export async function groupListing(did: string): Promise<GroupListing | undefined> {
   const hit = listingCache.get(did);
   if (hit && Date.now() - hit.at < LISTING_TTL_MS) return hit.listing;
-  let listing: CommunityListing | undefined;
+  let listing: GroupListing | undefined;
   try {
-    const host = await communityHostFor(did);
-    const res = await fetch(`${host.url}/xrpc/fyi.opensocial.listCommunities`);
-    const body = (await res.json()) as { communities?: (CommunityListing & { did: string })[] };
-    const found = body.communities?.find((c) => c.did === did);
+    const host = await groupHostFor(did);
+    const res = await fetch(`${host.url}/xrpc/fyi.opensocial.listGroups`);
+    const body = (await res.json()) as { groups?: (GroupListing & { did: string })[] };
+    const found = body.groups?.find((c) => c.did === did);
     if (found) {
       const { did: _, ...rest } = found;
-      // The host serves a community's images itself, renderably; the CID is
+      // The host serves a group's images itself, renderably; the CID is
       // only a cache-buster there.
       listing = {
         ...rest,
@@ -84,7 +84,7 @@ export async function communityListing(did: string): Promise<CommunityListing | 
 
 /** Call a fyi.opensocial.* procedure on the group's host as the viewer,
  *  with service auth minted by the viewer's own PDS. */
-export async function callCommunityHost(
+export async function callGroupHost(
   pds: (
     nsid: string,
     options?: { params?: Record<string, string> },
@@ -93,7 +93,7 @@ export async function callCommunityHost(
   lxm: string,
   body: Record<string, unknown>,
 ): Promise<{ ok: boolean; status: number; body: any }> {
-  const host = await communityHostFor(group);
+  const host = await groupHostFor(group);
   const { token } = (await pds("com.atproto.server.getServiceAuth", {
     params: { aud: host.did, lxm },
   })) as { token: string };

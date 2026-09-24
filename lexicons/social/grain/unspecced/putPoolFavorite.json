@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Favourite, or unfavourite, a gallery in a community's pool. The record is the viewer's own, written into the pool rather than their public repo: in the public repo it would name a private gallery to the whole network.",
+      "description": "Favourite, or unfavourite, a gallery in a group's pool. The record is the viewer's own, written into the pool rather than their public repo: in the public repo it would name a private gallery to the whole network.",
       "input": {
         "encoding": "application/json",
         "schema": {

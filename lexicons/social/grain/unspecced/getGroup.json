@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "query",
-      "description": "A group: a community DID that has declared itself and shows up in Grain as an author whose pool is other people's galleries.",
+      "description": "A group: a group DID that has declared itself and shows up in Grain as an author whose pool is other people's galleries.",
       "parameters": {
         "type": "params",
         "required": ["actor"],

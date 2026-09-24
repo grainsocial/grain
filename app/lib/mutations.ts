@@ -46,7 +46,7 @@ export async function unmuteActor(did: string, queryClient: QueryClient) {
 //
 // Two records, two repos. A submission is the member's (their repo, public);
 // an item is the group's (written while signed in as it). Nothing here talks
-// to the community host — the host is where the group is *run*, Grain is
+// to the group host — the host is where the group is *run*, Grain is
 // where it lives.
 
 function invalidateGroups(queryClient: QueryClient) {
@@ -93,7 +93,7 @@ export async function removeFromPool(itemUri: string, queryClient: QueryClient) 
  * Take your own gallery back out of a pool.
  *
  * Distinct from `removeFromPool`, which deletes the group's item record and is
- * the group's act. This deletes the author's own records from the community's
+ * the group's act. This deletes the author's own records from the group's
  * space — their gallery, its photos, the items joining them — and can only ever
  * reach their own repo.
  */

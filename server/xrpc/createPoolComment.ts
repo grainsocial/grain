@@ -1,8 +1,8 @@
-// Comment on a gallery in a community's pool.
+// Comment on a gallery in a group's pool.
 //   POST /xrpc/social.grain.unspecced.createPoolComment
 //
 // The comment is the commenter's own record, in their own repo, inside the
-// community's space — beside the gallery it answers rather than in the public
+// group's space — beside the gallery it answers rather than in the public
 // repo, where it would name a private gallery to everyone. Which is also why
 // the thread is assembled by reading every member's repo: your reply to my
 // gallery was never mine to hold.

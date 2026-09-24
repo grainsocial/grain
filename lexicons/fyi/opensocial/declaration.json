@@ -5,15 +5,15 @@
     "main": {
       "type": "record",
       "key": "literal:self",
-      "description": "Marks a DID as a community. Lives in the public repo. Points at the about space. Discovery only.",
+      "description": "Marks a DID as a group. Lives in the public repo. Points at the about space. Discovery only.",
       "record": {
         "type": "object",
-        "required": ["about", "createdAt"],
+        "required": ["meta", "createdAt"],
         "properties": {
-          "about": {
+          "meta": {
             "type": "string",
             "format": "space-ref",
-            "description": "The community's about space."
+            "description": "The group's about space."
           },
           "createdAt": {
             "type": "string",

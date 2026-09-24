@@ -1,11 +1,11 @@
-// Reading a community's pool: the shared half of listPoolGalleries (one pool)
+// Reading a group's pool: the shared half of listPoolGalleries (one pool)
 // and listPoolFeed (every pool the viewer is in).
 //
-// A pool is a permissioned space anchored on the community, holding one repo
+// A pool is a permissioned space anchored on the group, holding one repo
 // per member who has written into it. None of it is indexed — nothing in a
 // space reaches a firehose — so a read means asking the space who has written,
 // then reading those repos on the hosts that hold them, with a credential the
-// community's host issues to the viewer. A viewer who is not a member never
+// group's host issues to the viewer. A viewer who is not a member never
 // gets the credential, which is the whole access check.
 
 import {
@@ -66,7 +66,7 @@ export interface PoolComment {
 
 export interface PoolGallery {
   space: string;
-  /** The community whose pool it is in. */
+  /** The group whose pool it is in. */
   group: string;
   /** Whose gallery it is. */
   did: string;
@@ -91,7 +91,7 @@ const selfUri = (did: string, collection: string, rkey: string) =>
   `at://${did}/${collection}/${rkey}`;
 
 /**
- * Every gallery in one community's pool, newest first.
+ * Every gallery in one group's pool, newest first.
  *
  * Throws whatever the space threw — a 401 from the authority is how "not a
  * member" arrives, and it is the caller's business whether that is an error

@@ -5,11 +5,11 @@
 // no index here to page through. This is assembled per viewer, per request —
 // which is also why it cannot be shared, cached or handed to anyone else.
 //
-// Two halves, both private. *Which* communities the viewer belongs to comes
+// Two halves, both private. *Which* groups the viewer belongs to comes
 // from their own PDS — the members spaces they have written an acceptance
-// into — each confirmed with the community's host (see helpers/membership.ts).
-// What is in each community's pool is a credentialed read per pool, and a pool
-// that refuses is dropped rather than failing the feed: a community need not
+// into — each confirmed with the group's host (see helpers/membership.ts).
+// What is in each group's pool is a credentialed read per pool, and a pool
+// that refuses is dropped rather than failing the feed: a group need not
 // keep a pool at all.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
@@ -31,7 +31,7 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
 
   // One pool at a time would be one round trip to two hosts per group; they do
   // not depend on each other, so they go together. `allSettled`, because a
-  // refusal from one community's host is a pool to skip.
+  // refusal from one group's host is a pool to skip.
   const settled = await Promise.allSettled(groups.map((group) => readPool(pds, viewer.did, group)));
   // Every pool refusing is not "an empty feed" — it is the session or the
   // network, and it gets reported like any other failed space read.

@@ -22,7 +22,7 @@
     subjectUri: string
     onClose: () => void
     /**
-     * The community whose pool the subject is in, when it is in one. The thread
+     * The group whose pool the subject is in, when it is in one. The thread
      * then lives in that space: every comment is its author's own record inside
      * it, read across the members' repos at request time and readable by nobody
      * else. There is no index behind it, so there is no cursor either — the
