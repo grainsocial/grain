@@ -54,7 +54,7 @@ type Db = { query: (sql: string, params?: unknown[]) => Promise<unknown[]> };
  * hatk ends the session on that, signing the group out of Grain on the first
  * page that looks.
  */
-async function isGroup(db: Db, did: string): Promise<boolean> {
+export async function isGroup(db: Db, did: string): Promise<boolean> {
   const rows = await db.query(
     `SELECT 1 AS v FROM "fyi.opensocial.declaration" WHERE did = $1 LIMIT 1`,
     [did],

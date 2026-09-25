@@ -8,6 +8,8 @@
 // Two halves, both private. *Which* groups the viewer belongs to comes
 // from their own PDS — the members spaces they have written an acceptance
 // into — each confirmed with the group's host (see helpers/membership.ts).
+// Signed in as a group, it is the group's own pool: a group belongs to no
+// groups, and its pool is the one it keeps.
 // What is in each group's pool is a credentialed read per pool, and a pool
 // that refuses is dropped rather than failing the feed: a group need not
 // keep a pool at all.
@@ -16,7 +18,7 @@ import { defineQuery, InvalidRequestError } from "$hatk";
 import type { GrainActorProfile } from "$hatk";
 import { hydrateGroups } from "../hydrate/groups.ts";
 import { lookupHandles } from "../helpers/lookupHandles.ts";
-import { groupsOf } from "../helpers/membership.ts";
+import { groupsOf, isGroup } from "../helpers/membership.ts";
 import { type PoolGallery, readPool } from "../helpers/pool.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
@@ -26,7 +28,9 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
 
   const limit = Math.min(Number(params.limit) || 30, 100);
 
-  const groups = await groupsOf(db, pds, viewer.did);
+  const groups = (await isGroup(db, viewer.did))
+    ? [viewer.did]
+    : await groupsOf(db, pds, viewer.did);
   if (groups.length === 0) return ok({ galleries: [], groups: [] });
 
   // One pool at a time would be one round trip to two hosts per group; they do
