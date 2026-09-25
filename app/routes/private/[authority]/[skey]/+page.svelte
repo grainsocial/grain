@@ -121,8 +121,8 @@
     <GalleryCardSkeleton />
   {:else if gallery.isError}
     <p class="empty">
-      This gallery didn't open. Either your session expired, or you're not on its list, or your PDS
-      doesn't serve permissioned spaces. Signing in again fixes the first, and it's the most likely.
+      This gallery couldn't be opened. It may not be shared with you, or you may need to sign in
+      again, which usually fixes it.
     </p>
     <div class="action">
       <Button

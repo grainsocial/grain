@@ -8,11 +8,10 @@
 </script>
 
 <div class="spaces-required">
-  <p class="lead">{what} need a PDS that serves permissioned spaces.</p>
+  <p class="lead">{what} aren't available for your account yet.</p>
   <p class="detail">
-    A group's pool lives in a space rather than in public records, and reading one
-    starts with a token your own server issues. Yours doesn't serve spaces yet, so
-    there's nothing grain can show you here.
+    Your account is hosted somewhere that doesn't support private sharing yet. Once it
+    does, they'll show up here.
   </p>
 </div>
 

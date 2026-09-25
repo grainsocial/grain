@@ -42,16 +42,31 @@ export default defineProcedure("social.grain.unspecced.createGroup", async (ctx)
   const { token } = (await ctx.pds("com.atproto.server.getServiceAuth", {
     params: { aud: host.did, lxm },
   })) as { token: string };
-  const { did } = await ctx.obtainSession(
-    `${host.url}/xrpc/${lxm}`,
-    {
-      handle,
-      displayName: input.displayName,
-      ...(input.description ? { description: input.description } : {}),
-      scope: GROUP_SCOPE,
-    },
-    { headers: { authorization: `Bearer ${token}` } },
-  );
+  // What the host says when it refuses is for the log, not the person: they
+  // get what they can act on.
+  const { did } = await ctx
+    .obtainSession(
+      `${host.url}/xrpc/${lxm}`,
+      {
+        handle,
+        displayName: input.displayName,
+        ...(input.description ? { description: input.description } : {}),
+        scope: GROUP_SCOPE,
+      },
+      { headers: { authorization: `Bearer ${token}` } },
+    )
+    .catch((err: { errorName?: string; message?: string }) => {
+      console.error(`[createGroup] ${handle}: ${err.errorName ?? ""} ${err.message ?? err}`);
+      throw /Handle/i.test(err.errorName ?? "")
+        ? new InvalidRequestError(
+            "That handle is taken or not allowed. Try another one",
+            "HandleUnavailable",
+          )
+        : new InvalidRequestError(
+            "The group couldn't be started right now. Try again later",
+            "CreateFailed",
+          );
+    });
 
   // The pool is a host decision (a space, and who may read it), so it is the
   // founder who asks for it.
@@ -62,8 +77,13 @@ export default defineProcedure("social.grain.unspecced.createGroup", async (ctx)
     name: "Pool",
     readableBy: ["member"],
   });
-  if (!pool.ok)
-    throw new InvalidRequestError(pool.body?.message ?? `could not open the pool (${pool.status})`);
+  if (!pool.ok) {
+    console.error(`[createGroup] ${did}: pool ${pool.status} ${pool.body?.message ?? ""}`);
+    throw new InvalidRequestError(
+      "The group was started, but its pool couldn't be set up. Try again later",
+      "PoolFailed",
+    );
+  }
 
   // The group's face on Grain, written as the group with the session the
   // host just handed over.

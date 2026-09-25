@@ -93,8 +93,7 @@
     <div class="empty">
       <Lock size={15} />
       <p>
-        No pool would open. Your session may have expired — signing in again mints the credentials
-        these reads need.
+        Your groups' pools couldn't be loaded. Signing in again usually fixes this.
       </p>
     </div>
   {:else if cards.length === 0}

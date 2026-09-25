@@ -46,18 +46,21 @@ export async function throwSpaceError(err: unknown, db: Db, viewerDid: string): 
       const support = await getSpaceSupport(db, endpoint);
       if (!support.supported) {
         throw new InvalidRequestError(
-          "Your PDS does not serve permissioned spaces, so it cannot open a private gallery",
+          "Private galleries aren't available for your account yet",
           "SpacesUnsupported",
         );
       }
     }
-    throw new InvalidRequestError("Not a member of this space", "NotAuthorized");
+    throw new InvalidRequestError("Only members can see this", "NotAuthorized");
   }
 
   // A repo host that cannot be reached or resolved is a failure of ours to
   // report, not of the reader to fix.
   if (err instanceof SpaceError) {
-    throw new InvalidRequestError("Could not reach the gallery's host", "UpstreamFailed");
+    throw new InvalidRequestError(
+      "This couldn't be loaded right now. Try again in a moment",
+      "UpstreamFailed",
+    );
   }
 
   throw err;

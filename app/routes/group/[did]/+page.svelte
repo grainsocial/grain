@@ -243,8 +243,7 @@
     <SpacesRequired what="Pools" />
   {:else if pool.isError}
     <div class="empty-state">
-      Only members can open this pool. If you have just joined, reload — the
-      credential is minted fresh each time.
+      Only members can see this pool. If you've just joined, reload the page.
     </div>
   {:else}
     <GalleryGrid

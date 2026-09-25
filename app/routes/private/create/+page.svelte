@@ -127,14 +127,14 @@
   <p class="lede">
     <Lock size={13} />
     <span>
-      This gallery lives in a permissioned space on your PDS. It never reaches the firehose and is
-      never indexed. Only the accounts you list can read it.
+      Only the people you add can see this gallery. It isn't public, and it doesn't appear in feeds
+      or search.
     </span>
   </p>
 
   {#if spaces.isSuccess && !spaces.data?.supported}
     <p class="warning">
-      Your PDS doesn't serve permissioned spaces, so nothing here will publish.
+      Private galleries aren't available for your account yet, so this can't be published.
     </p>
   {/if}
 

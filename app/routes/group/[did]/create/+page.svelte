@@ -126,8 +126,8 @@
   <p class="lede">
     <Lock size={13} />
     <span>
-      This gallery goes into {group.data?.displayName ?? 'the group'}'s pool — a permissioned space
-      only its members can read. The photos stay in your repo, and leave with you.
+      This gallery goes into {group.data?.displayName ?? 'the group'}'s pool, which only its members
+      can see. The photos stay yours, and go with you if you leave.
     </span>
   </p>
 
