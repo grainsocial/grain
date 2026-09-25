@@ -327,13 +327,22 @@ describe("groupsOf", () => {
     const { pds } = pdsFor(ALICE, [
       { spaces: [{ uri: membersSpaceOf(CLUB) }, { uri: membersSpaceOf(QUIET) }] },
     ]);
-    expect(await groupsOf(pds, ALICE)).toEqual([CLUB]);
+    expect(await groupsOf(server.db, pds, ALICE)).toEqual([CLUB]);
   });
 
   test("drops an acceptance the host never admitted", async () => {
     // Bob wrote one into the club's members space; his PDS lists it anyway.
     const { pds } = pdsFor(BOB, [{ spaces: [{ uri: membersSpaceOf(CLUB) }] }]);
-    expect(await groupsOf(pds, BOB)).toEqual([]);
+    expect(await groupsOf(server.db, pds, BOB)).toEqual([]);
+  });
+
+  test("never asks when the viewer is a group", async () => {
+    // Signed in as a group, the grant has no members-space scope — its host
+    // withholds it — so the question could only be refused.
+    const { pds, listCalls } = pdsFor(CLUB, [{ spaces: [{ uri: membersSpaceOf(QUIET) }] }]);
+    expect(await groupsOf(server.db, pds, CLUB)).toEqual([]);
+    expect(listCalls).toEqual([]);
+    expect(pds).not.toHaveBeenCalled();
   });
 });
 

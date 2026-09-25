@@ -26,7 +26,7 @@ export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) =>
 
   const limit = Math.min(Number(params.limit) || 30, 100);
 
-  const groups = await groupsOf(pds, viewer.did);
+  const groups = await groupsOf(db, pds, viewer.did);
   if (groups.length === 0) return ok({ galleries: [], groups: [] });
 
   // One pool at a time would be one round trip to two hosts per group; they do

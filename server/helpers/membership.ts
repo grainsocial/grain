@@ -42,6 +42,26 @@ export async function candidateGroups(pds: PdsCall): Promise<string[]> {
   return [...out];
 }
 
+type Db = { query: (sql: string, params?: unknown[]) => Promise<unknown[]> };
+
+/**
+ * Whether this account is a group itself.
+ *
+ * A group is not a member of groups, and whoever signs in as one is granted
+ * none of what asking would take: its host withholds the members-space scope,
+ * because a group's roles confer nothing in other groups. Asking anyway is
+ * worse than a no — a PDS answers a missing scope with ScopeMissingError, and
+ * hatk ends the session on that, signing the group out of Grain on the first
+ * page that looks.
+ */
+async function isGroup(db: Db, did: string): Promise<boolean> {
+  const rows = await db.query(
+    `SELECT 1 AS v FROM "fyi.opensocial.declaration" WHERE did = $1 LIMIT 1`,
+    [did],
+  );
+  return rows.length > 0;
+}
+
 // A refusal is remembered briefly, so a page reloaded by a non-member does not
 // mint a delegation token each time. A yes needs no cache of its own:
 // spaceCredential already holds the credential.
@@ -54,11 +74,13 @@ const REFUSED_TTL_MS = 2 * 60_000;
  * admitted elsewhere turns up, and it should not tell them no for two minutes.
  */
 export async function isMember(
+  db: Db,
   pds: PdsCall,
   viewerDid: string,
   group: string,
   opts: { fresh?: boolean } = {},
 ): Promise<boolean> {
+  if (await isGroup(db, viewerDid)) return false;
   const key = `${viewerDid} ${group}`;
   if (!opts.fresh && Date.now() - (refused.get(key) ?? 0) < REFUSED_TTL_MS) return false;
   try {
@@ -72,9 +94,10 @@ export async function isMember(
 }
 
 /** The groups the viewer is in: their PDS's candidates, each confirmed with the host. */
-export async function groupsOf(pds: PdsCall, viewerDid: string): Promise<string[]> {
+export async function groupsOf(db: Db, pds: PdsCall, viewerDid: string): Promise<string[]> {
+  if (await isGroup(db, viewerDid)) return [];
   const candidates = await candidateGroups(pds);
-  const confirmed = await Promise.all(candidates.map((g) => isMember(pds, viewerDid, g)));
+  const confirmed = await Promise.all(candidates.map((g) => isMember(db, pds, viewerDid, g)));
   return candidates.filter((_, i) => confirmed[i]);
 }
 

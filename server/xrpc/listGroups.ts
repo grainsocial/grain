@@ -16,7 +16,7 @@ export default defineQuery("social.grain.unspecced.listGroups", async (ctx) => {
      LIMIT $1`,
     [limit],
   )) as { did: string }[];
-  const mine = ctx.viewer ? await groupsOf(ctx.pds, ctx.viewer.did).catch(() => []) : [];
+  const mine = ctx.viewer ? await groupsOf(db, ctx.pds, ctx.viewer.did).catch(() => []) : [];
   const groups = await hydrateGroups(
     ctx,
     rows.map((r) => r.did),
