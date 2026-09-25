@@ -126,7 +126,7 @@ const groupScopes = [
 // outright — not groups, the login.
 const groupScopeList = groupScopes.join(" ");
 
-const poolScopes = [
+const poolWriteScope = [
   "space:social.grain.group?authority=*&skey=*",
   "collection=social.grain.gallery",
   "collection=social.grain.gallery.item",
@@ -138,6 +138,13 @@ const poolScopes = [
   "collection=social.grain.comment",
   "action=read&action=create&action=update&action=delete",
 ].join("&");
+
+// The same pool, read only, asked for alongside. Whoever signs in as a group
+// gets a grant narrowed to what their roles may do as it, and a group host
+// grants writing into a space as the group separately from reading it — so
+// the read has to be a scope of its own, or a group loses its own pool with
+// the writes. For a member it adds nothing the scope above does not.
+const poolScopes = `${poolWriteScope} space:social.grain.group?authority=*&skey=*&action=read`;
 
 export default defineConfig({
   relay: isProd ? "wss://bsky.network" : "ws://localhost:2583",
