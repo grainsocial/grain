@@ -360,6 +360,18 @@ describe("actor feed", () => {
     const { ids } = await feed("feed=actor&limit=50");
     expect(ids).toEqual([]);
   });
+
+  test("starts at an earlier point with before", async () => {
+    const { ids } = await feed(
+      `feed=actor&actor=${ALICE}&before=2025-01-01T00:00:00.000Z&limit=50`,
+    );
+    expect(ids).toEqual(["a-import"]);
+  });
+
+  test("ignores an unparseable before", async () => {
+    const { ids } = await feed(`feed=actor&actor=${ALICE}&before=not-a-date&limit=50`);
+    expect(ids).toEqual(expected);
+  });
 });
 
 describe("camera feed", () => {
