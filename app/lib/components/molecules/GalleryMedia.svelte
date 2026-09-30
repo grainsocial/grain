@@ -131,7 +131,7 @@
     >
       {#each photos as photo, i}
         <div class="slide" class:centered={needsFixedHeight || maxHeight != null}>
-          <div class="grain-image">
+          <div class="grain-image" class:letterboxed={needsFixedHeight && photoRatio(photo) < minRatio}>
             <svg class="spacer" viewBox="0 0 1 {1 / Math.max(photoRatio(photo), needsFixedHeight ? minRatio : photoRatio(photo))}"></svg>
             <img
               src={Math.abs(i - currentIndex) <= 1 ? (isDesktop ? photo.fullsize : photo.thumb) : ''}
@@ -247,6 +247,15 @@
     object-fit: cover;
     opacity: 0;
     transition: opacity 0.2s ease;
+  }
+/* A photo narrower than the shared frame (a vertical XPan under the 9:16
+   floor) is shown whole rather than cropped to the frame, with no fill
+   beside it. */
+.grain-image.letterboxed {
+    background: none;
+  }
+.grain-image.letterboxed img {
+    object-fit: contain;
   }
 .grain-image img:global(.loaded) {
     opacity: 1;
