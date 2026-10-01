@@ -6,6 +6,7 @@
 // and "your server cannot do this" look identical.
 
 import { InvalidRequestError } from "$hatk";
+import { isNotAuthorized, SpaceCredentialError } from "@hatk/hatk/spaces";
 import { getSpaceSupport, pdsEndpointFor } from "../helpers/spaceSupport.ts";
 import { SpaceError } from "./client.ts";
 
@@ -37,6 +38,12 @@ export async function throwSpaceError(err: unknown, db: Db, viewerDid: string): 
     throw new InvalidRequestError("Sign in again to open this gallery", "SessionExpired");
   }
 
+  // The space's authority will not issue this reader a credential. hatk names
+  // the refusal, which the authority answers with a 400.
+  if (isNotAuthorized(err)) {
+    throw new InvalidRequestError("Only members can see this", "NotAuthorized");
+  }
+
   // A PDS with no permissioned data answers the very first call — a delegation
   // token from the reader's own server — with a 404 for a method it does not
   // serve. Indistinguishable from "no such space" by status alone, so ask.
@@ -56,7 +63,7 @@ export async function throwSpaceError(err: unknown, db: Db, viewerDid: string): 
 
   // A repo host that cannot be reached or resolved is a failure of ours to
   // report, not of the reader to fix.
-  if (err instanceof SpaceError) {
+  if (err instanceof SpaceError || err instanceof SpaceCredentialError) {
     throw new InvalidRequestError(
       "This couldn't be loaded right now. Try again in a moment",
       "UpstreamFailed",
