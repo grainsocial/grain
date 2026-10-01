@@ -23,7 +23,7 @@ interface InviteRow {
 }
 
 export default defineQuery("social.grain.unspecced.listSharedGalleries", async (ctx) => {
-  const { ok, db, viewer, pds, params } = ctx;
+  const { ok, db, viewer, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const limit = Math.min(Number(params.limit) || 25, 50);
@@ -51,7 +51,7 @@ export default defineQuery("social.grain.unspecced.listSharedGalleries", async (
 
         try {
           const records = await listSpaceRecords(
-            pds,
+            ctx,
             viewer.did,
             row.space,
             authority,

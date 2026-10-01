@@ -27,7 +27,7 @@ export default defineProcedure("social.grain.unspecced.putPoolFavorite", async (
   const space = poolUri(group);
 
   try {
-    const mine = await listSpaceRecords(pds, viewer.did, space, viewer.did, COLLECTION);
+    const mine = await listSpaceRecords(ctx, viewer.did, space, viewer.did, COLLECTION);
     const existing = mine.find((r) => (r.value as { subject?: string }).subject === gallery);
 
     if (!on) {

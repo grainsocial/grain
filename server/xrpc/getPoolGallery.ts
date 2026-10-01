@@ -18,7 +18,7 @@ import { poolUri } from "../spaces/client.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 export default defineQuery("social.grain.unspecced.getPoolGallery", async (ctx) => {
-  const { ok, db, viewer, pds, params } = ctx;
+  const { ok, db, viewer, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const group = params.group as string;
@@ -26,7 +26,7 @@ export default defineQuery("social.grain.unspecced.getPoolGallery", async (ctx) 
   const rkey = params.rkey as string;
 
   try {
-    const found = (await readPool(pds, viewer.did, group)).find(
+    const found = (await readPool(ctx, viewer.did, group)).find(
       (g) => g.did === did && g.rkey === rkey,
     );
 

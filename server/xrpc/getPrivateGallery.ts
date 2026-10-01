@@ -26,7 +26,7 @@ interface ItemValue {
 }
 
 export default defineQuery("social.grain.unspecced.getPrivateGallery", async (ctx) => {
-  const { ok, db, viewer, pds, params } = ctx;
+  const { ok, db, viewer, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const space = params.space;
@@ -40,9 +40,9 @@ export default defineQuery("social.grain.unspecced.getPrivateGallery", async (ct
 
   try {
     const [galleries, items, photos] = await Promise.all([
-      listSpaceRecords(pds, viewer.did, space, authority, "social.grain.gallery"),
-      listSpaceRecords(pds, viewer.did, space, authority, "social.grain.gallery.item"),
-      listSpaceRecords(pds, viewer.did, space, authority, "social.grain.photo"),
+      listSpaceRecords(ctx, viewer.did, space, authority, "social.grain.gallery"),
+      listSpaceRecords(ctx, viewer.did, space, authority, "social.grain.gallery.item"),
+      listSpaceRecords(ctx, viewer.did, space, authority, "social.grain.photo"),
     ]);
 
     // An item names its photo by the at-uri the record would have in a public

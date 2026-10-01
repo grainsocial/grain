@@ -6,15 +6,19 @@
 //
 // What it proves is the part that cannot be checked against a mock: that a
 // reader who owns none of the data can mint a credential from a space they were
-// added to and pull records and blobs out of a host they have no session on,
-// with DPoP proofs this code signs itself.
+// added to and pull records out of a host they have no session on, presenting
+// it with hatk's HTTP message signatures.
 
 import { readFileSync } from "node:fs";
+import { generateSpaceSigKey, spaceSigHeaders } from "@hatk/hatk/spaces";
 import { beforeAll, describe, expect, test } from "vitest";
 import {
   listSpaceRecords,
   listSpaceRepos,
   type PdsCall,
+  parseSpaceUri,
+  resolvePds,
+  type SpaceReader,
   spaceUri,
 } from "../server/spaces/client.ts";
 
@@ -46,6 +50,49 @@ function pdsCallFor(account: Account, jwt: string): PdsCall {
   };
 }
 
+/**
+ * A SpaceReader over a password session — what hatk's handler context is in
+ * production, with `spaceCredential` doing the exchange `ctx.spaceCredential`
+ * does: a delegation token from the reader's PDS, traded at the authority for a
+ * credential bound to a fresh key, then presented signed for the repo read.
+ */
+function readerFor(account: Account, jwt: string): SpaceReader {
+  const pds = pdsCallFor(account, jwt);
+  return {
+    pds,
+    spaceCredential: async (space) => {
+      const { token } = (await pds("com.atproto.space.getDelegationToken", {
+        params: { space },
+      })) as { token: string };
+      const { authority } = parseSpaceUri(space);
+      const key = await generateSpaceSigKey();
+      const res = await fetch(
+        `${await resolvePds(authority)}/xrpc/com.atproto.space.getSpaceCredential`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            ...(await spaceSigHeaders(key, `Bearer ${token}`)),
+          },
+          body: JSON.stringify({ space }),
+        },
+      );
+      if (!res.ok) throw Object.assign(new Error(await res.text()), { status: res.status });
+      const { credential } = (await res.json()) as { credential: string };
+      return {
+        fetch: async (input, init) => {
+          const url = new URL(String(input));
+          const audience = url.searchParams.get("repo") ?? authority;
+          const headers = new Headers(init?.headers);
+          const signed = await spaceSigHeaders(key, `Atproto-Space ${credential}`, audience);
+          for (const [name, value] of Object.entries(signed)) headers.set(name, value);
+          return fetch(url, { ...init, headers });
+        },
+      };
+    },
+  };
+}
+
 async function login(account: Account): Promise<string> {
   const res = await fetch(`${account.pdsUrl}/xrpc/com.atproto.server.createSession`, {
     method: "POST",
@@ -65,16 +112,16 @@ const PIXEL = Buffer.from(
 describe.skipIf(!live)("permissioned spaces, live", () => {
   let author: Account;
   let reader: Account;
-  let authorPds: PdsCall;
-  let readerPds: PdsCall;
+  let authorPds: SpaceReader;
+  let readerPds: SpaceReader;
   let space: string;
   let closedSpace: string;
 
   beforeAll(async () => {
     author = JSON.parse(readFileSync(`${CREDS}/credentials-spacehost.json`, "utf8"));
     reader = JSON.parse(readFileSync(`${CREDS}/credentials-spacemember.json`, "utf8"));
-    authorPds = pdsCallFor(author, await login(author));
-    readerPds = pdsCallFor(reader, await login(reader));
+    authorPds = readerFor(author, await login(author));
+    readerPds = readerFor(reader, await login(reader));
 
     // A gallery is a space: skey is the gallery's rkey, authority is its author.
     const skey = `test${Date.now().toString(36)}`;
@@ -82,7 +129,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
 
     // The same body createPrivateGallery sends — the one spelling every server
     // that implements the proposal reads.
-    await authorPds("com.atproto.simplespace.createSpace", {
+    await authorPds.pds("com.atproto.simplespace.createSpace", {
       method: "POST",
       body: {
         did: author.did,
@@ -94,7 +141,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
         },
       },
     });
-    await authorPds("com.atproto.simplespace.addMember", {
+    await authorPds.pds("com.atproto.simplespace.addMember", {
       method: "POST",
       body: { space, did: reader.did },
     });
@@ -103,7 +150,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
     // about membership rather than about a space that does not exist.
     const closedSkey = `closed${Date.now().toString(36)}`;
     closedSpace = spaceUri(author.did, closedSkey);
-    await authorPds("com.atproto.simplespace.createSpace", {
+    await authorPds.pds("com.atproto.simplespace.createSpace", {
       method: "POST",
       body: {
         did: author.did,
@@ -115,7 +162,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
         },
       },
     });
-    await authorPds("com.atproto.space.createRecord", {
+    await authorPds.pds("com.atproto.space.createRecord", {
       method: "POST",
       body: {
         space: closedSpace,
@@ -148,7 +195,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
     });
     const { blob } = (await upload.json()) as { blob: { ref: { $link: string } } };
 
-    await authorPds("com.atproto.space.applyWrites", {
+    await authorPds.pds("com.atproto.space.applyWrites", {
       method: "POST",
       body: {
         space,
@@ -208,7 +255,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
 
   test("a member reads the author's repo with a space credential", async () => {
     // The reader has no session on the author's PDS at all. Everything here
-    // rests on the credential the authority issued and the DPoP proof we sign.
+    // rests on the credential the authority issued and the signature we make.
     const photos = await listSpaceRecords(
       readerPds,
       reader.did,
@@ -222,7 +269,7 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
   });
 
   test("a member reads the writer set from the authority", async () => {
-    const repos = await listSpaceRepos(readerPds, reader.did, space);
+    const repos = await listSpaceRepos(readerPds, space);
 
     expect(repos.map((r) => r.did)).toContain(author.did);
   });

@@ -15,7 +15,7 @@
 // candidate is confirmed the way the host decides it: a credential for the
 // members space, which only members may read.
 
-import { forgetCredential, type PdsCall, spaceCredential } from "../spaces/client.ts";
+import type { PdsCall, SpaceReader } from "../spaces/client.ts";
 
 export const MEMBERS_SPACE_TYPE = "fyi.opensocial.members";
 const ACCEPTANCE = "fyi.opensocial.acceptance";
@@ -31,7 +31,13 @@ export async function candidateGroups(pds: PdsCall): Promise<string[]> {
   let cursor: string | undefined;
   do {
     const res = (await pds("com.atproto.space.listSpaces", {
-      params: { type: MEMBERS_SPACE_TYPE, limit: 100, ...(cursor ? { cursor } : {}) },
+      // `spaceType` is the reference PDS's name for the filter, `type` pds.js's.
+      params: {
+        spaceType: MEMBERS_SPACE_TYPE,
+        type: MEMBERS_SPACE_TYPE,
+        limit: 100,
+        ...(cursor ? { cursor } : {}),
+      },
     })) as { spaces?: { uri: string }[]; cursor?: string };
     for (const s of res.spaces ?? []) {
       const did = /^at:\/\/(did:[^/]+)\/space\//.exec(s.uri)?.[1];
@@ -64,7 +70,7 @@ export async function isGroup(db: Db, did: string): Promise<boolean> {
 
 // A refusal is remembered briefly, so a page reloaded by a non-member does not
 // mint a delegation token each time. A yes needs no cache of its own:
-// spaceCredential already holds the credential.
+// hatk already holds the credential.
 const refused = new Map<string, number>();
 const REFUSED_TTL_MS = 2 * 60_000;
 
@@ -75,7 +81,7 @@ const REFUSED_TTL_MS = 2 * 60_000;
  */
 export async function isMember(
   db: Db,
-  pds: PdsCall,
+  reader: SpaceReader,
   viewerDid: string,
   group: string,
   opts: { fresh?: boolean } = {},
@@ -84,7 +90,7 @@ export async function isMember(
   const key = `${viewerDid} ${group}`;
   if (!opts.fresh && Date.now() - (refused.get(key) ?? 0) < REFUSED_TTL_MS) return false;
   try {
-    await spaceCredential(pds, viewerDid, membersSpaceOf(group));
+    await reader.spaceCredential(membersSpaceOf(group));
     refused.delete(key);
     return true;
   } catch {
@@ -94,10 +100,10 @@ export async function isMember(
 }
 
 /** The groups the viewer is in: their PDS's candidates, each confirmed with the host. */
-export async function groupsOf(db: Db, pds: PdsCall, viewerDid: string): Promise<string[]> {
+export async function groupsOf(db: Db, reader: SpaceReader, viewerDid: string): Promise<string[]> {
   if (await isGroup(db, viewerDid)) return [];
-  const candidates = await candidateGroups(pds);
-  const confirmed = await Promise.all(candidates.map((g) => isMember(db, pds, viewerDid, g)));
+  const candidates = await candidateGroups(reader.pds);
+  const confirmed = await Promise.all(candidates.map((g) => isMember(db, reader, viewerDid, g)));
   return candidates.filter((_, i) => confirmed[i]);
 }
 
@@ -107,8 +113,12 @@ export function forgetRefusal(viewerDid: string, group: string) {
 }
 
 /** After leaving: the credential still cached would say they are in. */
-export function forgetMembership(viewerDid: string, group: string) {
-  forgetCredential(viewerDid, membersSpaceOf(group));
+export function forgetMembership(
+  reader: { forgetSpaceCredential: (space: string) => void },
+  viewerDid: string,
+  group: string,
+) {
+  reader.forgetSpaceCredential(membersSpaceOf(group));
   refused.set(`${viewerDid} ${group}`, Date.now());
 }
 

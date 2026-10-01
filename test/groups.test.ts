@@ -177,7 +177,7 @@ beforeEach(() => {
       // The host admits Alice to the club's members space and nobody else.
       if (url === "https://host.example/xrpc/com.atproto.space.getSpaceCredential") {
         const { space } = JSON.parse(init?.body ?? "{}");
-        const token = String(init?.headers?.authorization ?? "");
+        const token = new Headers(init?.headers).get("authorization") ?? "";
         return space === membersSpaceOf(CLUB) && token === `Bearer token-${ALICE}`
           ? json({ credential: "cred" })
           : new Response(JSON.stringify({ error: "UserNotAuthorized" }), { status: 400 });
@@ -303,7 +303,23 @@ describe("groupsOf", () => {
       listCalls.push({ nsid, ...opts });
       return pages[listCalls.length - 1] ?? { spaces: [] };
     });
-    return { pds, listCalls };
+    // The viewer's side of the exchange, against the host stood in for above.
+    const reader = {
+      pds,
+      spaceCredential: async (space: string) => {
+        const { token } = (await pds("com.atproto.space.getDelegationToken")) as {
+          token: string;
+        };
+        const res = await fetch("https://host.example/xrpc/com.atproto.space.getSpaceCredential", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}` },
+          body: JSON.stringify({ space }),
+        });
+        if (!res.ok) throw Object.assign(new Error("refused"), { status: res.status });
+        return { fetch };
+      },
+    };
+    return { pds, reader, listCalls };
   };
 
   test("asks the viewer's PDS for their members spaces", async () => {
@@ -311,7 +327,7 @@ describe("groupsOf", () => {
     expect(await candidateGroups(pds)).toEqual([CLUB]);
     expect(listCalls[0]).toMatchObject({
       nsid: "com.atproto.space.listSpaces",
-      params: { type: "fyi.opensocial.members" },
+      params: { spaceType: "fyi.opensocial.members", type: "fyi.opensocial.members" },
     });
   });
 
@@ -324,23 +340,23 @@ describe("groupsOf", () => {
   });
 
   test("keeps only the candidates the host admits", async () => {
-    const { pds } = pdsFor(ALICE, [
+    const { reader } = pdsFor(ALICE, [
       { spaces: [{ uri: membersSpaceOf(CLUB) }, { uri: membersSpaceOf(QUIET) }] },
     ]);
-    expect(await groupsOf(server.db, pds, ALICE)).toEqual([CLUB]);
+    expect(await groupsOf(server.db, reader, ALICE)).toEqual([CLUB]);
   });
 
   test("drops an acceptance the host never admitted", async () => {
     // Bob wrote one into the club's members space; his PDS lists it anyway.
-    const { pds } = pdsFor(BOB, [{ spaces: [{ uri: membersSpaceOf(CLUB) }] }]);
-    expect(await groupsOf(server.db, pds, BOB)).toEqual([]);
+    const { reader } = pdsFor(BOB, [{ spaces: [{ uri: membersSpaceOf(CLUB) }] }]);
+    expect(await groupsOf(server.db, reader, BOB)).toEqual([]);
   });
 
   test("never asks when the viewer is a group", async () => {
     // Signed in as a group, the grant has no members-space scope — its host
     // withholds it — so the question could only be refused.
-    const { pds, listCalls } = pdsFor(CLUB, [{ spaces: [{ uri: membersSpaceOf(QUIET) }] }]);
-    expect(await groupsOf(server.db, pds, CLUB)).toEqual([]);
+    const { pds, reader, listCalls } = pdsFor(CLUB, [{ spaces: [{ uri: membersSpaceOf(QUIET) }] }]);
+    expect(await groupsOf(server.db, reader, CLUB)).toEqual([]);
     expect(listCalls).toEqual([]);
     expect(pds).not.toHaveBeenCalled();
   });

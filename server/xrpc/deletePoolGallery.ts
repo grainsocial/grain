@@ -34,7 +34,7 @@ export default defineProcedure("social.grain.unspecced.deletePoolGallery", async
 
   let items: { rkey: string; value: unknown }[];
   try {
-    items = await listSpaceRecords(pds, viewer.did, space, viewer.did, "social.grain.gallery.item");
+    items = await listSpaceRecords(ctx, viewer.did, space, viewer.did, "social.grain.gallery.item");
   } catch (err) {
     return throwSpaceError(err, db, viewer.did);
   }

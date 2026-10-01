@@ -12,8 +12,8 @@ import {
   blobCid,
   listSpaceRecords,
   listSpaceRepos,
-  type PdsCall,
   poolUri,
+  type SpaceReader,
   type SpaceRecord,
 } from "../spaces/client.ts";
 
@@ -98,12 +98,12 @@ const selfUri = (did: string, collection: string, rkey: string) =>
  * (one pool asked for by name) or a pool to skip (a feed across many).
  */
 export async function readPool(
-  pds: PdsCall,
+  reader: SpaceReader,
   viewerDid: string,
   group: string,
 ): Promise<PoolGallery[]> {
   const space = poolUri(group);
-  const repos = await listSpaceRepos(pds, viewerDid, space);
+  const repos = await listSpaceRepos(reader, space);
   const perRepo = await Promise.all(
     repos.map(async (repo) => {
       // Five collections, because that is what a gallery in a pool is made of:
@@ -113,11 +113,11 @@ export async function readPool(
       // commenter's repo, which is why this is a read per repo and not per
       // gallery.
       const [galleries, items, photos, favorites, comments] = await Promise.all([
-        listSpaceRecords(pds, viewerDid, space, repo.did, "social.grain.gallery"),
-        listSpaceRecords(pds, viewerDid, space, repo.did, "social.grain.gallery.item"),
-        listSpaceRecords(pds, viewerDid, space, repo.did, "social.grain.photo"),
-        listSpaceRecords(pds, viewerDid, space, repo.did, "social.grain.favorite"),
-        listSpaceRecords(pds, viewerDid, space, repo.did, "social.grain.comment"),
+        listSpaceRecords(reader, viewerDid, space, repo.did, "social.grain.gallery"),
+        listSpaceRecords(reader, viewerDid, space, repo.did, "social.grain.gallery.item"),
+        listSpaceRecords(reader, viewerDid, space, repo.did, "social.grain.photo"),
+        listSpaceRecords(reader, viewerDid, space, repo.did, "social.grain.favorite"),
+        listSpaceRecords(reader, viewerDid, space, repo.did, "social.grain.comment"),
       ]);
       return { did: repo.did, galleries, items, photos, favorites, comments };
     }),

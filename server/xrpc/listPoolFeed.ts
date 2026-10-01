@@ -23,20 +23,20 @@ import { type PoolGallery, readPool } from "../helpers/pool.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 export default defineQuery("social.grain.unspecced.listPoolFeed", async (ctx) => {
-  const { ok, db, viewer, pds, params } = ctx;
+  const { ok, db, viewer, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const limit = Math.min(Number(params.limit) || 30, 100);
 
   const groups = (await isGroup(db, viewer.did))
     ? [viewer.did]
-    : await groupsOf(db, pds, viewer.did);
+    : await groupsOf(db, ctx, viewer.did);
   if (groups.length === 0) return ok({ galleries: [], groups: [] });
 
   // One pool at a time would be one round trip to two hosts per group; they do
   // not depend on each other, so they go together. `allSettled`, because a
   // refusal from one group's host is a pool to skip.
-  const settled = await Promise.allSettled(groups.map((group) => readPool(pds, viewer.did, group)));
+  const settled = await Promise.allSettled(groups.map((group) => readPool(ctx, viewer.did, group)));
   // Every pool refusing is not "an empty feed" — it is the session or the
   // network, and it gets reported like any other failed space read.
   const reachable = settled.filter((r) => r.status === "fulfilled");

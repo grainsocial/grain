@@ -19,14 +19,14 @@ import { poolUri } from "../spaces/client.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 export default defineQuery("social.grain.unspecced.listPoolGalleries", async (ctx) => {
-  const { ok, db, viewer, pds, params } = ctx;
+  const { ok, db, viewer, params } = ctx;
   if (!viewer) throw new InvalidRequestError("Authentication required");
 
   const group = params.group as string;
   const limit = Math.min(Number(params.limit) || 50, 100);
 
   try {
-    const galleries = (await readPool(pds, viewer.did, group)).slice(0, limit);
+    const galleries = (await readPool(ctx, viewer.did, group)).slice(0, limit);
 
     // Whose gallery it is, in the words grain uses everywhere else. A DID
     // grain has never indexed keeps its row — the gallery is still readable,

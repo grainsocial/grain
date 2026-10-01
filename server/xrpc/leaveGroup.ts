@@ -12,6 +12,6 @@ export default defineProcedure("social.grain.unspecced.leaveGroup", async (ctx) 
   });
   if (!r.ok)
     throw new InvalidRequestError(r.body?.message ?? `leave failed (${r.status})`, r.body?.error);
-  forgetMembership(viewer.did, input.group);
+  forgetMembership(ctx, viewer.did, input.group);
   return ok({});
 });

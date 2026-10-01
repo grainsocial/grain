@@ -30,7 +30,8 @@ export default defineQuery("social.grain.unspecced.listPrivateGalleries", async 
 
   const body = await pds("com.atproto.space.listSpaces", {
     method: "GET",
-    params: { type: GALLERY_SPACE_TYPE, limit },
+    // `spaceType` is the reference PDS's name for the filter, `type` pds.js's.
+    params: { spaceType: GALLERY_SPACE_TYPE, type: GALLERY_SPACE_TYPE, limit },
   });
 
   // listSpaces answers with the spaces this account has written into, which is
@@ -62,7 +63,7 @@ export default defineQuery("social.grain.unspecced.listPrivateGalleries", async 
       let createdAt: string | undefined;
       try {
         const records = await listSpaceRecords(
-          pds,
+          ctx,
           viewer.did,
           space.uri,
           viewer.did,
