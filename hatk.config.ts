@@ -166,6 +166,12 @@ export default defineConfig({
   // DID_PLC_URL is what the rest of the server reads too; a dev stack on
   // other ports sets it, and reading 2582 regardless resolves nothing there.
   plc: process.env.DID_PLC_URL ?? (isProd ? "https://plc.directory" : "http://localhost:2582"),
+  // Classifier scoring for the /admin review queue, by Clef on Workers AI. The
+  // account and token come from CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_TOKEN;
+  // with either unset, the classifiers under server/classifiers still load but
+  // no scan can run and nothing is queued. The thresholds were tuned on `clef`,
+  // not `clef-flash`, which scored noticeably worse on grain's moderated data.
+  clef: { model: "clef" },
   port: devPort,
   cdn: isProd
     ? {
