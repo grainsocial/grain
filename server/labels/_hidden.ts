@@ -39,3 +39,18 @@ export function hideSelfLabelsFilter(selfLabelTable: string, uriExpr: string): s
     WHERE sl.parent_uri = ${uriExpr} AND sl.val IN (${inList})
   )`;
 }
+
+/** SQL fragment: NOT EXISTS subquery filtering rows carrying any active label,
+ *  whatever its severity. For surfaces that cannot show a warning or a blur,
+ *  such as a search engine's index, where the only safe answer is to leave
+ *  labeled content out. */
+export function unlabeledFilter(uriExpr: string): string {
+  return `NOT EXISTS (
+    SELECT 1 FROM _labels l
+    WHERE l.uri = ${uriExpr} AND l.neg = 0
+      AND NOT EXISTS (
+        SELECT 1 FROM _labels l2
+        WHERE l2.uri = l.uri AND l2.val = l.val AND l2.neg = 1 AND l2.cts > l.cts
+      )
+  )`;
+}

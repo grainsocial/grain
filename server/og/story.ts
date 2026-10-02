@@ -12,7 +12,7 @@ export default defineOG("/og/profile/:actor/story/:rkey", async (ctx) => {
   const storyUri = `at://${did}/social.grain.story/${rkey}`;
 
   const rows = (await db.query(
-    `SELECT uri, did, cid, media FROM "social.grain.story" WHERE uri = $1`,
+    `SELECT uri, did, cid, media FROM "social.grain.story" WHERE uri = $1 AND space IS NULL`,
     [storyUri],
   )) as Array<{
     uri: string;

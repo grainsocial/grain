@@ -3,6 +3,7 @@ import type { GrainActorProfile, Photo } from "$hatk";
 import { allFonts } from "./fonts.ts";
 import { calculateCollageLayout } from "./collage.ts";
 import { resolveHandle } from "../helpers/resolveHandle.ts";
+import { unlabeledFilter } from "../labels/_hidden.ts";
 
 export default defineOG("/og/profile/:actor/gallery/:rkey", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
@@ -12,9 +13,10 @@ export default defineOG("/og/profile/:actor/gallery/:rkey", async (ctx) => {
 
   const galleryUri = `at://${did}/social.grain.gallery/${rkey}`;
 
-  // Fetch gallery record
+  // Fetch gallery record. A gallery in a space shares its URI with nothing
+  // public, but its row is indexed all the same, and this card goes to anyone.
   const rows = (await db.query(
-    `SELECT uri, did, cid, title, description FROM "social.grain.gallery" WHERE uri = $1`,
+    `SELECT uri, did, cid, title, description FROM "social.grain.gallery" WHERE uri = $1 AND space IS NULL`,
     [galleryUri],
   )) as Array<{
     uri: string;
@@ -50,11 +52,22 @@ export default defineOG("/og/profile/:actor/gallery/:rkey", async (ctx) => {
   const author = profiles.get(did);
   const avatarRef = author ? blobUrl(did, author.value.avatar) : null;
 
+  // A link preview has no way to blur or warn, so a gallery carrying any
+  // label, from a labeler or its author, goes out as a title card with no
+  // photos. Same for an author whose account is labeled.
+  const labeled = (await db.query(
+    `SELECT 1 WHERE NOT (${unlabeledFilter("$1")} AND ${unlabeledFilter("$2")})
+        OR EXISTS (SELECT 1 FROM "social.grain.gallery__labels_self_labels" WHERE parent_uri = $1)`,
+    [galleryUri, did],
+  )) as unknown[];
+
   // Fetch gallery photos (up to 6)
-  const itemRows = (await db.query(
-    `SELECT item FROM "social.grain.gallery.item" WHERE gallery = $1 ORDER BY position ASC LIMIT 6`,
-    [galleryUri],
-  )) as Array<{ item: string }>;
+  const itemRows = labeled.length
+    ? []
+    : ((await db.query(
+        `SELECT item FROM "social.grain.gallery.item" WHERE gallery = $1 AND space IS NULL ORDER BY position ASC LIMIT 6`,
+        [galleryUri],
+      )) as Array<{ item: string }>);
 
   const photoUris = itemRows.map((r) => r.item);
   const photoRecords =

@@ -347,6 +347,88 @@ describe("story card", () => {
   });
 });
 
+describe("labeled and space galleries", () => {
+  // Its own account, so the collage counts in the profile tests above stay put.
+  const MIXED = "did:plc:mixed";
+
+  async function galleryWithPhoto(rkey: string, createdAt: string, space: string | null = null) {
+    const uri = `at://${MIXED}/social.grain.gallery/${rkey}`;
+    const photoUri = `at://${MIXED}/social.grain.photo/${rkey}`;
+    await server.db.run(
+      `INSERT INTO "social.grain.gallery" (uri, cid, did, space, indexed_at, title, created_at)
+       VALUES ($1, $2, $3, $4, 'i', $5, $6)`,
+      [uri, `cid-${rkey}`, MIXED, space, `Title ${rkey}`, createdAt],
+    );
+    await server.db.run(
+      `INSERT INTO "social.grain.photo" (uri, cid, did, space, indexed_at, photo, aspect_ratio, created_at)
+       VALUES ($1, $2, $3, $4, 'i', $5, '{"width":3,"height":2}', $6)`,
+      [photoUri, `cid-p-${rkey}`, MIXED, space, JSON.stringify(blob(`bafy-${rkey}`)), createdAt],
+    );
+    await server.db.run(
+      `INSERT INTO "social.grain.gallery.item" (uri, cid, did, space, indexed_at, created_at, gallery, item, position)
+       VALUES ($1, $2, $3, $4, 'i', $5, $6, $7, 0)`,
+      [
+        `at://${MIXED}/social.grain.gallery.item/${rkey}`,
+        `cid-i-${rkey}`,
+        MIXED,
+        space,
+        createdAt,
+        uri,
+        photoUri,
+      ],
+    );
+    return uri;
+  }
+
+  beforeAll(async () => {
+    await server.db.run(
+      `INSERT INTO "social.grain.actor.profile" (uri, cid, did, indexed_at, display_name, created_at)
+       VALUES ($1, 'cid-pm', $2, 'i', 'Mixed', '2026-01-01')`,
+      [`at://${MIXED}/social.grain.actor.profile/self`, MIXED],
+    );
+    await galleryWithPhoto("clean", "2026-05-01");
+    const labeled = await galleryWithPhoto("labeled", "2026-05-02");
+    await server.db.run(
+      `INSERT INTO _labels (src, uri, val, neg, cts) VALUES ('did:plc:mod', $1, 'porn', 0, '2026-05-03')`,
+      [labeled],
+    );
+    const selfLabeled = await galleryWithPhoto("selflabeled", "2026-05-04");
+    await server.db.run(
+      `INSERT INTO "social.grain.gallery__labels_self_labels" (parent_uri, parent_did, val) VALUES ($1, $2, 'nudity')`,
+      [selfLabeled, MIXED],
+    );
+    await galleryWithPhoto(
+      "pooled",
+      "2026-05-05",
+      "at://did:plc:group/space/social.grain.group/pool",
+    );
+  });
+
+  test("a labeled gallery's card carries its title but none of its photos", async () => {
+    for (const rkey of ["labeled", "selflabeled"]) {
+      const { ctx, fetched } = ctxFor({ actor: MIXED, rkey });
+      const { element } = await galleryOg.generate(ctx);
+      expect(textOf(element)).toContain(`Title ${rkey}`);
+      expect(fetched.filter((u) => u.includes(`bafy-${rkey}`))).toEqual([]);
+    }
+  });
+
+  test("a gallery in a space has no public card", async () => {
+    const { ctx, fetched } = ctxFor({ actor: MIXED, rkey: "pooled" });
+    const { element } = await galleryOg.generate(ctx);
+    expect(textOf(element)).toEqual(["Gallery not found"]);
+    expect(fetched).toEqual([]);
+  });
+
+  test("the profile collage skips labeled and space galleries", async () => {
+    const { ctx, fetched } = ctxFor({ actor: MIXED });
+    await profileOg.generate(ctx);
+    const photos = fetched.filter((u) => u.includes("/bafy-") && !u.includes("avatar"));
+    expect(photos).toHaveLength(1);
+    expect(photos[0]).toContain("bafy-clean");
+  });
+});
+
 describe("fonts", () => {
   test("loads the brand font and the fallbacks", () => {
     expect(syneBrandFont()).toMatchObject({ name: "Syne", weight: 800, style: "normal" });

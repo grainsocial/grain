@@ -3,6 +3,7 @@ import type { GrainActorProfile, Photo } from "$hatk";
 import { allFonts } from "./fonts.ts";
 import { calculateCollageLayout } from "./collage.ts";
 import { resolveHandle } from "../helpers/resolveHandle.ts";
+import { unlabeledFilter } from "../labels/_hidden.ts";
 
 export default defineOG("/og/profile/:actor", async (ctx) => {
   const { db, params, fetchImage, lookup, blobUrl } = ctx;
@@ -21,6 +22,12 @@ export default defineOG("/og/profile/:actor", async (ctx) => {
     `SELECT gi.item, g.uri AS gallery FROM "social.grain.gallery.item" gi
        JOIN "social.grain.gallery" g ON g.uri = gi.gallery
        WHERE g.did = $1 AND gi.position = 0
+         AND g.space IS NULL AND gi.space IS NULL
+         AND ${unlabeledFilter("g.uri")}
+         AND ${unlabeledFilter("g.did")}
+         AND NOT EXISTS (
+           SELECT 1 FROM "social.grain.gallery__labels_self_labels" sl WHERE sl.parent_uri = g.uri
+         )
        ORDER BY g.created_at DESC
        LIMIT 10`,
     [did],
