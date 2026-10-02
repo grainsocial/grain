@@ -171,7 +171,11 @@ export default defineConfig({
   // with either unset, the classifiers under server/classifiers still load but
   // no scan can run and nothing is queued. The thresholds were tuned on `clef`,
   // not `clef-flash`, which scored noticeably worse on grain's moderated data.
-  clef: { model: "clef" },
+  //
+  // scoreOnIndex scores each new post as it is indexed, so a report lands within
+  // seconds. It covers only content written after it was first switched on; the
+  // library from before then is scored only by a manual scan from /admin.
+  clef: { model: "clef", scoreOnIndex: true },
   port: devPort,
   cdn: isProd
     ? {
