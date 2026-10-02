@@ -15,7 +15,7 @@
   }
 </script>
 
-<OGMeta title="Following - grain" />
+<OGMeta title="Following - grain" noindex />
 <FeedTabs />
 <PullToRefresh onRefresh={refresh}>
   {#if !$viewer?.did}

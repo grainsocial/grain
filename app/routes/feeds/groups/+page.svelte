@@ -74,7 +74,7 @@
   )
 </script>
 
-<OGMeta title="Groups — grain" />
+<OGMeta title="Groups - grain" noindex />
 
 <FeedTabs />
 

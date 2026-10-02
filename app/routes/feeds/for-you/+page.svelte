@@ -15,7 +15,7 @@
   }
 </script>
 
-<OGMeta title="For You - grain" />
+<OGMeta title="For You - grain" noindex />
 <FeedTabs />
 <PullToRefresh onRefresh={refresh}>
   {#if !$viewer?.did}

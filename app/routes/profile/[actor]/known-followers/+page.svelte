@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import ProfileCard from '$lib/components/molecules/ProfileCard.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
@@ -15,6 +16,8 @@
     enabled: !!$viewer?.did,
   }))
 </script>
+
+<OGMeta title="Followers you know - grain" noindex />
 
 <PageHeading title="Followers you know" back />
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import type { Snippet } from 'svelte'
   import { page } from '$app/state'
   import {
@@ -61,6 +62,8 @@
       : page.url.pathname.startsWith(href)
   }
 </script>
+
+<OGMeta title="Settings - grain" noindex />
 
 <div class="settings-shell" class:index={isIndex}>
   <aside class="settings-nav">

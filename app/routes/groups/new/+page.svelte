@@ -56,7 +56,7 @@
   }
 </script>
 
-<OGMeta title="Start a group — grain" />
+<OGMeta title="Start a group - grain" noindex />
 <DetailHeader label="Start a group" />
 
 {#if noSpaces}

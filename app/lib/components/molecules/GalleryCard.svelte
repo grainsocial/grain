@@ -201,6 +201,7 @@
 
   <GalleryMedia
     {photos}
+    title={gallery.title}
     bind:currentIndex
     obscured={labelResult.action === 'warn-media' && !revealed}
     warnLabel={labelResult.name}

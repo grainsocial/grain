@@ -22,7 +22,7 @@
   const canStart = $derived($isAuthenticated && !blocked && !!host.data?.handleDomain)
 </script>
 
-<OGMeta title="Groups — grain" />
+<OGMeta title="Groups - grain" />
 <DetailHeader label="Groups">
   {#snippet actions()}
     {#if canStart}

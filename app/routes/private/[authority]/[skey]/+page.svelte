@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import GalleryCard from '$lib/components/molecules/GalleryCard.svelte'
   import GalleryCardSkeleton from '$lib/components/molecules/GalleryCardSkeleton.svelte'
@@ -113,6 +114,8 @@
     }
   }
 </script>
+
+<OGMeta title="Private gallery - grain" noindex />
 
 <DetailHeader label={gallery.data?.gallery?.title ?? 'Private gallery'} />
 

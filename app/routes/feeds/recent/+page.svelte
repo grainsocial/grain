@@ -41,7 +41,7 @@
   }
 </script>
 
-<OGMeta title="grain" />
+<OGMeta title="grain" noindex />
 
 <FeedTabs />
 

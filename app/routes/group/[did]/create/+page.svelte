@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import Button from '$lib/components/atoms/Button.svelte'
   import Field from '$lib/components/atoms/Field.svelte'
@@ -108,6 +109,8 @@
     }
   }
 </script>
+
+<OGMeta title="Create - grain" noindex />
 
 <FileDropZone
   enabled={!publishing && photos.length < MAX_PHOTOS}

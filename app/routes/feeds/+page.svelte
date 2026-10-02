@@ -94,7 +94,7 @@
   }
 </script>
 
-<OGMeta title="My Feeds - grain" />
+<OGMeta title="My Feeds - grain" noindex />
 <PageHeading title="My Feeds" back />
 
 <div class="feeds-page" bind:this={listEl}>

@@ -1,6 +1,9 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import { page } from '$app/state'
 </script>
+
+<OGMeta title="{page.status} - grain" noindex />
 
 <div class="error-page">
   <span class="error-code">{page.status}</span>

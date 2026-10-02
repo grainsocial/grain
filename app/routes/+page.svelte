@@ -12,6 +12,8 @@
   import { viewer } from '$lib/stores'
   import { goto } from '$app/navigation'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import { siteJsonLd } from '$lib/seo'
+  import { page } from '$app/state'
 
   const CORE_FEEDS = new Set(['recent', 'following', 'foryou', 'groups'])
 
@@ -73,7 +75,7 @@
   }
 </script>
 
-<OGMeta title="grain" />
+<OGMeta title="Grain: photo sharing on the AT Protocol" jsonLd={siteJsonLd(page.url.origin)} />
 
 <FeedTabs />
 

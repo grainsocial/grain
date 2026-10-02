@@ -10,6 +10,8 @@
 
   let {
     photos,
+    /** The gallery's title, which names a photo that has no alt text of its own. */
+    title = null,
     currentIndex = $bindable(0),
     /** Cap the media height (detail view). Portrait photos otherwise run past
         the viewport. Unset in the feed, where width drives height. */
@@ -24,6 +26,7 @@
     renderedRatio = $bindable(null),
   }: {
     photos: PhotoView[]
+    title?: string | null
     currentIndex?: number
     maxHeight?: number | null
     obscured?: boolean
@@ -135,7 +138,7 @@
             <svg class="spacer" viewBox="0 0 1 {1 / Math.max(photoRatio(photo), needsFixedHeight ? minRatio : photoRatio(photo))}"></svg>
             <img
               src={Math.abs(i - currentIndex) <= 1 ? (isDesktop ? photo.fullsize : photo.thumb) : ''}
-              alt={photo.alt ?? ''}
+              alt={photo.alt || (title ? `${title}, photo ${i + 1} of ${photos.length}` : '')}
               decoding="async"
               loading="lazy"
               onload={(e) => (e.currentTarget as HTMLImageElement).classList.add('loaded')}

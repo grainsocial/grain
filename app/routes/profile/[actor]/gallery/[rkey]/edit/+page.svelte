@@ -441,7 +441,7 @@
   }
 </script>
 
-<OGMeta title="Edit gallery - grain" />
+<OGMeta title="Edit gallery - grain" noindex />
 
 <FileDropZone
   enabled={!!gallery && !processing && !saving}

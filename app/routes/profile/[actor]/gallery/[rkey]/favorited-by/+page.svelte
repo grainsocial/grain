@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import ProfileCard from '$lib/components/molecules/ProfileCard.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
@@ -12,6 +13,8 @@
   const favorites = createQuery(() => galleryFavoritesQuery(galleryUri, $viewer?.did))
   const items = $derived(favorites.data?.items ?? [])
 </script>
+
+<OGMeta title="Favorites - grain" noindex />
 
 <PageHeading title="Favorited by" back />
 

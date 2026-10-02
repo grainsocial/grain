@@ -368,7 +368,7 @@
   bind:active={fileDragging}
 />
 
-<OGMeta title="Create - grain" />
+<OGMeta title="Create - grain" noindex />
 <div class="create-page">
   <DetailHeader
     label={step === 3 ? 'Add image descriptions' : 'Create a gallery'}

@@ -70,7 +70,7 @@
 
 </script>
 
-<OGMeta title="Notifications - grain" />
+<OGMeta title="Notifications - grain" noindex />
 
 <div class="notifications">
   <PageHeading title="Notifications" />

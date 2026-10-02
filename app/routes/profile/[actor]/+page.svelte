@@ -13,6 +13,7 @@
   import { callXrpc } from '$hatk/client'
   import { share } from '$lib/utils/share'
   import { profilePath } from '$lib/utils'
+  import { snippet, labelsBlockIndexing, profileJsonLd } from '$lib/seo'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
   import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery, groupQuery } from '$lib/queries'
@@ -196,6 +197,7 @@
     </div>
   </div>
 {:else if profile.data && !profile.data.cid}
+  <OGMeta title="Profile not found on Grain" noindex />
   <DetailHeader label="Not Found" />
   <div class="not-found">
     <p>This user doesn't have a Grain profile yet.</p>
@@ -205,7 +207,17 @@
   </div>
 {:else if profile.data}
   {@const p = profile.data}
-  <OGMeta title="{p.displayName || p.handle || 'Profile'} (@{p.handle || did}) — Grain" description="{p.handle ? `@${p.handle}` : did} on Grain" image="/og/profile/{did}" />
+  {@const name = p.displayName || p.handle || 'Profile'}
+  <OGMeta
+    title="{name} (@{p.handle || did}) on Grain"
+    description={snippet(p.description) ?? `Photo galleries by ${name} (@${p.handle || did}) on Grain.`}
+    image="/og/profile/{did}"
+    imageAlt="Recent photos by {name}"
+    url="{page.url.origin}{profileHref}"
+    type="profile"
+    noindex={labelsBlockIndexing(p.labels)}
+    jsonLd={profileJsonLd(p, page.url.origin, profileHref)}
+  />
 
   <div class="mobile-back"><DetailHeader label={p.displayName || '\u00A0'} /></div>
 
@@ -294,6 +306,7 @@
 {/if}
 
 {#if profile.isError}
+  <OGMeta title="Profile not found on Grain" noindex />
   <DetailHeader label="Not Found" />
   <div class="not-found">
     <p>This user doesn't have a Grain profile yet.</p>

@@ -4,6 +4,7 @@
   import AvatarLightbox from '$lib/components/atoms/AvatarLightbox.svelte'
   import DetailHeader from '$lib/components/molecules/DetailHeader.svelte'
   import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import { snippet } from '$lib/seo'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
   import OverflowMenu from '$lib/components/atoms/OverflowMenu.svelte'
   import RichText from '$lib/components/atoms/RichText.svelte'
@@ -154,7 +155,7 @@
   {@const g = group.data}
   {@const name = g.displayName || g.handle}
   <!-- The card that goes out to anyone: never the size of the pool or the roster. -->
-  <OGMeta title="{name} (@{g.handle}) — Groups — Grain" description={g.description ?? `${name} on Grain`} />
+  <OGMeta title="{name} (@{g.handle}), a group on Grain" description={snippet(g.description) ?? `${name}, a photo group on Grain.`} />
 
   <div class="mobile-back"><DetailHeader label={name} /></div>
 

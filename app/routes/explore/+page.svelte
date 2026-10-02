@@ -17,7 +17,7 @@
   const items = $derived(feed.data?.items ?? [])
 </script>
 
-<OGMeta title="Explore — grain" description="Browse grain by camera and place." />
+<OGMeta title="Explore - grain" description="Browse grain by camera and place." />
 
 <div class="explore">
   <PageHeading title="Explore" />

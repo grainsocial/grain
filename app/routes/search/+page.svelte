@@ -20,7 +20,7 @@
   const people = createQuery(() => ({ ...searchProfilesQuery(query), enabled: activeTab === 'people' && !!query }))
 </script>
 
-<OGMeta title="Search - grain" />
+<OGMeta title="Search - grain" noindex />
 <PageHeading title='"{query}"' back />
 
 <div class="search-tabs">

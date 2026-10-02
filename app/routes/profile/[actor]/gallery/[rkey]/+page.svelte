@@ -21,7 +21,8 @@
   import { removeFromPool, withdrawFromPool} from '$lib/mutations'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { goto } from '$app/navigation'
-  import { relativeTime, profilePath } from '$lib/utils'
+  import { relativeTime, profilePath, galleryPath } from '$lib/utils'
+  import { snippet, labelsBlockIndexing, galleryJsonLd } from '$lib/seo'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
   import { spaceBlobViews } from '$lib/spaceBlob'
@@ -246,11 +247,23 @@
   }
 </script>
 
-<OGMeta
-  title={gallery ? `${gallery.title} by @${gallery.creator.handle} — Grain` : 'Gallery — Grain'}
-  description={gallery ? (gallery.description || `Photo gallery on Grain`) : 'Photo gallery on Grain'}
-  image="/og/profile/{actor}/gallery/{rkey}"
-/>
+{#if gallery}
+  {@const by = gallery.creator.displayName || `@${gallery.creator.handle}`}
+  {@const count = photos.length === 1 ? '1 photo' : `${photos.length} photos`}
+  <OGMeta
+    title="{gallery.title} by {by} on Grain"
+    description={snippet(gallery.description) ??
+      `${count} by ${by}${locationLabel ? ` in ${locationLabel}` : ''} on Grain.`}
+    image="/og/profile/{actor}/gallery/{rkey}"
+    imageAlt="{gallery.title}, {count} by {by}"
+    url="{page.url.origin}{galleryPath(gallery)}"
+    type="article"
+    noindex={pooled || labelsBlockIndexing(gallery.labels)}
+    jsonLd={pooled ? undefined : galleryJsonLd(gallery, page.url.origin, galleryPath(gallery), profilePath(gallery.creator))}
+  />
+{:else}
+  <OGMeta title="Gallery on Grain" noindex />
+{/if}
 
 {#if loading}
   <p class="state">Loading...</p>
@@ -309,6 +322,7 @@
       {:else}
         <GalleryMedia
           {photos}
+          title={gallery.title}
           bind:currentIndex
           bind:renderedRatio={mediaRatio}
           maxHeight={fit?.h ?? mediaMax}

@@ -32,10 +32,12 @@
   }
 </script>
 
+<!-- Stories expire, so a search result for one would lead nowhere; the card is for links shared while it is up. -->
 <OGMeta
-  title={story ? `Story by @${story.creator.handle} — Grain` : 'Story — Grain'}
+  title={story ? `Story by @${story.creator.handle} on Grain` : 'Story on Grain'}
   description="Photo story on Grain"
   image="/og/profile/{data.actor}/story/{data.rkey}"
+  noindex
 />
 <DetailHeader label="Story">
   {#snippet actions()}

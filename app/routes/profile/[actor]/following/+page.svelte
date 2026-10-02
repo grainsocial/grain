@@ -1,4 +1,5 @@
 <script lang="ts">
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
   import PageHeading from '$lib/components/molecules/PageHeading.svelte'
   import ProfileCard from '$lib/components/molecules/ProfileCard.svelte'
   import Skeleton from '$lib/components/atoms/Skeleton.svelte'
@@ -11,6 +12,8 @@
   const profile = createQuery(() => actorProfileQuery(did))
   const following = createQuery(() => followingQuery(did))
 </script>
+
+<OGMeta title="Following - grain" noindex />
 
 <PageHeading title="{profile.data?.displayName || 'Profile'} — Following" back />
 
