@@ -145,6 +145,7 @@ export function siteJsonLd(origin: string) {
         sameAs: [
           "https://bsky.app/profile/grain.social",
           "https://apps.apple.com/app/id6747730230",
+          "https://play.google.com/store/apps/details?id=social.grain",
         ],
       },
     ],
