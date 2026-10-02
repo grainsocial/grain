@@ -150,3 +150,27 @@ export function siteJsonLd(origin: string) {
     ],
   };
 }
+
+/**
+ * at-tags: `<meta name="at:*">` naming the atproto records a page renders
+ * (https://tangled.org/chrisshank.com/at-tags). `canonical` is the record the
+ * page exists for, `alternate` records it shows besides, `author` the accounts
+ * that wrote it. Every value is an AT URI, so an account is `at://<did>`.
+ */
+export type AtTags = {
+  canonical?: string[];
+  alternate?: string[];
+  author?: string[];
+};
+
+export function atTags(
+  canonical: string,
+  author: string,
+  alternate: (string | undefined)[] = [],
+): AtTags {
+  return {
+    canonical: [canonical],
+    alternate: alternate.filter((uri): uri is string => !!uri?.startsWith("at://")),
+    author: [`at://${author}`],
+  };
+}

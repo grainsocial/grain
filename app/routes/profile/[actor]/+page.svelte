@@ -13,7 +13,7 @@
   import { callXrpc } from '$hatk/client'
   import { share } from '$lib/utils/share'
   import { profilePath } from '$lib/utils'
-  import { snippet, labelsBlockIndexing, profileJsonLd } from '$lib/seo'
+  import { snippet, labelsBlockIndexing, profileJsonLd, atTags } from '$lib/seo'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import { createQuery, createInfiniteQuery, useQueryClient } from '@tanstack/svelte-query'
   import { actorProfileQuery, actorFeedQuery, actorFavoritesInfiniteQuery, knownFollowersQuery, storiesQuery, groupQuery } from '$lib/queries'
@@ -217,6 +217,7 @@
     type="profile"
     noindex={labelsBlockIndexing(p.labels)}
     jsonLd={profileJsonLd(p, page.url.origin, profileHref)}
+    at={atTags(`at://${p.did}/social.grain.actor.profile/self`, p.did)}
   />
 
   <div class="mobile-back"><DetailHeader label={p.displayName || '\u00A0'} /></div>

@@ -22,7 +22,7 @@
   import { useQueryClient } from '@tanstack/svelte-query'
   import { goto } from '$app/navigation'
   import { relativeTime, profilePath, galleryPath } from '$lib/utils'
-  import { snippet, labelsBlockIndexing, galleryJsonLd } from '$lib/seo'
+  import { snippet, labelsBlockIndexing, galleryJsonLd, atTags } from '$lib/seo'
   import { resolveLabels, labelDefsQuery } from '$lib/labels'
   import type { GalleryView, PhotoView, ExifView } from '$hatk/client'
   import { spaceBlobViews } from '$lib/spaceBlob'
@@ -260,6 +260,7 @@
     type="article"
     noindex={pooled || labelsBlockIndexing(gallery.labels)}
     jsonLd={pooled ? undefined : galleryJsonLd(gallery, page.url.origin, galleryPath(gallery), profilePath(gallery.creator))}
+    at={pooled ? undefined : atTags(gallery.uri, gallery.creator.did, photos.map((p) => p.uri))}
   />
 {:else}
   <OGMeta title="Gallery on Grain" noindex />

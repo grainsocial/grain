@@ -8,6 +8,7 @@
   import { MapPin, MessageCircle, Send } from 'lucide-svelte'
   import { share } from '$lib/utils/share'
   import { profilePath, storyPath } from '$lib/utils'
+  import { atTags } from '$lib/seo'
   import { requireAuth } from '$lib/stores'
   import Toast from '$lib/components/atoms/Toast.svelte'
   import type { StoryView } from '$hatk/client'
@@ -38,6 +39,7 @@
   description="Photo story on Grain"
   image="/og/profile/{data.actor}/story/{data.rkey}"
   noindex
+  at={story ? atTags(story.uri, story.creator.did) : undefined}
 />
 <DetailHeader label="Story">
   {#snippet actions()}

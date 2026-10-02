@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
+  import type { AtTags } from '$lib/seo'
 
   interface Props {
     title: string
@@ -14,9 +15,11 @@
     noindex?: boolean
     /** schema.org structured data, serialized into a JSON-LD script. */
     jsonLd?: Record<string, unknown>
+    /** AT URIs behind the page, as at-tags (https://tangled.org/chrisshank.com/at-tags). */
+    at?: AtTags
   }
 
-  let { title, description, image, imageAlt, url, type = 'website', noindex = false, jsonLd }: Props = $props()
+  let { title, description, image, imageAlt, url, type = 'website', noindex = false, jsonLd, at }: Props = $props()
 
   const DEFAULT_DESCRIPTION = 'Grain is a photo sharing app built on the AT Protocol. Share galleries, follow photographers, and own your data.'
   const DEFAULT_IMAGE = '/og-default.jpg'
@@ -63,6 +66,15 @@
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={desc} />
   <meta name="twitter:image" content={absoluteImage} />
+  {#each at?.canonical ?? [] as uri (uri)}
+    <meta name="at:canonical" content={uri} />
+  {/each}
+  {#each at?.alternate ?? [] as uri (uri)}
+    <meta name="at:alternate" content={uri} />
+  {/each}
+  {#each at?.author ?? [] as uri (uri)}
+    <meta name="at:author" content={uri} />
+  {/each}
   {#if jsonLdTag}
     {@html jsonLdTag}
   {/if}
