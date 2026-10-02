@@ -147,6 +147,9 @@ const poolWriteScope = [
 const poolScopes = `${poolWriteScope} space:social.grain.group?authority=*&skey=*&action=read`;
 
 export default defineConfig({
+  // hatk answers /robots.txt itself, ahead of SvelteKit, from this directory.
+  // Pointed at SvelteKit's static/ so the file lives with the other assets.
+  publicDir: "./static",
   relay: isProd ? "wss://bsky.network" : "ws://localhost:2583",
   // Jetstream filters server-side, so we stop decoding the whole network to
   // find social.grain.*. Prod only — the local PDS has no Jetstream in front

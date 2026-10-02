@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /settings
+Disallow: /notifications
+Disallow: /create
+Disallow: /search
+Disallow: /private/
+Disallow: /oauth/
+Disallow: /auth/
+Disallow: /admin
+Allow: /
+
+Sitemap: https://grain.social/sitemap.xml
