@@ -1,20 +1,4 @@
-export interface ExifData {
-  make?: string;
-  model?: string;
-  lensMake?: string;
-  lensModel?: string;
-  exposureTime?: number;
-  fNumber?: number;
-  iSO?: number;
-  focalLengthIn35mmFormat?: number;
-  flash?: string;
-  dateTimeOriginal?: string;
-}
-
-export interface GpsData {
-  latitude: number;
-  longitude: number;
-}
+import { extractExif, type ExifData, type ExifMetaData, type GpsData } from "./extract-exif";
 
 export interface ProcessedPhoto {
   dataUrl: string;
@@ -23,6 +7,7 @@ export interface ProcessedPhoto {
   alt: string;
   exif?: ExifData;
   gps?: GpsData;
+  meta?: ExifMetaData;
 }
 
 export function readFileAsDataURL(file: File): Promise<string> {
@@ -100,59 +85,6 @@ export async function resizeImage(
   return bestResult;
 }
 
-const SCALE = 1_000_000;
-
-async function extractExif(file: File): Promise<{ exif?: ExifData; gps?: GpsData }> {
-  try {
-    const exifr = await import("exifr");
-    const raw = await exifr.parse(file, {
-      pick: [
-        "Make",
-        "Model",
-        "LensMake",
-        "LensModel",
-        "ExposureTime",
-        "FNumber",
-        "ISO",
-        "FocalLengthIn35mmFormat",
-        "Flash",
-        "DateTimeOriginal",
-      ],
-    });
-    if (!raw) return {};
-    const exif: ExifData = {};
-    if (raw.Make) exif.make = String(raw.Make).trim();
-    if (raw.Model) exif.model = String(raw.Model).trim();
-    if (raw.LensMake) exif.lensMake = String(raw.LensMake).trim();
-    if (raw.LensModel) exif.lensModel = String(raw.LensModel).trim();
-    if (raw.ExposureTime) exif.exposureTime = Math.round(raw.ExposureTime * SCALE);
-    if (raw.FNumber) exif.fNumber = Math.round(raw.FNumber * SCALE);
-    if (raw.ISO) exif.iSO = Math.round(raw.ISO * SCALE);
-    if (raw.FocalLengthIn35mmFormat)
-      exif.focalLengthIn35mmFormat = Math.round(raw.FocalLengthIn35mmFormat * SCALE);
-    if (raw.Flash != null) exif.flash = String(raw.Flash);
-    if (raw.DateTimeOriginal instanceof Date)
-      exif.dateTimeOriginal = raw.DateTimeOriginal.toISOString();
-
-    let gps: GpsData | undefined;
-    try {
-      const coords = await exifr.gps(file);
-      if (coords && typeof coords.latitude === "number" && typeof coords.longitude === "number") {
-        gps = { latitude: coords.latitude, longitude: coords.longitude };
-      }
-    } catch {
-      // GPS extraction failed, continue without it
-    }
-
-    return {
-      exif: Object.keys(exif).length > 0 ? exif : undefined,
-      gps,
-    };
-  } catch {
-    return {};
-  }
-}
-
 export async function processPhotos(files: File[]): Promise<ProcessedPhoto[]> {
   const processed: ProcessedPhoto[] = [];
   for (const file of files) {
@@ -166,9 +98,10 @@ export async function processPhotos(files: File[]): Promise<ProcessedPhoto[]> {
       dataUrl: resized.dataUrl,
       width: resized.width,
       height: resized.height,
-      alt: "",
+      alt: extracted.meta?.alt ?? "",
       exif: extracted.exif,
       gps: extracted.gps,
+      meta: extracted.meta,
     });
   }
   return processed;
