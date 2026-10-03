@@ -2,33 +2,24 @@
   import { X } from 'lucide-svelte'
   import { onMount } from 'svelte'
 
-  const APP_URL = 'https://apps.apple.com/app/grain-social/id6747730230'
-  const DISMISSED_KEY = 'grain:ios-banner-dismissed'
+  const APP_URL = 'https://play.google.com/store/apps/details?id=social.grain'
+  const DISMISSED_KEY = 'grain:android-banner-dismissed'
 
-  // Safari renders the App Store banner itself from the apple-itunes-app meta
-  // tag in the root layout, so this stands in only where that tag does nothing:
-  // Chrome, Firefox, Edge and the in-app browsers, all of which are WebKit under
-  // a different wrapper. An installed app is reached the same way either route,
-  // through the universal links in .well-known/apple-app-site-association.
+  // No browser on Android renders a store banner the way Safari on iOS does
+  // from the apple-itunes-app meta tag, so this is the only prompt an Android
+  // visitor ever gets. Shown in every browser on the platform unless dismissed:
+  // a page cannot detect that the app is installed, and grain.social links
+  // open in the browser rather than the app.
   function needsBanner(): boolean {
-    const ua = navigator.userAgent
-    const isIOS = /iPhone|iPad|iPod/.test(ua)
-    if (!isIOS) return false
-    // Every one of these keeps the Safari token in its UA, so the absence of a
-    // wrapper name is what identifies Safari proper.
-    const isWrapped = /CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua) || !/Safari/.test(ua)
-    if (!isWrapped) return false
-    // Already installed and launched from the home screen.
-    if ((navigator as { standalone?: boolean }).standalone) return false
-    return true
+    return /Android/.test(navigator.userAgent)
   }
 
   let visible = $state(false)
 
   onMount(() => {
-    // `?ios-banner` forces it on for a look during development, where the user
-    // agent is whatever desktop browser is open. Compiled out of the build.
-    if (import.meta.env.DEV && new URLSearchParams(location.search).has('ios-banner')) {
+    // `?android-banner` forces it on for a look during development, where the
+    // user agent is whatever desktop browser is open. Compiled out of the build.
+    if (import.meta.env.DEV && new URLSearchParams(location.search).has('android-banner')) {
       visible = true
       document.documentElement.classList.add('app-banner')
       return () => document.documentElement.classList.remove('app-banner')
@@ -63,7 +54,7 @@
     <img class="app-icon" src="/icon-192.png" alt="" width="32" height="32" />
     <span class="copy">
       <span class="name">Grain Social</span>
-      <span class="sub">Get the iOS app</span>
+      <span class="sub">Get the Android app</span>
     </span>
     <a class="cta" href={APP_URL} target="_blank" rel="noopener noreferrer">View</a>
   </div>
@@ -74,7 +65,7 @@
      lives here rather than in the script because it is nil above the breakpoint,
      where the bar is not shown at all.
 
-     The class and the variable are shared with AndroidAppBanner: the two bars
+     The class and the variable are shared with IosAppBanner: the two bars
      never show on the same device, so both can push the same chrome down. */
   :global(html.app-banner) {
     --app-banner-h: 0px;
