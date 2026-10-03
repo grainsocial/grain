@@ -5,7 +5,7 @@ import type { GrainActorProfile, GermnetworkDeclaration } from "$hatk";
 import { resolveHandle } from "../helpers/resolveHandle.ts";
 
 export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx) => {
-  const { ok, params, isTakendown, lookup, count, blobUrl, viewer: authViewer } = ctx;
+  const { ok, params, isTakendown, lookup, blobUrl, viewer: authViewer } = ctx;
   const viewer = authViewer?.did ?? params.viewer;
 
   const actor = await resolveHandle(ctx.db, params.actor);
@@ -29,7 +29,20 @@ export default defineQuery("social.grain.unspecced.getActorProfile", async (ctx)
   ] = await Promise.all([
     lookup<GrainActorProfile>("social.grain.actor.profile", "did", [actor]),
     lookup<GermnetworkDeclaration>("com.germnetwork.declaration", "did", [actor]),
-    count("social.grain.gallery", "did", [actor]),
+    // Only galleries with at least one item, matching the actor feed. Labeled
+    // galleries still count: the feed hides them, but they are the author's.
+    ctx.db
+      .query(
+        `SELECT COUNT(*) as count FROM "social.grain.gallery" g
+         WHERE g.did = $1
+           AND EXISTS (SELECT 1 FROM "social.grain.gallery.item" gi WHERE gi.gallery = g.uri)`,
+        [actor],
+      )
+      .then((r: any) => {
+        const m = new Map();
+        m.set(actor, Number(r[0]?.count || 0));
+        return m;
+      }),
     ctx.db
       .query(
         `SELECT COUNT(DISTINCT did) as count FROM "social.grain.graph.follow" WHERE subject = $1`,

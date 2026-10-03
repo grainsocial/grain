@@ -112,14 +112,32 @@ beforeAll(async () => {
     );
   }
 
-  // Bob has two galleries; the count comes off the record table directly.
-  for (const id of ["g1", "g2"]) {
+  // Bob has three galleries, but g3 never had a photo added, so it is not
+  // counted. g2 carries a hide label and still is.
+  for (const id of ["g1", "g2", "g3"]) {
     await db.run(
       `INSERT INTO "social.grain.gallery" (uri, cid, did, indexed_at, title, created_at)
        VALUES ($1, $2, $3, 'i', $4, '2026-03-01')`,
       [`at://${BOB}/social.grain.gallery/${id}`, `cid-${id}`, BOB, id],
     );
   }
+  for (const id of ["g1", "g2"]) {
+    await db.run(
+      `INSERT INTO "social.grain.gallery.item" (uri, cid, did, indexed_at, created_at, gallery, item, position)
+       VALUES ($1, $2, $3, 'i', '2026-03-01', $4, $5, 0)`,
+      [
+        `at://${BOB}/social.grain.gallery.item/${id}`,
+        `cid-i-${id}`,
+        BOB,
+        `at://${BOB}/social.grain.gallery/${id}`,
+        `at://${BOB}/social.grain.photo/${id}`,
+      ],
+    );
+  }
+  await db.run(
+    `INSERT INTO _labels (src, uri, val, neg, cts) VALUES ('did:plc:mod', $1, 'spam', 0, '2026-03-02')`,
+    [`at://${BOB}/social.grain.gallery/g2`],
+  );
 
   // Bob is followed by Alice, Erin and Frank, and follows Alice back.
   await follow(ALICE, BOB);
