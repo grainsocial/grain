@@ -21,13 +21,17 @@ export default defineFeed({
       return ok({ uris: [], cursor: undefined });
     }
 
+    // Optional `before` (ISO date): start the feed at an earlier point, e.g. a year.
+    const before = params.before && !Number.isNaN(Date.parse(params.before)) ? params.before : null;
+
     const { rows, cursor } = await ctx.paginate<{ uri: string }>(
       `SELECT t.uri, t.cid, t.created_at
        FROM "social.grain.gallery" t
        WHERE t.did = $1
+         ${before ? "AND t.created_at < $2" : ""}
          AND ${hideLabelsFilter("t.uri")}
          AND (SELECT count(*) FROM "social.grain.gallery.item" gi WHERE gi.gallery = t.uri) > 0`,
-      { params: [actor], orderBy: "t.created_at" },
+      { params: before ? [actor, before] : [actor], orderBy: "t.created_at" },
     );
 
     return ok({ uris: rows.map((r) => r.uri), cursor });
