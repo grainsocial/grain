@@ -22,11 +22,11 @@ export default defineClassifier({
     promotional_listing: {
       type: "noul",
       instructions:
-        "Is this gallery advertising a product, service, investment, or download, rather than sharing photographs?",
+        "Is this gallery the poster advertising something they profit from, rather than sharing photographs? Every gallery on grain carries photographs; judge what the text is for.",
       criteria: {
-        true: "Sells or promotes something to the reader — a crypto platform, an ebook, a paid service, an affiliate link, a discount. Repeated near-identical listings from one poster count.",
+        true: "Sells or promotes something to the reader on the poster's behalf — a crypto platform, an ebook, a paid service, an affiliate link, a discount, a company's marketing. Use the poster's other galleries: many near-identical listings make it one.",
         false:
-          "Photographs shared as photographs. A photographer naming their own shop, print store, portfolio, or Ko-fi alongside their work is NOT a promotional listing — the photographs are still the point.",
+          "Photographs shared as photographs, whatever they show. Mentioning, joking about, photographing or reviewing a product, an ad, a shop or an event is NOT a promotional listing, and neither is sharing a link to an article, a talk or one's own blog, or selling a single personal item. A photographer naming their own shop, print store, portfolio, or Ko-fi alongside their work is NOT a promotional listing — the photographs are still the point. A poster whose other galleries are varied, personal posts is sharing, not listing.",
       },
     },
     article_not_caption: {
@@ -41,7 +41,7 @@ export default defineClassifier({
     },
   },
 
-  async buildState({ subject }) {
+  async buildState({ db, subject }) {
     const v = subject.value ?? {};
     const title = typeof v.title === "string" ? v.title.trim() : "";
     const description = typeof v.description === "string" ? v.description.trim() : "";
@@ -51,6 +51,28 @@ export default defineClassifier({
     // characters.
     if (title.length + description.length < 8) return null;
 
-    return { title: title || null, description: description || null };
+    // The poster's other galleries. One gallery alone cannot show the pattern
+    // that separates a listing from a post: "MIS EBOOKS" fifteen times over is
+    // spam, while a product joke in a varied personal archive is not.
+    const [{ count }] = (await db.query(
+      `SELECT COUNT(*) AS count FROM "social.grain.gallery" WHERE did = $1`,
+      [subject.did],
+    )) as { count: number }[];
+    const others = (await db.query(
+      `SELECT title, description FROM "social.grain.gallery"
+       WHERE did = $1 AND uri <> $2 ORDER BY created_at DESC LIMIT 6`,
+      [subject.did, subject.uri],
+    )) as { title: string | null; description: string | null }[];
+
+    return {
+      title: title || null,
+      description: description || null,
+      poster: {
+        galleries: Number(count),
+        otherGalleries: others.map((g) =>
+          [g.title, g.description].filter(Boolean).join(" — ").slice(0, 120),
+        ),
+      },
+    };
   },
 });
