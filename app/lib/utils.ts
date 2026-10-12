@@ -20,7 +20,7 @@ export function truncDid(did: string): string {
   return did.slice(0, 12) + "\u2026" + did.slice(-6);
 }
 
-/** Compact relative time matching grain-native: now, 2m, 3h, 4d, 1w, then Mon DD. */
+/** Compact relative time matching grain-native: now, 2m, 3h, 4d, 1w, then Mon DD (Mon DD, YYYY outside the current year). */
 export function relativeTime(iso: string): string {
   const date = new Date(iso);
   const diff = (Date.now() - date.getTime()) / 1000;
@@ -31,7 +31,9 @@ export function relativeTime(iso: string): string {
   if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
   if (diff < 2592000) return `${Math.floor(diff / 604800)}w`;
 
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+  if (date.getFullYear() !== new Date().getFullYear()) opts.year = "numeric";
+  return date.toLocaleDateString("en-US", opts);
 }
 
 /** Compact number formatting: 1K, 1.2M, etc. */
