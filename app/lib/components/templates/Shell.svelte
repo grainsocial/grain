@@ -6,6 +6,7 @@
   import MobileTopBar from '../molecules/MobileTopBar.svelte'
   import MobileBottomBar from '../molecules/MobileBottomBar.svelte'
   import IosAppBanner from '../molecules/IosAppBanner.svelte'
+  import AndroidAppBanner from '../molecules/AndroidAppBanner.svelte'
   import MobileDrawer from '../organisms/MobileDrawer.svelte'
   import MobileSearch from '../organisms/MobileSearch.svelte'
   import LoginModal from '../organisms/LoginModal.svelte'
@@ -35,6 +36,7 @@
 </script>
 
 <IosAppBanner />
+<AndroidAppBanner />
 <MobileTopBar onHamburger={() => drawerOpen = true} onSearch={() => searchOpen = true} />
 
 {#if full}
@@ -82,7 +84,7 @@
     .shell { grid-template-columns: 1fr; }
     .col-center {
       position: fixed;
-      top: calc(47px + var(--ios-banner-h, 0px));
+      top: calc(47px + var(--app-banner-h, 0px));
       left: 0;
       right: 0;
       bottom: calc(50px + env(safe-area-inset-bottom, 0px));

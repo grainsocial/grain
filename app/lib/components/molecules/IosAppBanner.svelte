@@ -30,8 +30,8 @@
     // agent is whatever desktop browser is open. Compiled out of the build.
     if (import.meta.env.DEV && new URLSearchParams(location.search).has('ios-banner')) {
       visible = true
-      document.documentElement.classList.add('ios-banner')
-      return () => document.documentElement.classList.remove('ios-banner')
+      document.documentElement.classList.add('app-banner')
+      return () => document.documentElement.classList.remove('app-banner')
     }
     try {
       if (localStorage.getItem(DISMISSED_KEY) === '1') return
@@ -40,13 +40,13 @@
     }
     if (!needsBanner()) return
     visible = true
-    document.documentElement.classList.add('ios-banner')
-    return () => document.documentElement.classList.remove('ios-banner')
+    document.documentElement.classList.add('app-banner')
+    return () => document.documentElement.classList.remove('app-banner')
   })
 
   function dismiss() {
     visible = false
-    document.documentElement.classList.remove('ios-banner')
+    document.documentElement.classList.remove('app-banner')
     try {
       localStorage.setItem(DISMISSED_KEY, '1')
     } catch {
@@ -56,7 +56,7 @@
 </script>
 
 {#if visible}
-  <div class="ios-banner-bar">
+  <div class="app-banner-bar">
     <button class="dismiss" type="button" onclick={dismiss} aria-label="Dismiss">
       <X size={16} />
     </button>
@@ -72,17 +72,20 @@
 <style>
   /* The bar is fixed, so the mobile chrome below it has to start lower. Height
      lives here rather than in the script because it is nil above the breakpoint,
-     where the bar is not shown at all. */
-  :global(html.ios-banner) {
-    --ios-banner-h: 0px;
+     where the bar is not shown at all.
+
+     The class and the variable are shared with AndroidAppBanner: the two bars
+     never show on the same device, so both can push the same chrome down. */
+  :global(html.app-banner) {
+    --app-banner-h: 0px;
   }
   @media (max-width: 600px) {
-    :global(html.ios-banner) {
-      --ios-banner-h: 58px;
+    :global(html.app-banner) {
+      --app-banner-h: 58px;
     }
   }
 
-  .ios-banner-bar {
+  .app-banner-bar {
     display: none;
     position: fixed;
     top: 0;
@@ -140,7 +143,7 @@
   }
 
   @media (max-width: 600px) {
-    .ios-banner-bar {
+    .app-banner-bar {
       display: flex;
     }
   }
