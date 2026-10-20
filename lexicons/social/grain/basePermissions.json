@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.basePermissions",
+  "defs": {
+    "main": {
+      "type": "permission-set",
+      "title": "Photos",
+      "detail": "Read your groups' photo pools, and add galleries, favourites and comments of your own to them",
+      "permissions": [
+        {
+          "type": "permission",
+          "resource": "space",
+          "spaceType": "social.grain.group",
+          "authority": "*",
+          "skey": "*",
+          "collection": [
+            "social.grain.gallery",
+            "social.grain.gallery.item",
+            "social.grain.photo",
+            "social.grain.favorite",
+            "social.grain.comment"
+          ],
+          "action": ["read", "create", "update", "delete"]
+        }
+      ]
+    }
+  }
+}

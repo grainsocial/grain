@@ -1,0 +1,19 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group",
+  "defs": {
+    "main": {
+      "type": "space",
+      "key": "any",
+      "name": "Group pool",
+      "description": "A group's pool of galleries: the photos its members put in, and their favourites and comments on them, held together as one space. The group is its authority and its space key is self. Each member's records stay in their own repo; the space says who may read them, which is the group's members. A favourite or a comment belongs here rather than in the public repo for the same reason the photos do: in the public repo it would name a private gallery to the whole network.",
+      "collections": [
+        "social.grain.gallery",
+        "social.grain.gallery.item",
+        "social.grain.photo",
+        "social.grain.favorite",
+        "social.grain.comment"
+      ]
+    }
+  }
+}
