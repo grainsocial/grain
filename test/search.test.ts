@@ -95,6 +95,27 @@ describe("searchGalleries", () => {
     const { items } = await get("/xrpc/social.grain.unspecced.searchGalleries?q=kayaking");
     expect(items).toEqual([]);
   });
+
+  test("leaves out spam-labelled galleries, and returns them once negated", async () => {
+    const uri = `at://${BOB}/social.grain.gallery/g2`;
+    await server.db.run(
+      `INSERT INTO _labels (src, uri, val, neg, cts) VALUES ('self', $1, 'spam', 0, '2026-10-21')`,
+      [uri],
+    );
+    try {
+      const hidden = await get("/xrpc/social.grain.unspecced.searchGalleries?q=cascades");
+      expect(hidden.items).toEqual([]);
+
+      await server.db.run(
+        `INSERT INTO _labels (src, uri, val, neg, cts) VALUES ('admin', $1, 'spam', 1, '2026-10-22')`,
+        [uri],
+      );
+      const shown = await get("/xrpc/social.grain.unspecced.searchGalleries?q=cascades");
+      expect(shown.items.map((i: any) => i.uri)).toEqual([uri]);
+    } finally {
+      await server.db.run(`DELETE FROM _labels WHERE uri = $1`, [uri]);
+    }
+  });
 });
 
 describe("searchActorsTypeahead", () => {
