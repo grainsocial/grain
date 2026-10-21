@@ -5,10 +5,20 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { startTestServer } from "@hatk/hatk/test";
 import spam from "../server/labels/spam";
-import { isBridgedHandle } from "../server/helpers/bridged";
+import { isBridgedDescription, isBridgedHandle } from "../server/helpers/bridged";
 
 const BRIDGED = "did:plc:bridged";
+const WEB = "did:plc:web";
+const DOMAIN = "did:plc:domain";
+const MENTIONS = "did:plc:mentions";
 const LOCAL = "did:plc:local";
+
+const FEDIVERSE_FOOTER =
+  "dev and pixel artist  🌉 bridged from ⁂ https://wetdry.world/@mae_h, follow @ap.brid.gy to interact";
+const WEB_FOOTER =
+  "Match reports  🌉 bridged from 🌐 https://multansultans.com/: https://fed.brid.gy/web/multansultans.com";
+const OWN_WORDS =
+  "Find me on the fediverse, or follow my bridged account @me.mastodon.social.ap.brid.gy";
 
 let server: Awaited<ReturnType<typeof startTestServer>>;
 
@@ -22,9 +32,31 @@ function evaluate(did: string, collection: string, rkey = "r1") {
 beforeAll(async () => {
   server = await startTestServer();
   await server.db.run(
-    `INSERT INTO _repos (did, status, handle) VALUES ($1, 'active', $2), ($3, 'active', $4)`,
-    [BRIDGED, "Someone.mastodon.social.ap.brid.gy", LOCAL, "alice.test"],
+    `INSERT INTO _repos (did, status, handle) VALUES
+       ($1, 'active', $2), ($3, 'active', $4), ($5, 'active', $6), ($7, 'active', $8), ($9, 'active', $10)`,
+    [
+      BRIDGED,
+      "Someone.mastodon.social.ap.brid.gy",
+      WEB,
+      "cxprowealth.com.web.brid.gy",
+      DOMAIN,
+      "mae-h.wetdry.world",
+      MENTIONS,
+      "me.example.com",
+      LOCAL,
+      "alice.test",
+    ],
   );
+  for (const [did, description] of [
+    [DOMAIN, FEDIVERSE_FOOTER],
+    [MENTIONS, OWN_WORDS],
+  ]) {
+    await server.db.run(
+      `INSERT INTO "social.grain.actor.profile" (uri, cid, did, indexed_at, description)
+       VALUES ($1, 'cid', $2, '2026-10-21', $3)`,
+      [`at://${did}/social.grain.actor.profile/self`, did, description],
+    );
+  }
 });
 
 beforeEach(async () => await server.db.run(`DELETE FROM _labels`));
@@ -36,10 +68,27 @@ describe("isBridgedHandle", () => {
     expect(isBridgedHandle("MDT.mast.lat.AP.brid.gy")).toBe(true);
   });
 
+  test("matches a website bridged by Bridgy Fed", () => {
+    expect(isBridgedHandle("cxprowealth.com.web.brid.gy")).toBe(true);
+  });
+
   test("does not match other handles, or none", () => {
     expect(isBridgedHandle("alice.bsky.social")).toBe(false);
     expect(isBridgedHandle("ap.brid.gy.example.com")).toBe(false);
     expect(isBridgedHandle(null)).toBe(false);
+  });
+});
+
+describe("isBridgedDescription", () => {
+  test("matches the footer Bridgy Fed writes, fediverse or web", () => {
+    expect(isBridgedDescription(FEDIVERSE_FOOTER)).toBe(true);
+    expect(isBridgedDescription(WEB_FOOTER)).toBe(true);
+  });
+
+  test("does not match someone pointing at their bridged account", () => {
+    expect(isBridgedDescription(OWN_WORDS)).toBe(false);
+    expect(isBridgedDescription("🌉 bridged from my blog, come say hi")).toBe(false);
+    expect(isBridgedDescription(null)).toBe(false);
   });
 });
 
@@ -48,6 +97,15 @@ describe("spam label rule", () => {
     expect(await evaluate(BRIDGED, "social.grain.gallery")).toEqual(["spam"]);
     expect(await evaluate(BRIDGED, "social.grain.story")).toEqual(["spam"]);
     expect(await evaluate(BRIDGED, "social.grain.comment")).toEqual(["spam"]);
+  });
+
+  test("labels a bridged website's gallery", async () => {
+    expect(await evaluate(WEB, "social.grain.gallery")).toEqual(["spam"]);
+  });
+
+  test("labels a bridged account on a domain handle, by its profile's footer", async () => {
+    expect(await evaluate(DOMAIN, "social.grain.gallery")).toEqual(["spam"]);
+    expect(await evaluate(MENTIONS, "social.grain.gallery")).toEqual([]);
   });
 
   test("leaves the bridged account's other records alone", async () => {

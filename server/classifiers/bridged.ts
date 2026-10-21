@@ -1,9 +1,10 @@
 import { defineClassifier } from "$hatk";
-import { BRIDGED_HIDDEN_COLLECTIONS, isBridgedHandle } from "../helpers/bridged.ts";
+import { BRIDGED_HIDDEN_COLLECTIONS, isBridgedAccount } from "../helpers/bridged.ts";
 
 /**
  * Labels every post from a Bridgy Fed account `spam`, which hides it; see
- * `helpers/bridged.ts`. The handle is the whole signal, so this asks no model.
+ * `helpers/bridged.ts`. The handle or the profile's Bridgy footer is the whole
+ * signal, so this asks no model.
  *
  * Unlike the other classifiers this acts rather than reports. It backs up the
  * label rule in `labels/spam.ts`, which never sees the records a backfill
@@ -18,8 +19,8 @@ export default defineClassifier({
   subject: "account",
 
   async buildState({ db, subject }) {
-    if (!isBridgedHandle(subject.handle)) return null;
-    const handle = subject.handle!.toLowerCase();
+    if (!(await isBridgedAccount(db, subject.did, subject.handle ?? null))) return null;
+    const handle = subject.handle?.toLowerCase() ?? null;
 
     // The unlabelled posts are the state, so each new post changes the
     // fingerprint and is scored again, and a fully labelled account is skipped.
