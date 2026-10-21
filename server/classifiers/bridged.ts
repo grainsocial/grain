@@ -1,18 +1,13 @@
 import { defineClassifier } from "$hatk";
-
-const BRIDGED_SUFFIX = ".ap.brid.gy";
-const COLLECTIONS = ["social.grain.gallery", "social.grain.story", "social.grain.comment"];
+import { BRIDGED_HIDDEN_COLLECTIONS, isBridgedHandle } from "../helpers/bridged.ts";
 
 /**
- * Fediverse accounts bridged in by Bridgy Fed. It writes their image posts as
- * grain galleries: news feeds and toots that carry a picture, mirrored here
- * without anyone choosing to post on grain. The handle is the whole signal,
- * so this asks no model.
+ * Labels every post from a Bridgy Fed account `spam`, which hides it; see
+ * `helpers/bridged.ts`. The handle is the whole signal, so this asks no model.
  *
- * Unlike the other classifiers this acts rather than reports: every post is
- * labelled `spam`, which hides it. It is a classifier, not a label rule,
- * because label rules never see the records a backfill writes, and a bridged
- * account's first posts always arrive by backfill.
+ * Unlike the other classifiers this acts rather than reports. It backs up the
+ * label rule in `labels/spam.ts`, which never sees the records a backfill
+ * writes, and a bridged account's first posts always arrive by backfill.
  *
  * A post that already carries a spam label row, positive or negated, is left
  * alone, so an admin who unhides one is not overruled on the next scan.
@@ -23,13 +18,13 @@ export default defineClassifier({
   subject: "account",
 
   async buildState({ db, subject }) {
-    const handle = subject.handle?.toLowerCase();
-    if (!handle?.endsWith(BRIDGED_SUFFIX)) return null;
+    if (!isBridgedHandle(subject.handle)) return null;
+    const handle = subject.handle!.toLowerCase();
 
     // The unlabelled posts are the state, so each new post changes the
     // fingerprint and is scored again, and a fully labelled account is skipped.
     const unlabelled: string[] = [];
-    for (const collection of COLLECTIONS) {
+    for (const collection of BRIDGED_HIDDEN_COLLECTIONS) {
       const rows = (await db.query(
         `SELECT t.uri FROM "${collection}" t
          WHERE t.did = $1
