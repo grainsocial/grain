@@ -200,6 +200,11 @@ export default defineConfig({
     signalCollections: ["social.grain.actor.profile", "fyi.opensocial.declaration"],
     fullNetwork: false,
     parallelism: 5,
+    // Bridgy Fed hosts every bridged fediverse account here, and each repo
+    // mirrors that account's whole history: one ran to 34,185 records and
+    // 31 seconds of import. Their live posts still arrive through the
+    // stream, where the bridged classifier hides them.
+    skipPds: ["atproto.brid.gy"],
   },
   push: {
     apns: {
