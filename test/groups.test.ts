@@ -174,11 +174,17 @@ beforeEach(() => {
       if (url === "https://host.example/xrpc/fyi.opensocial.listGroups") {
         return json({ groups: LISTING });
       }
-      // The host admits Alice to the club's members space and nobody else.
+      // The host admits Alice to the club's members space and nobody else. A
+      // request without a delegation token is told the space does not exist.
       if (url === "https://host.example/xrpc/com.atproto.space.getSpaceCredential") {
-        const { space } = JSON.parse(init?.body ?? "{}");
-        const token = new Headers(init?.headers).get("authorization") ?? "";
-        return space === membersSpaceOf(CLUB) && token === `Bearer token-${ALICE}`
+        const { space, credentialKid, delegationToken } = JSON.parse(init?.body ?? "{}");
+        if (!credentialKid) {
+          return new Response(JSON.stringify({ error: "InvalidRequest" }), { status: 400 });
+        }
+        if (!delegationToken) {
+          return new Response(JSON.stringify({ error: "SpaceNotFound" }), { status: 400 });
+        }
+        return space === membersSpaceOf(CLUB) && delegationToken === `token-${ALICE}`
           ? json({ credential: "cred" })
           : new Response(JSON.stringify({ error: "UserNotAuthorized" }), { status: 400 });
       }
@@ -312,8 +318,12 @@ describe("groupsOf", () => {
         };
         const res = await fetch("https://host.example/xrpc/com.atproto.space.getSpaceCredential", {
           method: "POST",
-          headers: { authorization: `Bearer ${token}` },
-          body: JSON.stringify({ space }),
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            space,
+            credentialKid: "did:key:zDnaeExample",
+            delegationToken: token,
+          }),
         });
         if (!res.ok) throw Object.assign(new Error("refused"), { status: res.status });
         return { fetch };

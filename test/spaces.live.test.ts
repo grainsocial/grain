@@ -54,7 +54,8 @@ function pdsCallFor(account: Account, jwt: string): PdsCall {
  * A SpaceReader over a password session — what hatk's handler context is in
  * production, with `spaceCredential` doing the exchange `ctx.spaceCredential`
  * does: a delegation token from the reader's PDS, traded at the authority for a
- * credential bound to a fresh key, then presented signed for the repo read.
+ * credential bound to a fresh key named in the request, then presented signed
+ * for the repo read.
  */
 function readerFor(account: Account, jwt: string): SpaceReader {
   const pds = pdsCallFor(account, jwt);
@@ -70,11 +71,8 @@ function readerFor(account: Account, jwt: string): SpaceReader {
         `${await resolvePds(authority)}/xrpc/com.atproto.space.getSpaceCredential`,
         {
           method: "POST",
-          headers: {
-            "content-type": "application/json",
-            ...(await spaceSigHeaders(key, `Bearer ${token}`)),
-          },
-          body: JSON.stringify({ space }),
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ space, credentialKid: key.did(), delegationToken: token }),
         },
       );
       if (!res.ok) throw Object.assign(new Error(await res.text()), { status: res.status });
@@ -84,7 +82,7 @@ function readerFor(account: Account, jwt: string): SpaceReader {
           const url = new URL(String(input));
           const audience = url.searchParams.get("repo") ?? authority;
           const headers = new Headers(init?.headers);
-          const signed = await spaceSigHeaders(key, `Atproto-Space ${credential}`, audience);
+          const signed = await spaceSigHeaders(key, credential, audience);
           for (const [name, value] of Object.entries(signed)) headers.set(name, value);
           return fetch(url, { ...init, headers });
         },
