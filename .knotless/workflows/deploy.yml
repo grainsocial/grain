@@ -1,0 +1,68 @@
+# Deploys main to the Hetzner host once this commit's test and check have
+# passed. The appview image is built from this checkout on the host, over
+# SSH, as a candidate, grain:build-<commit>, while the checks run; once
+# they pass it becomes grain:current and the grain service is recreated
+# from it, leaving the rest of the stack as it is. grain-deploy on the
+# host rebuilds the whole stack by hand.
+#
+# When main has moved past this commit by the time the checks pass, the
+# candidate is dropped and the run passes: the newer commit deploys. Once
+# a deploy starts it finishes; a newer one waits for it (superseded:
+# finish).
+#
+# DEPLOY_SSH_KEY is granted to pushes to main alone, in the runner's
+# secrets file on runner.knotless.dev (/etc/knotless/run-secrets.json,
+# under did:plc:e7rftrdyz5e2rw4y6ocszew2/grain). Its public half is in
+# root's authorized_keys on the host.
+on:
+  push: {refs: [refs/heads/main]}
+superseded: finish
+image: docker:28-cli
+secrets: [DEPLOY_SSH_KEY]
+env:
+  GRAIN_HOST: root@167.233.237.163
+steps:
+  - name: tools
+    run: |
+      apk add --no-cache curl openssh-client
+      curl -fsSL https://knotless.dev/install.sh | KNOTLESS_INSTALL_DIR=/usr/local/bin sh
+  - name: key
+    run: |
+      mkdir -p ~/.ssh && chmod 700 ~/.ssh
+      printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+      printf 'Host *\n  StrictHostKeyChecking accept-new\n' > ~/.ssh/config
+  - name: build
+    timeout: 30
+    run: |
+      DOCKER_HOST="ssh://$GRAIN_HOST" docker build -t "grain:build-$KNOTLESS_RUN_SHA" .
+  - name: checks
+    timeout: 30
+    run: |
+      repo="knotless://$KNOTLESS_RUN_REPO"
+      end=$(($(date +%s) + 1500))
+      for wf in test check; do
+        left=$((end - $(date +%s)))
+        [ "$left" -gt 0 ] || left=1
+        out=$(knotless checks "$repo" --ref "$KNOTLESS_RUN_REF" --commit "$KNOTLESS_RUN_SHA" --workflow "$wf" --wait "$left")
+        echo "$out"
+        case "$out" in
+          success*) ;;
+          *)
+            echo "$wf has not passed: not deploying"
+            DOCKER_HOST="ssh://$GRAIN_HOST" docker rmi "grain:build-$KNOTLESS_RUN_SHA"
+            exit 1
+            ;;
+        esac
+      done
+  - name: deploy
+    run: |
+      export DOCKER_HOST="ssh://$GRAIN_HOST"
+      tip=$(knotless refs "knotless://$KNOTLESS_RUN_REPO" | awk -F '\t' -v ref="$KNOTLESS_RUN_REF" '$2 == ref { print $1 }')
+      if [ "$tip" != "$KNOTLESS_RUN_SHA" ]; then
+        echo "$KNOTLESS_RUN_REF is at ${tip:-nothing} now, not $KNOTLESS_RUN_SHA: a newer commit will deploy"
+        docker rmi "grain:build-$KNOTLESS_RUN_SHA"
+        exit 0
+      fi
+      docker tag "grain:build-$KNOTLESS_RUN_SHA" grain:current
+      docker rmi "grain:build-$KNOTLESS_RUN_SHA"
+      ssh "$GRAIN_HOST" 'docker compose -f /etc/grain/docker-compose.yml up -d --no-build grain && docker image prune -f'

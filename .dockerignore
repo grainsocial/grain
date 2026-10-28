@@ -1,0 +1,11 @@
+.git
+node_modules
+build
+.svelte-kit
+coverage
+test-results
+.dev-logs
+.env
+*.db
+data
+certs
