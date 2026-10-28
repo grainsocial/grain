@@ -15,7 +15,7 @@
 # under did:plc:e7rftrdyz5e2rw4y6ocszew2/grain). Its public half is in
 # root's authorized_keys on the host.
 on:
-  push: {refs: [refs/heads/main]}
+  push: { refs: [refs/heads/main] }
 superseded: finish
 image: docker:28-cli
 secrets: [DEPLOY_SSH_KEY]
