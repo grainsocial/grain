@@ -10,14 +10,17 @@
 # a deploy starts it finishes; a newer one waits for it (superseded:
 # finish).
 #
-# DEPLOY_SSH_KEY is granted to pushes to main alone, in the runner's
-# secrets file on runner.knotless.dev (/etc/knotless/run-secrets.json,
-# under did:plc:e7rftrdyz5e2rw4y6ocszew2/grain). Its public half is in
-# root's authorized_keys on the host.
+# It runs on ci.knotless.dev alone, the runner on knotless.dev's own host,
+# so the key never reaches the hosted runner that checks pulls. There
+# DEPLOY_SSH_KEY is sealed to pushes to main alone (`knotless secret
+# knotless://grain.social/grain set DEPLOY_SSH_KEY --runner ci.knotless.dev
+# --ref refs/heads/main`). Its public half is in root's authorized_keys on
+# the host.
 on:
   push: { refs: [refs/heads/main] }
 superseded: finish
 image: docker:28-cli
+runners: [ci.knotless.dev]
 secrets: [DEPLOY_SSH_KEY]
 env:
   GRAIN_HOST: root@167.233.237.163

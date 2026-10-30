@@ -2,6 +2,7 @@
 # svelte-check. The packages are kept between runs and installed again only
 # when the lockfile changes.
 image: node:25-slim
+runners: [runner.knotless.dev]
 on:
   push: { refs: [refs/heads/main] }
   pull: { base: [refs/heads/main] }
