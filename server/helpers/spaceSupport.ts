@@ -30,14 +30,23 @@ const PROBE_TIMEOUT_MS = 5000;
  * The space methods grain needs, in the order a shared gallery uses them.
  * Each entry is a set of accepted spellings: the proposal renamed things after
  * implementations shipped, so a server may answer to either name and one is
- * enough. See pds.js docs/permissioned-data.md, "Two spellings".
+ * enough. See pds.js docs/permissioned-data.md, "Two spellings". The first
+ * names the method when it is missing.
+ *
+ * The reference alpha since 0.0.0-spaces-alpha-20261029171913 has no
+ * simplespace: it creates a space under com.atproto.space and keeps a member
+ * list under com.atproto.memberspace (spaces/client.ts asks for both).
  */
 const REQUIRED_METHODS: string[][] = [
-  ["com.atproto.simplespace.createSpace"],
+  ["com.atproto.simplespace.createSpace", "com.atproto.space.createSpace"],
   // The alpha spells this `putMember` and pairs it with `removeMember`; pds.js
   // says `addMember`. Same operation, and either is enough.
-  ["com.atproto.simplespace.addMember", "com.atproto.simplespace.putMember"],
-  ["com.atproto.simplespace.listMembers"],
+  [
+    "com.atproto.simplespace.addMember",
+    "com.atproto.simplespace.putMember",
+    "com.atproto.memberspace.putMember",
+  ],
+  ["com.atproto.simplespace.listMembers", "com.atproto.memberspace.listMembers"],
   ["com.atproto.simplespace.getSpace", "com.atproto.space.getSpace"],
   ["com.atproto.space.createRecord"],
   ["com.atproto.space.listRecords"],

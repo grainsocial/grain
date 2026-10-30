@@ -82,6 +82,91 @@ export function parseSpaceUri(uri: string): { authority: string; skey: string } 
   return { authority: match[1], skey: match[3] };
 }
 
+// --- A gallery's space and its readers, on the author's own PDS ----------------
+//
+// Three servers serve these, under two sets of names. The reference
+// `@atproto/pds` alpha, since 0.0.0-spaces-alpha-20261029171913, creates a
+// space with com.atproto.space.createSpace and keeps its member list under
+// com.atproto.memberspace. pds.js and zds still answer to
+// com.atproto.simplespace, with the proposal's shape (see AGENTS.md, "The second
+// implementation"). Each call asks the reference name first and the older one
+// when the server says it has no such method.
+
+type PdsAttempt = { nsid: string } & NonNullable<Parameters<PdsCall>[1]>;
+
+/** A server's way of saying it serves no such method: pds.js's 501, zds's 404. */
+function notServed(err: unknown): boolean {
+  const status = (err as { status?: unknown })?.status;
+  return status === 404 || status === 501;
+}
+
+/** The first of `attempts` the PDS serves. Any other failure is the answer. */
+async function firstServed(pds: PdsCall, attempts: PdsAttempt[]): Promise<Record<string, unknown>> {
+  for (const [i, { nsid, ...options }] of attempts.entries()) {
+    try {
+      return await pds(nsid, options);
+    } catch (err) {
+      if (i === attempts.length - 1 || !notServed(err)) throw err;
+    }
+  }
+  throw new Error("no attempts");
+}
+
+/** Make the space a private gallery is, anchored on its author, readable by its member list. */
+export function createGallerySpace(pds: PdsCall, author: string, skey: string) {
+  return firstServed(pds, [
+    {
+      nsid: "com.atproto.space.createSpace",
+      method: "POST",
+      body: {
+        spaceType: GALLERY_SPACE_TYPE,
+        skey,
+        policy: { $type: "com.atproto.memberspace.policy" },
+      },
+    },
+    {
+      // `did` names the authority: pds.js infers it from the session, zds
+      // requires it. The config is nested, with the policy as a bare string,
+      // the one spelling both read.
+      nsid: "com.atproto.simplespace.createSpace",
+      method: "POST",
+      body: {
+        did: author,
+        type: GALLERY_SPACE_TYPE,
+        skey,
+        config: {
+          policy: "member-list",
+          appAccess: { $type: "com.atproto.simplespace.defs#open" },
+        },
+      },
+    },
+  ]);
+}
+
+/** Let `did` read a gallery. Only its author writes, so a member never does. */
+export function addGalleryReader(pds: PdsCall, space: string, did: string) {
+  return firstServed(pds, [
+    {
+      nsid: "com.atproto.memberspace.putMember",
+      method: "POST",
+      body: { space, did, read: true, write: false },
+    },
+    { nsid: "com.atproto.simplespace.addMember", method: "POST", body: { space, did } },
+  ]);
+}
+
+/** A gallery's member list, as its authority keeps it. */
+export function listGalleryMembers(pds: PdsCall, space: string, limit: number) {
+  return firstServed(
+    pds,
+    ["com.atproto.memberspace.listMembers", "com.atproto.simplespace.listMembers"].map((nsid) => ({
+      nsid,
+      method: "GET" as const,
+      params: { space, limit },
+    })),
+  );
+}
+
 // --- Identity ---------------------------------------------------------------
 
 const pdsCache = new Map<string, { endpoint: string; expires: number }>();

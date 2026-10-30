@@ -13,6 +13,8 @@ import { readFileSync } from "node:fs";
 import { generateSpaceSigKey, spaceSigHeaders } from "@hatk/hatk/spaces";
 import { beforeAll, describe, expect, test } from "vitest";
 import {
+  addGalleryReader,
+  createGallerySpace,
   listSpaceRecords,
   listSpaceRepos,
   type PdsCall,
@@ -125,41 +127,15 @@ describe.skipIf(!live)("permissioned spaces, live", () => {
     const skey = `test${Date.now().toString(36)}`;
     space = spaceUri(author.did, skey);
 
-    // The same body createPrivateGallery sends — the one spelling every server
-    // that implements the proposal reads.
-    await authorPds.pds("com.atproto.simplespace.createSpace", {
-      method: "POST",
-      body: {
-        did: author.did,
-        type: "social.grain.privateGallery",
-        skey,
-        config: {
-          policy: "member-list",
-          appAccess: { $type: "com.atproto.simplespace.defs#open" },
-        },
-      },
-    });
-    await authorPds.pds("com.atproto.simplespace.addMember", {
-      method: "POST",
-      body: { space, did: reader.did },
-    });
+    // The same calls createPrivateGallery makes.
+    await createGallerySpace(authorPds.pds, author.did, skey);
+    await addGalleryReader(authorPds.pds, space, reader.did);
 
     // A second gallery the reader is never added to, so the refusal below is
     // about membership rather than about a space that does not exist.
     const closedSkey = `closed${Date.now().toString(36)}`;
     closedSpace = spaceUri(author.did, closedSkey);
-    await authorPds.pds("com.atproto.simplespace.createSpace", {
-      method: "POST",
-      body: {
-        did: author.did,
-        type: "social.grain.privateGallery",
-        skey: closedSkey,
-        config: {
-          policy: "member-list",
-          appAccess: { $type: "com.atproto.simplespace.defs#open" },
-        },
-      },
-    });
+    await createGallerySpace(authorPds.pds, author.did, closedSkey);
     await authorPds.pds("com.atproto.space.createRecord", {
       method: "POST",
       body: {

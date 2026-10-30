@@ -7,7 +7,7 @@
 // this answers what the space actually holds.
 
 import { defineQuery, InvalidRequestError } from "$hatk";
-import { parseSpaceUri } from "../spaces/client.ts";
+import { listGalleryMembers, parseSpaceUri } from "../spaces/client.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 interface MemberRow {
@@ -30,13 +30,10 @@ export default defineQuery("social.grain.unspecced.getSpaceMembers", async (ctx)
 
   let dids: string[];
   try {
-    const body = await pds("com.atproto.simplespace.listMembers", {
-      method: "GET",
-      params: { space: params.space, limit: 100 },
-    });
-    // createSpace puts the owner on their own member list, since membership is
-    // what a member-list policy consults. True, and not what "shared with"
-    // means to the person reading it.
+    const body = await listGalleryMembers(pds, params.space, 100);
+    // pds.js's createSpace puts the owner on their own member list, since
+    // membership is what a member-list policy consults. True, and not what
+    // "shared with" means to the person reading it.
     dids = ((body.members ?? []) as MemberRow[])
       .map((m) => m.did)
       .filter((did) => did !== authority);

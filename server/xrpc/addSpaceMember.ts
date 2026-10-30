@@ -7,7 +7,7 @@
 
 import { defineProcedure, InvalidRequestError } from "$hatk";
 import { resolveActor } from "../helpers/resolveActor.ts";
-import { parseSpaceUri } from "../spaces/client.ts";
+import { addGalleryReader, parseSpaceUri } from "../spaces/client.ts";
 import { throwSpaceError } from "../spaces/errors.ts";
 
 export default defineProcedure("social.grain.unspecced.addSpaceMember", async (ctx) => {
@@ -37,7 +37,7 @@ export default defineProcedure("social.grain.unspecced.addSpaceMember", async (c
   }
 
   try {
-    await pds("com.atproto.simplespace.addMember", { method: "POST", body: { space, did } });
+    await addGalleryReader(pds, space, did);
   } catch (err) {
     return throwSpaceError(err, db, viewer.did);
   }

@@ -238,6 +238,8 @@ export default defineConfig({
       .split(" "),
     conditionalScopes: [
       { whenMethod: "com.atproto.simplespace.createSpace", scopes: [spaceScopes] },
+      // The reference alpha's name for the same, since 0.0.0-spaces-alpha-20261029171913.
+      { whenMethod: "com.atproto.space.createSpace", scopes: [spaceScopes] },
       // Pools, gated on reading one rather than on creating a space: a member
       // never creates the pool — the group does — so `getDelegationToken`
       // is the method that actually decides whether they can take part.

@@ -69,6 +69,18 @@ describe("probeSpaceSupport", () => {
     expect(result.pds).toBe(PDS);
   });
 
+  test("accepts the reference alpha's names, which have no simplespace", async () => {
+    const alpha = SPACE_METHODS.filter((m) => !m.startsWith("com.atproto.simplespace.")).concat(
+      "com.atproto.space.createSpace",
+      "com.atproto.space.getSpace",
+      "com.atproto.memberspace.putMember",
+      "com.atproto.memberspace.listMembers",
+    );
+    stubFetch(describeResponse(alpha));
+
+    expect(await probeSpaceSupport(PDS)).toMatchObject({ supported: true, missing: [] });
+  });
+
   test("accepts either spelling of getSpace", async () => {
     // The proposal renamed things after implementations shipped, so a server
     // may answer to com.atproto.space.getSpace instead.

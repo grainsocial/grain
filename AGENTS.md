@@ -118,6 +118,15 @@ does too, and it is stricter, so it is the one that finds our assumptions:
   `spaceScopes` in `hatk.config.ts`.
 - `com.atproto.simplespace.createSpace` requires `did`, and reads `policy` and
   `appAccess` from a nested `config` with the policy as a bare string.
+
+The reference `@atproto/pds` alpha has no `simplespace` since
+`0.0.0-spaces-alpha-20261029171913`: a space is created with
+`com.atproto.space.createSpace` (`spaceType`, `skey`, and a `policy` such as
+`{$type: "com.atproto.memberspace.policy"}`), and its member list kept with
+`com.atproto.memberspace.putMember`, `removeMember` and `listMembers`, where
+`read` and `write` are required. `server/spaces/client.ts` asks for those names
+first and falls back to `simplespace` on a 404 or 501.
+
 - Space reads name the repo `repo`, never `did`. pds.js hosts one account and
   falls back to it, which hides the difference.
 - `com.atproto.space.listRepos` is credential-only. A session does not work

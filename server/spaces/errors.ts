@@ -39,8 +39,14 @@ export async function throwSpaceError(err: unknown, db: Db, viewerDid: string): 
   }
 
   // The space's authority will not issue this reader a credential. hatk names
-  // the refusal, which the authority answers with a 400.
-  if (isNotAuthorized(err)) {
+  // the refusal, which the authority answers with a 400. The reference alpha,
+  // since 0.0.0-spaces-alpha-20261029171913, answers a refused reader as though
+  // the space did not exist, so as not to disclose that it does: to the reader
+  // the two are the same.
+  if (
+    isNotAuthorized(err) ||
+    (err instanceof SpaceCredentialError && err.code === "SpaceNotFound")
+  ) {
     throw new InvalidRequestError("Only members can see this", "NotAuthorized");
   }
 

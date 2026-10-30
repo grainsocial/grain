@@ -14,7 +14,7 @@
 import { defineProcedure, InvalidRequestError } from "$hatk";
 import { resolveActor } from "../helpers/resolveActor.ts";
 import { getSpaceSupport, pdsEndpointFor } from "../helpers/spaceSupport.ts";
-import { GALLERY_SPACE_TYPE, spaceUri } from "../spaces/client.ts";
+import { addGalleryReader, createGallerySpace, spaceUri } from "../spaces/client.ts";
 
 interface PhotoInput {
   photo: unknown;
@@ -53,25 +53,8 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
   const space = spaceUri(viewer.did, rkey);
   const createdAt = new Date().toISOString();
 
-  // `did` names the authority. pds.js infers it from the session and treats the
-  // field as optional; zds requires it. Sending it satisfies both, and it can
-  // only ever be the caller — nobody anchors a space on somebody else's account.
-  //
-  // The config goes in `config` rather than beside it, with the policy as the
-  // bare string the proposal's `#spaceConfig` uses. That is the one spelling
-  // both servers read: pds.js accepts either shape, zds only this one.
-  await pds("com.atproto.simplespace.createSpace", {
-    method: "POST",
-    body: {
-      did: viewer.did,
-      type: GALLERY_SPACE_TYPE,
-      skey: rkey,
-      config: {
-        policy: "member-list",
-        appAccess: { $type: "com.atproto.simplespace.defs#open" },
-      },
-    },
-  });
+  // Anchored on the caller: nobody makes a space on somebody else's account.
+  await createGallerySpace(pds, viewer.did, rkey);
 
   // Sequential rather than concurrent: the authority applies these to one
   // member list, and a handful of readers is not worth racing.
@@ -83,7 +66,7 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
   // authority issues.
   for (const did of members) {
     if (did === viewer.did) continue; // the authority is authorized without being listed
-    await pds("com.atproto.simplespace.addMember", { method: "POST", body: { space, did } });
+    await addGalleryReader(pds, space, did);
     await db.run(
       `INSERT INTO _space_invites (space, member_did, author_did, created_at)
        VALUES ($1, $2, $3, $4)
