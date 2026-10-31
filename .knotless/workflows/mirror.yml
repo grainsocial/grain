@@ -1,0 +1,63 @@
+# Mirrors main to GitHub and Tangled on every push. Knotless is the source
+# of truth: nothing pushes the other way, and a mirror only ever
+# fast-forwards, so a commit made on GitHub or Tangled directly makes the
+# run fail rather than be overwritten.
+#
+# A run pushes main as knotless has it when the run starts, so a run that a
+# newer push overtakes still leaves the mirrors at the newest commit. Each
+# mirror is tried even when the other fails, and the run fails if either
+# did.
+#
+# It runs on ci.knotless.dev alone, like deploy, so the keys never reach
+# the hosted runner that checks pulls. Both are sealed to pushes to main
+# (`knotless secret knotless://grain.social/grain set <name> --runner
+# ci.knotless.dev --ref refs/heads/main`):
+#
+#   GITHUB_DEPLOY_KEY  a write deploy key on github.com/grainsocial/grain
+#   TANGLED_SSH_KEY    a key on the grain.social account on tangled.org
+#
+# `knotless rerun knotless://grain.social/grain --ref refs/heads/main
+# --workflow mirror` mirrors main again, which is how to repair a mirror
+# after a failed run.
+on:
+  push: { refs: [refs/heads/main] }
+  asked: { refs: [refs/heads/main] }
+image: alpine:3.22
+runners: [ci.knotless.dev]
+secrets: [GITHUB_DEPLOY_KEY, TANGLED_SSH_KEY]
+env:
+  SOURCE: https://knotless.dev/grain.social/grain.git
+steps:
+  - name: tools
+    run: apk add --no-cache git openssh-client
+  - name: keys
+    run: |
+      mkdir -p ~/.ssh && chmod 700 ~/.ssh
+      printf '%s\n' "$GITHUB_DEPLOY_KEY" > ~/.ssh/github && chmod 600 ~/.ssh/github
+      printf '%s\n' "$TANGLED_SSH_KEY" > ~/.ssh/tangled && chmod 600 ~/.ssh/tangled
+      printf 'Host github.com\n  IdentityFile ~/.ssh/github\n  IdentitiesOnly yes\nHost tangled.org\n  IdentityFile ~/.ssh/tangled\n  IdentitiesOnly yes\n' > ~/.ssh/config
+      # Both hosts' ed25519 keys, pinned. GitHub publishes its own at
+      # api.github.com/meta.
+      cat > ~/.ssh/known_hosts <<'EOF'
+      github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      tangled.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAII2UShEm/FFPmYZUizaPnIqOJuynoCQpcLhl5PPHd02n
+      EOF
+  - name: mirror
+    timeout: 10
+    run: |
+      # A full fetch, not the checkout: a mirror is sent the history between
+      # its head and this commit, and a shallow repository cannot send it.
+      git init -q --bare /mirror && cd /mirror
+      git fetch -q "$SOURCE" "+refs/heads/main:refs/heads/main"
+      echo "main is at $(git rev-parse refs/heads/main)"
+
+      failed=""
+      for mirror in git@github.com:grainsocial/grain.git git@tangled.org:grain.social/grain; do
+        echo "==> $mirror"
+        git push "$mirror" refs/heads/main:refs/heads/main || failed="$failed $mirror"
+      done
+
+      if [ -n "$failed" ]; then
+        echo "not mirrored to:$failed"
+        exit 1
+      fi
