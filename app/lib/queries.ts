@@ -37,14 +37,20 @@ export const forYouFeedQuery = (did: string, limit = FEED_PAGE_SIZE, f?: Fetch) 
     staleTime: 60_000,
   });
 
-export const actorFeedQuery = (did: string, f?: Fetch) =>
+export const actorFeedQuery = (did: string, f?: Fetch, before?: string) =>
   infiniteQueryOptions({
-    queryKey: ["getFeed", "actor", did],
+    queryKey: ["getFeed", "actor", did, before ?? null],
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) =>
       callXrpc(
         "dev.hatk.getFeed",
-        { feed: "actor", actor: did, limit: 30, ...(pageParam ? { cursor: pageParam } : {}) },
+        {
+          feed: "actor",
+          actor: did,
+          limit: 30,
+          ...(before ? { before } : {}),
+          ...(pageParam ? { cursor: pageParam } : {}),
+        },
         f,
       ),
     getNextPageParam: (lastPage) => lastPage?.cursor,

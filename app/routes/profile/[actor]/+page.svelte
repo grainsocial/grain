@@ -63,7 +63,16 @@
   // Links out of this page use the handle once the profile has one; until
   // then the DID is what the route already accepts.
   const profileHref = $derived(profilePath(profile.data ?? { did }))
-  const feed = createInfiniteQuery(() => actorFeedQuery(did))
+  // Jump to a year: ?year=2016 starts the grid at the end of that year.
+  const year = $derived(Number(page.url.searchParams.get('year')) || null)
+  const years = Array.from({ length: new Date().getFullYear() - 1999 }, (_, i) => new Date().getFullYear() - i)
+  function setYear(y: string) {
+    const url = new URL(page.url)
+    if (y) url.searchParams.set('year', y)
+    else url.searchParams.delete('year')
+    goto(url, { replaceState: true, keepFocus: true, noScroll: true })
+  }
+  const feed = createInfiniteQuery(() => actorFeedQuery(did, undefined, year ? `${year + 1}-01-01T00:00:00.000Z` : undefined))
   const feedItems = $derived(feed.data?.pages.flatMap((p) => p.items ?? []) ?? [])
   const favorites = createInfiniteQuery(() => ({
     ...actorFavoritesInfiniteQuery(did),
@@ -352,6 +361,12 @@
       onLoadMore={() => favorites.fetchNextPage()}
     />
   {:else}
+    {#if (profile.data?.galleryCount ?? 0) > 30}
+      <select class="year-jump" aria-label="Jump to year" value={year ?? ''} onchange={(e) => setYear(e.currentTarget.value)}>
+        <option value="">Latest</option>
+        {#each years as y}<option value={y}>{y}</option>{/each}
+      </select>
+    {/if}
     <GalleryGrid
       items={feedItems}
       loading={feed.isLoading}
@@ -538,6 +553,17 @@
     padding: 4px 0;
   }
   .select-text-btn:hover { opacity: 0.8; }
+  .year-jump {
+    display: block;
+    margin: 0 16px 8px auto;
+    background: none;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--grain);
+    cursor: pointer;
+  }
   .toggle-btn {
     display: flex;
     align-items: center;
