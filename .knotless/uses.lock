@@ -1,0 +1,13 @@
+# Written by `knotless uses update`. Commit it: runs read it.
+chadtmiller.com/steps/npm-ci@1:
+  version: 1.0.0
+  commit: 686cdbb38978730bb1ba5d1c999967e48497ce15
+  release: at://did:plc:bcgltzqazw5tb6k2g3ttenbj/dev.knotless.release/3mza7iq7tundv.dzyz2ceqihhxzgk2f2637ygpfw.sjjb7q6l3fsl3spvqsuzdoe73w
+chadtmiller.com/steps/publish-lexicons@1:
+  version: 1.0.0
+  commit: cc436177fab7461a33e84ec8876a2d66656a5c09
+  release: at://did:plc:bcgltzqazw5tb6k2g3ttenbj/dev.knotless.release/3mza7iq7tundv.ez5tgppxbpaxxrztjj3cnlyyhc.sjjb7q6l3fsl3spvqsuzdoe73w
+chadtmiller.com/steps/wait-for-checks@2:
+  version: 2.0.0
+  commit: d5b057a2314833fdee9f600c7872db2916b0d0aa
+  release: at://did:plc:bcgltzqazw5tb6k2g3ttenbj/dev.knotless.release/3mza7iq7tundv.nglt7rswdf5dzx2tmob2gquhpu.6ivl2z3tvmrsq2jsdlkldzd2yd

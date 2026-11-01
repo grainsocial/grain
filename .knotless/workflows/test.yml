@@ -1,7 +1,7 @@
 # The unit tests, as `npm test` runs them. The live spaces tests skip
 # themselves without SPACES_LIVE=1, and the Playwright tests in test/browser
 # are not run here. The packages are kept between runs and installed again
-# only when the lockfile changes.
+# only when the lockfile changes (the npm-ci shared step).
 image: node:25-slim
 runners: [runner.knotless.dev]
 on:
@@ -9,11 +9,6 @@ on:
   pull: { base: [refs/heads/main] }
 cache: [node_modules]
 steps:
-  - name: packages
-    run: |
-      lock=$(sha256sum package-lock.json)
-      [ "$(cat node_modules/.lock 2>/dev/null)" = "$lock" ] && exit 0
-      npm ci --no-audit --no-fund
-      echo "$lock" > node_modules/.lock
+  - uses: chadtmiller.com/steps/npm-ci@1
   - name: test
     run: npm test

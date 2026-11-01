@@ -1,11 +1,12 @@
 # Publishes grain's lexicons as atproto resolves them, once main's test
-# and check pass at a commit that changes them (deploy/publish-lexicons.mjs):
-# a com.atproto.lexicon.schema record in grain.social's repo for each
-# social.grain.* lexicon, and the `_lexicon.<authority>` TXT records in the
-# grain.social zone naming that account. What is new or changed is
-# written, and what main no longer has is deleted. Each run makes the
-# whole set match main, so a run cut off by a newer one leaves nothing the
-# next does not finish.
+# and check pass at a commit that changes them, with the publish-lexicons
+# shared step: a com.atproto.lexicon.schema record in grain.social's repo
+# for each lexicon whose authority is in the grain.social zone, and the
+# `_lexicon.<authority>` TXT records naming that account. The rest of
+# lexicons/ (app.bsky, dev.hatk, ...) are copies of other publishers' and
+# are left to them. What is new or changed is written, and what main no
+# longer has is deleted. Each run makes the whole set match main, so a run
+# cut off by a newer one leaves nothing the next does not finish.
 #
 # A PDS that validates records reads these schemas, not lexicons/, so a
 # stale one here rejects writes the appview accepts.
@@ -20,36 +21,29 @@
 #
 # Asked for on any other branch, `knotless rerun
 # knotless://grain.social/grain --ref refs/heads/<branch> --workflow
-# publish-lexicons`, it says what it would change and changes nothing.
+# publish-lexicons`, it says what it would change and changes nothing:
+# the wait and the publish run only at main.
 on:
-  push: { refs: [refs/heads/main], paths: [lexicons/social/**, deploy/publish-lexicons.mjs] }
+  push:
+    refs: [refs/heads/main]
+    paths: [lexicons/social/**, .knotless/workflows/publish-lexicons.yml, .knotless/uses.lock]
   asked: { refs: [refs/heads/*] }
 image: node:24.22.1
 runners: [ci.knotless.dev]
 secrets: [LEX_PASSWORD, CLOUDFLARE_API_TOKEN]
 env:
-  LEX_DID: did:plc:e7rftrdyz5e2rw4y6ocszew2
-  LEX_ZONE: grain.social
   # Cloudflare refuses a token limited to an address over IPv6.
   NODE_OPTIONS: --dns-result-order=ipv4first
 steps:
   - name: plan
-    run: node deploy/publish-lexicons.mjs
+    uses: chadtmiller.com/steps/publish-lexicons@1
+    with: { did: "did:plc:e7rftrdyz5e2rw4y6ocszew2", zone: grain.social }
   - name: checks
-    timeout: 30
-    run: |
-      [ "$KNOTLESS_RUN_REF" = refs/heads/main ] || exit 0
-      curl -fsSL https://knotless.dev/install.sh | KNOTLESS_INSTALL_DIR=/usr/local/bin sh
-      repo="knotless://$KNOTLESS_RUN_REPO"
-      end=$(($(date +%s) + 1500))
-      for wf in test check; do
-        left=$((end - $(date +%s)))
-        [ "$left" -gt 0 ] || left=1
-        out=$(knotless checks "$repo" --ref "$KNOTLESS_RUN_REF" --commit "$KNOTLESS_RUN_SHA" --workflow "$wf" --wait "$left")
-        echo "$out"
-        case "$out" in success*) ;; *) echo "$wf has not passed: not publishing"; exit 1 ;; esac
-      done
+    uses: chadtmiller.com/steps/wait-for-checks@2
+    on: { refs: [refs/heads/main] }
+    with: { workflows: test check }
   - name: publish
-    run: |
-      [ "$KNOTLESS_RUN_REF" = refs/heads/main ] || exit 0
-      node deploy/publish-lexicons.mjs --write
+    uses: chadtmiller.com/steps/publish-lexicons@1
+    on: { refs: [refs/heads/main] }
+    with: { did: "did:plc:e7rftrdyz5e2rw4y6ocszew2", zone: grain.social, write: "true" }
+    secrets: [LEX_PASSWORD, CLOUDFLARE_API_TOKEN]
