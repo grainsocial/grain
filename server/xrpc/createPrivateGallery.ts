@@ -101,7 +101,7 @@ export default defineProcedure("social.grain.unspecced.createPrivateGallery", as
       value: {
         $type: "social.grain.photo",
         photo: photo.photo,
-        ...(photo.alt ? { alt: photo.alt } : {}),
+        alt: photo.alt || "",
         aspectRatio: photo.aspectRatio,
         createdAt,
       },

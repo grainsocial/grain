@@ -135,6 +135,17 @@ first and falls back to `simplespace` on a 404 or 501.
 When touching the space client, check a call against both servers' handlers:
 `packages/spaces/src/handlers/` in pds.js, `src/atproto/space.zig` in zds.
 
+## Photo writes always send `alt`
+
+`@atproto/pds` validates writes against schemas compiled into the server, not
+the ones grain.social publishes (`validateRecord` in
+`packages/pds/src/repo/prepare.ts`). Its copy of `social.grain.photo` requires
+`alt`, so a photo without it is refused, and hatk reports that as a 500 on
+`dev.hatk.applyWrites`. Send `alt: ""` when there is no description.
+
+The same goes for any schema change: publishing it does not reach these servers.
+A write has to stay valid against the copy they ship until they upgrade.
+
 ## Production debugging
 
 Production is a single Hetzner host, `167.233.237.163`, running the appview,

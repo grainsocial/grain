@@ -73,7 +73,7 @@ export default defineProcedure("social.grain.unspecced.createPoolGallery", async
       value: {
         $type: "social.grain.photo",
         photo: photo.photo,
-        ...(photo.alt ? { alt: photo.alt } : {}),
+        alt: photo.alt || "",
         aspectRatio: photo.aspectRatio,
         createdAt,
       },

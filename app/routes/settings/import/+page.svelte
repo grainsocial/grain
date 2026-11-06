@@ -117,6 +117,7 @@
             createWrite('social.grain.photo', photoRkeys[i], {
               photo: blobs[i],
               aspectRatio: { width: photo.width, height: photo.height },
+              alt: '',
               createdAt,
             }),
           ),

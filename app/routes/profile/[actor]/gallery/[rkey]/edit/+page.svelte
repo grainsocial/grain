@@ -353,7 +353,7 @@
             createWrite('social.grain.photo', photoRkey, {
               photo: blobBySlot.get(i),
               aspectRatio: { width: slot.processed.width, height: slot.processed.height },
-              ...(slot.processed.alt ? { alt: slot.processed.alt } : {}),
+              alt: slot.processed.alt || '',
               createdAt: now,
             }),
           )
@@ -388,7 +388,7 @@
               updateWrite('social.grain.photo', photoRkey, {
                 photo: blobBySlot.get(i),
                 aspectRatio: { width: slot.replacement.width, height: slot.replacement.height },
-                ...(slot.view.alt ? { alt: slot.view.alt } : {}),
+                alt: slot.view.alt || '',
                 createdAt: (slot.view as any).record?.createdAt ?? now,
               }),
             )
