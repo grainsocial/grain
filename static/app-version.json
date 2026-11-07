@@ -1,0 +1,10 @@
+{
+  "ios": {
+    "minimumBuild": 0,
+    "storeUrl": "https://apps.apple.com/app/id6747730230"
+  },
+  "android": {
+    "minimumVersionCode": 0,
+    "storeUrl": "https://play.google.com/store/apps/details?id=social.grain"
+  }
+}

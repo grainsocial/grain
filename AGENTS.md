@@ -146,6 +146,21 @@ the ones grain.social publishes (`validateRecord` in
 The same goes for any schema change: publishing it does not reach these servers.
 A write has to stay valid against the copy they ship until they upgrade.
 
+## Minimum app versions
+
+`static/app-version.json`, served at `https://grain.social/app-version.json`,
+is the oldest build of each app this server still serves. The iOS and Android
+apps read it on launch and on returning to the foreground, and a build below
+its minimum shows a full-screen "Update Grain" that cannot be dismissed. Each
+app remembers the last minimum it read, so a blocked build stays blocked
+offline.
+
+The numbers are build numbers, not marketing versions: `ios.minimumBuild` is
+`CFBundleVersion` (`CURRENT_PROJECT_VERSION` in grain-ios's `project.yml`),
+`android.minimumVersionCode` is `versionCode`. `0` blocks nothing. Raise one
+only once the build it names is live in its store, or people are told to
+install an update they cannot get.
+
 ## Production debugging
 
 Production is a single Hetzner host, `167.233.237.163`, running the appview,
