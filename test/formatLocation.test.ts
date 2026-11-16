@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatStoredLocation } from "../server/helpers/formatLocation.ts";
+import { formatStoredLocation } from "../web/src/lib/utils/formatLocation.ts";
 
 describe("formatStoredLocation", () => {
   test("POI with locality differs from name — includes full context", () => {

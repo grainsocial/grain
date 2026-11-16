@@ -1,8 +1,6 @@
-# The web pages and the Node side of the repository, as `npm run check`
-# and `npm test` run them: vp check (format and lint), svelte-check, then
-# the unit tests. The live spaces tests skip themselves without
-# SPACES_LIVE=1, and the Playwright tests in test/browser are not run here.
-# The packages are kept between runs and installed again only when the
+# The web pages, as `npm run check` and `npm test` run them: vp check
+# (format and lint), svelte-check, then the unit tests under test/. The
+# packages are kept between runs and installed again only when the
 # lockfile changes (the npm-ci shared step).
 image: node:25-slim
 runners: [runner.knotless.dev]

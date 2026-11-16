@@ -30,7 +30,7 @@ impl Index {
     }
 
     /// The key of the cookies browsers held before grain-serve's, if the
-    /// import carried one ([`crate::login::carryover`]).
+    /// index holds one ([`crate::login::carryover`]).
     pub fn carried_cookie_key(&self) -> rusqlite::Result<Option<[u8; 32]>> {
         let db = self.db.lock().unwrap();
         let sql = "SELECT key FROM carried_cookie_key LIMIT 1";

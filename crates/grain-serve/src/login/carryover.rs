@@ -1,12 +1,12 @@
 //! Browsers logged in to grain.social before grain-serve served it stay
 //! logged in: the one runtime file that reads hatk's session cookies, and
 //! deleted once `--carry-cookies-until` has passed, with the
-//! `carried_cookie_key` table and its import.
+//! `carried_cookie_key` table.
 //!
 //! hatk sealed `__hatk_session`, `{did, handle, ts}`, and
 //! `__hatk_session_accounts`, `{accounts: [{did, handle}], ts}`, with
 //! AES-256-GCM: the value is the IV and the sealed bytes, each base64url,
-//! a `.` between. Each lasts 30 days from `ts`. The import keeps the
+//! a `.` between. Each lasts 30 days from `ts`. The index keeps the
 //! key, 32 bytes, as `carried_cookie_key`, and the sessions hatk held as
 //! `web_session`s.
 //!
@@ -194,9 +194,8 @@ pub(crate) mod tests {
     use super::*;
     use serde_json::json;
 
-    /// The key hatk's code draws from its fixture JWK (the one
-    /// `grain-import`'s tests draw it from), and cookies hatk's own
-    /// `encrypt` (`packages/hatk/src/oauth/session.ts`) sealed under it,
+    /// The key hatk's code draws from its fixture JWK, and cookies hatk's
+    /// own `encrypt` (`packages/hatk/src/oauth/session.ts`) sealed under it,
     /// on Node.
     const KEY: &str = "a0fb2a23a97fa7176425a2702c7ca2a8591deb89b7246a792454bc61e52a6903";
     /// `{did: "did:plc:alice", handle: "alice.test", ts: TS}`.

@@ -11,6 +11,5 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["web/src", "hatk.generated.ts", "hatk.config.ts"],
-  "references": [{ "path": "./tsconfig.server.json" }]
+  "include": ["web/src"]
 }

@@ -23,20 +23,11 @@ export default defineConfig({
   plugins: [sveltekit()],
   server: { port: Number(process.env.PORT ?? 3000), proxy },
   preview: { proxy },
+  test: { include: ["test/**/*.test.ts"] },
   lint: {
-    ignorePatterns: [
-      "hatk.generated.ts",
-      "hatk.generated.client.ts",
-      "web/src/lib/lexicons/**",
-      ".lexicons/**",
-    ],
+    ignorePatterns: ["web/src/lib/lexicons/**", ".lexicons/**"],
   },
   fmt: {
-    ignorePatterns: [
-      "hatk.generated.ts",
-      "hatk.generated.client.ts",
-      "web/src/lib/lexicons/**",
-      ".lexicons/**",
-    ],
+    ignorePatterns: ["web/src/lib/lexicons/**", ".lexicons/**"],
   },
 });

@@ -556,7 +556,7 @@ fn sealed(key: &[u8; 32], did: &str, others: &[&str]) -> Jar {
 async fn a_browser_logged_in_before_stays_logged_in() {
     let site = carrying(keys::now_secs() + 3600).await;
     let (a, b) = (net::account().await, net::account().await);
-    // Their sessions, as the import carries them.
+    // Their sessions, as the index holds them.
     let mut elsewhere = Jar::default();
     site.log_in(&mut elsewhere, &b).await;
     site.log_in(&mut elsewhere, &a).await;

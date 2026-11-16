@@ -1,6 +1,6 @@
 # grain
 
-A photo sharing app built on the AT Protocol with [hatk](https://github.com/hatk-dev/hatk).
+A photo sharing app built on the AT Protocol.
 
 Users create galleries of photos, browse feeds, leave comments, and follow other photographers.
 
@@ -18,11 +18,14 @@ grain-serve, the Rust server, which follows Jetstream into an index in
 
 ## Project structure
 
-| Directory   | Purpose                                    |
-| ----------- | ------------------------------------------ |
-| `lexicons/` | AT Protocol lexicon schemas                |
-| `server/`   | Feeds, XRPC handlers, hooks, setup scripts |
-| `web/`      | SvelteKit frontend                         |
-| `seeds/`    | Test data for local dev                    |
+| Directory            | Purpose                                         |
+| -------------------- | ----------------------------------------------- |
+| `crates/grain-serve` | grain-serve: appview, web server side, push     |
+| `crates/grain`       | Core library and the `grain` CLI                |
+| `crates/grain-mcp`   | MCP server for moderation                       |
+| `web/`               | SvelteKit frontend                              |
+| `lexicons/`          | AT Protocol lexicon schemas                     |
+| `harness/`           | Test harness: reference PDS, check scripts, e2e |
+| `deploy/`            | Production deploy                               |
 
 See `AGENTS.md` for detailed development docs.

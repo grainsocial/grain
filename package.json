@@ -3,18 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "lex": "rm -rf .lexicons && mkdir .lexicons && cp -R lexicons/. .lexicons/ && rm -rf .lexicons/dev/hatk .lexicons/social/grain/unspecced .lexicons/social/grain/group.json .lexicons/social/grain/privateGallery.json .lexicons/fyi/opensocial/declaration.json && lex build --lexicons .lexicons --out web/src/lib/lexicons --clear --import-ext .ts",
-    "start": "hatk start",
+    "lex": "rm -rf .lexicons && mkdir .lexicons && cp -R lexicons/. .lexicons/ && rm -rf .lexicons/social/grain/unspecced .lexicons/social/grain/group.json .lexicons/social/grain/privateGallery.json .lexicons/fyi/opensocial/declaration.json && lex build --lexicons .lexicons --out web/src/lib/lexicons --clear --import-ext .ts",
     "dev": "npm run lex && vp dev",
     "build": "npm run lex && vp build",
     "check": "npm run lex && vp check && svelte-check",
     "format": "vp format",
-    "test": "vp test",
-    "test:coverage": "vitest run --config vitest.coverage.config.ts --coverage",
-    "test:browser": "npx playwright test"
+    "test": "vp test"
   },
   "dependencies": {
-    "@hatk/hatk": "^0.0.1-alpha.115",
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.55.0",
     "@tanstack/svelte-query": "^6.1.0",
@@ -24,14 +20,11 @@
     "lucide-svelte": "^0.576.0",
     "maplibre-gl": "^5.24.0",
     "pmtiles": "^4.5.0",
-    "protomaps-themes-base": "^4.5.0",
-    "sharp": "^0.35.4"
+    "protomaps-themes-base": "^4.5.0"
   },
   "devDependencies": {
     "@atproto/lex": "0.4.4",
-    "@playwright/test": "^1",
     "@types/node": "^25.4.0",
-    "@vitest/coverage-v8": "^5.0.0",
     "@voidzero-dev/vite-plus-core": "^0.3.0",
     "svelte": "^5",
     "svelte-check": "^4",

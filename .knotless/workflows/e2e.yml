@@ -33,7 +33,6 @@ on:
         package-lock.json,
         svelte.config.js,
         vite.config.ts,
-        hatk.generated.client.ts,
         harness/e2e/**,
         harness/pds.mjs,
         harness/tls-proxy.mjs,

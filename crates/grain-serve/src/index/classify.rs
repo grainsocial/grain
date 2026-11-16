@@ -3,7 +3,7 @@
 //! The paths that put what accounts write as they write it (the stream,
 //! `indexRecords` and the web's writes) say which records were new to
 //! the index ([`Index::arrived`]), for the classifiers to score. Backfill
-//! and the import do not: what they put is not new.
+//! does not: what it puts is not new.
 //!
 //! `classification` keeps each subject's last scores, by classifier, and
 //! the fingerprint of what was asked, so that what has not changed is not

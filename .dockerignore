@@ -6,11 +6,7 @@ harness/node_modules
 build
 .svelte-kit
 .lexicons
-coverage
-test-results
-.dev-logs
 .env
-*.db
-data
-certs
+*.p8
 deploy/local.env
+*.db

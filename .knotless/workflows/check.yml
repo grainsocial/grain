@@ -16,19 +16,20 @@ on:
   pull: { base: [refs/heads/main, refs/heads/feature/*] }
 cache: [target, /usr/local/cargo/registry, /usr/local/rustup]
 steps:
-  # grain-import, the one-shot cutover from the old server's database, and
-  # grain-serve's login carryover, which reads the cookies it set until a
-  # date after cutover, are the only Rust that may name it: the rest
-  # describes grain on its own terms. Both are deleted after cutover. The pattern is bracketed so that this file does not match it.
-  # git grep exits 1 when it finds nothing, and more when it cannot search.
-  - name: the old server is named only in grain-import
+  # grain-serve's login carryover (crates/grain-serve/src/login/carryover.rs),
+  # which opens the session cookies browsers hold from grain's previous
+  # server until GRAIN_CARRY_COOKIES_UNTIL, is the one file that may name
+  # that server: the rest describes grain on its own terms. The pattern is
+  # bracketed so that this file does not match it. git grep exits 1 when it
+  # finds nothing, and more when it cannot search.
+  - name: the previous server is named only in the login carryover
     run: |
       git config --global --add safe.directory "$PWD"
       rc=0
-      git grep -in 'h[a]tk' -- crates harness .knotless/workflows/check.yml ':(exclude)crates/grain-import' ':(exclude)crates/grain-serve/src/login/carryover.rs' || rc=$?
+      git grep -in 'h[a]tk' -- crates harness deploy web Dockerfile Justfile .knotless ':(exclude)crates/grain-serve/src/login/carryover.rs' || rc=$?
       case $rc in
         1) exit 0 ;;
-        0) echo "named outside crates/grain-import, above"; exit 1 ;;
+        0) echo "named outside the login carryover, above"; exit 1 ;;
         *) echo "git grep could not search the checkout"; exit 2 ;;
       esac
   # cargo fmt --check, then clippy over the workspace, warnings denied.

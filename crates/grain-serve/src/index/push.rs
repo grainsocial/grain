@@ -6,7 +6,7 @@
 //! The paths that put what accounts write as they write it (the stream,
 //! `indexRecords` and the web's writes) say which records were new to the
 //! index ([`Index::arrived`]), for the sender ([`crate::push::send`]) to
-//! push. Backfill and the import do not: what they put is old news.
+//! push. Backfill does not: what it puts is old news.
 
 use super::Index;
 use rusqlite::params;

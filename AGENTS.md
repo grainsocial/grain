@@ -1,8 +1,10 @@
-# hatk project
+# grain
 
-This is an AT Protocol application built with [hatk](https://github.com/hatk-dev/hatk).
-Read the project's lexicons in `lexicons/` to understand the data model.
-Types are generated from lexicons into `hatk.generated.ts` — never edit this file directly.
+grain is a photo sharing app on the AT Protocol. grain-serve, the Rust
+server in `crates/grain-serve`, is its appview, the web's server side, push
+and backfill; the web pages are the SvelteKit app in `web/`, which
+grain-serve hands what it does not answer itself. The schemas are in
+`lexicons/`.
 
 ## Landing a change
 
@@ -36,9 +38,6 @@ opened or pushed there.
   pull open from it into main, unqueued, as the check that the whole of it
   still passes there, and merge main into the feature branch as main
   moves.
-
-`feature/rust` holds the move off hatk onto a Rust server modelled on
-knotless: one pull into it per step of the plan.
 
 ## The Rust tests
 
@@ -133,12 +132,12 @@ optional and nothing removed, renamed, retyped, made required or
 narrowed. A bound or a DID that a published field lacks is left as it is,
 for the same reason. Fix anything either says, or say why not.
 
-It reads grain's own schemas, less `unspecced/` and the admin methods only
-the old server serves (`OLD` in the script), which go at cutover rather
-than be brought up to the guide; the other namespaces under `lexicons/`
-are copies of others' schemas. What this branch has that the guide would
-have otherwise, not yet published, is in its `PENDING`, to be fixed
-before main.
+It reads grain's own schemas, less `unspecced/` and the admin methods
+grain-serve does not serve (`UNSERVED` in the script), which stay as
+published rather than be brought up to the guide; the other namespaces
+under `lexicons/` are copies of others' schemas. What this branch has that
+the guide would have otherwise, not yet published, is in its `PENDING`, to
+be fixed before main.
 
 Still by hand: no `required` a reader could do without, since it can never
 be dropped; a description on any field whose name does not say what it
@@ -153,45 +152,21 @@ valid against what those servers ship until they upgrade.
 
 ## Project structure
 
-| Directory   | Purpose                                                                             |
-| ----------- | ----------------------------------------------------------------------------------- |
-| `lexicons/` | AT Protocol lexicon schemas (JSON). Defines collections and XRPC methods            |
-| `server/`   | All server-side code: feeds, XRPC handlers, hooks, labels, OG routes, setup scripts |
-| `web/`      | SvelteKit frontend: `web/src` (routes, components, styles), `web/static` (assets)   |
-| `seeds/`    | Test data seeding scripts for local development                                     |
-| `test/`     | Test files (vitest). Run with `vp test`                                             |
+| Path                 | Purpose                                                                        |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `crates/grain`       | grain's core library and the `grain` CLI, shared by the server, CLI and MCP    |
+| `crates/grain-serve` | grain-serve: the appview, the web's server side, push and backfill             |
+| `crates/grain-mcp`   | An MCP server for grain's moderation                                           |
+| `web/`               | SvelteKit pages: `web/src` (routes, components, styles), `web/static` (assets) |
+| `test/`              | The web's unit tests (Vitest), `npm test`                                      |
+| `lexicons/`          | AT Protocol lexicon schemas (JSON): records and XRPC methods                   |
+| `harness/`           | The reference PDS the Rust tests run against, the checks' scripts, and e2e     |
+| `deploy/`            | The production deploy: compose project, `deploy.sh`, `logs.sh`                 |
+| `docs/`              | Notes on grain-serve, such as its observability                                |
 
-## Key files
-
-- `hatk.config.ts` — project configuration (see `defineConfig` for type info)
-- `hatk.generated.ts` — auto-generated server types and helpers. Regenerate with `hatk generate types`
-- `hatk.generated.client.ts` — auto-generated client-safe types and `callXrpc`. Never import `hatk.generated.ts` from frontend code
-
-## The `$hatk` alias
-
-Server files in `server/` import from `$hatk`:
-
-```ts
-import { defineFeed, views, type Status } from "$hatk";
-```
-
-SvelteKit routes and components import from `$hatk/client`:
-
-```ts
-import { callXrpc, getViewer } from "$hatk/client";
-```
-
-`$hatk` resolves to `hatk.generated.ts` and `$hatk/client` to `hatk.generated.client.ts`.
-The Vite plugin handles this in dev/build. In tests and production, a Node.js module resolve hook handles it.
-
-## Commands
-
-Run `npx hatk --help` for the full list of commands.
-
-Use `npx hatk generate` to scaffold new feeds, xrpc handlers, labels, and lexicons
-rather than creating files manually. These generate files with the correct imports.
-
-After modifying lexicons, always run `npx hatk generate types` to update the generated types.
+The web is built from the root's `package.json`, `svelte.config.js`,
+`vite.config.ts` and `tsconfig.json`; `npm run lex` generates its lexicon
+types into `web/src/lib/lexicons` (ignored by git) from `lexicons/`.
 
 ## The vitest overrides
 
@@ -205,8 +180,7 @@ Two entries are there only to keep `npm install` resolvable, not because we use
 them. `@vitest/browser-playwright` and `@vitest/browser-webdriverio` are optional
 peers of vite-plus at 4.1.11, and Vitest 5 wants `>=5.0.0`; webdriverio has no
 5.0.0 release yet, so it is pinned to `5.0.0-rc.1`. Vitest browser mode is unused
-here — the browser tests in `test/browser/` are plain Playwright, run separately
-with `npm run test:browser`.
+here.
 
 Drop the whole block once vite-plus ships a release built on Vitest 5.
 
@@ -221,53 +195,19 @@ The `Justfile` holds the recipes, as knotless's does; `just` lists them.
 - `just serve <flags>` — grain-serve alone; `just web` builds the pages
   into `build/`, and `just pages` runs them against `just serve`
 - `just test`, `just t <cargo test args>` — the Rust tests; `npm test` the
-  Node ones, which the `web` check runs with `npm run check`
+  web's, which the `web` check runs with `npm run check`
 
-## Permissioned spaces in dev
+## Permissioned spaces on other servers
 
-Shared galleries run on permissioned data (proposal 0016), which the reference
-PDS on 2583 does not serve. `docker compose` also brings up two pds.js
-instances, on 2584 and 2585, with `PDS_ENABLE_SPACES=true`. Two, because pds.js
-hosts one account per instance and a space is only interesting once a member's
-repo lives on a host the authority does not control.
-
-```sh
-docker compose up -d
-./seeds/pdsjs-accounts.sh   # needs a pds.js checkout; PDSJS_DIR if not ~/code/pds.js
-```
-
-The script prints a DID per account. **Log in with the DID, not the handle** —
-handle resolution goes through the dev relay, which is the PDS on 2583, and it
-has never heard of these accounts.
-
-Both instances are addressed as `pdsjs-a.localhost` / `pdsjs-b.localhost` rather
-than `localhost`. A member's PDS notifies the authority's PDS directly on every
-space write, so both have to reach each other by the hostname in the DID
-document, and `localhost` inside a container is that container. macOS resolves
-`*.localhost` to 127.0.0.1, and `extra_hosts` maps the same names to the host
-gateway inside the containers, so one name works from everywhere.
-
-The image defaults to `atcr.io/chadtmiller.com/pds.js:latest`, which needs
-`docker login atcr.io` (handle + app password). To run a local build instead:
-
-```sh
-docker build -t pds.js:local ~/code/pds.js
-PDSJS_IMAGE=pds.js:local docker compose up -d
-```
-
-Space writes never reach a firehose, so nothing these accounts do in a space is
-indexed by the appview. That is the protocol working as designed, not a dev-env
-limitation — the app assembles a space by reading member repos directly.
-
-### The second implementation
-
-pds.js is not the only server that serves spaces. [zds](https://tangled.org/zat.dev/zds)
-does too, and it is stricter, so it is the one that finds our assumptions:
+Groups run on permissioned spaces (proposal 0016). The tests run them on the
+reference PDS's spaces alpha (`GRAIN_DEV_ENV`, above), but it is not the only
+server that serves them: pds.js and [zds](https://tangled.org/zat.dev/zds) do
+too, and zds is the stricter, so it is the one that finds our assumptions:
 
 - It validates the requested OAuth scope against the `scope` in our published
-  client metadata document. Conditional scopes widen the request past that
-  document unless the extra scopes are registered on the client too — see
-  `spaceScopes` in `hatk.config.ts`.
+  client metadata document. Scopes asked for only of PDSes that serve spaces
+  widen the request past that document unless they are registered on the
+  client too: `REGISTERED` in `crates/grain-serve/src/login.rs` holds them all.
 - `com.atproto.simplespace.createSpace` requires `did`, and reads `policy` and
   `appAccess` from a nested `config` with the policy as a bare string.
 
@@ -276,8 +216,9 @@ The reference `@atproto/pds` alpha has no `simplespace` since
 `com.atproto.space.createSpace` (`spaceType`, `skey`, and a `policy` such as
 `{$type: "com.atproto.memberspace.policy"}`), and its member list kept with
 `com.atproto.memberspace.putMember`, `removeMember` and `listMembers`, where
-`read` and `write` are required. `server/spaces/client.ts` asks for those names
-first and falls back to `simplespace` on a 404 or 501.
+`read` and `write` are required. `Admin` in `crates/grain/src/space.rs` asks
+for those names first and the `simplespace` ones when the PDS has no such
+method.
 
 - Space reads name the repo `repo`, never `did`. pds.js hosts one account and
   falls back to it, which hides the difference.
@@ -355,7 +296,7 @@ write small.
 The record tables (`gallery`, `photo`, `favorite`, `repo`, ...) are
 re-derivable: backfill fetches them from the network. These are not:
 `oauth_key` (change it and every web session is void), `web_session`,
-`carried_cookie_key` (the old server's cookie key, read until
+`carried_cookie_key` (the key of the previous server's session cookies, read until
 `--carry-cookies-until`), `push_token`, `preference`, `notification_pref`,
 `notification_seen`, `label`, `mute`, `report`, `story_view`,
 `space_support`, `space_invite`, and `takedown`, which is where an admin
@@ -413,10 +354,10 @@ When an XRPC output has inline objects you want to reference independently (e.g.
 }
 ```
 
-Then run `npx hatk generate types`. The generated code will export `ExternalLink` as its own type, importable from `$hatk/client`:
+Then `npm run lex` regenerates `web/src/lib/lexicons`, where `ExternalLink` is a type of its own in that schema's module:
 
 ```ts
-import { callXrpc, type ExternalLink } from "$hatk/client";
+import type { ExternalLink } from "$lib/lexicons/social/grain/actor/defs.ts";
 let links: ExternalLink[] = $state([]);
 ```
 
@@ -424,35 +365,17 @@ If the type name collides with a component import (e.g. `ExternalLink.svelte`), 
 
 ```ts
 import ExternalLink from "$lib/components/molecules/ExternalLink.svelte";
-import { type ExternalLink as ExternalLinkType } from "$hatk/client";
+import type { ExternalLink as ExternalLinkType } from "$lib/lexicons/social/grain/actor/defs.ts";
 ```
 
-## Custom indexes
-
-hatk auto-creates indexes on `indexed_at DESC`, `did`, and child table columns. For app-specific queries (e.g. ordering by `played_time`), add custom indexes in a setup script:
-
-```ts
-// server/setup/create-indexes.ts
-import { defineSetup } from "$hatk";
-
-export default defineSetup(async (ctx) => {
-  const { db } = ctx;
-  await db.run(
-    `CREATE INDEX IF NOT EXISTS idx_fm_teal_alpha_feed_play_played_time ON "fm.teal.alpha.feed.play"(played_time DESC)`,
-  );
-});
-```
-
-Setup scripts run on every startup before the server accepts requests. Use `CREATE INDEX IF NOT EXISTS` so they're idempotent. To create an index on prod immediately without redeploying, use the `docker run` pattern above.
-
-### SQLite datetime comparison gotcha
+## SQLite datetime comparison gotcha
 
 SQLite's `datetime('now', '-4 hours')` returns space-separated format (`2026-03-16 12:00:00`) while ISO timestamps use `T` separator (`2026-03-16T12:00:00Z`). String comparison breaks because `T` > space. Use `strftime` for correct comparisons:
 
 ```sql
 -- WRONG: matches too many rows
-WHERE played_time >= datetime('now', '-4 hours')
+WHERE created_at >= datetime('now', '-4 hours')
 
 -- CORRECT: ISO format matches stored timestamps
-WHERE played_time >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-4 hours')
+WHERE created_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-4 hours')
 ```

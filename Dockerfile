@@ -1,9 +1,8 @@
 # syntax=docker/dockerfile:1
 
 # grain-serve and the web pages it serves beside, in one image, with the
-# grain CLI, grain-mcp and grain-import (the cutover's one-shot import of
-# the old server's database): deploy/docker-compose.yml runs it once as
-# each of serve and the pages. Built from the repository's root:
+# grain CLI and grain-mcp: deploy/docker-compose.yml runs it once as each
+# of serve and the pages. Built from the repository's root:
 #
 #   docker build -t grain-serve:current .
 
@@ -25,13 +24,10 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
         -p grain-serve --bin grain-serve \
         -p grain --bin grain \
         -p grain-mcp --bin grain-mcp \
-        -p grain-import --bin grain-import \
-    && cp target/deploy/grain-serve target/deploy/grain target/deploy/grain-mcp \
-        target/deploy/grain-import /
+    && cp target/deploy/grain-serve target/deploy/grain target/deploy/grain-mcp /
 
-# The pages: the SvelteKit app in web/, built with adapter-node, from the
-# root's package.json, beside the old server's packages, so its
-# dependencies go into the image with it.
+# The pages: the SvelteKit app in web/, built with adapter-node from the
+# root's package.json, so its dependencies go into the image with it.
 FROM node:25-bookworm-slim AS pages
 WORKDIR /web
 COPY package.json package-lock.json ./
@@ -43,7 +39,7 @@ FROM node:25-bookworm-slim
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates tini \
     && rm -rf /var/lib/apt/lists/*
-COPY --from=serve /grain-serve /grain /grain-mcp /grain-import /usr/local/bin/
+COPY --from=serve /grain-serve /grain /grain-mcp /usr/local/bin/
 COPY --from=pages /web/build /app/build
 COPY --from=pages /web/package.json /app/package.json
 COPY --from=pages /web/node_modules /app/node_modules

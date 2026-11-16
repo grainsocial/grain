@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/grain", "crates/grain-import", "crates/grain-mcp", "crates/grain-serve"]
+members = ["crates/grain", "crates/grain-mcp", "crates/grain-serve"]
 resolver = "3"
 
 [workspace.package]
@@ -19,7 +19,6 @@ bs58 = "0.5"
 bytes = "1"
 ciborium = "0.2"
 futures = "0.3"
-hkdf = "0.12"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
 k256 = { version = "0.13", features = ["ecdsa"] }
 png = "0.18.1"

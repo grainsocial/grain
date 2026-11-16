@@ -6,8 +6,8 @@
 //! its author, once they have written nothing for a minute, by the
 //! classifiers of accounts: an import writes hundreds of photos in a row,
 //! and an account's state counts them, so the account is asked about once
-//! it settles rather than once a photo. Backfill and the import do not
-//! say what they put; what existed before is scored by no one here.
+//! it settles rather than once a photo. Backfill does not say what it
+//! puts; what existed before is scored by no one here.
 //!
 //! Scoring a subject builds the state its classifier shows the model,
 //! skips it where there is none, or where the same classifier scored the

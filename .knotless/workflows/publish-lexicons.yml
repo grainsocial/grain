@@ -4,7 +4,7 @@
 # shared step: a com.atproto.lexicon.schema record in grain.social's repo
 # for each lexicon whose authority is in the grain.social zone, and the
 # `_lexicon.<authority>` TXT records naming that account. The rest of
-# lexicons/ (app.bsky, dev.hatk, ...) are copies of other publishers' and
+# lexicons/ (app.bsky, com.atproto, ...) are copies of other publishers' and
 # are left to them. What is new or changed is written, and what main no
 # longer has is deleted. Each run makes the whole set match main, so a run
 # cut off by a newer one leaves nothing the next does not finish.

@@ -857,21 +857,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "grain-import"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "grain",
- "grain-serve",
- "hkdf",
- "rusqlite",
- "serde_json",
- "sha2",
- "tempfile",
-]
-
-[[package]]
 name = "grain-mcp"
 version = "0.1.0"
 dependencies = [
@@ -997,15 +982,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a596f1b20ed2cc5ecac41a164aaebc7258057060f06c0cf7a2ba3991ee7990fb"
 dependencies = [
  "hashbrown 0.17.1",
-]
-
-[[package]]
-name = "hkdf"
-version = "0.12.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b5f8eb2ad728638ea2c7d47a21db23b7b58a72ed6a38256b8a1849f15fbbdf7"
-dependencies = [
- "hmac",
 ]
 
 [[package]]

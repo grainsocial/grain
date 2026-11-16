@@ -10,8 +10,8 @@
 //
 // Prints each problem as `nsid#def.path: what`, failing if there is any.
 //
-// It reads grain's own, under lexicons/social/grain, less those the old
-// server alone serves (OLD), which go with it at cutover rather than be
+// It reads grain's own, under lexicons/social/grain, less those grain-serve
+// does not serve (UNSERVED), which are kept as published rather than
 // brought up to the guide: unspecced/, and the admin methods grain-serve
 // does not answer. The other namespaces under lexicons/ are copies of
 // others' schemas, theirs to keep.
@@ -24,10 +24,10 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "lexicons", "social", "grain");
 
-// What the old server alone serves, by path under lexicons/social/grain,
-// a directory ending in `/`. Each goes once nothing serves it, or comes
-// out of here as grain-serve answers it.
-const OLD = [
+// What grain-serve does not serve, by path under lexicons/social/grain,
+// a directory ending in `/`. Each comes out of here as grain-serve
+// answers it.
+const UNSERVED = [
   "unspecced/",
   "admin/actOnReview.json",
   "admin/addRepos.json",
@@ -40,9 +40,9 @@ const OLD = [
   "admin/searchRecords.json",
   "admin/startScan.json",
 ];
-const old = (file) => {
+const unserved = (file) => {
   const at = relative(dir, file).split("\\").join("/");
-  return OLD.some((o) => (o.endsWith("/") ? at.startsWith(o) : at === o));
+  return UNSERVED.some((o) => (o.endsWith("/") ? at.startsWith(o) : at === o));
 };
 
 /// Every lexicon file under `d` this checks, by its absolute path.
@@ -50,7 +50,7 @@ const files = (d) =>
   readdirSync(d, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory()
       ? files(join(d, e.name))
-      : e.name.endsWith(".json") && !old(join(d, e.name))
+      : e.name.endsWith(".json") && !unserved(join(d, e.name))
         ? [join(d, e.name)]
         : [],
   );
@@ -168,7 +168,7 @@ const walk = (schema, path, visit) => {
 const published = () =>
   git("ls-tree", "-r", "--name-only", base, "--", relative(root, dir))
     .split("\n")
-    .filter((f) => f.endsWith(".json") && !old(join(root, f)));
+    .filter((f) => f.endsWith(".json") && !unserved(join(root, f)));
 
 // Every schema's path in `base`. What would narrow one of these is left as
 // it is: it is published, and only grows (below).

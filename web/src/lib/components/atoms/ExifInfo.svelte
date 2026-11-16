@@ -24,7 +24,7 @@
       <div class="exif-row">
         <Camera size={14} />
         <!-- The raw make+model string. The camera feed normalizes whatever it
-             is given (server/feeds/camera.ts), so this resolves to the same
+             is given (crates/grain-serve/src/read/camera.rs), so this resolves to the same
              page as the cleaned name shown on /explore and /cameras. -->
         <a class="camera-link" href="/camera/{encodeURIComponent(cameraName)}">{cameraName}</a>
       </div>

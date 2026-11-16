@@ -28,8 +28,7 @@ is a project of its own beside it, in `/etc/grain-serve`, as knotless's is
 in `/etc/knotless`: deploy.sh writes `/etc/grain-serve/.env` and copies
 `docker-compose.yml` and `rollout.sh` there, and keeps its state in
 `GRAIN_DATA` (`/mnt/data/grain-serve`): `index.db`, and the push key files
-under `certs/`. The index began as the old server's database, imported
-once with the image's `grain-import` before serve first started on it.
+under `certs/`.
 
 The secrets are on the host alone, in `/etc/grain-serve/serve.env`
 (mode 600), never in the repository or the deploy's environment:

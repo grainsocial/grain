@@ -82,8 +82,8 @@
 //!   web login out; `web-cookie` signs the web's cookies, and a new one
 //!   signs every browser out;
 //! - `carried_cookie_key`, the key the cookies a browser held before
-//!   grain-serve were sealed under, put there by the import and read by
-//!   [`crate::login::carryover`] until it is removed;
+//!   grain-serve were sealed under, read by [`crate::login::carryover`]
+//!   until it is removed;
 //! - `web_session`, the OAuth session of each account logged in to the
 //!   web ([`grain::session::Session`], as JSON), with `since`, when its
 //!   login was kept with none before it, in microseconds since the epoch:

@@ -1,7 +1,7 @@
 # The lexicons, as `just lex` checks them: goat's lint, what it does not
 # see, and that they only grow from main's (harness/lexicons.mjs), over
-# grain's own under lexicons/social/grain, less what the old server alone
-# serves. goat is kept between runs.
+# grain's own under lexicons/social/grain, less those grain-serve does not
+# serve. goat is kept between runs.
 #
 # The XRPC answers are held to the lexicons by test.yml, over what
 # grain-serve's tests received.
