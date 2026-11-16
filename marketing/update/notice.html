@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>grain update notice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=block"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-root: #080b12;
+        --grain: #85a1ff;
+        --text: #f8fafc;
+        --text-secondary: #a3b3cc;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+      }
+      body {
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--bg-root);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+        position: relative;
+        background-image:
+          radial-gradient(
+            ellipse 1100px 900px at 90% -10%,
+            rgba(133, 161, 255, 0.22),
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 900px 800px at 5% 110%,
+            rgba(107, 139, 239, 0.12),
+            transparent 60%
+          );
+      }
+      .stage {
+        width: 100%;
+        height: 100%;
+        padding: 0 96px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-bottom: 220px;
+        position: relative;
+      }
+      .mark {
+        width: 220px;
+        height: 220px;
+        border-radius: 48px;
+        background:
+          url("../login-bg.jpg") center/cover no-repeat,
+          #1a2238;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+        box-shadow:
+          0 30px 60px -16px rgba(0, 0, 0, 0.7),
+          0 0 0 1px rgba(255, 255, 255, 0.08);
+        margin-bottom: 88px;
+      }
+      .mark::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(8, 11, 18, 0) 0%, rgba(8, 11, 18, 0.35) 100%);
+      }
+      .mark span {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 50px;
+        letter-spacing: -0.035em;
+        color: #fff;
+        position: relative;
+        z-index: 1;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+      }
+      .eyebrow {
+        font-weight: 700;
+        font-size: 34px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--grain);
+        margin-bottom: 36px;
+      }
+      h1 {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 100px;
+        line-height: 1.04;
+        letter-spacing: -0.03em;
+        margin-bottom: 56px;
+      }
+      p {
+        font-weight: 500;
+        font-size: 46px;
+        line-height: 1.4;
+        color: var(--text-secondary);
+        max-width: 860px;
+      }
+      .stores {
+        display: flex;
+        gap: 24px;
+        margin-top: 80px;
+      }
+      .store {
+        font-weight: 700;
+        font-size: 36px;
+        padding: 26px 40px;
+        border-radius: 999px;
+        background: rgba(133, 161, 255, 0.14);
+        border: 2px solid rgba(133, 161, 255, 0.45);
+        color: var(--text);
+      }
+      .date {
+        position: absolute;
+        left: 96px;
+        right: 96px;
+        bottom: 150px;
+        font-weight: 600;
+        font-size: 38px;
+        color: var(--text-secondary);
+        border-top: 2px solid rgba(163, 179, 204, 0.18);
+        padding-top: 44px;
+      }
+      .date b {
+        white-space: nowrap;
+        color: var(--text);
+        font-weight: 800;
+      }
+
+      /* The feed post is shorter, 4:5: everything a step smaller. */
+      body.post .stage {
+        padding: 0 88px 40px;
+      }
+      body.post .mark {
+        width: 160px;
+        height: 160px;
+        border-radius: 36px;
+        margin-bottom: 64px;
+      }
+      body.post .mark span {
+        font-size: 36px;
+      }
+      body.post h1 {
+        font-size: 88px;
+        margin-bottom: 44px;
+      }
+      body.post p {
+        font-size: 42px;
+      }
+      body.post .stores {
+        margin-top: 64px;
+      }
+      body.post .date {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="mark"><span>grain</span></div>
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 id="title"></h1>
+      <p id="body"></p>
+      <div class="stores">
+        <div class="store">App Store</div>
+        <div class="store">Google Play</div>
+      </div>
+      <div class="date" id="date"></div>
+    </div>
+  </body>
+</html>

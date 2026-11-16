@@ -1,0 +1,45 @@
+{
+  "account": "did:plc:e7rftrdyz5e2rw4y6ocszew2",
+  "images": {
+    "story-1.png": {
+      "width": 1080,
+      "height": 1920,
+      "alt": "Grain's app icon above the words \"Heads up. A new Grain is on the way. We’ve made big changes under the hood. Update the app to keep your feed, stories and galleries working. Older versions of the app stop working on Monday, Nov 16.\""
+    },
+    "story-2.png": {
+      "width": 1080,
+      "height": 1920,
+      "alt": "Grain's app icon above the words \"Update today. Get the latest Grain. Open the App Store or Google Play and update Grain. It takes a minute, and nothing you posted changes. Older versions of the app stop working on Monday, Nov 16.\""
+    },
+    "story-3.png": {
+      "width": 1080,
+      "height": 1920,
+      "alt": "Grain's app icon above the words \"Today. Grain updates today. Grain is down for about 15 minutes while the update goes out. Update the app if you haven’t yet. Older versions of the app stop working today.\""
+    },
+    "post.png": {
+      "width": 1080,
+      "height": 1350,
+      "alt": "Grain's app icon above the words \"Update Grain. This version has stopped working. Update Grain from the App Store or Google Play to see your feed again. Your photos and galleries are all still there.\""
+    }
+  },
+  "steps": {
+    "story-1": { "story": "story-1.png" },
+    "story-2": { "story": "story-2.png" },
+    "story-3": { "story": "story-3.png" },
+    "announce": {
+      "text": "A big update to Grain arrives on Monday, Nov 16.\n\nPlease update the app before then: version 11 on the App Store, 0.8.0 on Google Play. Older versions stop working on the 16th. You’ll need to sign in again after updating.\n\nYour photos, galleries and stories all come with you.",
+      "image": "story-1.png",
+      "reply": "On the web, there’s nothing to do: grain.social switches over by itself, and you stay signed in."
+    },
+    "reminder": {
+      "text": "Grain’s big update arrives tomorrow, Monday, Nov 16.\n\nIf you haven’t updated the app yet, now’s the time: version 11 on the App Store, 0.8.0 on Google Play. Older versions stop working tomorrow.",
+      "image": "story-2.png"
+    },
+    "start": {
+      "text": "Grain’s update is going out now. The site and apps are down for about 15 minutes. We’ll post here when it’s back."
+    },
+    "done": {
+      "text": "Grain is back, and up to date. Thanks for waiting.\n\nIf the app asks you to update, get the latest from the App Store or Google Play. If anything looks off, reply here or send a report from the app."
+    }
+  }
+}
