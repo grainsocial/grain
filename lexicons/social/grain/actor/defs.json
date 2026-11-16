@@ -4,7 +4,7 @@
   "defs": {
     "profileView": {
       "type": "object",
-      "required": ["cid", "did", "handle"],
+      "required": ["did", "handle"],
       "properties": {
         "cid": { "type": "string", "format": "cid" },
         "did": { "type": "string", "format": "did" },
@@ -32,7 +32,7 @@
     },
     "profileViewDetailed": {
       "type": "object",
-      "required": ["cid", "did", "handle"],
+      "required": ["did", "handle"],
       "properties": {
         "cid": { "type": "string", "format": "cid" },
         "did": { "type": "string", "format": "did" },
@@ -83,6 +83,112 @@
         "blocking": { "type": "string", "format": "at-uri" },
         "blockedBy": { "type": "boolean" },
         "muted": { "type": "boolean" }
+      }
+    },
+    "profileSearchResult": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    },
+    "typeaheadItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    },
+    "suggestedFollow": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" },
+        "followersCount": { "type": "integer" }
+      }
+    },
+    "preferences": {
+      "type": "array",
+      "items": {
+        "type": "union",
+        "refs": ["#pinnedFeedsPref", "#photoMetadataPref", "#themePref", "#notificationsPref"]
+      }
+    },
+    "pinnedFeedsPref": {
+      "type": "object",
+      "description": "The feeds pinned to the viewer's navigation.",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#pinnedFeed" },
+          "description": "In the order they show."
+        }
+      }
+    },
+    "pinnedFeed": {
+      "type": "object",
+      "required": ["id", "label", "type", "path"],
+      "properties": {
+        "id": { "type": "string", "maxLength": 2048 },
+        "label": { "type": "string", "maxLength": 640 },
+        "type": { "type": "string", "knownValues": ["feed", "camera", "location", "hashtag"] },
+        "path": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "The page it opens, on this site."
+        }
+      }
+    },
+    "photoMetadataPref": {
+      "type": "object",
+      "description": "What an upload keeps of a photo's metadata.",
+      "properties": {
+        "includeExif": {
+          "type": "boolean",
+          "description": "Keep camera settings on uploaded photos."
+        },
+        "includeLocation": {
+          "type": "boolean",
+          "description": "Keep where a photo was taken on uploaded photos."
+        }
+      }
+    },
+    "themePref": {
+      "type": "object",
+      "required": ["theme"],
+      "properties": {
+        "theme": { "type": "string", "knownValues": ["system", "light", "dark"] }
+      }
+    },
+    "notificationsPref": {
+      "type": "object",
+      "description": "How each kind of notification reaches the viewer. A kind left out takes the default: push and in-app, from anyone.",
+      "properties": {
+        "favorites": { "type": "ref", "ref": "#notificationPref" },
+        "follows": { "type": "ref", "ref": "#notificationPref" },
+        "comments": { "type": "ref", "ref": "#notificationPref" },
+        "mentions": { "type": "ref", "ref": "#notificationPref" }
+      }
+    },
+    "notificationPref": {
+      "type": "object",
+      "required": ["push", "inApp", "from"],
+      "properties": {
+        "push": { "type": "boolean" },
+        "inApp": { "type": "boolean" },
+        "from": { "type": "string", "knownValues": ["all", "follows"] }
       }
     }
   }

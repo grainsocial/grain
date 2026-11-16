@@ -1,0 +1,43 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.startScan",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Start a classifier scan. Answers once it is under way; progress is polled from getReviewStats. Requires an admin session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "classifier": {
+              "type": "string",
+              "description": "Only this classifier; every one when left out."
+            },
+            "force": {
+              "type": "boolean",
+              "description": "Rescore subjects unchanged since their last scan."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Stop after this many subjects."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["started"],
+          "properties": { "started": { "type": "boolean" } }
+        }
+      },
+      "errors": [
+        { "name": "NotConfigured", "description": "No classifier model is configured." },
+        { "name": "ScanRunning", "description": "A scan is already running." }
+      ]
+    }
+  }
+}

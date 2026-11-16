@@ -1,0 +1,13 @@
+{
+  "name": "grain-harness",
+  "private": true,
+  "description": "Runs the npm-published reference PDS and PLC for grain's tests, holds grain-serve's answers to the lexicons, and drives the pages end to end",
+  "type": "module",
+  "dependencies": {
+    "@atproto/dev-env": "0.6.26",
+    "@atproto/lexicon": "0.7.17"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2"
+  }
+}

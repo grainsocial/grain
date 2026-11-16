@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group.listFeed",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Every gallery in every pool the viewer is a member of, newest first. Assembled per viewer at request time: which groups they belong to is a public fact in the index, but what is in each pool is a permissioned space, read with a credential that group's host issues. Nothing here is shared between viewers or cached.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["galleries", "groups"],
+          "properties": {
+            "galleries": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.group.defs#poolFeedItem" }
+            },
+            "groups": {
+              "type": "array",
+              "description": "The pools these came out of, so a card can say whose it is.",
+              "items": { "type": "ref", "ref": "social.grain.group.defs#groupView" }
+            }
+          }
+        }
+      },
+      "errors": [
+        { "name": "NotAuthorized", "description": "No pool the viewer belongs to would answer." }
+      ]
+    }
+  }
+}

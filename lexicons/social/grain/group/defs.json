@@ -159,6 +159,131 @@
           "type": "string"
         }
       }
+    },
+    "poolFeedItem": {
+      "type": "object",
+      "required": ["space", "group", "did", "rkey", "title", "photoCount", "items"],
+      "properties": {
+        "space": { "type": "string" },
+        "group": { "type": "string", "format": "did", "description": "Whose pool it is in." },
+        "did": { "type": "string", "format": "did", "description": "Whose gallery it is." },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": {
+          "type": "string",
+          "description": "The author's Grain profile picture, a public record of their own."
+        },
+        "rkey": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "photoCount": { "type": "integer" },
+        "items": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#galleryItem" }
+        },
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "What a favourite or a comment names."
+        },
+        "favCount": { "type": "integer" },
+        "viewerFav": { "type": "string" },
+        "commentCount": { "type": "integer" }
+      }
+    },
+    "poolGallery": {
+      "type": "object",
+      "required": ["space", "did", "rkey", "title", "photoCount"],
+      "properties": {
+        "space": { "type": "string" },
+        "did": { "type": "string", "format": "did", "description": "Whose gallery it is." },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": {
+          "type": "string",
+          "description": "The author's Grain profile picture, a public record of their own."
+        },
+        "rkey": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "photoCount": { "type": "integer" },
+        "cover": { "type": "ref", "ref": "#galleryItem" },
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "What a favourite or a comment names."
+        },
+        "favCount": { "type": "integer" },
+        "viewerFav": { "type": "string" },
+        "commentCount": { "type": "integer" }
+      }
+    },
+    "poolComment": {
+      "type": "object",
+      "required": ["uri", "rkey", "text", "author"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "rkey": { "type": "string" },
+        "text": { "type": "string" },
+        "facets": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
+        },
+        "replyTo": { "type": "string", "format": "at-uri" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "author": { "type": "ref", "ref": "#poolAuthor" }
+      }
+    },
+    "poolAuthor": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    },
+    "photoInput": {
+      "type": "object",
+      "required": ["photo", "aspectRatio"],
+      "properties": {
+        "photo": { "type": "blob", "accept": ["image/*"], "maxSize": 1000000 },
+        "alt": { "type": "string" },
+        "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" }
+      }
+    },
+    "galleryRecord": {
+      "type": "object",
+      "required": ["uri", "title"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "galleryItem": {
+      "type": "object",
+      "required": ["uri", "did", "cid", "position"],
+      "properties": {
+        "uri": { "type": "string", "description": "Space URI of the photo record." },
+        "did": {
+          "type": "string",
+          "format": "did",
+          "description": "Repo holding the photo, and its blob."
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid",
+          "description": "Blob CID. Fetch through the space, never the CDN."
+        },
+        "alt": { "type": "string" },
+        "aspectRatio": { "type": "ref", "ref": "social.grain.defs#aspectRatio" },
+        "position": { "type": "integer" }
+      }
     }
   }
 }

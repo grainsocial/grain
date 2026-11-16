@@ -1,0 +1,87 @@
+[workspace]
+members = ["crates/grain", "crates/grain-import", "crates/grain-mcp", "crates/grain-serve"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.89"
+
+[workspace.dependencies]
+grain = { path = "crates/grain" }
+grain-serve = { path = "crates/grain-serve" }
+aes-gcm = "0.10"
+anyhow = "1"
+axum = "0.8"
+base64 = "0.22"
+bs58 = "0.5"
+bytes = "1"
+ciborium = "0.2"
+futures = "0.3"
+hkdf = "0.12"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+k256 = { version = "0.13", features = ["ecdsa"] }
+png = "0.18.1"
+p256 = { version = "0.13", features = ["ecdsa"] }
+rand_core = { version = "0.6", features = ["getrandom"] }
+ring = "0.17"
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "rustls-tls",
+  "http2",
+  "gzip",
+] }
+resvg = { version = "0.48.1", default-features = false, features = ["text", "raster-images"] }
+rusqlite = { version = "0.40", features = ["bundled", "trace"] }
+rustix = { version = "1", features = ["fs"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+skrifa = "0.44.0"
+tempfile = "3"
+unicode-segmentation = "1"
+zstd = { version = "0.13", default-features = false }
+tokio = { version = "1", features = [
+  "rt",
+  "rt-multi-thread",
+  "macros",
+  "net",
+  "signal",
+  "time",
+  "io-util",
+  "process",
+  "sync",
+] }
+tokio-tungstenite = { version = "0.29", features = ["rustls-tls-webpki-roots"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "std",
+  "fmt",
+  "json",
+  "env-filter",
+  "registry",
+] }
+
+# Every worktree keeps its own target/, so debug info is kept small: line
+# tables for our crates, none for dependencies. As knotless's.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# The image a deploy builds (Dockerfile): built for the build's
+# time over the last percent of speed, as knotless's. In 16 units, without
+# LTO across crates, grain-serve's codegen goes over every core rather
+# than one; for a server that waits on the network and disk, what that
+# costs at run time is lost in the noise.
+[profile.deploy]
+inherits = "release"
+lto = false
+codegen-units = 16

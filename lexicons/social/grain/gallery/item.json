@@ -3,6 +3,7 @@
   "id": "social.grain.gallery.item",
   "defs": {
     "main": {
+      "description": "A photo's place in a gallery: which photo, which gallery, and where in it.",
       "type": "record",
       "key": "tid",
       "record": {

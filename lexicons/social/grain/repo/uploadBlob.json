@@ -1,0 +1,25 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.repo.uploadBlob",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Upload a blob to the logged-in account's PDS, for a record written after to reference. Called as social.grain.repo.createRecord is.",
+      "input": { "encoding": "*/*" },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["blob"],
+          "properties": { "blob": { "type": "blob" } }
+        }
+      },
+      "errors": [
+        {
+          "name": "ScopeMissingError",
+          "description": "The account's PDS granted the session less than the upload needs."
+        }
+      ]
+    }
+  }
+}

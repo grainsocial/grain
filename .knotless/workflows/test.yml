@@ -1,14 +1,104 @@
-# The unit tests, as `npm test` runs them. The live spaces tests skip
-# themselves without SPACES_LIVE=1, and the Playwright tests in test/browser
-# are not run here. The packages are kept between runs and installed again
-# only when the lockfile changes (the npm-ci shared step).
-image: node:25-slim
+# The Rust tests against the reference PDS, under the coverage gate, as
+# `just cov` runs them (harness/cov.mjs): every test binary, instrumented,
+# against @atproto/pds and a PLC directory from harness/pds.mjs, failing
+# under harness/cov.json's lines or functions. Then that every XRPC answer
+# grain-serve's tests received is as its lexicon says (harness/answers.mjs),
+# and that the check would name a wrong one (harness/answers-test.sh); and
+# that no query they ran scans the network at prod's size
+# (harness/plans.mjs).
+#
+# The test binaries named `spaces` run against the reference PDS on the
+# permissioned spaces alpha, built from an atproto commit, as knotless's
+# tests are: npm's alpha builds name their dependencies by workspace, so
+# they do not install.
+#
+# Node, the harness's packages, the alpha's build, cargo-llvm-cov and the
+# build are kept between runs; each is made again only when what it is
+# made from changes. So are the test runs that passed, in /opt/testcache:
+# a test binary the same byte for byte as one that passed, against the
+# same harness, is not run again, and its profile counts (harness/cov.mjs).
+image: rust:1.98
 runners: [runner.knotless.dev]
+# A pre-flight, as check is: the merge queue takes a pull into a batch only
+# once this has passed at its head, so one whose tests fail on their own
+# costs no batch and no halving.
+queue: first
+# Pushes to main and to a feature/ branch, which keeps caches of its own
+# for the pulls into it: a branch keeps them only where both push and
+# pull name it.
 on:
-  push: { refs: [refs/heads/main] }
-  pull: { base: [refs/heads/main] }
-cache: [node_modules]
+  push: { refs: [refs/heads/main, refs/heads/feature/*] }
+  pull: { base: [refs/heads/main, refs/heads/feature/*] }
+cache:
+  [
+    target,
+    /usr/local/cargo/registry,
+    /usr/local/rustup,
+    /opt/node,
+    /opt/tools,
+    /opt/atproto,
+    harness/node_modules,
+    /opt/testcache,
+  ]
+env:
+  # The spaces alpha the tests of spaces run against, as knotless's do.
+  ATPROTO_COMMIT: 11c5d98cd50261c5e1201fedc5c6c05a7b8d1ccf
+  # Bumped when the steps that build the alpha change, to build it again.
+  ALPHA_BUILD: "1"
 steps:
+  # Node into /opt/node, the harness's packages when their lockfile
+  # changes, and cargo-llvm-cov into /opt/tools, each kept in the cache.
+  - uses: chadtmiller.com/steps/node@1
+    with: { version: 24.22.1 }
   - uses: chadtmiller.com/steps/npm-ci@1
+    name: harness
+    with: { dir: harness, omit: dev }
+  - uses: chadtmiller.com/steps/cargo-llvm-cov@1
+    with: { version: 0.9.1 }
+  - name: spaces alpha
+    run: |
+      [ "$(cat /opt/atproto/.built 2>/dev/null)" = "$ATPROTO_COMMIT $ALPHA_BUILD" ] && exit 0
+      export PATH=/opt/node/bin:$PATH COREPACK_ENABLE_DOWNLOAD_PROMPT=0 COREPACK_HOME=/opt/atproto/.corepack
+      mkdir -p /opt/atproto && find /opt/atproto -mindepth 1 -delete
+      cd /opt/atproto
+      git init -q . && git fetch -q --depth 1 https://github.com/bluesky-social/atproto.git "$ATPROTO_COMMIT" && git checkout -q FETCH_HEAD
+      mkdir .bin && corepack enable --install-directory /opt/atproto/.bin
+      export PATH=/opt/atproto/.bin:$PATH
+      pnpm install --frozen-lockfile --ignore-scripts
+      pnpm run build:tooling --force
+      pnpm --filter '@atproto/dev-env^...' --filter @atproto/dev-env run --if-present prebuild
+      pnpm exec tsc --build packages/dev-env/tsconfig.build.json
+      # The PDS serves the OAuth sign-in pages from this bundle.
+      pnpm --filter @atproto/oauth-provider-ui run build:ui
+      echo "$ATPROTO_COMMIT $ALPHA_BUILD" > /opt/atproto/.built
+  - name: sqlite
+    run: |
+      # The one install script the alpha's PDS needs, which the install
+      # above skips: SQLite's native module, as better-sqlite3 builds it.
+      export PATH=/opt/node/bin:$PATH
+      cd "$(dirname "$(node -p "require.resolve('better-sqlite3/package.json', { paths: ['/opt/atproto/packages/pds'] })")")"
+      [ -f build/Release/better_sqlite3.node ] && exit 0
+      npm run install
   - name: test
-    run: npm test
+    run: |
+      export PATH=/opt/node/bin:$PATH GRAIN_DEV_ENV=/opt/atproto/packages/dev-env
+      # Half the host's cores, as two test runs go side by side, over two
+      # stock PDSes, as one PDS is one node process, and the alpha beside
+      # them, all at once: each binary against the stock PDS but those
+      # named `spaces`, which go against the alpha (harness/cov.mjs).
+      COV_STORE=/opt/testcache COV_JOBS=$(( $(nproc) / 2 )) COV_HARNESSES=2 COV_TOOLCHAIN=$(rustup show active-toolchain | cut -d' ' -f1) \
+        node harness/cov.mjs
+  - name: answers
+    run: |
+      # Every XRPC answer grain-serve's tests received, fresh or kept with
+      # a stored run, as its lexicon says.
+      export PATH=/opt/node/bin:$PATH
+      harness/answers-test.sh
+      node harness/answers.mjs target/llvm-cov-target/cov-report/answers
+  - name: plans
+    run: |
+      # No query the tests ran scans a table that grows with the network,
+      # or sorts many of its rows, as SQLite would plan it at prod's size,
+      # unless its SQL says so.
+      export PATH=/opt/node/bin:$PATH
+      node harness/plans.mjs target/llvm-cov-target/cov-report/plans

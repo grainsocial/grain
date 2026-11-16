@@ -3,6 +3,7 @@
   "id": "social.grain.gallery",
   "defs": {
     "main": {
+      "description": "A gallery of photos, which its items place in it in order.",
       "type": "record",
       "key": "tid",
       "record": {

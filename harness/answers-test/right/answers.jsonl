@@ -1,0 +1,4 @@
+{"path":"/xrpc/_health","status":200,"body":{"version":"0.1.0"}}
+{"path":"/xrpc/test.grain.getThing?actor=a","status":200,"body":{"name":"a"}}
+{"path":"/xrpc/test.grain.getThing","status":400,"body":{"error":"InvalidRequest","message":"no actor"}}
+{"path":"/xrpc/test.grain.missing","status":501,"body":{"error":"MethodNotImplemented","message":"Method Not Implemented"}}

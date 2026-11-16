@@ -3,6 +3,7 @@
   "id": "social.grain.comment",
   "defs": {
     "main": {
+      "description": "A comment on the record its subject names, or a reply to another comment.",
       "type": "record",
       "key": "tid",
       "record": {

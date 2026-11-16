@@ -1,0 +1,34 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.listRepos",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Tracked repos, most recently backfilled first. q finds them by part of a DID or handle. Requires an admin session.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "status": { "type": "string" },
+          "q": { "type": "string", "description": "Part of a DID or handle." },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["repos", "total"],
+          "properties": {
+            "repos": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#repoView" }
+            },
+            "cursor": { "type": "string" },
+            "total": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

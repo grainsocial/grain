@@ -13,3 +13,7 @@ public/
 *.tsbuildinfo
 coverage/
 .dev-logs/
+/target/
+/web/src/lib/lexicons
+/.lexicons
+deploy/local.env

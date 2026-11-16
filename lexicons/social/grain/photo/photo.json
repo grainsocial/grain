@@ -3,6 +3,7 @@
   "id": "social.grain.photo",
   "defs": {
     "main": {
+      "description": "A photo, with its alt text and aspect ratio, placed in galleries by gallery items.",
       "type": "record",
       "key": "tid",
       "record": {

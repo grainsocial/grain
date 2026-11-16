@@ -1,0 +1,120 @@
+<script lang="ts">
+  import { untrack } from 'svelte'
+  import { createQuery, useQueryClient } from '@tanstack/svelte-query'
+  import { infiniteScroll } from '$lib/actions/infinite-scroll'
+  import { notificationsQuery } from '$lib/queries'
+  import { markNotificationsSeen } from '$lib/preferences'
+  import { viewer as viewerStore } from '$lib/stores'
+  import { groupNotifications, type GroupedNotification } from '$lib/notifications'
+  import PageHeading from '$lib/components/molecules/PageHeading.svelte'
+  import NotificationItem from '$lib/components/atoms/NotificationItem.svelte'
+  import Spinner from '$lib/components/atoms/Spinner.svelte'
+  import OGMeta from '$lib/components/atoms/OGMeta.svelte'
+  import { query } from '$lib/xrpc'
+  import type * as listNotifications from '$lib/lexicons/social/grain/notification/listNotifications.ts'
+
+  const viewerDid = $derived($viewerStore?.did)
+  const queryClient = useQueryClient()
+
+  const notifications = createQuery(() => ({
+    ...notificationsQuery(viewerDid ?? ''),
+    enabled: !!viewerDid,
+  }))
+
+  let loadingMore = $state(false)
+  let allItems: any[] = $state([])
+  let currentCursor: string | undefined = $state(undefined)
+  let hasMore = $state(true)
+  let initialized = false
+
+  let grouped: GroupedNotification[] = $state([])
+
+  $effect(() => {
+    const data = notifications.data
+    if (data && !initialized) {
+      initialized = true
+      untrack(() => {
+        allItems = data.notifications ?? []
+        grouped = groupNotifications(allItems)
+        currentCursor = data.cursor
+        hasMore = !!data.cursor
+      })
+    }
+  })
+
+  let hasMark = false
+  $effect(() => {
+    if (viewerDid && !hasMark) {
+      hasMark = true
+      markNotificationsSeen().then(() => {
+        queryClient.setQueryData(['unseenNotificationCount', viewerDid], 0)
+      })
+    }
+  })
+
+  async function loadMore() {
+    if (loadingMore || !hasMore || !viewerDid || !currentCursor) return
+    loadingMore = true
+    try {
+      const result = await query<typeof listNotifications.main>('social.grain.notification.listNotifications', {
+        limit: 100,
+        cursor: currentCursor,
+      })
+      allItems = [...allItems, ...result.notifications]
+      grouped = groupNotifications(allItems)
+      currentCursor = result.cursor
+      hasMore = !!result.cursor
+    } finally {
+      loadingMore = false
+    }
+  }
+
+</script>
+
+<OGMeta title="Notifications - grain" noindex />
+
+<div class="notifications">
+  <PageHeading title="Notifications" />
+
+  {#if notifications.isLoading}
+    <div class="center"><Spinner /></div>
+  {:else if grouped.length === 0}
+    <div class="empty">No notifications yet</div>
+  {:else}
+    <div class="notification-list">
+      {#each grouped as group (group.notification.uri)}
+        <NotificationItem {group} />
+      {/each}
+      {#if hasMore}
+        <div use:infiniteScroll={() => { if (!loadingMore) loadMore() }} class="sentinel">
+          {#if loadingMore}<Spinner />{/if}
+        </div>
+      {/if}
+    </div>
+  {/if}
+</div>
+
+<style>
+  .notifications {
+    padding: 0 0 32px;
+  }
+  .notification-list {
+    margin-top: 18px;
+  }
+  .center {
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+  }
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  .sentinel {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+</style>

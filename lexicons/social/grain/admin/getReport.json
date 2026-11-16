@@ -1,0 +1,24 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.getReport",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "A report by its id, in any state. Requires an admin session.",
+      "parameters": {
+        "type": "params",
+        "required": ["id"],
+        "properties": { "id": { "type": "integer" } }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["report"],
+          "properties": { "report": { "type": "ref", "ref": "social.grain.admin.defs#reportView" } }
+        }
+      },
+      "errors": [{ "name": "ReportNotFound", "description": "No report by that id." }]
+    }
+  }
+}

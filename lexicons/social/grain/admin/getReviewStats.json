@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.getReviewStats",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Rollups for the review queue, the classifiers there are, and the progress of the latest scan. Requires an admin session.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["total", "pending", "byClassifier", "classifiers", "configured"],
+          "properties": {
+            "total": { "type": "integer", "description": "Subjects scored." },
+            "pending": { "type": "integer", "description": "Subjects with an open report." },
+            "byClassifier": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#classifierCount" }
+            },
+            "lastScan": { "type": "string", "format": "datetime" },
+            "classifiers": { "type": "array", "items": { "type": "string" } },
+            "configured": {
+              "type": "boolean",
+              "description": "Whether a classifier model is configured, so a scan can run."
+            },
+            "scan": { "type": "ref", "ref": "social.grain.admin.defs#scanProgress" }
+          }
+        }
+      }
+    }
+  }
+}

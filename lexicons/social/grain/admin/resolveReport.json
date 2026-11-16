@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.resolveReport",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Close an open report. Resolving it applies the label it asked for; dismissing it does not. Requires an admin session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["id", "action"],
+          "properties": {
+            "id": { "type": "integer" },
+            "action": { "type": "string", "knownValues": ["resolve", "dismiss"] }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": {} }
+      },
+      "errors": [{ "name": "ReportNotFound", "description": "No open report by that id." }]
+    }
+  }
+}

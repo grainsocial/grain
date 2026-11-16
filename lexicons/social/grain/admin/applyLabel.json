@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.applyLabel",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Apply a label as this server's labeler. Requires an admin session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uri", "val"],
+          "properties": {
+            "uri": {
+              "type": "string",
+              "format": "uri",
+              "description": "An account's bare DID, or a record's at:// URI."
+            },
+            "val": { "type": "string", "maxLength": 128 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": {} }
+      }
+    }
+  }
+}

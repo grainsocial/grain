@@ -3,6 +3,7 @@
   "id": "social.grain.story",
   "defs": {
     "main": {
+      "description": "A story: a photo or video posted to an account's stories.",
       "type": "record",
       "key": "tid",
       "record": {

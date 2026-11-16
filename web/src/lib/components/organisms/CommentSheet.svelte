@@ -1,0 +1,572 @@
+<script lang="ts">
+  import { createRecord, deleteRecord } from '$lib/utils/records'
+  import type { AtUriString, DidString } from '@atproto/lex'
+  import type * as commentGetThread from '$lib/lexicons/social/grain/comment/getThread.ts'
+  import { call, query, type Input } from '$lib/xrpc'
+  import type * as groupGetGallery from '$lib/lexicons/social/grain/group/getGallery.ts'
+  import type * as groupCreateComment from '$lib/lexicons/social/grain/group/createComment.ts'
+  import type * as groupDeleteComment from '$lib/lexicons/social/grain/group/deleteComment.ts'
+  import type { CommentView } from '$lib/lexicons/social/grain/comment/defs.ts'
+  import { useQueryClient } from '@tanstack/svelte-query'
+  import { viewer, requireAuth } from '$lib/stores'
+  import { parseTextToFacets } from '$lib/utils/rich-text'
+  import CommentItem from '../molecules/Comment.svelte'
+  import Avatar from '../atoms/Avatar.svelte'
+  import { X, LoaderCircle } from 'lucide-svelte'
+
+  let {
+    open = false,
+    subjectUri,
+    onClose,
+    contained = false,
+    inline = false,
+    pool = undefined,
+    before,
+    footer,
+  }: {
+    open: boolean
+    subjectUri: string
+    onClose: () => void
+    /**
+     * The group whose pool the subject is in, when it is in one. The thread
+     * then lives in that space: every comment is its author's own record inside
+     * it, read across the members' repos at request time and readable by nobody
+     * else. There is no index behind it, so there is no cursor either — the
+     * pool hands over the whole thread or none of it.
+     */
+    pool?: string
+    /** Absolute panel over the story viewer's own dark surface. */
+    contained?: boolean
+    /** Sits in normal flow as a column of the page — no overlay, no close. */
+    inline?: boolean
+    /** Rendered at the top of the scroll area, so a caption scrolls with the
+        comments instead of competing with them for the column's height. */
+    before?: import('svelte').Snippet
+    /** Rendered just above the composer, for pinned actions. */
+    footer?: import('svelte').Snippet
+  } = $props()
+
+  let comments = $state<CommentView[]>([])
+  let totalCount = $state(0)
+  let cursor = $state<string | undefined>(undefined)
+  let loading = $state(false)
+  let loadingMore = $state(false)
+  let posting = $state(false)
+  let inputValue = $state('')
+  let replyToUri = $state<string | null>(null)
+  let replyToHandle = $state<string | null>(null)
+  let error = $state<string | null>(null)
+  let inputEl = $state<HTMLInputElement | null>(null)
+  let sheetEl = $state<HTMLDivElement | null>(null)
+
+  const queryClient = useQueryClient()
+
+  // Organize comments: roots first, then their replies
+  const organized = $derived.by(() => {
+    const roots = comments.filter((c) => !c.replyTo)
+    const replyMap = new Map<string, CommentView[]>()
+    for (const c of comments) {
+      if (c.replyTo) {
+        if (!replyMap.has(c.replyTo)) replyMap.set(c.replyTo, [])
+        replyMap.get(c.replyTo)!.push(c)
+      }
+    }
+    const result: CommentView[] = []
+    for (const root of roots) {
+      result.push(root)
+      const replies = replyMap.get(root.uri) ?? []
+      result.push(...replies)
+    }
+    return result
+  })
+
+  // Constrain sheet to center column on desktop
+  $effect(() => {
+    if (!open || !sheetEl || contained) return
+    const col = sheetEl.closest('main')
+    if (!col) return
+    function position() {
+      const rect = col!.getBoundingClientRect()
+      sheetEl!.style.left = `${rect.left}px`
+      sheetEl!.style.right = `${document.documentElement.clientWidth - rect.right}px`
+    }
+    position()
+    window.addEventListener('resize', position)
+    return () => window.removeEventListener('resize', position)
+  })
+
+  // Load comments when sheet opens
+  $effect(() => {
+    if (open && subjectUri) {
+      loadComments()
+    }
+  })
+
+  /** A pooled subject is `at://<author>/social.grain.gallery/<rkey>`. */
+  const poolTarget = $derived.by(() => {
+    if (!pool) return null
+    const m = subjectUri.match(/^at:\/\/([^/]+)\/[^/]+\/([^/]+)$/)
+    return m ? { group: pool as DidString, did: m[1] as DidString, rkey: m[2] } : null
+  })
+
+  async function loadComments() {
+    loading = true
+    error = null
+    try {
+      if (poolTarget) {
+        const res = await query<typeof groupGetGallery.main>(
+          'social.grain.group.getGallery',
+          poolTarget,
+        )
+        comments = (res?.comments ?? []) as unknown as CommentView[]
+        cursor = undefined
+        totalCount = res?.commentCount ?? comments.length
+        return
+      }
+      const res = await query<typeof commentGetThread.main>('social.grain.comment.getThread', {
+        subject: subjectUri as AtUriString,
+        limit: 20,
+      })
+      comments = (res as any).comments ?? []
+      cursor = (res as any).cursor
+      totalCount = (res as any).totalCount ?? 0
+    } catch (err: any) {
+      error = 'Failed to load comments'
+      console.error(err)
+    } finally {
+      loading = false
+    }
+  }
+
+  async function loadMore() {
+    if (!cursor || loadingMore) return
+    loadingMore = true
+    try {
+      const res = await query<typeof commentGetThread.main>('social.grain.comment.getThread', {
+        subject: subjectUri as AtUriString,
+        limit: 20,
+        cursor,
+      })
+      const older = (res as any).comments ?? []
+      comments = [...older, ...comments]
+      cursor = (res as any).cursor
+    } catch (err: any) {
+      console.error(err)
+    } finally {
+      loadingMore = false
+    }
+  }
+
+  async function handlePost() {
+    if (!requireAuth()) return
+    if (!inputValue.trim() || posting) return
+    posting = true
+    error = null
+
+    try {
+      const text = inputValue.trim()
+      const now = new Date().toISOString()
+
+      // Parse facets
+      const parsed = await parseTextToFacets(text)
+      const facets = parsed.facets.length > 0 ? parsed.facets : undefined
+
+      const result = poolTarget
+        ? await call<typeof groupCreateComment.main>('social.grain.group.createComment', {
+            group: poolTarget.group,
+            gallery: subjectUri as AtUriString,
+            text,
+            ...(facets
+              ? { facets: facets as Input<typeof groupCreateComment.main>['facets'] }
+              : {}),
+            ...(replyToUri ? { replyTo: replyToUri as AtUriString } : {}),
+          })
+        : await createRecord({
+            collection: 'social.grain.comment',
+            record: {
+              text,
+              subject: subjectUri,
+              ...(facets ? { facets } : {}),
+              ...(replyToUri ? { replyTo: replyToUri } : {}),
+              createdAt: now,
+            },
+          })
+
+      // Optimistic add
+      const newComment: CommentView = {
+        uri: (result as any).uri,
+        cid: (result as any).cid,
+        text,
+        facets,
+        author: {
+          did: $viewer!.did,
+          handle: $viewer!.handle ?? $viewer!.did,
+          displayName: $viewer!.displayName,
+          avatar: $viewer!.avatar ?? undefined,
+          cid: '',
+        },
+        replyTo: replyToUri ?? undefined,
+        createdAt: now,
+      } as any
+
+      comments = [...comments, newComment]
+      totalCount++
+      inputValue = ''
+      replyToUri = null
+      replyToHandle = null
+
+      // Invalidate feed queries to update comment counts
+      queryClient.invalidateQueries({ queryKey: ['getFeed'], refetchType: 'none' })
+      if (poolTarget) queryClient.invalidateQueries({ queryKey: ['poolGallery'] })
+    } catch (err: any) {
+      error = 'Failed to post comment'
+      console.error(err)
+    } finally {
+      posting = false
+    }
+  }
+
+  async function handleDelete(uri: string) {
+    const rkey = uri.split('/').pop()!
+    try {
+      if (poolTarget) {
+        await call<typeof groupDeleteComment.main>('social.grain.group.deleteComment', {
+          group: poolTarget.group,
+          rkey,
+        })
+      } else {
+        await deleteRecord({
+          collection: 'social.grain.comment',
+          rkey,
+        })
+      }
+      comments = comments.filter((c) => c.uri !== uri)
+      totalCount--
+      queryClient.invalidateQueries({ queryKey: ['getFeed'], refetchType: 'none' })
+      if (poolTarget) queryClient.invalidateQueries({ queryKey: ['poolGallery'] })
+    } catch (err: any) {
+      console.error('Failed to delete comment:', err)
+    }
+  }
+
+  function handleReply(uri: string, handle: string) {
+    replyToUri = uri
+    replyToHandle = handle
+    inputValue = `@${handle} `
+    inputEl?.focus()
+  }
+
+  function cancelReply() {
+    replyToUri = null
+    replyToHandle = null
+    inputValue = ''
+  }
+</script>
+
+{#if open}
+  {#if !contained && !inline}
+    <div class="overlay" onclick={onClose} onkeydown={(e) => e.key === 'Escape' && onClose()} role="button" tabindex="-1"></div>
+  {/if}
+  <div class="sheet" class:contained class:inline bind:this={sheetEl}>
+    <!-- The split view reads top-to-bottom as author -> caption -> comments,
+         so a "Comments (n)" bar between the caption and the thread only pushes
+         the two apart. The sheet and contained modes still need the title. -->
+    {#if !inline}
+      <div class="sheet-header">
+        <span class="sheet-title">Comments ({totalCount})</span>
+        <button class="close-btn" onclick={onClose}>
+          <X size={20} />
+        </button>
+      </div>
+    {/if}
+
+    <div class="comment-list">
+      {#if before}
+        <div class="list-before">{@render before()}</div>
+      {/if}
+      {#if cursor}
+        <button class="load-more" onclick={loadMore} disabled={loadingMore}>
+          {#if loadingMore}
+            <LoaderCircle size={14} class="spin" /> Loading...
+          {:else}
+            Load earlier comments
+          {/if}
+        </button>
+      {/if}
+
+      {#if loading}
+        <div class="empty"><LoaderCircle size={24} class="spin" /></div>
+      {:else if organized.length === 0}
+        <div class="empty">No comments yet. Be the first!</div>
+      {:else}
+        {#each organized as comment (comment.uri)}
+          <CommentItem {comment} onReply={handleReply} onDelete={handleDelete} />
+        {/each}
+      {/if}
+    </div>
+
+    {#if error}
+      <p class="error">{error}</p>
+    {/if}
+
+    {#if footer}
+      <div class="list-footer">{@render footer()}</div>
+    {/if}
+
+    <!-- Directly above the composer it applies to. Rendered before the actions
+         row, the reply context was separated from its own input by the heart. -->
+    {#if replyToHandle}
+      <div class="reply-bar">
+        <span>Replying to @{replyToHandle}</span>
+        <button class="cancel-reply" onclick={cancelReply}>
+          <X size={14} />
+        </button>
+      </div>
+    {/if}
+    <div class="input-bar">
+      {#if $viewer}
+        <Avatar did={$viewer.did} src={$viewer.avatar} name={$viewer.displayName || $viewer.handle} size={28} />
+      {/if}
+      <div class="input-wrapper">
+        <input
+          type="text"
+          placeholder="Add a comment..."
+          bind:value={inputValue}
+          bind:this={inputEl}
+          disabled={posting}
+          onkeydown={(e) => e.key === 'Enter' && handlePost()}
+        />
+        <button class="send-btn" onclick={handlePost} disabled={!inputValue.trim() || posting}>
+          {#if posting}
+            <LoaderCircle size={14} class="spin" />
+          {:else}
+            Post
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<style>
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+  }
+  .sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 70vh;
+    background: var(--bg-root);
+    border-radius: 16px 16px 0 0;
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Inline: part of the page rather than over it, so it takes the theme's own
+     surface and stretches to whatever height the column gives it. */
+  .sheet.inline {
+    position: static;
+    max-height: none;
+    /* Not height:100% — the column sizes itself from its content now, so a
+       percentage has no definite parent to resolve against and the sheet grows
+       to fit every comment instead of scrolling them. Flex sizing shrinks
+       against the column's clamped height. */
+    flex: 1 1 0;
+    min-height: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    z-index: auto;
+  }
+  .sheet.inline .input-bar,
+  .sheet.inline .reply-bar {
+    padding-left: 0;
+    padding-right: 0;
+    /* No side padding here to inset a tint against, so the fill ran edge to
+       edge with the text flush against it. Plain text suits the flat column;
+       the bottom sheet keeps its tint. */
+    background: none;
+    padding-bottom: 4px;
+  }
+  .sheet.inline .input-bar {
+    padding-bottom: 16px;
+  }
+  .list-before { padding-bottom: 4px; }
+  /* The bottom padding is load-bearing: without it the actions row sits
+     directly on the composer's border-top and reads as crowded. */
+  .list-footer { padding: 10px 0 12px; }
+  .sheet.inline .comment-list {
+    flex: 1;
+    /* Never collapse to a slit: the thread is the point of the column, so it
+       claims a floor and the sidebar grows to accommodate it. */
+    min-height: 140px;
+    /* The actions row and composer are siblings of this list, not children, so
+       its side padding indented the caption and comments away from them. */
+    padding-left: 0;
+    padding-right: 0;
+  }
+  /* 16px is the largest text in a column where the comments it writes are 14px.
+     Deliberately not applied to the bottom sheet: sub-16px inputs make iOS zoom
+     on focus, and the inline sheet is desktop-only. */
+  .sheet.inline .input-wrapper input {
+    font-size: 14px;
+  }
+  .sheet.contained {
+    position: absolute;
+    max-height: 60%;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(12px);
+    z-index: 20;
+  }
+  .sheet.contained .sheet-header,
+  .sheet.contained .input-bar,
+  .sheet.contained .reply-bar {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  @media (max-width: 600px) {
+    .sheet:not(.contained) {
+      bottom: calc(50px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sheet-title {
+    font-weight: 600;
+    font-size: 16px;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+  }
+
+  .comment-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px;
+  }
+  .empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 32px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .load-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .load-more:hover { background: var(--bg-hover); }
+  .load-more:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .error {
+    color: var(--danger);
+    font-size: 13px;
+    text-align: center;
+    margin: 0;
+    padding: 8px 16px;
+  }
+
+  .reply-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--bg-hover);
+    font-size: 13px;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border);
+  }
+  /* Now adjacent to the composer, so only one of the two draws the rule that
+     separates the thread from the input. */
+  .reply-bar + .input-bar {
+    border-top: none;
+  }
+  .cancel-reply {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+  }
+
+  .input-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .input-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--bg-hover);
+    border-radius: 20px;
+    padding: 6px 6px 6px 14px;
+  }
+  .input-wrapper input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-size: 16px;
+    color: var(--text-primary);
+    font-family: inherit;
+  }
+  .input-wrapper input::placeholder {
+    color: var(--text-muted);
+  }
+  .send-btn {
+    background: none;
+    border: none;
+    color: var(--grain);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+  }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  :global(.spin) {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>

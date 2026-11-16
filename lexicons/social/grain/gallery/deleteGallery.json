@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.deleteGallery",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete one of the logged-in account's galleries with what hangs off it: its items, the photos they place that no other of the account's galleries does, those photos' EXIF, and the account's own favorite of it and comments on it, children first, at the account's PDS and from the index before answering. What others wrote about it stays theirs. For the web, by its session cookie, from a page of the site; a service token is refused (the apps delete at their own PDS, then call social.grain.sync.indexRecords).",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["rkey"],
+          "properties": {
+            "rkey": {
+              "type": "string",
+              "format": "record-key",
+              "maxLength": 512,
+              "description": "Record key of the gallery to delete."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": {} }
+      },
+      "errors": [
+        { "name": "NotFound", "description": "The account has no gallery of that key." },
+        { "name": "Forbidden", "description": "Called with a service token, or from another site." }
+      ]
+    }
+  }
+}

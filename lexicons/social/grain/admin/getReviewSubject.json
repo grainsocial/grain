@@ -1,0 +1,50 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.getReviewSubject",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Everything needed to judge one account: its status, the labels on it and on its records, the reports against them, a sample of its records and how many it has of each kind. Requires an admin session.",
+      "parameters": {
+        "type": "params",
+        "required": ["did"],
+        "properties": { "did": { "type": "string", "format": "did" } }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did", "records", "counts", "labels", "reports", "childSafety"],
+          "properties": {
+            "did": { "type": "string", "format": "did" },
+            "handle": { "type": "string", "format": "handle" },
+            "status": { "type": "string" },
+            "records": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#recordView" },
+              "description": "The newest few of each collection."
+            },
+            "counts": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#collectionCount" }
+            },
+            "labels": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "com.atproto.label.defs#label" },
+              "description": "The labels standing on the account and on each of its records."
+            },
+            "reports": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#reportView" },
+              "description": "Every report against the account or one of its records, newest first."
+            },
+            "childSafety": {
+              "type": "boolean",
+              "description": "Whether a child-safety report or label (csae) was ever made against the account or one of its records, in any state: what it holds is for a person to judge, never a model."
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "lex": "rm -rf .lexicons && mkdir .lexicons && cp -R lexicons/. .lexicons/ && rm -rf .lexicons/dev/hatk .lexicons/social/grain/unspecced .lexicons/social/grain/group.json .lexicons/social/grain/privateGallery.json .lexicons/fyi/opensocial/declaration.json && lex build --lexicons .lexicons --out web/src/lib/lexicons --clear --import-ext .ts",
     "start": "hatk start",
-    "dev": "vp dev",
-    "build": "vp build",
-    "check": "vp check && svelte-check",
+    "dev": "npm run lex && vp dev",
+    "build": "npm run lex && vp build",
+    "check": "npm run lex && vp check && svelte-check",
     "format": "vp format",
     "test": "vp test",
     "test:coverage": "vitest run --config vitest.coverage.config.ts --coverage",
@@ -27,6 +28,7 @@
     "sharp": "^0.35.4"
   },
   "devDependencies": {
+    "@atproto/lex": "0.4.4",
     "@playwright/test": "^1",
     "@types/node": "^25.4.0",
     "@vitest/coverage-v8": "^5.0.0",

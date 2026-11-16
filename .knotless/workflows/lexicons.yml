@@ -1,0 +1,30 @@
+# The lexicons, as `just lex` checks them: goat's lint, what it does not
+# see, and that they only grow from main's (harness/lexicons.mjs), over
+# grain's own under lexicons/social/grain, less what the old server alone
+# serves. goat is kept between runs.
+#
+# The XRPC answers are held to the lexicons by test.yml, over what
+# grain-serve's tests received.
+image: node:24.22.1
+runners: [runner.knotless.dev]
+# Every push to main, and pulls into it or a feature/ branch, at their
+# heads merged with their base, that change the lexicons, their check or
+# this file. A pull changing none passes at once, noted as skipped.
+on:
+  push: { refs: [refs/heads/main] }
+  pull:
+    base: [refs/heads/main, refs/heads/feature/*]
+    paths: [lexicons/**, harness/lexicons.mjs, .knotless/workflows/lexicons.yml]
+cache: [/opt/goat]
+steps:
+  - name: goat
+    run: |
+      mkdir -p /opt/goat
+      [ -x /opt/goat/goat ] || curl -fsSL https://github.com/bluesky-social/goat/releases/download/v0.2.6/goat_Linux_x86_64.tar.gz | tar -xz -C /opt/goat goat
+      /opt/goat/goat --version
+  - name: lexicons
+    run: |
+      # The checkout is another user's: git reads where it left main only
+      # once told it may.
+      git config --global --add safe.directory "$PWD"
+      PATH=/opt/goat:$PATH node harness/lexicons.mjs

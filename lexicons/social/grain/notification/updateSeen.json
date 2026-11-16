@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.notification.updateSeen",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Mark the viewer's notifications seen up to a time, as app.bsky.notification.updateSeen does. getUnreadCount counts from it. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["seenAt"],
+          "properties": { "seenAt": { "type": "string", "format": "datetime" } }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": {} }
+      }
+    }
+  }
+}

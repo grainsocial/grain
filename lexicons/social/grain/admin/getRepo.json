@@ -1,0 +1,20 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.getRepo",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "One tracked repo's status. Requires an admin session.",
+      "parameters": {
+        "type": "params",
+        "required": ["did"],
+        "properties": { "did": { "type": "string", "format": "did" } }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "social.grain.admin.defs#repoView" }
+      },
+      "errors": [{ "name": "RepoNotFound", "description": "The repo is not tracked." }]
+    }
+  }
+}

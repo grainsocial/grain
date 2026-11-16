@@ -1,0 +1,21 @@
+{
+  "lexicon": 1,
+  "id": "test.grain.getThing",
+  "defs": {
+    "main": {
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "properties": { "actor": { "type": "string" } }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["name"],
+          "properties": { "name": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@
   "id": "social.grain.graph.follow",
   "defs": {
     "main": {
+      "description": "A follow of another account.",
       "key": "tid",
       "type": "record",
       "record": {

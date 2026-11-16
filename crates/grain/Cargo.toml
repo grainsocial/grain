@@ -1,0 +1,32 @@
+[package]
+name = "grain"
+description = "grain's core library and command line: what the server, the CLI and MCP share"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+base64.workspace = true
+bs58.workspace = true
+bytes.workspace = true
+ciborium.workspace = true
+futures.workspace = true
+k256.workspace = true
+p256.workspace = true
+rand_core.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+unicode-segmentation.workspace = true
+zstd.workspace = true
+
+[dev-dependencies]
+axum.workspace = true
+tempfile.workspace = true

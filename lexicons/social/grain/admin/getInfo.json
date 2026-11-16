@@ -1,0 +1,29 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.getInfo",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "The state of this server: repos by status, records by collection, open reports and the database's size. Requires an admin session.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["repos", "collections", "openReports"],
+          "properties": {
+            "repos": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#statusCount" }
+            },
+            "collections": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#collectionCount" }
+            },
+            "openReports": { "type": "integer" },
+            "databaseBytes": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

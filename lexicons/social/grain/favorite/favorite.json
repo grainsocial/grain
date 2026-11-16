@@ -3,6 +3,7 @@
   "id": "social.grain.favorite",
   "defs": {
     "main": {
+      "description": "A favorite of the record its subject names.",
       "type": "record",
       "key": "tid",
       "record": {

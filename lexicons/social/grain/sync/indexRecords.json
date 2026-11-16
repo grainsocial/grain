@@ -1,0 +1,52 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.sync.indexRecords",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Index records the caller has just written to their own PDS, without waiting for the firehose. The server reads each one back from the caller's PDS before answering, so a read after this sees the write. Requires service auth; every URI must name the caller's repo.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uris"],
+          "properties": {
+            "uris": {
+              "type": "array",
+              "items": { "type": "string", "format": "at-uri" },
+              "minLength": 1,
+              "maxLength": 25,
+              "description": "Records in the caller's repo, just created, updated or deleted."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["indexed", "notFound"],
+          "properties": {
+            "indexed": {
+              "type": "array",
+              "items": { "type": "string", "format": "at-uri" },
+              "description": "Read back from the caller's PDS and indexed."
+            },
+            "notFound": {
+              "type": "array",
+              "items": { "type": "string", "format": "at-uri" },
+              "description": "Not in the caller's repo: deleted, or never written. Whatever the index held for it is removed."
+            }
+          }
+        }
+      },
+      "errors": [
+        { "name": "RepoMismatch", "description": "A URI names a repo other than the caller's." },
+        {
+          "name": "UnknownCollection",
+          "description": "A URI names a collection this server does not index."
+        }
+      ]
+    }
+  }
+}

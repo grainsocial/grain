@@ -1,0 +1,21 @@
+# The web pages and the Node side of the repository, as `npm run check`
+# and `npm test` run them: vp check (format and lint), svelte-check, then
+# the unit tests. The live spaces tests skip themselves without
+# SPACES_LIVE=1, and the Playwright tests in test/browser are not run here.
+# The packages are kept between runs and installed again only when the
+# lockfile changes (the npm-ci shared step).
+image: node:25-slim
+runners: [runner.knotless.dev]
+# A pre-flight: the merge queue takes a pull into a batch only once this
+# has passed at its head, so one that does not build fails no batch.
+queue: first
+on:
+  push: { refs: [refs/heads/main] }
+  pull: { base: [refs/heads/main, refs/heads/feature/*] }
+cache: [node_modules]
+steps:
+  - uses: chadtmiller.com/steps/npm-ci@1
+  - name: check
+    run: npm run check
+  - name: test
+    run: npm test

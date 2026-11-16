@@ -1,0 +1,146 @@
+import { writable, get } from "svelte/store";
+import type { DatetimeString } from "@atproto/lex";
+import { call } from "$lib/xrpc";
+import type * as updateSeen from "$lib/lexicons/social/grain/notification/updateSeen.ts";
+import { forgetPreferences, putPreference, type Settings } from "./preferenceSync";
+import { Images, Users, Camera, MapPin, Hash, Pin, Sparkles, UsersRound } from "lucide-svelte";
+import { applyStoredTheme } from "./theme";
+
+export interface PinnedFeed {
+  id: string;
+  label: string;
+  type: string;
+  path: string;
+}
+
+/**
+ * Feeds that only work on a PDS serving permissioned spaces.
+ *
+ * Groups are pools, pools are spaces, and every read of one mints a delegation
+ * token on the viewer's own PDS — so a viewer whose server has no spaces cannot
+ * see a pool however they arrive at it. Hidden rather than shown-and-broken.
+ *
+ * Filtered where feeds are rendered, never removed from the stored pins: a
+ * server can gain spaces, and someone who had Groups pinned before should find
+ * it there again rather than having quietly lost it.
+ */
+export const SPACES_ONLY_FEEDS = new Set(["groups"]);
+
+export const DEFAULT_PINNED: PinnedFeed[] = [
+  { id: "recent", label: "Recent", type: "feed", path: "/feeds/recent" },
+  { id: "following", label: "Following", type: "feed", path: "/feeds/following" },
+  { id: "foryou", label: "For You", type: "feed", path: "/feeds/for-you" },
+  { id: "groups", label: "Groups", type: "feed", path: "/feeds/groups" },
+];
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const CORE_ICONS: Record<string, any> = {
+  recent: Images,
+  following: Users,
+  foryou: Sparkles,
+  groups: UsersRound,
+};
+
+const TYPE_ICONS: Record<string, any> = {
+  camera: Camera,
+  location: MapPin,
+  hashtag: Hash,
+};
+
+export function feedIcon(feed: { id: string; type: string }): any {
+  return CORE_ICONS[feed.id] ?? TYPE_ICONS[feed.type] ?? Pin;
+}
+
+export const pinnedFeeds = writable<PinnedFeed[]>(DEFAULT_PINNED);
+export const includeExif = writable(true);
+export const includeLocation = writable(true);
+
+function isValidFeed(f: unknown): f is PinnedFeed {
+  return (
+    !!f &&
+    typeof f === "object" &&
+    typeof (f as any).id === "string" &&
+    typeof (f as any).label === "string" &&
+    typeof (f as any).path === "string"
+  );
+}
+
+export function loadPreferences(prefs: Settings | null): void {
+  if (!prefs) return;
+  if (Array.isArray(prefs.pinnedFeeds)) {
+    const valid = prefs.pinnedFeeds
+      .filter(isValidFeed)
+      .map((f) => (f.id === "recent" && f.path === "/" ? { ...f, path: "/feeds/recent" } : f));
+    // Dedupe by id. pinFeed refuses to add a duplicate, but nothing validates
+    // the stored blob — an older client, the native app, or a racing write
+    // could persist one. Sidebar, MobileDrawer and /feeds all key their
+    // {#each} on feed.id, and the sidebar renders on every page, so a repeat
+    // would throw each_key_duplicate and blank the entire app.
+    const seen = new Set<string>();
+    const unique = valid.filter((f) => (seen.has(f.id) ? false : (seen.add(f.id), true)));
+    if (unique.length > 0) pinnedFeeds.set(unique);
+  }
+  if (typeof prefs.includeExif === "boolean") includeExif.set(prefs.includeExif);
+  if (typeof prefs.includeLocation === "boolean") includeLocation.set(prefs.includeLocation);
+  applyStoredTheme(prefs.theme);
+}
+
+export async function setIncludeExif(value: boolean): Promise<void> {
+  includeExif.set(value);
+  await putPreference("includeExif", value);
+}
+
+export async function setIncludeLocation(value: boolean): Promise<void> {
+  includeLocation.set(value);
+  await putPreference("includeLocation", value);
+}
+
+export async function pinFeed(feed: PinnedFeed): Promise<boolean> {
+  const previous = get(pinnedFeeds);
+  if (previous.some((f) => f.id === feed.id)) return false;
+  const updated = [...previous, feed];
+  pinnedFeeds.set(updated);
+  try {
+    await putPreference("pinnedFeeds", updated);
+  } catch {
+    pinnedFeeds.set(previous);
+  }
+  return true;
+}
+
+export async function unpinFeed(id: string): Promise<boolean> {
+  const previous = get(pinnedFeeds);
+  const updated = previous.filter((f) => f.id !== id);
+  if (updated.length === previous.length) return false;
+  if (updated.length === 0) return false;
+  pinnedFeeds.set(updated);
+  try {
+    await putPreference("pinnedFeeds", updated);
+  } catch {
+    pinnedFeeds.set(previous);
+  }
+  return true;
+}
+
+export async function reorderFeeds(feeds: PinnedFeed[]): Promise<void> {
+  const previous = get(pinnedFeeds);
+  pinnedFeeds.set(feeds);
+  try {
+    await putPreference("pinnedFeeds", feeds);
+  } catch {
+    pinnedFeeds.set(previous);
+  }
+}
+
+export function resetPreferences(): void {
+  forgetPreferences();
+  pinnedFeeds.set(DEFAULT_PINNED);
+  includeExif.set(true);
+  includeLocation.set(true);
+}
+
+export async function markNotificationsSeen(): Promise<void> {
+  await call<typeof updateSeen.main>("social.grain.notification.updateSeen", {
+    seenAt: new Date().toISOString() as DatetimeString,
+  });
+}

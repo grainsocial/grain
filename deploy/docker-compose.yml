@@ -1,0 +1,168 @@
+# grain-serve and its pages, as /etc/grain-serve/docker-compose.yml on
+# grain's host. deploy.sh copies it there, beside the .env it reads; edit
+# it here.
+#
+# It is a compose project of its own, beside the one hetzner-infra keeps
+# in /etc/grain (Caddy, the PDS, imgproxy and porxie), as knotless's is on
+# the same host. TLS is left to that Caddy:
+# it joins the network GRAIN_PROXY_NETWORK names and proxies grain's domain
+# to grain-serve:2600, which hands the pages every request it does not
+# answer itself (--web; deploy/README.md).
+#
+# deploy.sh moves serve and pages with rollout.sh, which starts a new
+# container beside the old under the same names and stops the old once the
+# new one's healthcheck passes: neither sets a container_name, so two can
+# run at once.
+
+name: grain-serve
+
+# Each container's output, JSON lines for serve, kept in the host's
+# journal (deploy/README.md, Logs), which outlives the container: a rollout
+# removes the old one, and its lines stay. Each line names its project and
+# service (COM_DOCKER_COMPOSE_PROJECT and _SERVICE) and its container
+# (CONTAINER_TAG).
+x-logging: &logging
+  driver: journald
+  options:
+    labels: com.docker.compose.project,com.docker.compose.service
+    tag: "{{.Name}}"
+
+services:
+  serve:
+    image: grain-serve:current
+    restart: always
+    logging: *logging
+    command:
+      - grain-serve
+      - --listen
+      - 0.0.0.0:2600
+      - --public-url
+      - https://${GRAIN_DOMAIN:?set GRAIN_DOMAIN in .env}
+      - --index
+      - /data/index.db
+      # What feeds the index: Jetstream, and backfill from the collection
+      # directories. GRAIN_JETSTREAM set empty turns Jetstream off;
+      # GRAIN_BACKFILL set empty turns backfill off.
+      - --jetstream
+      - ${GRAIN_JETSTREAM-wss://jetstream.us-west.bsky.network}
+      - --backfill
+      - ${GRAIN_BACKFILL-https://lightrail.microcosm.blue,https://relay1.us-east.bsky.network}
+      # grain's imgproxy, through Bunny; its key and salt are secrets, in
+      # /etc/grain-serve/serve.env. Empty, Bluesky's CDN.
+      - --cdn
+      - ${GRAIN_CDN:-}
+      # The Bluesky appview typeahead fills out its own with. Empty, none.
+      - --bsky-appview
+      - ${GRAIN_BSKY_APPVIEW-https://public.api.bsky.app}
+      - --sign-up-pds
+      - ${GRAIN_SIGN_UP_PDS:-}
+      # The group host the web starts groups on. Empty, none.
+      - --group-host
+      - ${GRAIN_GROUP_HOST:-}
+      # Until when the web carries the cookies browsers held before
+      # grain-serve, an RFC 3339 time. Empty, none.
+      - --carry-cookies-until
+      - ${GRAIN_CARRY_COOKIES_UNTIL:-}
+      # /metrics and PUT /log, inside the container alone: read them with
+      # docker exec (docs/observability.md).
+      - --metrics
+      - 127.0.0.1:9464
+      # Push, once serve.env names the key files.
+      - --apns-key-id
+      - ${GRAIN_APNS_KEY_ID:-}
+      - --apns-team-id
+      - ${GRAIN_APNS_TEAM_ID:-}
+      - --apns-topic
+      - ${GRAIN_APNS_TOPIC:-}
+      - --fcm-project-id
+      - ${GRAIN_FCM_PROJECT_ID:-}
+      # The pages, handed every request serve does not answer itself.
+      - --web
+      - http://pages:2601
+    environment:
+      # The CLI's and the identity cache's directories, inside /data.
+      GRAIN_CONFIG_DIR: /data/config
+      GRAIN_CACHE_DIR: /data/cache
+      # The accounts, by DID, that moderate.
+      GRAIN_ADMIN_DIDS: ${GRAIN_ADMIN_DIDS:-}
+      # What is logged, as RUST_LOG takes it: info, unless .env says.
+      RUST_LOG: ${GRAIN_LOG:-info}
+    env_file:
+      # The secrets and key files: GRAIN_CDN_KEY, GRAIN_CDN_SALT,
+      # GRAIN_APNS_KEY_FILE, GRAIN_FCM_KEY_FILE (paths under /data/certs),
+      # CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_TOKEN. Kept on the host,
+      # never in the repository (deploy/README.md).
+      - path: /etc/grain-serve/serve.env
+        required: false
+    volumes:
+      # Owned by uid 1000, the node user the image runs as: the index, and
+      # the push key files under certs/.
+      - ${GRAIN_DATA:-/mnt/data/grain-serve}:/data
+    networks:
+      default: {}
+      # The name the reverse proxy reaches it by.
+      proxy:
+        aliases: [grain-serve]
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2g
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:2600/healthz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      # Each second while it starts, so a rollout hands over as soon as it
+      # listens rather than at the first 30s check.
+      start_period: 120s
+      start_interval: 1s
+    # Stopped, it finishes the requests it has.
+    stop_grace_period: 30s
+
+  pages:
+    image: grain-serve:current
+    restart: always
+    logging: *logging
+    command: ["node", "/app/build"]
+    environment:
+      HOST: 0.0.0.0
+      PORT: "2601"
+      # Where a page's load reaches grain-serve.
+      GRAIN_SERVE_URL: http://serve:2600
+      # serve hands on the host and scheme it was asked for.
+      HOST_HEADER: x-forwarded-host
+      PROTOCOL_HEADER: x-forwarded-proto
+    # A file the build writes, answered without asking serve anything.
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:2601/_app/version.json').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+      start_interval: 1s
+    # Stopped, it finishes the requests it has, for up to adapter-node's
+    # SHUTDOWN_TIMEOUT (30s).
+    stop_grace_period: 35s
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 512m
+
+networks:
+  proxy:
+    name: ${GRAIN_PROXY_NETWORK:-grain-serve}
+    external: true

@@ -1,7 +1,11 @@
+# What the Dockerfile's build is not sent.
 .git
+target
 node_modules
+harness/node_modules
 build
 .svelte-kit
+.lexicons
 coverage
 test-results
 .dev-logs
@@ -9,3 +13,4 @@ test-results
 *.db
 data
 certs
+deploy/local.env

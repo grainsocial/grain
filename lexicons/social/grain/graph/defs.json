@@ -1,0 +1,66 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.graph.defs",
+  "defs": {
+    "followerItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" },
+        "viewer": { "type": "ref", "ref": "#viewerState" }
+      }
+    },
+    "viewerState": {
+      "type": "object",
+      "properties": { "following": { "type": "string", "format": "at-uri" } }
+    },
+    "followingItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" },
+        "viewer": { "type": "ref", "ref": "#viewerState" }
+      }
+    },
+    "knownFollowerItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    },
+    "blockItem": {
+      "type": "object",
+      "required": ["did", "blockUri"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" },
+        "blockUri": { "type": "string", "format": "at-uri" }
+      }
+    },
+    "muteItem": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" }
+      }
+    }
+  }
+}

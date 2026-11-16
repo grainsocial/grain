@@ -3,6 +3,7 @@
   "id": "social.grain.basePermissions",
   "defs": {
     "main": {
+      "description": "The photo pools of an account's groups, to read and to add galleries, photos, favorites and comments of its own to.",
       "type": "permission-set",
       "title": "Photos",
       "detail": "Read your groups' photo pools, and add galleries, favourites and comments of your own to them",

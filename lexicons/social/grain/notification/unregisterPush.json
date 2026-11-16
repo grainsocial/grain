@@ -1,0 +1,35 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.notification.unregisterPush",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Stop sending pushes to a device token, as app.bsky.notification.unregisterPush does. Requires auth.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["serviceDid", "token", "platform", "appId"],
+          "properties": {
+            "serviceDid": {
+              "type": "string",
+              "format": "did",
+              "description": "The service that sends the pushes: this server's DID."
+            },
+            "token": { "type": "string", "maxLength": 4096 },
+            "platform": { "type": "string", "knownValues": ["ios", "android", "web"] },
+            "appId": {
+              "type": "string",
+              "maxLength": 256,
+              "description": "The app's bundle or package id."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": {} }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+[package]
+name = "grain-serve"
+description = "grain's server: its appview, the web's server side, push and backfill"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+grain.workspace = true
+aes-gcm.workspace = true
+anyhow.workspace = true
+axum.workspace = true
+base64.workspace = true
+bytes.workspace = true
+futures.workspace = true
+image.workspace = true
+p256.workspace = true
+png.workspace = true
+reqwest.workspace = true
+resvg.workspace = true
+ring.workspace = true
+rusqlite.workspace = true
+rustix.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+skrifa.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+unicode-segmentation.workspace = true
+
+[dev-dependencies]
+axum = { workspace = true, features = ["http2"] }
+ciborium.workspace = true
+tokio-tungstenite.workspace = true
+zstd.workspace = true

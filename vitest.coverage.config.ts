@@ -6,7 +6,7 @@
 // own `defineConfig` here skips the guard plugin; `vp test` is unaffected and
 // stays the normal way to run the suite.
 //
-// Scope is server code only. `app/lib` is browser code with no DOM setup, and
+// Scope is server code only. `web/src/lib` is browser code with no DOM setup, and
 // `.svelte` files cannot be instrumented without a component test harness, so
 // including either would only report an unreachable denominator.
 import { hatk } from "@hatk/hatk/vite-plugin";

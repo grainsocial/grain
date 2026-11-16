@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.story.getStory",
+  "defs": {
+    "main": {
+      "description": "Get one story, by its URI.",
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "required": ["story"],
+        "properties": { "story": { "type": "string", "format": "at-uri" } }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": { "story": { "type": "ref", "ref": "social.grain.story.defs#storyView" } }
+        }
+      }
+    }
+  }
+}

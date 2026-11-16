@@ -3,6 +3,7 @@
   "id": "social.grain.graph.block",
   "defs": {
     "main": {
+      "description": "A block of another account.",
       "key": "tid",
       "type": "record",
       "record": {

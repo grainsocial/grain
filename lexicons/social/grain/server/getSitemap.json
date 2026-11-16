@@ -1,0 +1,35 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.server.getSitemap",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "One page of the public profiles or galleries a search engine may index, for the sitemap. Leaves out anything labeled, taken down, or in a space.",
+      "parameters": {
+        "type": "params",
+        "required": ["kind"],
+        "properties": {
+          "kind": { "type": "string", "knownValues": ["profiles", "galleries"] },
+          "page": { "type": "integer", "minimum": 0, "default": 0 }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["entries", "pageCount"],
+          "properties": {
+            "entries": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.server.defs#sitemapEntry" }
+            },
+            "pageCount": {
+              "type": "integer",
+              "description": "How many pages of this kind there are, so the sitemap index can list them all."
+            }
+          }
+        }
+      }
+    }
+  }
+}

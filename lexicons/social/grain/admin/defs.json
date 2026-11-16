@@ -1,0 +1,163 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.defs",
+  "defs": {
+    "reportView": {
+      "type": "object",
+      "required": ["id", "subject", "subjectDid", "label", "reportedBy", "status", "createdAt"],
+      "properties": {
+        "id": { "type": "integer" },
+        "subject": {
+          "type": "string",
+          "format": "uri",
+          "description": "An account's bare DID, or a record's at:// URI."
+        },
+        "subjectDid": { "type": "string", "format": "did" },
+        "label": { "type": "string", "description": "The label the report asks for." },
+        "reason": { "type": "string" },
+        "reportedBy": { "type": "string", "format": "did" },
+        "reportedByHandle": { "type": "string", "format": "handle" },
+        "status": { "type": "string", "knownValues": ["open", "resolved", "dismissed"] },
+        "resolvedBy": { "type": "string", "format": "did" },
+        "resolvedAt": { "type": "string", "format": "datetime" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "reasonType": {
+          "type": "string",
+          "description": "The reasonType the report was made with (com.atproto.moderation.defs#reasonType); none for one made before grain took them by it."
+        }
+      }
+    },
+    "signalView": {
+      "type": "object",
+      "required": ["name", "classifier", "score", "type"],
+      "properties": {
+        "name": { "type": "string", "description": "The question the classifier answered." },
+        "classifier": { "type": "string" },
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "A classifier's score, in thousandths: 1000 is certain."
+        },
+        "type": { "type": "string" },
+        "choice": { "type": "string", "description": "For a choice: the option selected." },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "For a choice: how sure, in thousandths."
+        }
+      }
+    },
+    "reviewItem": {
+      "type": "object",
+      "description": "One subject in the review queue, however many classifiers scored it.",
+      "required": ["subject", "subjectDid", "classifiers", "signals", "topScore"],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "format": "uri",
+          "description": "An account's bare DID, or a record's at:// URI."
+        },
+        "subjectDid": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "repoStatus": {
+          "type": "string",
+          "description": "The subject's repo status: active, takendown and so on."
+        },
+        "reportId": {
+          "type": "integer",
+          "description": "The open report against the subject, when there is one."
+        },
+        "reportStatus": {
+          "type": "string",
+          "description": "The status of the subject's latest report."
+        },
+        "classifiers": { "type": "array", "items": { "type": "string" } },
+        "signals": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "#signalView" },
+          "description": "Every classifier's answers, merged."
+        },
+        "topSignal": { "type": "string" },
+        "topScore": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "description": "A classifier's score, in thousandths: 1000 is certain."
+        },
+        "state": {
+          "type": "unknown",
+          "description": "What the richest classifier saw of the subject."
+        },
+        "scannedAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "recordView": {
+      "type": "object",
+      "required": ["uri", "did", "collection", "value"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "did": { "type": "string", "format": "did" },
+        "collection": { "type": "string", "format": "nsid" },
+        "value": { "type": "unknown" },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
+        }
+      }
+    },
+    "collectionCount": {
+      "type": "object",
+      "required": ["collection", "count"],
+      "properties": {
+        "collection": { "type": "string", "format": "nsid" },
+        "count": { "type": "integer" }
+      }
+    },
+    "scanProgress": {
+      "type": "object",
+      "required": ["running", "scanned", "skipped", "scored", "filed", "errors", "startedAt"],
+      "properties": {
+        "running": { "type": "boolean" },
+        "scanned": { "type": "integer", "description": "Subjects considered." },
+        "skipped": {
+          "type": "integer",
+          "description": "Gated out, or unchanged since the last scan."
+        },
+        "scored": { "type": "integer", "description": "Sent to the model and stored." },
+        "filed": { "type": "integer", "description": "Reports filed for crossing a threshold." },
+        "errors": { "type": "integer" },
+        "inputTokens": { "type": "integer" },
+        "startedAt": { "type": "string", "format": "datetime" },
+        "finishedAt": { "type": "string", "format": "datetime" },
+        "error": { "type": "string" }
+      }
+    },
+    "classifierCount": {
+      "type": "object",
+      "required": ["classifier", "count"],
+      "properties": { "classifier": { "type": "string" }, "count": { "type": "integer" } }
+    },
+    "repoView": {
+      "type": "object",
+      "required": ["did", "status"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "status": { "type": "string", "knownValues": ["active", "pending", "takendown", "failed"] },
+        "rev": { "type": "string" },
+        "backfilledAt": { "type": "string", "format": "datetime" },
+        "retryCount": { "type": "integer" },
+        "retryAfter": { "type": "string", "format": "datetime" }
+      }
+    },
+    "statusCount": {
+      "type": "object",
+      "required": ["status", "count"],
+      "properties": { "status": { "type": "string" }, "count": { "type": "integer" } }
+    }
+  }
+}

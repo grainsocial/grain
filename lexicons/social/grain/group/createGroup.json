@@ -1,0 +1,54 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.group.createGroup",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Start a group on Grain's group host. The host creates the group with the viewer as its founder and hands Grain its own session on it (fyi.opensocial.provisionGroup); Grain then gives the group its pool and its Grain profile. The viewer never leaves Grain.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["name", "displayName"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The first label of the group's handle, 3 to 18 characters; the host supplies its domain.",
+              "minLength": 3,
+              "maxLength": 18
+            },
+            "displayName": { "type": "string", "maxGraphemes": 64, "maxLength": 640 },
+            "description": { "type": "string", "maxGraphemes": 300, "maxLength": 3000 }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did", "handle"],
+          "properties": {
+            "did": { "type": "string", "format": "did" },
+            "handle": { "type": "string", "format": "handle" }
+          }
+        }
+      },
+      "errors": [
+        { "name": "NotSupported", "description": "This Grain starts no groups." },
+        {
+          "name": "InvalidName",
+          "description": "The name is not 3 to 18 letters, digits and hyphens, starting and ending with no hyphen."
+        },
+        {
+          "name": "HandleUnavailable",
+          "description": "The group host refused the handle: taken, or not allowed."
+        },
+        { "name": "CreateFailed", "description": "The group host did not start the group." },
+        {
+          "name": "PoolFailed",
+          "description": "The group was started, but its host did not open its pool."
+        }
+      ]
+    }
+  }
+}

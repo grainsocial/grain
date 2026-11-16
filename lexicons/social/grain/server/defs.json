@@ -1,0 +1,17 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.server.defs",
+  "defs": {
+    "sitemapEntry": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "The page's path on this site, named by handle where the account has one."
+        },
+        "lastmod": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

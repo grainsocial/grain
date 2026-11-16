@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.repo.deleteRecord",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Delete a record from the logged-in account's repo, at its PDS, and from the index before answering. Called as social.grain.repo.createRecord is.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["collection", "rkey"],
+          "properties": {
+            "collection": {
+              "type": "string",
+              "format": "nsid",
+              "description": "A collection grain indexes."
+            },
+            "rkey": { "type": "string", "format": "record-key", "maxLength": 512 },
+            "swapRecord": { "type": "string", "format": "cid" },
+            "swapCommit": { "type": "string", "format": "cid" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "object", "properties": {} }
+      },
+      "errors": [
+        { "name": "UnknownCollection", "description": "grain does not index the collection." },
+        { "name": "InvalidSwap" },
+        {
+          "name": "ScopeMissingError",
+          "description": "The account's PDS granted the session less than the write needs."
+        }
+      ]
+    }
+  }
+}

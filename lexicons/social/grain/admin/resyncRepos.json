@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.resyncRepos",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Fetch repos again from their PDS and reindex them. Requires an admin session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "dids": {
+              "type": "array",
+              "items": { "type": "string", "format": "did" },
+              "maxLength": 100,
+              "description": "The repos to resync; every active one when left out."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["resyncing"],
+          "properties": { "resyncing": { "type": "integer" } }
+        }
+      }
+    }
+  }
+}

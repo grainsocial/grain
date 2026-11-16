@@ -7,22 +7,23 @@ import { QueryClient } from "@tanstack/svelte-query";
 const calls: { nsid: string; input: unknown }[] = [];
 let fail = false;
 
-// Mocked by resolved path: the $hatk and $lib aliases resolve before vi.mock matches.
-vi.mock("../hatk.generated.client.ts", () => ({
-  callXrpc: async (nsid: string, input: unknown) => {
+// Mocked by resolved path: the $lib alias resolves before vi.mock matches.
+vi.mock("../web/src/lib/xrpc/index.ts", () => ({
+  call: async (nsid: string, input: unknown) => {
     calls.push({ nsid, input });
     if (fail) throw new Error("offline");
     return {};
   },
 }));
 
-vi.mock("../app/lib/stores.ts", async () => {
+vi.mock("../web/src/lib/stores.ts", async () => {
   const { writable } = await import("svelte/store");
   return { viewer: writable<{ did: string } | null>({ did: "did:plc:me" }) };
 });
 
-const { isCaughtUp, firstUnviewedIndex, markStoriesViewed } = await import("../app/lib/stories.ts");
-const { viewer } = await import("../app/lib/stores.ts");
+const { isCaughtUp, firstUnviewedIndex, markStoriesViewed } =
+  await import("../web/src/lib/stories.ts");
+const { viewer } = await import("../web/src/lib/stores.ts");
 
 const ALICE = "did:plc:alice";
 const story = (id: string, createdAt: string, viewed?: boolean) =>
@@ -87,7 +88,7 @@ describe("markStoriesViewed", () => {
 
     expect(calls).toEqual([
       {
-        nsid: "social.grain.unspecced.markStoriesViewed",
+        nsid: "social.grain.story.markViewed",
         input: { stories: [a3.uri] },
       },
     ]);

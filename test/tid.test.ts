@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { encodeTid, nextTid } from "../app/lib/utils/tid.ts";
+import { encodeTid, nextTid } from "../web/src/lib/utils/tid.ts";
 
 /** Regex from the AT Protocol TID syntax: 13 base32-sortable chars, top bit clear. */
 const TID_RE = /^[234567abcdefghij][234567abcdefghijklmnopqrstuvwxyz]{12}$/;

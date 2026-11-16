@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.actor.getProfile",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get an actor's profile with gallery stats and follow relationships.",
+      "parameters": {
+        "type": "params",
+        "required": ["actor"],
+        "properties": {
+          "actor": { "type": "string", "format": "at-identifier" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": { "type": "ref", "ref": "social.grain.actor.defs#profileViewDetailed" }
+      },
+      "errors": [
+        {
+          "name": "AccountTakedown",
+          "description": "An admin, or the account's host, took it down."
+        },
+        {
+          "name": "AccountDeactivated",
+          "description": "The account's host says it is deactivated."
+        }
+      ]
+    }
+  }
+}

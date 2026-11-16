@@ -1,0 +1,152 @@
+# The pages used as people use them, as `just e2e` runs them: grain-serve
+# and the web's build together, in Chromium, logging in through the PDS's
+# own approval page, then each write the pages make, each read back on the
+# page and from the PDS (harness/e2e/flows.spec.mjs). Then, over the
+# spaces alpha, what an account on a PDS with spaces finds: the Groups tab
+# and the groups page (spaces.spec.mjs). check.yml and test.yml check
+# grain-serve, web.yml the pages; this, that the two work together. Each flow that
+# fails leaves the page as it was then among the check's outputs, as a
+# picture, beside what the servers said.
+#
+# Node, the packages, Chromium, the libraries it needs, the alpha and the
+# build are kept between runs as main's runs, or a feature/ branch's,
+# leave them: nothing is fetched again until what it is made from changes.
+image: rust:1.98
+runners: [runner.knotless.dev]
+# Every push to main or a feature/ branch, and pulls into either that
+# change the pages, the server they log in to and write through, the lexicons
+# between them, the harness they run over, or this file. A pull changing
+# none passes at once, noted as skipped.
+on:
+  push: { refs: [refs/heads/main, refs/heads/feature/*] }
+  pull:
+    base: [refs/heads/main, refs/heads/feature/*]
+    paths:
+      [
+        web/**,
+        lexicons/**,
+        crates/grain/**,
+        crates/grain-serve/**,
+        Cargo.toml,
+        Cargo.lock,
+        package.json,
+        package-lock.json,
+        svelte.config.js,
+        vite.config.ts,
+        hatk.generated.client.ts,
+        harness/e2e/**,
+        harness/pds.mjs,
+        harness/tls-proxy.mjs,
+        harness/package.json,
+        harness/package-lock.json,
+        .knotless/workflows/e2e.yml,
+      ]
+cache:
+  [
+    target,
+    /usr/local/cargo/registry,
+    /usr/local/rustup,
+    /opt/node,
+    /opt/browsers,
+    /opt/chromium-debs,
+    /opt/atproto,
+    node_modules,
+    harness/node_modules,
+  ]
+env:
+  PLAYWRIGHT_BROWSERS_PATH: /opt/browsers
+  # The spaces alpha the spaces flows run over, as test.yml pins it:
+  # the two move together.
+  ATPROTO_COMMIT: 11c5d98cd50261c5e1201fedc5c6c05a7b8d1ccf
+  ALPHA_BUILD: "1"
+steps:
+  # Node into /opt/node, and the web's and the harness's packages when
+  # their lockfiles change, each kept in the cache.
+  - uses: chadtmiller.com/steps/node@1
+    with: { version: 24.22.1 }
+  - uses: chadtmiller.com/steps/npm-ci@1
+    name: web packages
+  - uses: chadtmiller.com/steps/npm-ci@1
+    name: harness
+    with: { dir: harness }
+  - name: chromium
+    run: |
+      export PATH=/opt/node/bin:$PATH
+      cd harness
+      # The browser, into /opt/browsers once for each Playwright version.
+      npx playwright install chromium
+      # The libraries it needs, which `install-deps` would fetch with apt on
+      # every run: their .debs are kept, fetched again only when this
+      # Playwright or this Debian asks for others, and installed offline.
+      pkgs=$(npx playwright install-deps --dry-run chromium | sed -n "s/.*--no-install-recommends \([^\"']*\).*/\1/p")
+      [ -n "$pkgs" ] || { echo "no packages in: $(npx playwright install-deps --dry-run chromium)"; exit 1; }
+      debs=/opt/chromium-debs
+      want="$(. /etc/os-release && echo "$VERSION_ID") $pkgs"
+      if [ "$(cat $debs/.want 2>/dev/null)" != "$want" ]; then
+        mkdir -p $debs && rm -rf "${debs:?}"/* && mkdir -p $debs/partial
+        apt-get update -qq
+        apt-get install -y -qq --no-install-recommends --download-only -o Dir::Cache::archives=$debs $pkgs
+        echo "$want" > $debs/.want
+      fi
+      dpkg -i $debs/*.deb > /dev/null
+  - name: spaces alpha
+    run: |
+      [ "$(cat /opt/atproto/.built 2>/dev/null)" = "$ATPROTO_COMMIT $ALPHA_BUILD" ] && exit 0
+      export PATH=/opt/node/bin:$PATH COREPACK_ENABLE_DOWNLOAD_PROMPT=0 COREPACK_HOME=/opt/atproto/.corepack
+      mkdir -p /opt/atproto && find /opt/atproto -mindepth 1 -delete
+      cd /opt/atproto
+      git init -q . && git fetch -q --depth 1 https://github.com/bluesky-social/atproto.git "$ATPROTO_COMMIT" && git checkout -q FETCH_HEAD
+      mkdir .bin && corepack enable --install-directory /opt/atproto/.bin
+      export PATH=/opt/atproto/.bin:$PATH
+      pnpm install --frozen-lockfile --ignore-scripts
+      pnpm run build:tooling --force
+      pnpm --filter '@atproto/dev-env^...' --filter @atproto/dev-env run --if-present prebuild
+      pnpm exec tsc --build packages/dev-env/tsconfig.build.json
+      # The PDS serves the OAuth sign-in pages from this bundle.
+      pnpm --filter @atproto/oauth-provider-ui run build:ui
+      echo "$ATPROTO_COMMIT $ALPHA_BUILD" > /opt/atproto/.built
+  - name: sqlite
+    run: |
+      # The one install script the alpha's PDS needs, which the install
+      # above skips: SQLite's native module, as better-sqlite3 builds it.
+      export PATH=/opt/node/bin:$PATH
+      cd "$(dirname "$(node -p "require.resolve('better-sqlite3/package.json', { paths: ['/opt/atproto/packages/pds'] })")")"
+      [ -f build/Release/better_sqlite3.node ] && exit 0
+      npm run install
+  - name: build
+    run: |
+      export PATH=/opt/node/bin:$PATH
+      cargo build --locked -p grain-serve --bin grain-serve
+      npm run build
+  - name: flows
+    run: |
+      export PATH=/opt/node/bin:$PATH
+      rm -rf target/e2e
+      status=0
+      (cd harness && npx playwright test -c e2e/playwright.config.mjs) || status=$?
+      # Then the spaces ones, over a world of their own on the alpha.
+      cp -r target/e2e/logs target/e2e/logs-public 2>/dev/null || true
+      (cd harness && GRAIN_DEV_ENV=/opt/atproto/packages/dev-env npx playwright test -c e2e/playwright.config.mjs) || status=$?
+      if [ $status -ne 0 ]; then
+        # What the servers said, the last of it, for the flows that failed.
+        # What each failed page held, and the browser said.
+        for context in target/e2e/*/*/error-context.md; do
+          [ -f "$context" ] && { echo "--- $context"; head -c 6000 "$context"; echo; }
+        done
+        for log in target/e2e/logs-public/*.log target/e2e/logs/*.log; do
+          [ -f "$log" ] && { echo "--- $log"; grep -v '"url.path":"/\(_app\|atmo\)/' "$log" | tail -n 80 | cut -c1-600; }
+        done
+      fi
+      # The page each failed flow ended on, named for the flow, and the logs.
+      if [ -n "${KNOTLESS_RUN_OUTPUTS:-}" ] && [ -d target/e2e ]; then
+        for shot in target/e2e/*/*/test-failed-*.png; do
+          [ -f "$shot" ] && cp "$shot" "$KNOTLESS_RUN_OUTPUTS/$(basename "$(dirname "$shot")").png"
+        done
+        for log in target/e2e/logs-public/*.log; do
+          [ -f "$log" ] && cp "$log" "$KNOTLESS_RUN_OUTPUTS/public-$(basename "$log")"
+        done
+        for log in target/e2e/logs/*.log; do
+          [ -f "$log" ] && cp "$log" "$KNOTLESS_RUN_OUTPUTS/spaces-$(basename "$log")"
+        done
+      fi
+      exit $status

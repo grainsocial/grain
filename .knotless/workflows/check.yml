@@ -1,13 +1,35 @@
-# Formatting, lint and types, as `npm run check` runs them: vp check, then
-# svelte-check. The packages are kept between runs and installed again only
-# when the lockfile changes (the npm-ci shared step).
-image: node:25-slim
+# The Rust workspace: formatting and clippy with warnings denied, as `just
+# lint` runs them; test.yml runs the tests, and web.yml checks the pages.
+#
+# The build, the registry and the toolchain's components are kept between
+# runs, so a push builds only what it changed.
+image: rust:1.98
 runners: [runner.knotless.dev]
+# A pre-flight: the merge queue takes a pull into a batch only once this
+# has passed at its head, so one that does not build fails no batch.
+queue: first
+# Pushes to main and to a feature/ branch, which keeps caches of its own
+# for the pulls into it: a branch keeps them only where both push and
+# pull name it.
 on:
-  push: { refs: [refs/heads/main] }
-  pull: { base: [refs/heads/main] }
-cache: [node_modules]
+  push: { refs: [refs/heads/main, refs/heads/feature/*] }
+  pull: { base: [refs/heads/main, refs/heads/feature/*] }
+cache: [target, /usr/local/cargo/registry, /usr/local/rustup]
 steps:
-  - uses: chadtmiller.com/steps/npm-ci@1
-  - name: check
-    run: npm run check
+  # grain-import, the one-shot cutover from the old server's database, and
+  # grain-serve's login carryover, which reads the cookies it set until a
+  # date after cutover, are the only Rust that may name it: the rest
+  # describes grain on its own terms. Both are deleted after cutover. The pattern is bracketed so that this file does not match it.
+  # git grep exits 1 when it finds nothing, and more when it cannot search.
+  - name: the old server is named only in grain-import
+    run: |
+      git config --global --add safe.directory "$PWD"
+      rc=0
+      git grep -in 'h[a]tk' -- crates harness .knotless/workflows/check.yml ':(exclude)crates/grain-import' ':(exclude)crates/grain-serve/src/login/carryover.rs' || rc=$?
+      case $rc in
+        1) exit 0 ;;
+        0) echo "named outside crates/grain-import, above"; exit 1 ;;
+        *) echo "git grep could not search the checkout"; exit 2 ;;
+      esac
+  # cargo fmt --check, then clippy over the workspace, warnings denied.
+  - uses: chadtmiller.com/steps/rust-lint@1

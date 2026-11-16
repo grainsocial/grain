@@ -1,0 +1,64 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.server.deleteAccount",
+  "description": "Deletes every grain record from the asking account, then has grain forget it.",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Deletes the asking account's grain data a part at a time, as knotless's dev.knotless.deleteAccountData does. Asked by the web's session cookie, from a page of the site, it deletes the account's records in every social.grain.* collection at its PDS with the session grain keeps for it, up to `limit` records a call, and answers whether it is done; the web asks again until it is, and a run cut short carries on where it stopped. Once nothing is left, grain drops what it indexed from the account, as for one deleted at its PDS, with its preferences, notification state, push tokens, mutes, story views and space invitations, keeping its takedowns, the labels given out and the reports about it; and it ends the account's web session, revoked at its PDS, logging the browser out of it. Asked with a service token, as the apps ask once they have deleted the records at their own PDS, it deletes nothing, and forgets the account only once its PDS lists no social.grain.* collection. The atproto account itself, and other apps' records in it, a Bluesky cross-post among them, are untouched. Only the account itself can ask.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did"],
+          "properties": {
+            "did": {
+              "type": "string",
+              "format": "did",
+              "description": "The account whose data goes: the one asking, named again so that no call deletes it by mistake."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 400,
+              "description": "The most records to delete in this call."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["deleted", "done"],
+          "properties": {
+            "deleted": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "How many records this call deleted."
+            },
+            "done": {
+              "type": "boolean",
+              "description": "Whether nothing is left: grain has then forgotten the account, and logged it out."
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "AuthenticationRequired",
+          "description": "No account asks, or the web's session for it has ended."
+        },
+        {
+          "name": "Forbidden",
+          "description": "The account asking is not the one named, or the cookie was sent from another site."
+        },
+        {
+          "name": "RecordsRemain",
+          "description": "Asked with a service token while the account's PDS still holds grain records: delete them first."
+        }
+      ]
+    }
+  }
+}

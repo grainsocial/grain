@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.feed.describeFeeds",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "List the feeds this server serves, as app.bsky.feed.describeFeedGenerator does for a feed generator.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["did", "feeds"],
+          "properties": {
+            "did": {
+              "type": "string",
+              "format": "did",
+              "description": "The service that serves them."
+            },
+            "feeds": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.feed.defs#feedView" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.addRepos",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Start tracking repos, and backfill them. Requires an admin session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["dids"],
+          "properties": {
+            "dids": {
+              "type": "array",
+              "items": { "type": "string", "format": "did" },
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["added"],
+          "properties": { "added": { "type": "integer" } }
+        }
+      }
+    }
+  }
+}

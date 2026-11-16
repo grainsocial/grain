@@ -1,0 +1,31 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.getLocations",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get top locations by gallery count.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "locations": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.gallery.defs#locationItem" }
+            }
+          }
+        }
+      },
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "pins": {
+            "type": "boolean",
+            "description": "Return every place carrying only what a map needs — name, h3Index, galleryCount — instead of the top 30 with thumbnails and cell lists. The full shape is ~1.1KB per place, so all of them would be ~780KB; lean it is ~70 bytes each."
+          }
+        }
+      }
+    }
+  }
+}

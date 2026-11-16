@@ -1,0 +1,102 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.repo.applyWrites",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Make several writes in the logged-in account's repo at once, as com.atproto.repo.applyWrites makes them at its PDS, and index them before answering. Called as social.grain.repo.createRecord is.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["writes"],
+          "properties": {
+            "writes": {
+              "type": "array",
+              "minLength": 1,
+              "maxLength": 200,
+              "items": {
+                "type": "union",
+                "refs": ["#create", "#update", "#delete"],
+                "closed": true
+              }
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["results"],
+          "properties": {
+            "results": {
+              "type": "array",
+              "description": "Each write's result, in the place of its write.",
+              "items": {
+                "type": "union",
+                "refs": ["#createResult", "#updateResult", "#deleteResult"],
+                "closed": true
+              }
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "UnknownCollection",
+          "description": "grain does not index a write's collection."
+        },
+        { "name": "InvalidRecord", "description": "A write's value does not fit its lexicon." },
+        { "name": "InvalidSwap" },
+        {
+          "name": "ScopeMissingError",
+          "description": "The account's PDS granted the session less than the writes need."
+        }
+      ]
+    },
+    "create": {
+      "type": "object",
+      "required": ["collection", "value"],
+      "properties": {
+        "collection": { "type": "string", "format": "nsid" },
+        "rkey": { "type": "string", "format": "record-key", "maxLength": 512 },
+        "value": { "type": "unknown" }
+      }
+    },
+    "update": {
+      "type": "object",
+      "required": ["collection", "rkey", "value"],
+      "properties": {
+        "collection": { "type": "string", "format": "nsid" },
+        "rkey": { "type": "string", "format": "record-key", "maxLength": 512 },
+        "value": { "type": "unknown" }
+      }
+    },
+    "delete": {
+      "type": "object",
+      "required": ["collection", "rkey"],
+      "properties": {
+        "collection": { "type": "string", "format": "nsid" },
+        "rkey": { "type": "string", "format": "record-key", "maxLength": 512 }
+      }
+    },
+    "createResult": {
+      "type": "object",
+      "required": ["uri", "cid"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" }
+      }
+    },
+    "updateResult": {
+      "type": "object",
+      "required": ["uri", "cid"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" }
+      }
+    },
+    "deleteResult": { "type": "object", "properties": {} }
+  }
+}

@@ -1,5 +1,6 @@
-# Publishes grain's lexicons as atproto resolves them, once main's test
-# and check pass at a commit that changes them, with the publish-lexicons
+# Publishes grain's lexicons as atproto resolves them, once main's checks
+# all pass (check, test, web and lexicons, as deploy.yml waits on)
+# at a commit that changes them, with the publish-lexicons
 # shared step: a com.atproto.lexicon.schema record in grain.social's repo
 # for each lexicon whose authority is in the grain.social zone, and the
 # `_lexicon.<authority>` TXT records naming that account. The rest of
@@ -41,7 +42,7 @@ steps:
   - name: checks
     uses: chadtmiller.com/steps/wait-for-checks@2
     on: { refs: [refs/heads/main] }
-    with: { workflows: test check }
+    with: { workflows: check test web lexicons }
   - name: publish
     uses: chadtmiller.com/steps/publish-lexicons@1
     on: { refs: [refs/heads/main] }

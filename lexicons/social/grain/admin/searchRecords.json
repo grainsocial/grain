@@ -1,0 +1,32 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.searchRecords",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Search the indexed records. q is an at:// URI, a DID (that account's records) or text; with no q, the newest records the firehose brought. Requires an admin session.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "q": { "type": "string" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["records"],
+          "properties": {
+            "records": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#recordView" }
+            },
+            "cursor": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

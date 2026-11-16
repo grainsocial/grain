@@ -2,7 +2,7 @@
 // shared gallery hydrator attaches to each photo.
 //
 // EXIF numbers are stored scaled by a million, because atproto lexicons have no
-// decimal type — the client multiplies on the way in (app/lib/utils/image-resize.ts)
+// decimal type — the client multiplies on the way in (web/src/lib/utils/image-resize.ts)
 // and the hydrator divides on the way out. ISO is scaled too, despite being a
 // whole number already. What a reader wants is "1/250s" and "f/2.8", so the
 // formatting is where the meaning is.

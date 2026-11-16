@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.moderation.describeLabels",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "The labels this server gives out and what each means, as an app.bsky.labeler.service record's policies say for a Bluesky labeler. Anyone may ask.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["policies"],
+          "properties": {
+            "did": {
+              "type": "string",
+              "format": "did",
+              "description": "The labeler, as its labels name it in src. Absent from a server with no DID."
+            },
+            "policies": {
+              "type": "ref",
+              "ref": "app.bsky.labeler.defs#labelerPolicies"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.repo.defs",
+  "defs": {
+    "written": {
+      "type": "object",
+      "description": "A record written, as its PDS answered.",
+      "required": ["uri", "cid"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" }
+      }
+    }
+  }
+}

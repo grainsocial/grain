@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.feed.getFeed",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get a page of one of grain's gallery feeds, named by its URI as app.bsky.feed.getFeed names a feed generator. The filters each apply only to the feed that takes them.",
+      "parameters": {
+        "type": "params",
+        "required": ["feed"],
+        "properties": {
+          "feed": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The feed's URI, as social.grain.feed.describeFeeds lists it."
+          },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 30 },
+          "cursor": { "type": "string" },
+          "actor": { "type": "string", "format": "did", "description": "Filter by actor DID" },
+          "camera": { "type": "string", "description": "Filter by camera make and model" },
+          "location": { "type": "string", "description": "Filter by H3 cell index" },
+          "name": {
+            "type": "string",
+            "description": "Filter by a place's label, as a gallery view's locationDisplay gives it. Where it finds nothing, location is used instead."
+          },
+          "tag": { "type": "string", "description": "Filter by hashtag" },
+          "group": { "type": "string", "format": "did", "description": "Filter by group DID" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["items"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.gallery.defs#galleryView" }
+            },
+            "cursor": { "type": "string" }
+          }
+        }
+      },
+      "errors": [{ "name": "UnknownFeed", "description": "No feed by that URI." }]
+    }
+  }
+}

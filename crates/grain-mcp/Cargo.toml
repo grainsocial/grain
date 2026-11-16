@@ -1,0 +1,22 @@
+[package]
+name = "grain-mcp"
+description = "An MCP server for grain's moderation, which never shows a model what a child-safety report is about"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+grain.workspace = true
+anyhow.workspace = true
+rmcp = { version = "3.6", features = ["server", "transport-io", "macros"] }
+schemars = "1"
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+grain-serve.workspace = true
+reqwest.workspace = true
+rmcp = { version = "3.6", features = ["client"] }
+tempfile.workspace = true

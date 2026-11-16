@@ -11,9 +11,9 @@ const FOLLOW_URI = `at://did:plc:me/social.grain.graph.follow/1`;
 let following: string | undefined;
 let fetches = 0;
 
-// Mocked by resolved path: the $hatk and $lib aliases resolve before vi.mock matches.
-vi.mock("../hatk.generated.client.ts", () => ({
-  callXrpc: async (_nsid: string, _input: unknown) => {
+// Mocked by resolved path: the $lib alias resolves before vi.mock matches.
+vi.mock("../web/src/lib/xrpc/index.ts", () => ({
+  query: async (_nsid: string, _input: unknown) => {
     fetches++;
     return {
       did: ALICE,
@@ -25,8 +25,8 @@ vi.mock("../hatk.generated.client.ts", () => ({
   },
 }));
 
-const { resolveRouteActor } = await import("../app/lib/actor.ts");
-const { actorProfileQuery } = await import("../app/lib/queries.ts");
+const { resolveRouteActor } = await import("../web/src/lib/actor.ts");
+const { actorProfileQuery } = await import("../web/src/lib/queries.ts");
 
 const profileIn = (qc: QueryClient, actor: string) =>
   qc.getQueryData(actorProfileQuery(actor).queryKey) as any;

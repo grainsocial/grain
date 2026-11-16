@@ -1,0 +1,20 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.actor.getPreferences",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "Get the viewer's grain preferences, one of each kind they have set. Requires auth.",
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["preferences"],
+          "properties": {
+            "preferences": { "type": "ref", "ref": "social.grain.actor.defs#preferences" }
+          }
+        }
+      }
+    }
+  }
+}

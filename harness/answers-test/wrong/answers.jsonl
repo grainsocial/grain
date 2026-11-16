@@ -1,0 +1,5 @@
+{"path":"/xrpc/_health","status":200,"body":{}}
+{"path":"/xrpc/test.grain.getThing?actor=a","status":200,"body":{"name":7}}
+{"path":"/xrpc/test.grain.getThing?nope=1","status":200,"body":{"name":"a"}}
+{"path":"/xrpc/test.grain.getThing","status":400,"body":{}}
+{"path":"/xrpc/test.grain.missing","status":200,"body":{}}

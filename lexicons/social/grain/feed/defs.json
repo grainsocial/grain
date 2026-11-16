@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.feed.defs",
+  "defs": {
+    "feedView": {
+      "type": "object",
+      "required": ["uri", "name", "label"],
+      "properties": {
+        "uri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "What social.grain.feed.getFeed takes as `feed`."
+        },
+        "name": {
+          "type": "string",
+          "description": "The feed's short name, its URI's last segment."
+        },
+        "label": { "type": "string", "description": "What a reader sees it called." }
+      }
+    }
+  }
+}

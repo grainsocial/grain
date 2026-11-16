@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.getReviewQueue",
+  "defs": {
+    "main": {
+      "type": "query",
+      "description": "The classifier review queue, one item per subject, highest score first. Requires an admin session.",
+      "parameters": {
+        "type": "params",
+        "properties": {
+          "classifier": { "type": "string" },
+          "signal": { "type": "string" },
+          "minScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000,
+            "description": "A classifier's score, in thousandths: 1000 is certain."
+          },
+          "state": {
+            "type": "string",
+            "knownValues": ["pending", "actioned", "all"],
+            "default": "pending",
+            "description": "pending: a report is open against the subject. actioned: decided, or taken down."
+          },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 100, "default": 25 },
+          "cursor": { "type": "string" }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["items", "total"],
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "social.grain.admin.defs#reviewItem" }
+            },
+            "cursor": { "type": "string" },
+            "total": { "type": "integer" }
+          }
+        }
+      }
+    }
+  }
+}

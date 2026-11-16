@@ -1,0 +1,47 @@
+{
+  "lexicon": 1,
+  "id": "com.atproto.admin.defs",
+  "description": "The parts of atproto's com.atproto.admin.defs that grain's moderation methods name.",
+  "defs": {
+    "repoRef": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did"
+        }
+      }
+    },
+    "repoBlobRef": {
+      "type": "object",
+      "required": ["did", "cid"],
+      "properties": {
+        "did": {
+          "type": "string",
+          "format": "did"
+        },
+        "cid": {
+          "type": "string",
+          "format": "cid"
+        },
+        "recordUri": {
+          "type": "string",
+          "format": "at-uri"
+        }
+      }
+    },
+    "statusAttr": {
+      "type": "object",
+      "required": ["applied"],
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        },
+        "ref": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

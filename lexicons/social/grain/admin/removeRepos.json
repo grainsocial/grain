@@ -1,0 +1,33 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.admin.removeRepos",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Stop tracking repos, and drop what was indexed from them. Requires an admin session.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["dids"],
+          "properties": {
+            "dids": {
+              "type": "array",
+              "items": { "type": "string", "format": "did" },
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["removed"],
+          "properties": { "removed": { "type": "integer" } }
+        }
+      }
+    }
+  }
+}
