@@ -35,8 +35,9 @@ env:
   GRAIN_DOMAIN: grain.social
   # grain's imgproxy, through Bunny.
   GRAIN_CDN: https://cdn.grain.social
-  # The accounts, by DID, that moderate.
-  GRAIN_ADMIN_DIDS: did:plc:bcgltzqazw5tb6k2g3ttenbj
+  # The accounts, by DID, that moderate: chadtmiller.com, and the support
+  # agent's grain-support.monolith.chadtmiller.com.
+  GRAIN_ADMIN_DIDS: did:plc:bcgltzqazw5tb6k2g3ttenbj,did:plc:uljxma5o2jhuftegi5slxw2q
   # Push, with the key files serve.env names under /mnt/data/grain-serve/certs.
   GRAIN_APNS_KEY_ID: J53A95HDW7
   GRAIN_APNS_TEAM_ID: YN68LN9T7Z
