@@ -159,13 +159,15 @@ async fn every_method_the_web_calls_is_served() {
     // The scan finds the web's calls, so that a scan that finds none
     // does not pass for one whose calls are all served.
     assert!(methods.len() > 40, "found only {methods:?}");
-    // A server that keeps an index and has a DID, as the web's does: one
-    // with neither answers 501 for the methods that need them.
+    // A server that keeps an index and has a DID and a public URL, as the
+    // web's does: one without them answers 501 for the methods that need
+    // them.
     let ctx = grain::env::Ctx::new(grain::env::Env::from_vars(|_| None));
     let mut app = grain_serve::App::bare(ctx);
-    app.index = Some(std::sync::Arc::new(
-        grain_serve::index::Index::memory().unwrap(),
-    ));
+    let index = std::sync::Arc::new(grain_serve::index::Index::memory().unwrap());
+    let web = grain_serve::login::Web::new("https://grain.test", &index, "https://pds.test");
+    app.web = Some(std::sync::Arc::new(web.unwrap()));
+    app.index = Some(index);
     app.did = Some("did:web:grain.test".into());
     let s = common::served_app(app).await;
     let mut unserved = vec![];

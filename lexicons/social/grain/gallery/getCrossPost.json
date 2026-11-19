@@ -1,0 +1,40 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.gallery.getCrossPost",
+  "defs": {
+    "main": {
+      "description": "Get the Bluesky post that shares a gallery or a story, for its author to write to their own repository as it is: its title, #GrainSocial and a link to it, and its photos.",
+      "type": "query",
+      "parameters": {
+        "type": "params",
+        "required": ["subject"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "The gallery or story to share."
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["post"],
+          "properties": {
+            "post": {
+              "type": "unknown",
+              "description": "The app.bsky.feed.post record. Its photos are the blobs the subject's records hold, already in its author's repository."
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotFound",
+          "description": "The subject is not a gallery or story there is to share."
+        }
+      ]
+    }
+  }
+}

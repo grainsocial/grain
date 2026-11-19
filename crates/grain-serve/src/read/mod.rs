@@ -14,6 +14,7 @@
 pub mod actor;
 pub mod camera;
 pub mod comment;
+pub mod cross_post;
 pub mod feed;
 pub mod foryou;
 pub mod gallery;
@@ -98,13 +99,19 @@ pub const METHODS: &[(&str, Method)] = &[
     ("social.grain.server.getSitemap", sitemap::get_sitemap),
 ];
 
-/// `router` with each of [`METHODS`] at `/xrpc/<nsid>`, and typeahead,
-/// which asks Bluesky's too ([`search::typeahead`]).
+/// `router` with each of [`METHODS`] at `/xrpc/<nsid>`, typeahead, which
+/// asks Bluesky's too ([`search::typeahead`]), and the cross-post, which
+/// links to the server's public URL ([`cross_post`]).
 pub fn routes(router: Router<Arc<App>>) -> Router<Arc<App>> {
-    let router = router.route(
-        "/xrpc/social.grain.actor.searchActorsTypeahead",
-        get(search::typeahead),
-    );
+    let router = router
+        .route(
+            "/xrpc/social.grain.actor.searchActorsTypeahead",
+            get(search::typeahead),
+        )
+        .route(
+            &format!("/xrpc/{}", cross_post::NSID),
+            get(cross_post::get_cross_post),
+        );
     METHODS.iter().fold(router, |router, &(nsid, method)| {
         let path = format!("/xrpc/{nsid}");
         router.route(

@@ -46,6 +46,7 @@ fn invalid(path: &str, message: impl Into<String>) -> Invalid {
 const BUILT_IN: &[&str] = &[
     include_str!("../../../lexicons/app/bsky/embed/defs.json"),
     include_str!("../../../lexicons/app/bsky/embed/external.json"),
+    include_str!("../../../lexicons/app/bsky/embed/gallery.json"),
     include_str!("../../../lexicons/app/bsky/embed/images.json"),
     include_str!("../../../lexicons/app/bsky/embed/record.json"),
     include_str!("../../../lexicons/app/bsky/embed/recordWithMedia.json"),

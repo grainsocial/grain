@@ -13,7 +13,6 @@
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
   import { reverseGeocode, formatLocationName, extractAddress } from '$lib/utils/nominatim'
   import { createBskyPost } from '$lib/utils/bsky-post'
-  import { galleryPath } from '$lib/utils'
   import { parseTextToFacets } from '$lib/utils/rich-text'
   import { latLonToH3 } from '$lib/utils/h3'
   import { X, LoaderCircle, ImagePlus } from 'lucide-svelte'
@@ -324,16 +323,7 @@
       }
 
       // 4. Create Bluesky post if opted in
-      if (postToBluesky) {
-        const galleryUrl = `${window.location.origin}${galleryPath({ uri: galleryUri, creator: $viewer })}`
-        await createBskyPost({
-          url: galleryUrl,
-          title: title.trim() || undefined,
-          location: location ? { name: location.name, address: location.address } : null,
-          description: description.trim() || undefined,
-          images: photos,
-        })
-      }
+      if (postToBluesky) await createBskyPost(galleryUri)
 
       queryClient.invalidateQueries({ queryKey: ['getFeed'] })
       goto('/')

@@ -80,72 +80,12 @@ import type { PhotoView } from '$lib/lexicons/social/grain/photo/defs.ts'
   let posted = $state(false)
   let error = $state<string | null>(null)
 
-  function blobToDataUrl(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = reject
-      reader.readAsDataURL(blob)
-    })
-  }
-
-  let pdsUrlCache: string | null = null
-
-  async function resolvePdsUrl(did: string): Promise<string> {
-    if (pdsUrlCache) return pdsUrlCache
-    const res = await fetch(`https://plc.directory/${did}`)
-    if (!res.ok) throw new Error('Failed to resolve DID document')
-    const doc = await res.json()
-    const svc = doc.service?.find((s: any) => s.type === 'AtprotoPersonalDataServer')
-    if (!svc?.serviceEndpoint) throw new Error('PDS not found in DID document')
-    // Bind before caching: `svc` is `any`, so assigning straight into the
-    // `string | null` cache leaves the return un-narrowed.
-    const endpoint: string = svc.serviceEndpoint
-    pdsUrlCache = endpoint
-    return endpoint
-  }
-
-  async function fetchPhotoDataUrl(photo: PhotoView): Promise<string> {
-    const fullsize = photo.fullsize
-    // Local dev: already a com.atproto.sync.getBlob URL
-    if (fullsize.includes('com.atproto.sync.getBlob')) {
-      const res = await fetch(fullsize)
-      const blob = await res.blob()
-      return blobToDataUrl(blob)
-    }
-    // Production: parse CID from CDN URL, fetch from PDS
-    const did = photo.uri.split('/')[2]
-    const blobCid = new URL(fullsize).pathname.split('/').pop()!
-    const pdsUrl = await resolvePdsUrl(did)
-    const res = await fetch(`${pdsUrl}/xrpc/com.atproto.sync.getBlob?did=${did}&cid=${blobCid}`)
-    if (!res.ok) throw new Error(`Failed to fetch blob: ${res.status}`)
-    const blob = await res.blob()
-    return blobToDataUrl(blob)
-  }
-
   async function postToBluesky() {
     if (!gallery || posting) return
     posting = true
     error = null
     try {
-      const photos = (gallery.items ?? []) as PhotoView[]
-      const images = await Promise.all(
-        photos.slice(0, 4).map(async (photo) => ({
-          dataUrl: await fetchPhotoDataUrl(photo),
-          alt: photo.alt ?? '',
-          width: photo.aspectRatio?.width ?? 4,
-          height: photo.aspectRatio?.height ?? 3,
-        }))
-      )
-      await createBskyPost({
-        url: `${window.location.origin}${galleryPath(gallery)}`,
-        title: title.trim() || undefined,
-        location: gallery.location
-          ? { name: gallery.location.name, address: (gallery as any).address }
-          : null,
-        description: description.trim() || undefined,
-        images,
-      })
+      await createBskyPost(gallery.uri)
       posted = true
     } catch (err: any) {
       error = err.message || 'Failed to post to Bluesky.'

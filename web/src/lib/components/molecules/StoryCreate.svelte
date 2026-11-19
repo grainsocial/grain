@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createRecord, uploadBlob } from '$lib/utils/records'
-  import { storyPath } from '$lib/utils'
   import { X, MapPin, LoaderCircle } from 'lucide-svelte'
   import { useQueryClient } from '@tanstack/svelte-query'
   import { processPhotos, type ProcessedPhoto } from '$lib/utils/image-resize'
@@ -14,7 +13,6 @@
   import ContentWarningPicker from '$lib/components/atoms/ContentWarningPicker.svelte'
   import { createBskyPost } from '$lib/utils/bsky-post'
   import { includeLocation } from '$lib/preferences'
-  import { viewer } from '$lib/stores'
 
   let { onclose }: { onclose: () => void } = $props()
 
@@ -112,20 +110,7 @@
       })
 
       // Post to Bluesky if opted in
-      if (postToBluesky && $viewer) {
-        const storyUri = (result as any).uri as string
-        const storyUrl = `${window.location.origin}${storyPath({ uri: storyUri, creator: $viewer })}`
-        await createBskyPost({
-          url: storyUrl,
-          location: location ? { name: location.name, address: location.address } : null,
-          images: [{
-            dataUrl: photo.dataUrl,
-            alt: '',
-            width: photo.width,
-            height: photo.height,
-          }],
-        })
-      }
+      if (postToBluesky) await createBskyPost((result as any).uri as string)
 
       queryClient.invalidateQueries({ queryKey: ['storyAuthors'] })
       onclose()
@@ -196,7 +181,7 @@
       <div class="divider"></div>
       <div class="bsky-field">
         <Checkbox bind:checked={postToBluesky} label="Post to Bluesky" />
-        <span class="bsky-hint">Includes location and photo.</span>
+        <span class="bsky-hint">Includes the photo, its location and a link to the story.</span>
       </div>
     {/if}
   </div>
