@@ -620,6 +620,94 @@ async fn preferences_put_are_the_ones_notifications_follow() {
 }
 
 #[tokio::test]
+async fn a_preference_set_alone_leaves_the_others() {
+    let w = world().await;
+    w.fixture();
+    let get = "/xrpc/social.grain.actor.getPreferences";
+    let put = "/xrpc/social.grain.actor.putPreferences";
+    let set = "/xrpc/social.grain.actor.setPreference";
+    let defs = "social.grain.actor.defs";
+    let feeds = json!({
+        "$type": format!("{defs}#pinnedFeedsPref"),
+        "items": [{ "id": "recent", "label": "Recent", "type": "feed", "path": "/" }],
+    });
+    let metadata = json!({ "$type": format!("{defs}#photoMetadataPref"), "includeExif": false });
+    let dark = json!({ "$type": format!("{defs}#themePref"), "theme": "dark" });
+    let favorites = json!({
+        "$type": format!("{defs}#notificationsPref"),
+        "favorites": { "push": true, "inApp": false, "from": "all" },
+    });
+    let all = json!([feeds, metadata, dark, favorites]);
+    let (status, _) = w.post_as(put, &json!({ "preferences": all })).await;
+    assert_eq!(status, 200);
+
+    // One kind replaced: the others stay, and the whole set is answered.
+    let light = json!({ "$type": format!("{defs}#themePref"), "theme": "light" });
+    let (status, said) = w.post_as(set, &json!({ "preference": light })).await;
+    let after = json!({ "preferences": [feeds, metadata, light, favorites] });
+    assert_eq!((status, said), (200, after.clone()));
+    assert_eq!(w.get_as(get).await, (200, after));
+    // Photo metadata replaced whole: what it leaves out is unset.
+    let location = json!({ "$type": format!("{defs}#photoMetadataPref"), "includeLocation": true });
+    let (status, said) = w.post_as(set, &json!({ "preference": location })).await;
+    let after = json!({ "preferences": [feeds, location, light, favorites] });
+    assert_eq!((status, said), (200, after));
+    // Notifications replaced, as listing them follows.
+    let follows = json!({
+        "$type": format!("{defs}#notificationsPref"),
+        "follows": { "push": true, "inApp": true, "from": "follows" },
+    });
+    let (status, said) = w.post_as(set, &json!({ "preference": follows })).await;
+    let after = json!({ "preferences": [feeds, location, light, follows] });
+    assert_eq!((status, said), (200, after));
+    let listed = w.listed("?limit=50").await;
+    assert!(
+        listed
+            .iter()
+            .any(|(reason, _)| reason.ends_with("favorite"))
+    );
+    assert!(listed.iter().all(|(reason, _)| reason != "follow"));
+
+    // A kind the viewer has none of is added.
+    let (status, _) = w.post_as(put, &json!({ "preferences": [dark] })).await;
+    assert_eq!(status, 200);
+    let (status, said) = w.post_as(set, &json!({ "preference": feeds })).await;
+    assert_eq!(
+        (status, said),
+        (200, json!({ "preferences": [feeds, dark] }))
+    );
+
+    for wrong in [
+        json!({}),
+        json!({ "preference": { "$type": "app.bsky.actor.defs#adultContentPref" } }),
+        json!({ "preference": { "$type": format!("{defs}#themePref") } }),
+        json!({ "preference": {
+            "$type": format!("{defs}#notificationsPref"),
+            "likes": { "push": true, "inApp": true, "from": "all" },
+        } }),
+    ] {
+        let (status, said) = w.post_as(set, &wrong).await;
+        assert_eq!(
+            (status, said["error"].as_str()),
+            (400, Some("InvalidRequest")),
+            "{wrong}"
+        );
+        assert!(said["message"].is_string(), "{said}");
+    }
+    assert_eq!(
+        w.get_as(get).await,
+        (200, json!({ "preferences": [feeds, dark] }))
+    );
+    let (status, said) = w.served.post(set, &json!({ "preference": light })).await;
+    assert_eq!(
+        (status, said["error"].as_str()),
+        (401, Some("AuthenticationRequired"))
+    );
+    let bare = common::served().await;
+    assert_eq!(bare.post(set, &json!({ "preference": light })).await.0, 501);
+}
+
+#[tokio::test]
 async fn pages_run_on_from_the_cursor() {
     let w = world().await;
     w.fixture();

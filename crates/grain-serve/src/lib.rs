@@ -411,6 +411,10 @@ pub fn router(app: Arc<App>) -> Router {
             post(preferences::put_preferences),
         )
         .route(
+            &format!("/xrpc/{}", preferences::SET),
+            post(preferences::set_preference),
+        )
+        .route(
             "/xrpc/social.grain.repo.createRecord",
             post(write::create_record),
         )

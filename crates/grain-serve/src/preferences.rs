@@ -1,7 +1,8 @@
 //! An account's grain preferences: `social.grain.actor.getPreferences`
 //! and `putPreferences`, the whole set at once, as Bluesky's
 //! `app.bsky.actor.getPreferences` and `putPreferences` take them, each of
-//! `social.grain.actor.defs#preferences`' kinds at most once.
+//! `social.grain.actor.defs#preferences`' kinds at most once; and
+//! `setPreference`, one kind of them, the others left as they are.
 //!
 //! The index keeps them as [`crate::index::preferences`] does: the pinned
 //! feeds, the photo metadata an upload keeps and the theme are values of
@@ -23,6 +24,7 @@ use std::sync::Arc;
 
 pub const GET: &str = "social.grain.actor.getPreferences";
 pub const PUT: &str = "social.grain.actor.putPreferences";
+pub const SET: &str = "social.grain.actor.setPreference";
 
 /// The `preference` keys these methods set, every one of them.
 const KEYS: &[&str] = &["pinnedFeeds", "includeExif", "includeLocation", "theme"];
@@ -76,6 +78,17 @@ impl Pref {
             Pref::PhotoMetadata { .. } => "photoMetadataPref",
             Pref::Theme { .. } => "themePref",
             Pref::Notifications(_) => "notificationsPref",
+        }
+    }
+
+    /// The `preference` keys this kind is kept under, and whether it is
+    /// `notification_pref`.
+    fn kept_in(&self) -> (&'static [&'static str], bool) {
+        match self {
+            Pref::PinnedFeeds { .. } => (&["pinnedFeeds"], false),
+            Pref::PhotoMetadata { .. } => (&["includeExif", "includeLocation"], false),
+            Pref::Theme { .. } => (&["theme"], false),
+            Pref::Notifications(_) => (&[], true),
         }
     }
 }
@@ -211,6 +224,30 @@ pub async fn put_preferences(
     let to = kept(input.preferences)?;
     index.put_preferences(&did, KEYS, &to, &grain::keys::now_iso())?;
     Ok(Json(json!({})))
+}
+
+#[derive(Deserialize)]
+struct One {
+    preference: Pref,
+}
+
+/// `social.grain.actor.setPreference`: the caller's preference of the
+/// input's kind set to it, every other kind left as it is, answering the
+/// whole set after.
+pub async fn set_preference(
+    State(app): State<Arc<App>>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Result<Json<Value>, Failure> {
+    let index = index(&app)?;
+    let did = crate::viewer::writer(&app, &headers, SET).await?;
+    let input: One = serde_json::from_slice(&body)
+        .map_err(|e| Failure::invalid(format!("the input is not {{preference}}: {e}")))?;
+    let (keys, notifications) = input.preference.kept_in();
+    let to = kept(vec![input.preference])?;
+    let now = grain::keys::now_iso();
+    let after = index.set_preference(&did, keys, notifications, &to, KEYS, &now)?;
+    Ok(Json(json!({ "preferences": read(after) })))
 }
 
 #[cfg(test)]
