@@ -300,6 +300,7 @@ pub(super) async fn views(
         let reader = Reader {
             db,
             cdn: &app.cdn,
+            rankings: &app.rankings,
             viewer: asking.viewer,
             service: app.did.as_deref(),
         };
@@ -430,6 +431,7 @@ fn group_named(app: &App, actor: &str) -> Result<String, Failure> {
         let reader = Reader {
             db,
             cdn: &app.cdn,
+            rankings: &app.rankings,
             viewer: None,
             service: None,
         };
@@ -554,6 +556,7 @@ pub async fn get_submissions(
         let reader = Reader {
             db,
             cdn: &app.cdn,
+            rankings: &app.rankings,
             viewer: viewer.as_deref(),
             service: app.did.as_deref(),
         };

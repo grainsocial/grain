@@ -58,6 +58,7 @@ async fn world_of(cdn: Cdn, bsky_appview: Option<String>) -> World {
         web: None,
         admins: Vec::new(),
         cards: Default::default(),
+        rankings: Default::default(),
         pages: None,
         spaces: Default::default(),
     })
@@ -964,6 +965,7 @@ async fn the_viewer_is_who_their_token_says() {
         web: None,
         admins: Vec::new(),
         cards: Default::default(),
+        rankings: Default::default(),
         pages: None,
         spaces: Default::default(),
     })
@@ -1096,6 +1098,7 @@ async fn the_feeds_are_named_by_uri() {
         web: None,
         admins: Vec::new(),
         cards: Default::default(),
+        rankings: Default::default(),
         pages: None,
         spaces: Default::default(),
     })
@@ -1482,6 +1485,36 @@ async fn for_you_starts_cold_from_the_months_favorites() {
     assert_eq!(body["cursor"], "2");
     let body = w.feed_as("foryou", "limit=2&cursor=2").await;
     has(&body, &[&older]);
+    assert!(body.get("cursor").is_none());
+}
+
+#[tokio::test]
+async fn for_you_keeps_its_ranking_a_minute_but_not_past_a_block() {
+    let w = world().await;
+    let me = w.did.clone();
+    let seed = w.lately(ALICE, "g1", 3600);
+    let alices = w.lately(ALICE, "g2", 3600);
+    let carols = w.lately(CAROL, "g3", 7200);
+    w.favorite(&me, "f1", &seed, &before(30));
+    w.favorite(BOB, "f1", &seed, &before(10));
+    w.favorite(BOB, "f2", &alices, &before(11));
+    w.favorite(BOB, "f3", &carols, &before(12));
+    has(&w.feed_as("foryou", "").await, &[&alices, &carols]);
+
+    // A path made since waits for the ranking to be made again.
+    let newest = w.lately(ERIN, "g4", 60);
+    w.favorite(BOB, "f4", &newest, &before(13));
+    has(&w.feed_as("foryou", "").await, &[&alices, &carols]);
+
+    // A block stands at once.
+    w.put(
+        &me,
+        "social.grain.graph.block",
+        "b1",
+        json!({"subject": ALICE, "createdAt": NOW}),
+    );
+    let body = w.feed_as("foryou", "").await;
+    has(&body, &[&carols]);
     assert!(body.get("cursor").is_none());
 }
 

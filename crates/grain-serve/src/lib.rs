@@ -298,6 +298,7 @@ impl Settings {
             web,
             admins: self.admins.clone(),
             cards: og::Cards::default(),
+            rankings: Default::default(),
             pages: self.web.clone(),
             spaces: Default::default(),
         })
@@ -322,6 +323,8 @@ pub struct App {
     pub admins: Vec<String>,
     /// The OpenGraph cards drawn lately.
     pub cards: og::Cards,
+    /// The For You rankings made lately ([`read::foryou::Rankings`]).
+    pub rankings: read::foryou::Rankings,
     /// The web's app, handed what the server does not answer itself
     /// ([`pages`]), if there is one: `--web`.
     pub pages: Option<String>,
@@ -342,6 +345,7 @@ impl App {
             web: None,
             admins: Vec::new(),
             cards: og::Cards::default(),
+            rankings: Default::default(),
             pages: None,
             spaces: Default::default(),
         }

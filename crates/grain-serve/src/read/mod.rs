@@ -47,6 +47,8 @@ use std::sync::Arc;
 pub struct Reader<'a> {
     pub db: &'a Connection,
     pub cdn: &'a Cdn,
+    /// The For You rankings made lately ([`foryou::Rankings`]).
+    pub rankings: &'a foryou::Rankings,
     /// The caller, if they said who they are.
     pub viewer: Option<&'a str>,
     /// The server's own DID, if it has one.
@@ -148,6 +150,7 @@ async fn answer(
         let reader = Reader {
             db,
             cdn: &app.cdn,
+            rankings: &app.rankings,
             viewer: viewer.as_deref(),
             service: app.did.as_deref(),
         };

@@ -150,6 +150,7 @@ fn people(app: &App, viewer: &str, dids: &[&str]) -> Result<HashMap<String, Valu
         let reader = Reader {
             db,
             cdn: &app.cdn,
+            rankings: &app.rankings,
             viewer: Some(viewer),
             service: app.did.as_deref(),
         };

@@ -64,6 +64,7 @@ pub async fn get_cross_post(State(app): State<Arc<App>>, uri: Uri) -> Result<Jso
         let reader = Reader {
             db,
             cdn: &app.cdn,
+            rankings: &app.rankings,
             viewer: None,
             service: app.did.as_deref(),
         };

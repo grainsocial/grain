@@ -50,6 +50,7 @@ async fn world() -> World {
         web: None,
         admins: Vec::new(),
         cards: Default::default(),
+        rankings: Default::default(),
         pages: None,
         spaces: Default::default(),
     })

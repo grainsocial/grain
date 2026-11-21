@@ -86,6 +86,7 @@ async fn site_of(
         web: Some(Arc::new(web)),
         admins: Vec::new(),
         cards: Default::default(),
+        rankings: Default::default(),
         pages: None,
         spaces: Default::default(),
     });
@@ -117,6 +118,7 @@ pub fn shared(app: &Arc<App>) -> App {
         web: app.web.clone(),
         admins: Vec::new(),
         cards: Default::default(),
+        rankings: Default::default(),
         pages: None,
         spaces: Default::default(),
     }

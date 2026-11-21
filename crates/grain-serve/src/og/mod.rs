@@ -496,6 +496,7 @@ async fn answer(
                 read(&Reader {
                     db,
                     cdn: &app.cdn,
+                    rankings: &app.rankings,
                     viewer: None,
                     service: None,
                 })

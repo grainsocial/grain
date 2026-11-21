@@ -1,6 +1,12 @@
 //! For You: galleries favorited by those who favorited what the viewer
 //! did, ranked with spacecowboy17's weights; and where the viewer has favorited nothing
 //! anyone else has, the month's most favorited.
+//!
+//! A ranking reads every favorite of up to a thousand co-favoriters, so it
+//! is kept a minute ([`Rankings`]): the pages after the first, and a page
+//! asked for again, read it rather than rank anew. Each page is held to
+//! what the viewer may see as it is read, so a block, a mute or a label
+//! stands at once.
 
 use super::feed::seen;
 use super::views::{ago, put};
@@ -9,6 +15,8 @@ use crate::xrpc::Failure;
 use rusqlite::params;
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 /// How many hours a gallery's score takes to halve.
 const HALF_LIFE_HOURS: f64 = 6.0;
@@ -29,6 +37,10 @@ const COLIKERS: usize = 1000;
 const PAGE: usize = 50;
 /// How long the cold start looks back.
 const MONTH_MICROS: u64 = 30 * 24 * 60 * 60 * 1_000_000;
+/// How long a viewer's ranking is kept.
+const KEPT: Duration = Duration::from_secs(60);
+/// The most viewers' rankings kept at once, each a few thousand URIs.
+const KEEP: usize = 64;
 
 /// The viewer's latest favorites, and when, as a Julian day.
 pub const SEEDS_SQL: &str = "SELECT subject, julianday(created_at) FROM favorite
@@ -42,20 +54,22 @@ pub const COLIKERS_SQL: &str = "SELECT did, subject, julianday(created_at) FROM 
 pub const LIKES_SQL: &str = "SELECT did, count(*) FROM favorite
      WHERE did IN (SELECT value FROM json_each(?1)) GROUP BY did";
 
-/// How many favorites each of `?1` has.
-pub const POPULARITY_SQL: &str = "SELECT subject, count(*) FROM favorite
-     WHERE subject IN (SELECT value FROM json_each(?1)) GROUP BY subject";
+/// Each favorite of the co-favoriters `?1` other than of the seeds `?2`,
+/// who made it and of what, the latest first: a path to a gallery.
+pub const PATHS_SQL: &str = "SELECT did, subject FROM favorite
+     WHERE did IN (SELECT value FROM json_each(?1))
+       AND subject NOT IN (SELECT value FROM json_each(?2))
+     ORDER BY created_at DESC, uri";
 
-/// Each gallery the co-favoriters `?2` favorited, other than the seeds
-/// `?3` and the viewer `?1`'s own, with who and how many hours old.
-pub fn candidates_sql() -> String {
+/// Which of the galleries `?2` the viewer `?1` may see and did not post,
+/// each with how many hours old it is and how many favorited it: once a
+/// gallery, however many paths reach it.
+pub fn shown_sql() -> String {
     format!(
-        "SELECT f.did, f.subject, (julianday('now') - julianday(g.sort_at)) * 24 FROM favorite f
-         JOIN gallery g ON g.uri = f.subject
-         WHERE f.did IN (SELECT value FROM json_each(?2))
-           AND f.subject NOT IN (SELECT value FROM json_each(?3))
-           AND g.did != ?1 AND {}
-         ORDER BY f.created_at DESC, f.uri",
+        "SELECT g.uri, (julianday('now') - julianday(g.sort_at)) * 24,
+           (SELECT count(*) FROM favorite f WHERE f.subject = g.uri)
+         FROM gallery g
+         WHERE g.uri IN (SELECT value FROM json_each(?2)) AND g.did != ?1 AND {}",
         seen("g")
     )
 }
@@ -73,6 +87,38 @@ pub fn cold_sql() -> String {
     )
 }
 
+/// A ranking, best first, and when it was made.
+type Made = (Instant, Arc<[String]>);
+
+/// Each viewer's ranking made lately, kept [`KEPT`]; past [`KEEP`] the
+/// oldest is dropped.
+#[derive(Default)]
+pub struct Rankings {
+    kept: Mutex<HashMap<String, Made>>,
+}
+
+impl Rankings {
+    /// `viewer`'s ranking, if one was made less than [`KEPT`] before `now`.
+    fn get(&self, viewer: &str, now: Instant) -> Option<Arc<[String]>> {
+        let kept = self.kept.lock().unwrap();
+        let (at, ranked) = kept.get(viewer)?;
+        (now.duration_since(*at) < KEPT).then(|| ranked.clone())
+    }
+
+    /// Keeps `ranked` as `viewer`'s, made at `now`.
+    fn put(&self, viewer: &str, ranked: Arc<[String]>, now: Instant) {
+        let mut kept = self.kept.lock().unwrap();
+        kept.retain(|_, (at, _)| now.duration_since(*at) < KEPT);
+        if kept.len() >= KEEP && !kept.contains_key(viewer) {
+            let oldest = kept.iter().min_by_key(|(_, (at, _))| *at);
+            if let Some(oldest) = oldest.map(|(v, _)| v.clone()) {
+                kept.remove(&oldest);
+            }
+        }
+        kept.insert(viewer.to_string(), (now, ranked));
+    }
+}
+
 /// For You, for the viewer, from the offset `cursor` names.
 pub fn feed(r: &Reader, p: &Params) -> Result<Value, Failure> {
     let viewer = r.signed_in()?;
@@ -83,11 +129,34 @@ pub fn feed(r: &Reader, p: &Params) -> Result<Value, Failure> {
             .parse()
             .map_err(|_| Failure::invalid("malformed cursor"))?,
     };
-    let (uris, more): (Vec<String>, bool) = match ranked(r, viewer)? {
+    let now = Instant::now();
+    let ranked = match r.rankings.get(viewer, now) {
+        Some(ranked) => Some(ranked),
+        None => {
+            let ranked = ranked(r, viewer)?.map(Arc::<[String]>::from);
+            if let Some(ranked) = &ranked {
+                r.rankings.put(viewer, ranked.clone(), now);
+            }
+            ranked
+        }
+    };
+    let (uris, more): (Vec<String>, bool) = match ranked {
         Some(ranked) => {
             let more = offset + limit < ranked.len();
-            let page = ranked.into_iter().skip(offset).take(limit).collect();
-            (page, more)
+            let page: Vec<&str> = ranked
+                .iter()
+                .skip(offset)
+                .take(limit)
+                .map(String::as_str)
+                .collect();
+            // The page as the viewer may see it now, in its order.
+            let shown: HashSet<String> = r
+                .all::<(String, Option<f64>, i64)>(&shown_sql(), params![viewer, list(&page)])?
+                .into_iter()
+                .map(|(uri, _, _)| uri)
+                .collect();
+            let page = page.into_iter().filter(|u| shown.contains(*u));
+            (page.map(str::to_string).collect(), more)
         }
         None => {
             let rows: Vec<(String,)> = r.all(
@@ -141,30 +210,35 @@ fn ranked(r: &Reader, viewer: &str) -> rusqlite::Result<Option<Vec<String>>> {
     colikers.sort_by_key(|did| std::cmp::Reverse(shared[did].len()));
     colikers.truncate(COLIKERS);
 
-    let candidates: Vec<(String, String, Option<f64>)> = r.all(
-        &candidates_sql(),
-        params![viewer, list(&colikers), list(&subjects)],
-    )?;
+    // The paths, then each gallery they reach held to what the viewer
+    // may see once, not once a path: most of the network's favorites
+    // may be paths, to a few thousand galleries.
+    let paths: Vec<(String, String)> =
+        r.all(PATHS_SQL, params![list(&colikers), list(&subjects)])?;
+    let mut reached: Vec<&str> = paths.iter().map(|(_, g)| g.as_str()).collect();
+    reached.sort_unstable();
+    reached.dedup();
+    let shown: HashMap<String, (Option<f64>, i64)> = r
+        .all::<(String, Option<f64>, i64)>(&shown_sql(), params![viewer, list(&reached)])?
+        .into_iter()
+        .map(|(uri, age, popularity)| (uri, (age, popularity)))
+        .collect();
     let likes: HashMap<String, i64> = r
         .all::<(String, i64)>(LIKES_SQL, [list(&colikers)])?
         .into_iter()
         .collect();
-    let mut galleries: Vec<&str> = candidates.iter().map(|c| c.1.as_str()).collect();
-    galleries.sort_unstable();
-    galleries.dedup();
-    let popularity: HashMap<String, i64> = r
-        .all::<(String, i64)>(POPULARITY_SQL, [list(&galleries)])?
-        .into_iter()
-        .collect();
 
-    // Each gallery's score, its paths and age, in the order first reached.
+    // Each gallery's score and paths, in the order first reached.
     let mut order: Vec<&str> = Vec::new();
-    let mut scores: HashMap<&str, (f64, f64, Option<f64>)> = HashMap::new();
-    for (did, gallery, age) in &candidates {
+    let mut scores: HashMap<&str, (f64, f64)> = HashMap::new();
+    for (did, gallery) in &paths {
+        if !shown.contains_key(gallery) {
+            continue;
+        }
         let total = likes.get(did).copied().filter(|n| *n > 0).unwrap_or(1) as f64;
         let entry = scores.entry(gallery.as_str()).or_insert_with(|| {
             order.push(gallery.as_str());
-            (0.0, 0.0, *age)
+            (0.0, 0.0)
         });
         entry.0 += 1.0 / total.powf(DIVISOR_POWER);
         entry.1 += 1.0;
@@ -172,11 +246,11 @@ fn ranked(r: &Reader, viewer: &str) -> rusqlite::Result<Option<Vec<String>>> {
     let mut scored: Vec<(&str, f64)> = order
         .into_iter()
         .map(|uri| {
-            let (score, paths, age) = scores[uri];
-            let popularity = popularity.get(uri).copied().filter(|n| *n > 0).unwrap_or(1);
+            let (score, paths) = scores[uri];
+            let (age, popularity) = shown[uri];
             let decay = 0.5f64.powf(age.unwrap_or(f64::INFINITY) / HALF_LIFE_HOURS);
             let score = score * paths.powf(SMOOTHING) * decay
-                / (popularity as f64).powf(POPULARITY_PENALTY);
+                / (popularity.max(1) as f64).powf(POPULARITY_PENALTY);
             (uri, score)
         })
         .collect();
@@ -192,8 +266,56 @@ pub fn queries() -> Vec<String> {
         SEEDS_SQL.into(),
         COLIKERS_SQL.into(),
         LIKES_SQL.into(),
-        POPULARITY_SQL.into(),
-        candidates_sql(),
+        PATHS_SQL.into(),
+        shown_sql(),
         cold_sql(),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn ranking(uri: &str) -> Arc<[String]> {
+        Arc::from(vec![uri.to_string()])
+    }
+
+    #[test]
+    fn a_ranking_is_kept_a_minute() {
+        let rankings = Rankings::default();
+        let at = Instant::now();
+        assert!(rankings.get("did:plc:a", at).is_none());
+        rankings.put("did:plc:a", ranking("at://g/1"), at);
+        let kept = rankings.get("did:plc:a", at + KEPT - Duration::from_secs(1));
+        assert_eq!(kept.as_deref(), Some(&["at://g/1".to_string()][..]));
+        assert!(rankings.get("did:plc:b", at).is_none());
+        assert!(rankings.get("did:plc:a", at + KEPT).is_none());
+    }
+
+    #[test]
+    fn past_the_most_kept_the_oldest_goes() {
+        let rankings = Rankings::default();
+        let at = Instant::now();
+        for i in 0..KEEP {
+            let viewer = format!("did:plc:{i}");
+            rankings.put(
+                &viewer,
+                ranking("at://g/1"),
+                at + Duration::from_millis(i as u64),
+            );
+        }
+        let later = at + Duration::from_secs(1);
+        // Made again, one already kept takes its own place.
+        rankings.put("did:plc:1", ranking("at://g/2"), later);
+        assert!(rankings.get("did:plc:0", later).is_some());
+        rankings.put("did:plc:new", ranking("at://g/3"), later);
+        assert!(rankings.get("did:plc:0", later).is_none());
+        assert!(rankings.get("did:plc:new", later).is_some());
+        assert_eq!(rankings.get("did:plc:1", later).unwrap()[0], "at://g/2");
+        // Those past their minute go before any is dropped for room: all
+        // but the two made a second later.
+        let gone = at + KEPT + Duration::from_millis(500);
+        rankings.put("did:plc:last", ranking("at://g/4"), gone);
+        assert_eq!(rankings.kept.lock().unwrap().len(), 3);
+    }
 }
