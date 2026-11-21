@@ -12,7 +12,6 @@ use axum::Json;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode};
-use grain::lexicon;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -44,12 +43,11 @@ pub async fn update_seen(
     let did = crate::viewer::writer(&app, &headers, UPDATE_SEEN).await?;
     let input: Seen = serde_json::from_slice(&body)
         .map_err(|e| Failure::invalid(format!("the input is not {{seenAt}}: {e}")))?;
-    let invalid = || Failure::invalid("seenAt must be a valid datetime");
-    if !lexicon::valid_datetime(&input.seen_at) {
-        return Err(invalid());
+    // A datetime as atproto has one holds a year UTC writes in four digits,
+    // so the index keeps any that passes.
+    if !atproto::lexicon::is_datetime(&input.seen_at) {
+        return Err(Failure::invalid("seenAt must be a valid datetime"));
     }
-    match index.set_seen(&did, &input.seen_at)? {
-        true => Ok(Json(json!({}))),
-        false => Err(invalid()),
-    }
+    index.set_seen(&did, &input.seen_at)?;
+    Ok(Json(json!({})))
 }

@@ -56,7 +56,7 @@ async fn world(admin: &str) -> World {
         index.track(did).unwrap();
         index.set_handle(did, handle).unwrap();
         let uri = format!("at://{did}/social.grain.gallery/3l3qo2vuowo2a");
-        let cid = grain::drisl::cid_text(&grain::drisl::cid(uri.as_bytes()));
+        let cid = atproto::Cid::of_cbor(uri.as_bytes()).to_string();
         let record = json!({"$type": "social.grain.gallery", "title": title, "createdAt": NOW});
         index.put_at(&uri, &cid, &record, NOW).unwrap();
     }

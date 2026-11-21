@@ -1,0 +1,4 @@
+# The registry the atproto crate is published to, from its own repository
+# (knotless.dev/chadtmiller.com/atproto). Reading it needs no login.
+[registries.atproto]
+index = "sparse+https://knotless.dev/cargo/did:plc:bcgltzqazw5tb6k2g3ttenbj/3mzr5vldibtui/"

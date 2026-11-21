@@ -8,6 +8,7 @@ rust-version.workspace = true
 
 [dependencies]
 grain.workspace = true
+atproto.workspace = true
 aes-gcm.workspace = true
 anyhow.workspace = true
 axum.workspace = true
@@ -33,6 +34,5 @@ unicode-segmentation.workspace = true
 
 [dev-dependencies]
 axum = { workspace = true, features = ["http2"] }
-ciborium.workspace = true
 tokio-tungstenite.workspace = true
 zstd.workspace = true

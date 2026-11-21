@@ -38,8 +38,7 @@ use anyhow::{Context, anyhow};
 use bytes::Bytes;
 use grain::crypto::PublicKey;
 use grain::env::Ctx;
-use grain::repo::star;
-use grain::{drisl, identity, lexicon};
+use grain::identity;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -261,7 +260,7 @@ impl Backfill {
     /// Tracks each of `dids`, to be read; how many were not tracked before.
     pub fn add_repos(&self, dids: &[String]) -> rusqlite::Result<usize> {
         let mut added = 0;
-        for did in dids.iter().filter(|d| lexicon::valid_did(d)) {
+        for did in dids.iter().filter(|d| atproto::syntax::is_did(d)) {
             added += usize::from(self.index.track(did)?);
         }
         self.wake.notify_one();
@@ -343,7 +342,7 @@ impl Backfill {
 
     async fn read_and_apply(&self, did: &str) -> Result<Option<Done>, Failure> {
         let doc = identity::document(&self.ctx, did).await.map_err(retry)?;
-        let key = identity::signing_key(&doc).map_err(give_up)?;
+        let key = atproto::did::signing_key(&doc).map_err(give_up)?;
         let pds = identity::pds(&self.ctx, did, &doc).map_err(give_up)?;
         let host = host_of(&pds);
         if self
@@ -394,7 +393,10 @@ impl Backfill {
         let url = format!("{base}/xrpc/com.atproto.sync.getRepo?did={did}");
         let mut req = self.http.get(url);
         if lite {
-            let accept = format!("{}, application/vnd.ipld.car;q=0.5", star::MEDIA_TYPE);
+            let accept = format!(
+                "{}, application/vnd.ipld.car;q=0.5",
+                atproto::star_lite::MEDIA_TYPE
+            );
             req = req
                 .header("accept", accept)
                 .header("accept-encoding", "zstd");
@@ -550,8 +552,9 @@ fn check(body: impl Read + Send + 'static, did: &str, key: &PublicKey) -> anyhow
         }
         let uri = format!("at://{did}/{path}");
         present.insert(uri.clone());
-        if let Some(record) = drisl::record(&bytes) {
-            records.push((uri, drisl::cid_text(&drisl::cid(&bytes)), record));
+        if let Ok(record) = atproto::drisl::decode(&bytes) {
+            let cid = atproto::Cid::of_cbor(&bytes).to_string();
+            records.push((uri, cid, record.to_json()));
         }
     }
     let commit = archive.finish()?;

@@ -231,7 +231,7 @@ async fn star_lite(did: &str, forge: bool) -> Vec<u8> {
     let doc = grain::identity::document(&ctx(dir.path(), &[]), did)
         .await
         .unwrap();
-    let key = grain::identity::signing_key(&doc).unwrap();
+    let key = atproto::did::signing_key(&doc).unwrap();
     let spill = Box::new(tempfile::tempfile().unwrap());
     let mut archive = grain::repo::open(std::io::Cursor::new(car), did, &key, spill).unwrap();
     let mut records = Vec::new();
@@ -239,8 +239,8 @@ async fn star_lite(did: &str, forge: bool) -> Vec<u8> {
         records.push(record);
     }
     let commit = archive.finish().unwrap();
-    let mut out = Vec::new();
-    grain::repo::star::write(&mut out, &commit, records).unwrap();
+    let records = records.iter().map(|(k, r)| (k.as_str(), &r[..]));
+    let mut out = atproto::star_lite::write(&commit, records);
     if forge {
         let at = out.windows(6).position(|w| w == b"roll 0").unwrap();
         out[at + 5] = b'X';

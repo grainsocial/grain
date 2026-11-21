@@ -240,19 +240,19 @@ pub async fn credential(
     let token = token.to_str().map_err(|_| refused("not a token".into()))?;
     let delegation = grain::auth::verify_delegation(&app.ctx, token).await;
     let delegation = delegation.map_err(|e| refused(format!("{e:#}")))?;
-    if delegation.space != space {
-        let why = format!("a delegation for {}, not {space}", delegation.space);
+    if delegation.sub != space {
+        let why = format!("a delegation for {}, not {space}", delegation.sub);
         return Err(refused(why));
     }
     let caller = crate::viewer::viewer(app, headers, lxm).await?;
-    if caller.is_some_and(|did| did != delegation.did) {
+    if caller.is_some_and(|did| did != delegation.iss) {
         let why = "a delegation for another account than the caller";
         return Err(refused(why.into()));
     }
     if !app.spaces.spend(&delegation.jti, delegation.exp) {
         return Err(refused("the delegation token was spent".into()));
     }
-    let reader = &delegation.did;
+    let reader = &delegation.iss;
     if let Some(kept) = app.spaces.kept(reader, space) {
         return Ok(kept);
     }

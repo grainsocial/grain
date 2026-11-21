@@ -967,9 +967,8 @@ pub(crate) mod tests {
         assert_eq!(claims["ath"], sha256("tok"));
         assert!(claims.get("nonce").is_none());
         let (signed, sig) = token.rsplit_once('.').unwrap();
-        key.public()
-            .verify(signed.as_bytes(), &URL_SAFE_NO_PAD.decode(sig).unwrap())
-            .unwrap();
+        let sig = URL_SAFE_NO_PAD.decode(sig).unwrap();
+        assert!(key.public().verify(signed.as_bytes(), &sig));
         // Not a URL: proved as it is.
         let (_, claims) = crypto::jwt_parts(&proof(&key, "POST", "nowhere", None)).unwrap();
         assert_eq!(claims["htu"], "nowhere");
@@ -1097,8 +1096,8 @@ pub(crate) mod tests {
         let key =
             crypto::PublicKey::P256(p256::ecdsa::VerifyingKey::from_sec1_bytes(&point).unwrap());
         let (signed, sig) = proof.rsplit_once('.').unwrap();
-        key.verify(signed.as_bytes(), &URL_SAFE_NO_PAD.decode(sig).unwrap())
-            .unwrap();
+        let sig = URL_SAFE_NO_PAD.decode(sig).unwrap();
+        assert!(key.verify(signed.as_bytes(), &sig));
         crypto::jwt_parts(proof).unwrap().1
     }
 

@@ -22,6 +22,15 @@ const ALICE: &str = "did:plc:alice";
 const LABELER: &str = "did:web:grain.test";
 const TOKEN: &str = "workers-ai-token";
 
+// Blobs' CIDs, each the raw CID of its name: real ones, as the index
+// takes a blob only with a CID in its $link.
+const PHOTO: &str = "bafkreicvyzgq7tlptvpxzauasocx4p673juepc5u5g6sjveb544ry6ae5a";
+const MISSING: &str = "bafkreih7uy2yhx5gobvypuuexbvq22j2cypeqqfk2lc46225e7b3syq7pu";
+const OTHER: &str = "bafkreigzfgfbbunqonmdpxcl3bo2yza3b46o6j5epzovhjkpf47vwl6p7i";
+const TWO: &str = "bafkreib7ytgp45cyodrmbwm7ohzq74dfnsg63va4yhl5hu3wwdn6nbpc6m";
+const THREE: &str = "bafkreielloo3bqj5wjbfnsbjvi3evkimnuxlummlsizkjk4tco4vju2vl4";
+const STORY: &str = "bafkreigepa3b42djv4szobuculctsz5nxsfen2kct364ms4wguop2uxbh4";
+
 /// What the fake Clef was sent, and what it answers.
 #[derive(Default)]
 struct Fake {
@@ -160,7 +169,7 @@ async fn world() -> World {
             move |Path((_, preset, _, cid)): Path<(String, String, String, String)>| async move {
                 seen.lock().unwrap().push((preset, cid.clone()));
                 match cid.as_str() {
-                    "bafkreimissing" => Err(StatusCode::NOT_FOUND),
+                    MISSING => Err(StatusCode::NOT_FOUND),
                     _ => Ok(([(header::CONTENT_TYPE, "image/png")], png(1000, 750))),
                 }
             },
@@ -227,7 +236,7 @@ impl World {
         let uri = format!("at://{did}/{collection}/{rkey}");
         record["$type"] = collection.into();
         record["createdAt"] = NOW.into();
-        let cid = grain::drisl::cid_text(&grain::drisl::cid(record.to_string().as_bytes()));
+        let cid = atproto::Cid::of_cbor(record.to_string().as_bytes()).to_string();
         self.index.put_at(&uri, &cid, &record, NOW).unwrap();
         uri
     }
@@ -299,7 +308,7 @@ impl World {
 #[tokio::test]
 async fn with_no_labeler_to_report_as_nothing_is_reported() {
     let w = world().await;
-    let photo = w.photo("p1", "bafkreiphoto");
+    let photo = w.photo("p1", PHOTO);
     w.fake.scores(0.9);
     let classify = w.classify(Some(w.clef.clone()), None);
     let scored = classify.score(classifier("nsfw"), &photo, ALICE).await;
@@ -311,7 +320,7 @@ async fn with_no_labeler_to_report_as_nothing_is_reported() {
 #[tokio::test]
 async fn a_photo_past_its_threshold_is_reported_once() {
     let w = world().await;
-    let photo = w.photo("p1", "bafkreiphoto");
+    let photo = w.photo("p1", PHOTO);
     w.fake.scores(0.9);
     let classify = w.classify(Some(w.clef.clone()), Some(LABELER));
     let nsfw = classifier("nsfw");
@@ -323,7 +332,7 @@ async fn a_photo_past_its_threshold_is_reported_once() {
     let (auth, body) = &asked[0];
     assert_eq!(auth, &format!("Bearer {TOKEN}"));
     assert_eq!(body["model"], "clef");
-    assert_eq!(body["state"], json!({"did": ALICE, "cid": "bafkreiphoto"}));
+    assert_eq!(body["state"], json!({"did": ALICE, "cid": PHOTO}));
     assert_eq!(body["questions"], (nsfw.questions)());
     let image = body["images"][0].as_str().unwrap();
     let jpeg = image.strip_prefix("data:image/jpeg;base64,").unwrap();
@@ -332,7 +341,7 @@ async fn a_photo_past_its_threshold_is_reported_once() {
     assert_eq!((jpeg.width(), jpeg.height()), (512, 384));
     assert_eq!(
         *w.drawn.lock().unwrap(),
-        [("feed_thumbnail".to_string(), "bafkreiphoto".to_string())]
+        [("feed_thumbnail".to_string(), PHOTO.to_string())]
     );
 
     let reports = w.reports();
@@ -356,7 +365,7 @@ async fn a_photo_past_its_threshold_is_reported_once() {
         Scored::Skipped
     );
     assert_eq!(w.fake.asked().len(), 1);
-    w.photo("p1", "bafkreiother");
+    w.photo("p1", OTHER);
     let scored = classify.score(nsfw, &photo, ALICE).await.unwrap();
     assert_eq!(scored, Scored::Asked { filed: false });
     assert_eq!(w.fake.asked().len(), 2);
@@ -444,7 +453,7 @@ async fn nothing_about_the_safety_of_children_reaches_a_model() {
     let cases: [&dyn Fn(&World); 6] = [
         &|w| w.label(ALICE, "csae", false),
         &|w| {
-            let other = w.photo("p2", "bafkreitwo");
+            let other = w.photo("p2", TWO);
             w.label(&other, "csae", false);
             w.label(&other, "csae", true);
         },
@@ -464,7 +473,7 @@ async fn nothing_about_the_safety_of_children_reaches_a_model() {
         },
         &|w| {
             let record = json!({
-                "photo": blob("bafkreithree"), "aspectRatio": {"width": 1, "height": 1},
+                "photo": blob(THREE), "aspectRatio": {"width": 1, "height": 1},
                 "labels": {"$type": "com.atproto.label.defs#selfLabels", "values": [{"val": "csae"}]},
             });
             w.put(ALICE, "social.grain.photo", "p3", record);
@@ -472,7 +481,7 @@ async fn nothing_about_the_safety_of_children_reaches_a_model() {
     ];
     for case in cases {
         let w = world().await;
-        w.photo("p1", "bafkreiphoto");
+        w.photo("p1", PHOTO);
         w.profile(ALICE, "Photos of the coast");
         case(&w);
         assert_eq!(classify_all(&w).await, skipped);
@@ -482,7 +491,7 @@ async fn nothing_about_the_safety_of_children_reaches_a_model() {
 
     // Another account's, or another label's, stops nothing.
     let w = world().await;
-    w.photo("p1", "bafkreiphoto");
+    w.photo("p1", PHOTO);
     w.label("did:plc:bob", "csae", false);
     w.label(ALICE, "spam", false);
     w.report(ALICE, "spam");
@@ -492,7 +501,7 @@ async fn nothing_about_the_safety_of_children_reaches_a_model() {
     // Nor is an account taken down, or one gone from its host.
     for gone in [0, 1] {
         let w = world().await;
-        w.photo("p1", "bafkreiphoto");
+        w.photo("p1", PHOTO);
         match gone {
             0 => w.index.take_down(ALICE).unwrap(),
             _ => w.index.set_host_status(ALICE, Some("deleted")).unwrap(),
@@ -587,7 +596,7 @@ async fn clef_is_asked_again_when_it_is_busy() {
 #[tokio::test]
 async fn an_image_the_cdn_cannot_draw_fails_the_score() {
     let w = world().await;
-    let photo = w.photo("p1", "bafkreimissing");
+    let photo = w.photo("p1", MISSING);
     let classify = w.classify(Some(w.clef.clone()), Some(LABELER));
     assert!(
         classify
@@ -614,7 +623,7 @@ async fn what_arrives_is_scored_and_its_author_once_they_settle() {
         w.index.arrived(&gallery);
         galleries.push(gallery);
     }
-    let photo = w.photo("p1", "bafkreiphoto");
+    let photo = w.photo("p1", PHOTO);
     w.index.arrived(&photo);
     // Records of no classifier's, and what is not a record, ask nothing.
     w.index
@@ -677,20 +686,20 @@ async fn a_score_that_fails_is_tried_again() {
     w.fake.reply(503, None, json!({}));
     let classify = w.classify(Some(w.clef.clone()), Some(LABELER));
     assert!(classify.start());
-    let photo = w.photo("p1", "bafkreiphoto");
+    let photo = w.photo("p1", PHOTO);
     w.index.arrived(&photo);
     w.until(|w| w.index.classification("nsfw", &photo).unwrap().is_some())
         .await;
 
     // One that fails every time is dropped after its attempts.
-    let missing = w.photo("p2", "bafkreimissing");
+    let missing = w.photo("p2", MISSING);
     w.index.arrived(&missing);
     w.until(|w| {
         w.drawn
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, c)| c == "bafkreimissing")
+            .filter(|(_, c)| c == MISSING)
             .count()
             == 2
     })
@@ -701,7 +710,7 @@ async fn a_score_that_fails_is_tried_again() {
             .lock()
             .unwrap()
             .iter()
-            .filter(|(_, c)| c == "bafkreimissing")
+            .filter(|(_, c)| c == MISSING)
             .count(),
         2
     );
@@ -730,10 +739,10 @@ async fn bridged_posts_are_labeled_spam_as_they_arrive() {
         let record = match collection {
             "social.grain.gallery" => json!({"title": "Bridged"}),
             "social.grain.story" => {
-                json!({"media": blob("bafkreistory"), "aspectRatio": {"width": 1, "height": 1}})
+                json!({"media": blob(STORY), "aspectRatio": {"width": 1, "height": 1}})
             }
             "social.grain.photo" => {
-                json!({"photo": blob("bafkreiphoto"), "aspectRatio": {"width": 1, "height": 1}})
+                json!({"photo": blob(PHOTO), "aspectRatio": {"width": 1, "height": 1}})
             }
             _ => json!({"subject": format!("at://{ALICE}/social.grain.gallery/g1"), "text": "hi"}),
         };

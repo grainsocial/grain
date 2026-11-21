@@ -37,11 +37,8 @@ async fn an_account_resolves_through_plc() {
 
     let doc = identity::document(&ctx, &a.did).await.unwrap();
     assert_eq!(doc["alsoKnownAs"][0], format!("at://{}", a.handle));
-    assert_eq!(
-        identity::service(&doc, "#atproto_pds"),
-        Some(net().pds.clone())
-    );
-    identity::signing_key(&doc).unwrap();
+    assert_eq!(atproto::did::pds(&doc), Some(net().pds.clone()));
+    atproto::did::signing_key(&doc).unwrap();
     assert_eq!(
         identity::resolve_pds(&ctx, &a.did).await.unwrap(),
         net().pds

@@ -1,7 +1,7 @@
 //! The OpenGraph cards, asked for as a link unfurler asks: drawn from the
 //! index, with their images from a CDN of the test's own, which draws
 //! every photo red and every avatar blue, and has no image for a blob
-//! named `bafkreimissing`.
+//! [`MISSING`].
 
 use axum::extract::Path;
 use axum::http::header;
@@ -18,6 +18,14 @@ const BOB: &str = "did:plc:bob";
 const RED: [u8; 3] = [255, 0, 0];
 const BLUE: [u8; 3] = [0, 0, 255];
 const WHITE: [u8; 3] = [255, 255, 255];
+
+// Blobs' CIDs, each the raw CID of its name: real ones, as the index
+// takes a blob only with a CID in its $link.
+const ONE: &str = "bafkreidwslb22nkaxoadyaqlhlxgntmiq4jdenhkbrxhcq6avxlt75br5u";
+const TWO: &str = "bafkreib7ytgp45cyodrmbwm7ohzq74dfnsg63va4yhl5hu3wwdn6nbpc6m";
+const MISSING: &str = "bafkreih7uy2yhx5gobvypuuexbvq22j2cypeqqfk2lc46225e7b3syq7pu";
+const AVATAR: &str = "bafkreiehxpuhtr5f6v4eu4byjo2j7kkrhjvd7psmfu4imnpdzb3bdqb7vy";
+const STORY: &str = "bafkreigepa3b42djv4szobuculctsz5nxsfen2kct364ms4wguop2uxbh4";
 const BLACK: [u8; 3] = [0, 0, 0];
 
 /// A PNG `w` by `h` of one color.
@@ -40,7 +48,7 @@ async fn cdn() -> String {
             |Path((_, preset, _, cid)): Path<(String, String, String, String)>| async move {
                 let rgb = if preset == "avatar" { BLUE } else { RED };
                 match cid.as_str() {
-                    "bafkreimissing" => Err(axum::http::StatusCode::NOT_FOUND),
+                    MISSING => Err(axum::http::StatusCode::NOT_FOUND),
                     _ => Ok(([(header::CONTENT_TYPE, "image/png")], png(40, 30, rgb))),
                 }
             },
@@ -110,14 +118,13 @@ impl World {
     fn put(&self, did: &str, collection: &str, rkey: &str, mut record: Value) -> String {
         let uri = format!("at://{did}/{collection}/{rkey}");
         record["$type"] = collection.into();
-        let cid = grain::drisl::cid_text(&grain::drisl::cid(uri.as_bytes()));
+        let cid = atproto::Cid::of_cbor(uri.as_bytes()).to_string();
         self.index.put_at(&uri, &cid, &record, NOW).unwrap();
         uri
     }
 
     fn profile(&self, did: &str, name: &str) {
-        let record =
-            json!({"displayName": name, "avatar": blob("bafkreiavatar"), "createdAt": NOW});
+        let record = json!({"displayName": name, "avatar": blob(AVATAR), "createdAt": NOW});
         self.put(did, "social.grain.actor.profile", "self", record);
     }
 
@@ -140,7 +147,7 @@ impl World {
     }
 
     fn story(&self, did: &str, rkey: &str, extra: Value) -> String {
-        let mut record = json!({"media": blob("bafkreistory"), "aspectRatio": {"width": 4, "height": 3}, "createdAt": NOW});
+        let mut record = json!({"media": blob(STORY), "aspectRatio": {"width": 4, "height": 3}, "createdAt": NOW});
         for (k, v) in extra.as_object().unwrap() {
             record[k] = v.clone();
         }
@@ -206,19 +213,14 @@ fn missing(card: &Drawn) -> bool {
 async fn a_gallery_shows_its_photos_and_its_author() {
     let w = world().await;
     w.profile(ALICE, "Alice");
-    w.gallery(ALICE, "g1", &["bafkreione"], json!({}));
+    w.gallery(ALICE, "g1", &[ONE], json!({}));
     // A photo on its own fills the frame as far as its shape lets it.
     let card = w.card("/og/profile/alice.test/gallery/g1").await;
     assert_eq!(card.at(600, 265), RED);
     assert_eq!(card.at(52, 574), BLUE, "the avatar");
     assert_eq!(card.at(10, 10), WHITE);
     // By DID too, and with some photos the CDN has no image for.
-    w.gallery(
-        ALICE,
-        "g2",
-        &["bafkreione", "bafkreimissing", "bafkreitwo"],
-        json!({}),
-    );
+    w.gallery(ALICE, "g2", &[ONE, MISSING, TWO], json!({}));
     let card = w.card(&format!("/og/profile/{ALICE}/gallery/g2")).await;
     assert!(card.count(RED) > 10_000);
     // Asked again, the card is the one drawn, though the gallery changed.
@@ -231,25 +233,25 @@ async fn a_gallery_shows_its_photos_and_its_author() {
 async fn a_label_leaves_the_photos_out() {
     let w = world().await;
     w.profile(ALICE, "Alice");
-    let labeled = w.gallery(ALICE, "g1", &["bafkreione"], json!({}));
+    let labeled = w.gallery(ALICE, "g1", &[ONE], json!({}));
     w.label(&labeled, "nudity");
     let card = w.card("/og/profile/alice.test/gallery/g1").await;
     assert_eq!(card.count(RED), 0);
     assert_eq!(card.at(52, 574), BLUE, "the author is not labeled");
     // Its author's label, as a self-label.
     let self_labels = json!({"labels": {"$type": "com.atproto.label.defs#selfLabels", "values": [{"val": "nudity"}]}});
-    w.gallery(ALICE, "g2", &["bafkreione"], self_labels);
+    w.gallery(ALICE, "g2", &[ONE], self_labels);
     let card = w.card("/og/profile/alice.test/gallery/g2").await;
     assert_eq!(card.count(RED), 0);
     // A photo with a label of its own is left out of the rest.
     let photo = format!("at://{ALICE}/social.grain.photo/g3p0");
-    w.gallery(ALICE, "g3", &["bafkreione"], json!({}));
+    w.gallery(ALICE, "g3", &[ONE], json!({}));
     w.label(&photo, "porn");
     let card = w.card("/og/profile/alice.test/gallery/g3").await;
     assert_eq!(card.count(RED), 0);
     // A label on the account leaves out its photos and its avatar.
     w.profile(BOB, "Bob");
-    w.gallery(BOB, "g1", &["bafkreione"], json!({}));
+    w.gallery(BOB, "g1", &[ONE], json!({}));
     w.label(BOB, "spam");
     let card = w.card("/og/profile/bob.test/gallery/g1").await;
     assert_eq!(card.count(RED) + card.count(BLUE), 0);
@@ -259,9 +261,9 @@ async fn a_label_leaves_the_photos_out() {
 async fn what_is_not_shown_is_not_found() {
     let w = world().await;
     w.profile(ALICE, "Alice");
-    let hidden = w.gallery(ALICE, "g1", &["bafkreione"], json!({}));
+    let hidden = w.gallery(ALICE, "g1", &[ONE], json!({}));
     w.label(&hidden, "!hide");
-    w.gallery(BOB, "g1", &["bafkreione"], json!({}));
+    w.gallery(BOB, "g1", &[ONE], json!({}));
     w.story(BOB, "s1", json!({}));
     w.index.take_down(BOB).unwrap();
     for path in [
@@ -283,11 +285,11 @@ async fn what_is_not_shown_is_not_found() {
 async fn a_profile_shows_a_photo_of_each_of_its_latest_galleries() {
     let w = world().await;
     w.profile(ALICE, "Alice");
-    w.gallery(ALICE, "g1", &["bafkreione", "bafkreitwo"], json!({}));
-    let labeled = w.gallery(ALICE, "g2", &["bafkreione"], json!({}));
+    w.gallery(ALICE, "g1", &[ONE, TWO], json!({}));
+    let labeled = w.gallery(ALICE, "g2", &[ONE], json!({}));
     w.label(&labeled, "nudity");
     let self_labels = json!({"labels": {"$type": "com.atproto.label.defs#selfLabels", "values": [{"val": "nudity"}]}});
-    w.gallery(ALICE, "g3", &["bafkreione"], self_labels);
+    w.gallery(ALICE, "g3", &[ONE], self_labels);
     // The one gallery left fills the frame with its first photo.
     let card = w.card("/og/profile/alice.test").await;
     assert_eq!(card.at(600, 265), RED);

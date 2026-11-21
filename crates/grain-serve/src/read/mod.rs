@@ -192,7 +192,7 @@ impl Params {
     /// The `at-uri` parameter `name`, which the call must give.
     pub fn at_uri(&self, name: &str) -> Result<&str, Failure> {
         let uri = self.required(name)?;
-        match lexicon::valid_at_uri(uri) {
+        match atproto::lexicon::is_at_uri(uri) {
             true => Ok(uri),
             false => Err(Failure::invalid(format!("{name} must be a valid at-uri"))),
         }
@@ -277,7 +277,8 @@ impl Reader<'_> {
     /// no account the index knows, as Bluesky refuses one.
     pub fn actor(&self, params: &Params) -> Result<String, Failure> {
         let actor = params.required("actor")?;
-        if !(lexicon::valid_did(actor) || lexicon::valid_handle(actor.trim_start_matches('@'))) {
+        if !(atproto::syntax::is_did(actor) || lexicon::valid_handle(actor.trim_start_matches('@')))
+        {
             return Err(Failure::invalid("actor must be a valid did or a handle"));
         }
         self.resolve(actor)?

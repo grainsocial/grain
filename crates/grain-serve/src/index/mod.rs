@@ -29,7 +29,8 @@ pub mod spaces;
 pub mod stories;
 
 use anyhow::{Context, bail};
-use grain::lexicon::{self, Invalid, Lexicons};
+use atproto::lexicon::LexiconError;
+use grain::lexicon::Lexicons;
 use records::{Any, Record};
 use rusqlite::{Connection, OptionalExtension, ToSql, params};
 use serde_json::Value;
@@ -73,7 +74,7 @@ pub enum Applied {
 #[derive(Debug)]
 pub enum PutError {
     /// It is not one the index keeps, or does not fit its lexicon.
-    Refused(Invalid),
+    Refused(LexiconError),
     Db(rusqlite::Error),
 }
 
@@ -95,7 +96,7 @@ impl From<rusqlite::Error> for PutError {
 }
 
 fn refused(path: &str, message: impl Into<String>) -> PutError {
-    PutError::Refused(Invalid {
+    PutError::Refused(LexiconError {
         path: path.into(),
         message: message.into(),
     })
@@ -154,9 +155,9 @@ pub const KEPT_FOR: &[&str] = &[
 pub fn record_uri(uri: &str) -> Option<(&str, &str, &str)> {
     let mut parts = uri.strip_prefix("at://")?.split('/');
     let (did, collection, rkey) = (parts.next()?, parts.next()?, parts.next()?);
-    let valid = lexicon::valid_did(did)
-        && lexicon::valid_nsid(collection)
-        && lexicon::valid_record_key(rkey);
+    let valid = atproto::syntax::is_did(did)
+        && atproto::syntax::is_nsid(collection)
+        && atproto::syntax::is_record_key(rkey);
     (valid && parts.next().is_none()).then_some((did, collection, rkey))
 }
 
@@ -341,7 +342,7 @@ impl Index {
     ) -> Result<Applied, PutError> {
         let (did, collection, _) =
             record_uri(uri).ok_or_else(|| refused("", "not a record URI"))?;
-        if !lexicon::valid_cid(cid) {
+        if !atproto::lexicon::is_cid_string(cid) {
             return Err(refused("", format!("not a CID: {cid}")));
         }
         let (table, row) = self.parsed(collection, record, false)?;
@@ -541,22 +542,18 @@ impl Index {
     /// time, kept in UTC to the millisecond as SQLite's `strftime` writes
     /// it, so that it compares as text with the times records are kept
     /// at. A later call replaces it, earlier or not, as Bluesky's
-    /// `updateSeen` does. Whether it was kept: not where it is a time
-    /// UTC cannot write in four digits of year, such as the first moments
-    /// of year 0 east of Greenwich.
-    pub fn set_seen(&self, did: &str, seen_at: &str) -> rusqlite::Result<bool> {
+    /// `updateSeen` does. `seen_at` is a datetime as atproto has one, which
+    /// holds a year UTC writes in four digits.
+    pub fn set_seen(&self, did: &str, seen_at: &str) -> rusqlite::Result<()> {
         let db = self.db.lock().unwrap();
         let sql = "SELECT strftime('%Y-%m-%dT%H:%M:%fZ', ?1)";
-        let utc: Option<String> = db.query_row(sql, [seen_at], |r| r.get(0))?;
-        let Some(utc) = utc.filter(|t| lexicon::valid_datetime(t)) else {
-            return Ok(false);
-        };
+        let utc: String = db.query_row(sql, [seen_at], |r| r.get(0))?;
         db.execute(
             "INSERT INTO notification_seen VALUES (?1, ?2)
              ON CONFLICT (did) DO UPDATE SET seen_at = excluded.seen_at",
             [did, &utc],
         )?;
-        Ok(true)
+        Ok(())
     }
 
     /// The last sequence number read from the stream `source`.

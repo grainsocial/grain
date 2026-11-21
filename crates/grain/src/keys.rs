@@ -1,9 +1,11 @@
 //! The clock, and record keys made from it: TIDs, the timestamp keys
-//! atproto names records with.
+//! atproto names records with, as the `atproto` crate writes and reads
+//! them, from one clock that only goes forward in this process.
 
-use crate::base32;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub use atproto::tid::tid_from;
 
 static LAST_MICROS: AtomicU64 = AtomicU64::new(0);
 
@@ -23,26 +25,7 @@ pub fn now_secs() -> u64 {
 /// `2026-10-31T12:00:00.000Z`: as JavaScript's `toISOString` writes it, so
 /// that times grain writes and times clients write sort together as text.
 pub fn iso(micros: u64) -> String {
-    let secs = micros / 1_000_000;
-    let millis = (micros / 1_000) % 1_000;
-    let days = (secs / 86_400) as i64;
-    let rem = secs % 86_400;
-    // Howard Hinnant's days_from_civil, inverted.
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = yoe + era * 400 + i64::from(month <= 2);
-    format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}.{millis:03}Z",
-        rem / 3_600,
-        rem % 3_600 / 60,
-        rem % 60
-    )
+    atproto::time::iso((micros / 1_000) as i64)
 }
 
 /// The time now, as [`iso`] writes it.
@@ -62,14 +45,9 @@ pub fn tid() -> String {
     tid_from(micros, u64::from(std::process::id()))
 }
 
-pub fn tid_from(micros: u64, clock: u64) -> String {
-    let micros = micros & ((1 << 53) - 1);
-    base32::encode_u64(base32::SORTABLE, (micros << 10) | (clock & 1023))
-}
-
 /// The timestamp in a TID, or `None` if `tid` is not one.
 pub fn tid_micros(tid: &str) -> Option<u64> {
-    base32::decode_u64(base32::SORTABLE, tid).map(|v| v >> 10)
+    atproto::tid::micros(tid)
 }
 
 #[cfg(test)]

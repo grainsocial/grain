@@ -90,7 +90,7 @@ async fn world() -> World {
 }
 
 fn cid(uri: &str) -> String {
-    grain::drisl::cid_text(&grain::drisl::cid(uri.as_bytes()))
+    atproto::Cid::of_cbor(uri.as_bytes()).to_string()
 }
 
 fn blob() -> Value {

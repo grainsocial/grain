@@ -41,7 +41,7 @@ impl Index {
     /// `time`, an RFC 3339 time, in seconds since the epoch.
     pub fn epoch_secs(&self, time: &str) -> anyhow::Result<u64> {
         anyhow::ensure!(
-            grain::lexicon::valid_datetime(time),
+            atproto::lexicon::is_datetime(time),
             "{time}: not an RFC 3339 time"
         );
         let db = self.db.lock().unwrap();

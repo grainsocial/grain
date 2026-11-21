@@ -11,16 +11,15 @@ rust-version = "1.89"
 [workspace.dependencies]
 grain = { path = "crates/grain" }
 grain-serve = { path = "crates/grain-serve" }
+# atproto's primitives, from their own repository's registry (.cargo/config.toml).
+atproto = { version = "0.2.2", registry = "atproto" }
 aes-gcm = "0.10"
 anyhow = "1"
 axum = "0.8"
 base64 = "0.22"
-bs58 = "0.5"
 bytes = "1"
-ciborium = "0.2"
 futures = "0.3"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
-k256 = { version = "0.13", features = ["ecdsa"] }
 png = "0.18.1"
 p256 = { version = "0.13", features = ["ecdsa"] }
 rand_core = { version = "0.6", features = ["getrandom"] }

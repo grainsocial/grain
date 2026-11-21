@@ -5,9 +5,10 @@
 mod common;
 use common::*;
 
+use atproto::{Commit, star_lite};
 use grain::crypto::PublicKey;
 use grain::identity;
-use grain::repo::{self, Commit, Record, star};
+use grain::repo::{self, Record};
 use serde_json::{Value, json};
 
 /// An account with `n` galleries and a profile, and its session token.
@@ -65,7 +66,7 @@ async fn key_of(did: &str) -> PublicKey {
     let doc = identity::document(&ctx(dir.path(), &[]), did)
         .await
         .unwrap();
-    identity::signing_key(&doc).unwrap()
+    atproto::did::signing_key(&doc).unwrap()
 }
 
 fn read(bytes: Vec<u8>, did: &str, key: &PublicKey) -> anyhow::Result<(Commit, Vec<Record>)> {
@@ -95,29 +96,27 @@ async fn the_reference_pdss_repos_read_and_check() {
     .await
     .unwrap();
     assert_eq!(commit.rev, latest["rev"]);
-    assert_eq!(grain::drisl::cid_text(&commit.data).len(), 59);
+    assert_eq!(commit.data.to_string().len(), 59);
     assert_eq!(records.len(), 151);
     assert!(records.windows(2).all(|w| w[0].0 < w[1].0));
     assert_eq!(records[0].0, "social.grain.actor.profile/self");
-    let profile = grain::drisl::record(&records[0].1).unwrap();
+    let profile = atproto::drisl::decode(&records[0].1).unwrap().to_json();
     assert_eq!(profile["displayName"], "Film");
 
     // The same repo as STAR-lite, plain and zstd'd.
-    let mut lite = Vec::new();
-    star::write(&mut lite, &commit, records.clone()).unwrap();
+    let lite = star_lite::write(&commit, records.iter().map(|(k, r)| (k.as_str(), &r[..])));
     assert!(lite.len() < car.len(), "STAR-lite carries no tree");
     let (again, same) = read(lite.clone(), &a.did, &key).unwrap();
-    let parts = |c: &Commit| (c.did.clone(), c.rev.clone(), c.data.clone());
+    let parts = |c: &Commit| (c.did.clone(), c.rev.clone(), c.data);
     assert_eq!((parts(&again), &same), (parts(&commit), &records));
     let zstd = zstd::encode_all(&lite[..], 3).unwrap();
     assert_eq!(read(zstd, &a.did, &key).unwrap().1, records);
 
     // Tampered with, or cut short, either is refused.
     let mut forged = records.clone();
-    forged[3].1 =
-        grain::drisl::encode(&ciborium::Value::serialized(&json!({"title": "x"})).unwrap());
-    let mut lite_forged = Vec::new();
-    star::write(&mut lite_forged, &commit, forged).unwrap();
+    let forged_title = atproto::drisl::Value::from_json(&json!({"title": "x"})).unwrap();
+    forged[3].1 = atproto::drisl::encode(&forged_title);
+    let lite_forged = star_lite::write(&commit, forged.iter().map(|(k, r)| (k.as_str(), &r[..])));
     let why = read(lite_forged, &a.did, &key).unwrap_err().to_string();
     assert_eq!(why, "the records do not make the tree the commit signed");
     assert!(read(lite[..lite.len() - 1].to_vec(), &a.did, &key).is_err());

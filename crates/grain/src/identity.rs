@@ -1,11 +1,10 @@
-//! Handle → DID → PDS, and the keys a DID document names: cached on disk
-//! so a warm lookup spends no round trip on it.
+//! Handle → DID → PDS: cached on disk so a warm lookup spends no round
+//! trip on it. What a DID document names is read by `atproto::did`.
 //!
 //! The hosts identity data names, a handle's, a `did:web`'s and the PDS a
 //! DID document names, are held to [`crate::guard`]; the PLC directory and
 //! the handle resolvers set are asked as they are set.
 
-use crate::crypto::PublicKey;
 use crate::env::{Ctx, HandleResolver};
 use crate::keys::now_secs;
 use crate::store;
@@ -311,7 +310,7 @@ pub async fn resolve_pds(ctx: &Ctx, did: &str) -> Result<String> {
 /// The PDS `doc`, `did`'s DID document, names, if it may be asked
 /// ([`Ctx::may_ask`]); a refusal is a [`crate::guard::Refused`].
 pub fn pds(ctx: &Ctx, did: &str, doc: &Value) -> Result<String> {
-    let pds = service(doc, "#atproto_pds");
+    let pds = atproto::did::pds(doc);
     let pds = pds.ok_or_else(|| anyhow!("{did} names no #atproto_pds service"))?;
     ctx.may_ask(&pds)?;
     Ok(pds)
@@ -367,50 +366,6 @@ pub async fn kept_document(ctx: &Ctx, did: &str) -> Result<Value> {
         Some((at, doc)) if at.elapsed() < KEPT_FOR => Ok(doc),
         _ => document(ctx, did).await,
     }
-}
-
-/// The endpoint of the service whose id ends in `id`, such as `#atproto_pds`.
-pub fn service(doc: &Value, id: &str) -> Option<String> {
-    doc.get("service")?
-        .as_array()?
-        .iter()
-        .find(|s| {
-            s.get("id")
-                .and_then(Value::as_str)
-                .is_some_and(|i| i.ends_with(id))
-        })?
-        .get("serviceEndpoint")?
-        .as_str()
-        .map(|s| s.trim_end_matches('/').to_string())
-}
-
-/// The key the account signs with: its `#atproto` verification method.
-pub fn signing_key(doc: &Value) -> Result<PublicKey> {
-    method_key(doc, "#atproto")
-}
-
-/// The key of the verification method whose id ends in `id`.
-fn method_key(doc: &Value, id: &str) -> Result<PublicKey> {
-    let method = doc
-        .get("verificationMethod")
-        .and_then(Value::as_array)
-        .and_then(|methods| {
-            methods.iter().find(|m| {
-                m.get("id")
-                    .and_then(Value::as_str)
-                    .is_some_and(|i| i.ends_with(id))
-            })
-        })
-        .with_context(|| format!("the DID document has no {id} key"))?;
-    let multibase = method
-        .get("publicKeyMultibase")
-        .and_then(Value::as_str)
-        .with_context(|| format!("the {id} key has no publicKeyMultibase"))?;
-    let kind = method
-        .get("type")
-        .and_then(Value::as_str)
-        .unwrap_or("Multikey");
-    PublicKey::from_method(kind, multibase)
 }
 
 #[cfg(test)]
@@ -618,7 +573,7 @@ mod tests {
 
         assert_eq!(resolve_pds(&ctx, &did).await.unwrap(), pds);
         let doc = kept_document(&ctx, &did).await.unwrap();
-        assert_eq!(signing_key(&doc).unwrap(), key);
+        assert_eq!(atproto::did::signing_key(&doc).unwrap(), key);
         assert_eq!(
             verified_handle(&ctx, &did).await.unwrap(),
             Some(name.clone())
@@ -686,32 +641,5 @@ mod tests {
         }
         assert!(pds("").is_err());
         assert!(super::pds(&ctx, "did:plc:a", &json!({})).is_err());
-    }
-
-    #[test]
-    fn service_lookup() {
-        let doc = json!({"service": [
-            {"id": "#other", "serviceEndpoint": "x"},
-            {"id": "did:plc:a#atproto_pds", "serviceEndpoint": "https://pds.example/"}
-        ]});
-        let pds = |doc: &Value| service(doc, "#atproto_pds");
-        assert_eq!(pds(&doc).as_deref(), Some("https://pds.example"));
-        assert_eq!(pds(&json!({"service": []})), None);
-        assert_eq!(pds(&json!({})), None);
-    }
-
-    #[test]
-    fn signing_keys() {
-        let key = crate::crypto::P256Key::generate().public();
-        let other = crate::crypto::P256Key::generate().public();
-        let doc = json!({"verificationMethod": [
-            {"id": "#other", "publicKeyMultibase": "zjunk"},
-            {"id": "did:plc:a#atproto_label", "publicKeyMultibase": other.to_multibase()},
-            {"id": "did:plc:a#atproto", "publicKeyMultibase": key.to_multibase()}
-        ]});
-        assert_eq!(signing_key(&doc).unwrap(), key);
-        assert_eq!(method_key(&doc, "#atproto_label").unwrap(), other);
-        assert!(signing_key(&json!({})).is_err());
-        assert!(signing_key(&json!({"verificationMethod": [{"id": "#atproto"}]})).is_err());
     }
 }

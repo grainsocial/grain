@@ -20,7 +20,6 @@ use axum::Json;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode, header};
-use grain::lexicon;
 use rusqlite::params;
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -77,7 +76,7 @@ pub async fn delete_gallery(
     let did = crate::viewer::writer(&app, &headers, DELETE_GALLERY).await?;
     let input: Input = serde_json::from_slice(&body)
         .map_err(|e| Failure::invalid(format!("the input is not {{rkey}}: {e}")))?;
-    if !lexicon::valid_record_key(&input.rkey) {
+    if !atproto::syntax::is_record_key(&input.rkey) {
         return Err(Failure::invalid(format!(
             "not a record key: {}",
             input.rkey

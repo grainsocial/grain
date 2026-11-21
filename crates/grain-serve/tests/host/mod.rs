@@ -174,8 +174,8 @@ async fn forward(
 /// Signs the PLC operation `op` with `key`.
 fn signed(mut op: Value, key: &P256Key) -> Value {
     op.as_object_mut().unwrap().remove("sig");
-    let cbor = ciborium::Value::serialized(&op).unwrap();
-    let sig = key.sign(&grain::drisl::encode(&cbor));
+    let unsigned = atproto::drisl::Value::from_json(&op).unwrap();
+    let sig = key.sign(&atproto::drisl::encode(&unsigned));
     op["sig"] = URL_SAFE_NO_PAD.encode(sig).into();
     op
 }
@@ -217,7 +217,7 @@ async fn made(dir: &std::path::Path, handle: &str, key: &P256Key) -> (String, Se
             "email": format!("{handle}@test.com"),
             "handle": handle,
             "password": password,
-            "recoveryKey": key.public().to_did_key(),
+            "recoveryKey": key.public().did_key(),
         }))
         .send()
         .await

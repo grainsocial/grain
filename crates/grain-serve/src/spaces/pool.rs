@@ -175,14 +175,14 @@ fn people(app: &App, viewer: &str, dids: &[&str]) -> Result<HashMap<String, Valu
 
 fn did_param(params: &Params, key: &str) -> Result<String, Failure> {
     let group = params.required(key)?;
-    if !grain::lexicon::valid_did(group) {
+    if !atproto::syntax::is_did(group) {
         return Err(Failure::invalid(format!("{key} must be a valid did")));
     }
     Ok(group.to_string())
 }
 
 fn valid_group(group: &str) -> Result<(), Failure> {
-    match grain::lexicon::valid_did(group) {
+    match atproto::syntax::is_did(group) {
         true => Ok(()),
         false => Err(Failure::invalid("group must be a valid did")),
     }
@@ -517,7 +517,7 @@ pub async fn create_gallery(
     let did = writer(app, &headers, CREATE).await?;
     let input: CreateInput = parse(&body)?;
     valid_group(&input.group)?;
-    if !grain::lexicon::valid_record_key(&input.rkey) || input.rkey.len() > 64 {
+    if !atproto::syntax::is_record_key(&input.rkey) || input.rkey.len() > 64 {
         return Err(Failure::invalid("rkey must be a record key of 64 at most"));
     }
     if input.photos.len() > MOST {

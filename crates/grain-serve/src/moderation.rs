@@ -119,7 +119,9 @@ fn subject(subject: &Value) -> Result<(String, String), Failure> {
     let wrong = || Failure::invalid(format!("a subject is a {REPO_REF} or a {STRONG_REF}"));
     match subject["$type"].as_str() {
         Some(REPO_REF) => {
-            let did = subject["did"].as_str().filter(|d| lexicon::valid_did(d));
+            let did = subject["did"]
+                .as_str()
+                .filter(|d| atproto::syntax::is_did(d));
             let did = did.ok_or_else(|| Failure::invalid("a repoRef names a valid did"))?;
             Ok((did.to_string(), did.to_string()))
         }
@@ -127,7 +129,9 @@ fn subject(subject: &Value) -> Result<(String, String), Failure> {
             let uri = subject["uri"].as_str().unwrap_or_default();
             let (did, _, _) = record_uri(uri)
                 .ok_or_else(|| Failure::invalid("a strongRef names a record's at-uri"))?;
-            let cid = subject["cid"].as_str().filter(|c| lexicon::valid_cid(c));
+            let cid = subject["cid"]
+                .as_str()
+                .filter(|c| atproto::lexicon::is_cid_string(c));
             cid.ok_or_else(|| Failure::invalid("a strongRef names a valid cid"))?;
             Ok((uri.to_string(), did.to_string()))
         }
@@ -255,7 +259,7 @@ pub async fn query_labels(State(app): State<Arc<App>>, uri: Uri) -> Result<Json<
             "Params must have the property \"uriPatterns\"",
         ));
     }
-    if let Some(wrong) = sources.iter().find(|s| !lexicon::valid_did(s)) {
+    if let Some(wrong) = sources.iter().find(|s| !atproto::syntax::is_did(s)) {
         return Err(Failure::invalid(format!("{wrong}: a source is a did")));
     }
     let limit = params.limit(50, 250)?;
@@ -327,7 +331,7 @@ pub async fn get_subject_status(
     let params = params(&uri);
     let (subject, applied) = match (params.get("did"), params.get("uri")) {
         (Some(did), _) => {
-            if !lexicon::valid_did(did) {
+            if !atproto::syntax::is_did(did) {
                 return Err(Failure::invalid("did must be a valid did"));
             }
             let subject = json!({"$type": REPO_REF, "did": did});
@@ -481,7 +485,7 @@ async fn labeled(
     let index = index(app)?;
     let (_, src) = admin(app, headers, lxm).await?;
     let input: Labeling = parse(body)?;
-    if !(lexicon::valid_did(&input.uri) || record_uri(&input.uri).is_some()) {
+    if !(atproto::syntax::is_did(&input.uri) || record_uri(&input.uri).is_some()) {
         let why = "uri is an account's bare did or a record's at-uri";
         return Err(Failure::invalid(why));
     }
@@ -548,7 +552,7 @@ pub async fn get_review_subject(
     admin(&app, &headers, GET_SUBJECT).await?;
     let params = params(&uri);
     let did = params.required("did")?;
-    if !lexicon::valid_did(did) {
+    if !atproto::syntax::is_did(did) {
         return Err(Failure::invalid("did must be a valid did"));
     }
     let labels = index.labels_on(did)?;

@@ -4,12 +4,16 @@
 //! these, and grain asks a PDS for them to call another service, such as a
 //! group's host, as the account.
 
-use crate::crypto::{self, PublicKey};
+use crate::crypto::PublicKey;
 use crate::env::Ctx;
 use crate::identity;
+use crate::keys::now_secs;
 use crate::session::Session;
 use crate::xrpc::Xrpc;
-use anyhow::{Result, bail};
+use anyhow::{Result, ensure};
+use atproto::service_auth;
+use atproto::space::SpaceRef;
+use atproto::space_auth::{self, Expect, Kind, Token};
 use serde::Deserialize;
 
 /// A token from `me`'s PDS for calling `lxm` on the service `aud`.
@@ -45,81 +49,54 @@ async fn token(ctx: &Ctx, me: &Session, params: &[(&str, &str)]) -> Result<Strin
     Ok(out.token)
 }
 
-#[derive(Deserialize)]
-struct Claims {
-    iss: String,
-    aud: String,
-    lxm: Option<String>,
-}
-
 /// Checks a service token for calling `lxm` on `aud`, and returns the DID
 /// that sent it. The signature is checked against the key the issuer's DID
 /// document names ([`signed_by`]), and `exp` against the clock.
 pub async fn verify(ctx: &Ctx, token: &str, aud: &str, lxm: &str) -> Result<String> {
-    let (_, claims) = crypto::jwt_parts(token)?;
-    let claims: Claims = serde_json::from_value(claims)?;
-    let did = claims.iss.split('#').next().unwrap_or_default().to_string();
-    if claims.aud != aud {
-        bail!("a token for {}, not {aud}", claims.aud);
-    }
-    if claims.lxm.as_deref() != Some(lxm) {
-        bail!("a token for {:?}, not {lxm}", claims.lxm);
-    }
-    signed_by(ctx, token, &did).await?;
+    let (_, claims) = service_auth::parts(token)?;
+    let did = service_auth::check(&claims, aud, lxm)?.to_string();
+    let now = now_secs();
+    signed_by(ctx, &did, |key| service_auth::verify(token, key, now)).await?;
     Ok(did)
 }
 
-/// Checks `token`'s signature against the key `did`'s DID document names:
+/// Checks a token with `check` against the key `did`'s DID document names:
 /// as read a few minutes ago, and as it is now when that one turns it
 /// away, as it does once the key rotated.
-async fn signed_by(ctx: &Ctx, token: &str, did: &str) -> Result<()> {
-    let kept = identity::signing_key(&identity::kept_document(ctx, did).await?)?;
-    if crypto::verify_jwt::<serde_json::Value>(token, &kept).is_ok() {
-        return Ok(());
+async fn signed_by<T, E>(
+    ctx: &Ctx,
+    did: &str,
+    check: impl Fn(&PublicKey) -> Result<T, E>,
+) -> Result<T>
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    let kept = atproto::did::signing_key(&identity::kept_document(ctx, did).await?)?;
+    if let Ok(found) = check(&kept) {
+        return Ok(found);
     }
-    let key: PublicKey = identity::signing_key(&identity::document(ctx, did).await?)?;
-    crypto::verify_jwt::<serde_json::Value>(token, &key)?;
-    Ok(())
+    let key = atproto::did::signing_key(&identity::document(ctx, did).await?)?;
+    Ok(check(&key)?)
 }
 
-/// The type a space delegation token names in its header.
-const DELEGATION_TYP: &str = "atproto-space-delegation+jwt";
-
-/// A delegation token, as a member's PDS signs one for a space's
-/// authority (`com.atproto.space.getDelegationToken`).
-#[derive(Deserialize, Debug, Clone)]
-pub struct Delegation {
-    /// The account it names.
-    #[serde(rename = "iss")]
-    pub did: String,
-    /// The space it is for.
-    #[serde(rename = "sub")]
-    pub space: String,
-    /// What spends it: an authority takes each once.
-    pub jti: String,
-    /// When it stops, in seconds since the epoch.
-    pub exp: u64,
-    aud: String,
-}
-
-/// Checks a delegation token, for a space, signed by the account it names
-/// with the key its DID document names ([`signed_by`]), and returns what
-/// it holds. It names a space's authority, not whoever holds it: anyone
-/// handed one may exchange it, so it proves who sent it only together with
-/// being spent once.
-pub async fn verify_delegation(ctx: &Ctx, token: &str) -> Result<Delegation> {
-    let (header, claims) = crypto::jwt_parts(token)?;
-    if header["typ"].as_str() != Some(DELEGATION_TYP) {
-        bail!("not a delegation token: {}", header["typ"]);
-    }
-    let found: Delegation = serde_json::from_value(claims)?;
-    let authority = found.space.strip_prefix("at://").unwrap_or_default();
-    let authority = authority.split('/').next().unwrap_or_default();
-    if found.aud != format!("{authority}#atproto_pds") {
-        bail!("a token for {}, not {}'s authority", found.aud, found.space);
-    }
-    signed_by(ctx, token, &found.did).await?;
-    Ok(found)
+/// Checks a delegation token, as a member's PDS signs one for a space's
+/// authority (`com.atproto.space.getDelegationToken`): signed by the
+/// account it names (`iss`) with the key its DID document names
+/// ([`signed_by`]). Returns what it holds: the space (`sub`), and the
+/// `jti` and `exp` that spend it. It names a space's authority, not
+/// whoever holds it: anyone handed one may exchange it, so it proves who
+/// sent it only together with being spent once.
+pub async fn verify_delegation(ctx: &Ctx, token: &str) -> Result<Token> {
+    let (_, found) = space_auth::parse(Kind::Delegation, token)?;
+    let authority = SpaceRef::parse(&found.sub)?.authority;
+    // Refused before any DID document is looked up for it.
+    let (aud, space) = (&found.aud, &found.sub);
+    let ours = aud.as_deref() == Some(space_auth::space_host_aud(&authority).as_str());
+    ensure!(ours, "a token for {aud:?}, not {space}'s authority");
+    let now = now_secs();
+    let check =
+        |key: &PublicKey| space_auth::verify(Kind::Delegation, token, key, &Expect::default(), now);
+    signed_by(ctx, &found.iss, check).await
 }
 
 #[cfg(test)]
@@ -268,17 +245,15 @@ mod tests {
             json!({"iss": "did:plc:member", "sub": "at://did:plc:owner/space/social.grain.group/self",
                    "aud": aud, "jti": "1", "exp": 1})
         };
-        let typ = |typ: &str| json!({"alg": "ES256", "typ": typ});
+        let typ = |typ: &str| json!({"alg": "ES256", "typ": typ, "kid": "#atproto"});
+        let delegation = Kind::Delegation.typ();
         let service = unsigned(typ("JWT"), claims("did:plc:owner#atproto_pds"));
         let why = verify_delegation(&ctx, &service).await.unwrap_err();
-        assert!(
-            why.to_string().starts_with("not a delegation token"),
-            "{why}"
-        );
-        let elsewhere = unsigned(typ(DELEGATION_TYP), claims("did:plc:other#atproto_pds"));
+        assert!(why.to_string().starts_with("BadJwtType"), "{why}");
+        let elsewhere = unsigned(typ(delegation), claims("did:plc:other#atproto_pds"));
         let why = verify_delegation(&ctx, &elsewhere).await.unwrap_err();
         assert!(why.to_string().contains("not at://did:plc:owner/"), "{why}");
-        let bare = unsigned(typ(DELEGATION_TYP), json!({"iss": "did:plc:member"}));
+        let bare = unsigned(typ(delegation), json!({"iss": "did:plc:member"}));
         assert!(verify_delegation(&ctx, &bare).await.is_err());
     }
 }

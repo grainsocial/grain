@@ -80,7 +80,7 @@ async fn world() -> World {
 }
 
 fn cid(of: &str) -> String {
-    grain::drisl::cid_text(&grain::drisl::cid(of.as_bytes()))
+    atproto::Cid::of_cbor(of.as_bytes()).to_string()
 }
 
 fn strong_ref(uri: &str) -> Value {

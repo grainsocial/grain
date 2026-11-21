@@ -12,7 +12,6 @@
 use crate::auth;
 use crate::env::Ctx;
 use crate::identity;
-use crate::lexicon;
 use crate::session::{self, Session};
 use crate::xrpc::{Auth, Xrpc};
 use anyhow::{Context, Result, bail};
@@ -117,7 +116,7 @@ pub async fn subject(ctx: &Ctx, target: &str) -> Result<Value> {
 /// The DID of `account`, a DID or a handle.
 pub async fn account(ctx: &Ctx, account: &str) -> Result<String> {
     let account = account.trim_start_matches('@');
-    if lexicon::valid_did(account) {
+    if atproto::syntax::is_did(account) {
         return Ok(account.to_string());
     }
     Ok(identity::resolve(ctx, account).await?.did)

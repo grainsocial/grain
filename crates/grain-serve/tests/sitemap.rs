@@ -18,7 +18,7 @@ const DAVE: &str = "did:plc:dave";
 const SITEMAP: &str = "/xrpc/social.grain.server.getSitemap";
 
 fn cid(uri: &str) -> String {
-    grain::drisl::cid_text(&grain::drisl::cid(uri.as_bytes()))
+    atproto::Cid::of_cbor(uri.as_bytes()).to_string()
 }
 
 fn put(index: &Index, did: &str, collection: &str, rkey: &str, mut record: Value) -> String {

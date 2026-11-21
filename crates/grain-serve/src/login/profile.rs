@@ -121,7 +121,7 @@ mod tests {
                 "displayName": "Alice", "avatar": avatar})
         );
         let fresh = from_bluesky(&json!({}), None);
-        assert!(grain::lexicon::valid_datetime(
+        assert!(atproto::lexicon::is_datetime(
             fresh["createdAt"].as_str().unwrap()
         ));
         assert_eq!(fresh.as_object().unwrap().len(), 2);

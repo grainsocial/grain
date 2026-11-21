@@ -106,7 +106,7 @@ fn typed(collection: &str, mut record: Value) -> Value {
     record
 }
 
-fn refusal(result: Result<Applied, PutError>) -> Invalid {
+fn refusal(result: Result<Applied, PutError>) -> LexiconError {
     match result {
         Err(PutError::Refused(why)) => why,
         other => panic!("not refused: {other:?}"),
@@ -178,7 +178,7 @@ fn a_gallery_titled_past_its_lexicon_is_indexed_whole_but_not_written() {
     };
     assert_eq!(
         (why.path.as_str(), why.message.as_str()),
-        ("title", "string too long (max 100)")
+        ("record.title", "must not be longer than 100 bytes")
     );
     assert_eq!(
         index.put(&at, CID, &gallery(&title)).unwrap(),
@@ -189,7 +189,7 @@ fn a_gallery_titled_past_its_lexicon_is_indexed_whole_but_not_written() {
     // Another collection's string past its bound is still refused.
     let profile = json!({"$type": "social.grain.actor.profile", "displayName": "n".repeat(641)});
     let why = refusal(index.put(&uri("social.grain.actor.profile"), CID, &profile));
-    assert_eq!(why.message, "string too long (max 640)");
+    assert_eq!(why.message, "must not be longer than 640 bytes");
 }
 
 #[test]
@@ -244,7 +244,7 @@ fn records_that_do_not_fit_are_refused() {
     let why = refusal(index.put(&at, CID, &wrong));
     assert_eq!(
         (why.path.as_str(), why.message.as_str()),
-        ("createdAt", "invalid datetime format")
+        ("record.createdAt", "must be a valid datetime")
     );
     // An integer written as a float fits the lexicon, but not the row.
     let item = json!({"$type": "social.grain.gallery.item", "createdAt": NOW, "gallery": at, "item": at, "position": 1.0});

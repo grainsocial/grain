@@ -15,7 +15,6 @@ use axum::Json;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode};
-use grain::lexicon;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -44,7 +43,7 @@ async fn asked(
     let did = crate::viewer::writer(app, headers, lxm).await?;
     let input: Input = serde_json::from_slice(body)
         .map_err(|e| Failure::invalid(format!("the input is not {{actor}}: {e}")))?;
-    if !lexicon::valid_did(&input.actor) {
+    if !atproto::syntax::is_did(&input.actor) {
         return Err(Failure::invalid("actor must be a valid did"));
     }
     Ok((did, input.actor))

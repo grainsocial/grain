@@ -422,7 +422,7 @@ async fn an_account_deleted_where_it_was_stays_if_its_host_has_it() {
     for did in [account.did.as_str(), nowhere] {
         site.index.track(did).unwrap();
         let uri = format!("at://{did}/social.grain.gallery/3l3qo2vuowo2a");
-        let cid = grain::drisl::cid_text(&grain::drisl::cid(uri.as_bytes()));
+        let cid = atproto::Cid::of_cbor(uri.as_bytes()).to_string();
         site.index.put(&uri, &cid, &gallery).unwrap();
     }
     let (to, told) = tokio::sync::mpsc::unbounded_channel();
@@ -452,7 +452,7 @@ async fn an_account_deleted_where_it_was_stays_if_its_host_has_it() {
 }
 
 #[tokio::test]
-async fn a_server_with_no_index_deletes_nothing() {
+async fn a_server_with_no_index_writes_nothing() {
     let ctx = grain::env::Ctx::new(grain::env::Env::from_vars(|_| None));
     let served = common::served_app(App::bare(ctx)).await;
     for (method, body) in [
@@ -460,6 +460,14 @@ async fn a_server_with_no_index_deletes_nothing() {
         (
             "/xrpc/social.grain.gallery.deleteGallery",
             json!({ "rkey": "3l3qo2vuowo2a" }),
+        ),
+        (
+            "/xrpc/social.grain.graph.muteActor",
+            json!({ "actor": "did:plc:someone" }),
+        ),
+        (
+            "/xrpc/social.grain.story.markViewed",
+            json!({ "stories": ["at://did:plc:someone/social.grain.story/3l3qo2vuowo2a"] }),
         ),
     ] {
         let (status, said) = served.post(method, &body).await;

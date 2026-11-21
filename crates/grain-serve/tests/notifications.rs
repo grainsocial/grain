@@ -83,14 +83,12 @@ fn day(n: u32) -> String {
 }
 
 fn cid(of: &str) -> String {
-    grain::drisl::cid_text(&grain::drisl::cid(of.as_bytes()))
+    atproto::Cid::of_cbor(of.as_bytes()).to_string()
 }
 
 /// A blob's CID, of the raw codec blobs have.
 fn blob_cid(of: &str) -> String {
-    let mut cid = grain::drisl::cid(of.as_bytes());
-    cid[1] = 0x55;
-    grain::drisl::cid_text(&cid)
+    atproto::Cid::of_raw(of.as_bytes()).to_string()
 }
 
 fn blob(cid: &str) -> Value {

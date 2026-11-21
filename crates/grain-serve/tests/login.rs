@@ -734,7 +734,7 @@ async fn a_login_seeds_a_grain_profile_from_bluesky() {
     let at = grain_profile(&a).await.unwrap();
     assert_eq!(at["displayName"], "Alice B");
     let created = at["createdAt"].as_str().unwrap();
-    assert!(grain::lexicon::valid_datetime(created), "{created}");
+    assert!(atproto::lexicon::is_datetime(created), "{created}");
     // Named now, it is left as it is.
     assert_eq!(seeded(&site.app, &a.did).await.unwrap(), Seeded::Named);
 
@@ -789,7 +789,7 @@ async fn a_login_seeds_a_grain_profile_from_bluesky() {
     assert!(site.index.tracks(&d.did));
     let at = grain_profile(&d).await.unwrap();
     assert_eq!(at.as_object().unwrap().len(), 2, "{at}");
-    assert!(grain::lexicon::valid_datetime(
+    assert!(atproto::lexicon::is_datetime(
         at["createdAt"].as_str().unwrap()
     ));
     assert_eq!(seeded(&site.app, &d.did).await.unwrap(), Seeded::NoBluesky);

@@ -9,6 +9,7 @@
 FROM rust:1.98-bookworm AS serve
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
+COPY .cargo/ .cargo/
 COPY crates/ crates/
 COPY lexicons/ lexicons/
 # The cache mounts keep the registry and the build between builds on the

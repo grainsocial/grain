@@ -40,7 +40,7 @@ mod tests {
         let record = json!({"$type": "social.grain.story", "aspectRatio": {"width": 9, "height": 16},
             "media": {"$type": "blob", "ref": {"$link": "bafkreigh2akiscaildcqabsyg3dfr6chu3fgpregiymsck7e7aqa4s52zy"}, "mimeType": "image/jpeg", "size": 1},
             "createdAt": "2026-10-31T12:00:00.000Z"});
-        let cid = grain::drisl::cid_text(&grain::drisl::cid(b"story"));
+        let cid = atproto::Cid::of_cbor(b"story").to_string();
         index.put(story, &cid, &record).unwrap();
         let gone = "at://did:plc:a/social.grain.story/3l4";
         let now = grain::keys::now_iso();

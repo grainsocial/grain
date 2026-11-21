@@ -13,7 +13,6 @@ use axum::Json;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, StatusCode};
-use grain::lexicon;
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::sync::Arc;
@@ -50,7 +49,11 @@ pub async fn mark_viewed(
         let why = format!("stories names 1 to {MOST_STORIES} stories, not {n}");
         return Err(Failure::invalid(why));
     }
-    if let Some(wrong) = input.stories.iter().find(|u| !lexicon::valid_at_uri(u)) {
+    if let Some(wrong) = input
+        .stories
+        .iter()
+        .find(|u| !atproto::lexicon::is_at_uri(u))
+    {
         return Err(Failure::invalid(format!("not an at-uri: {wrong}")));
     }
     let uris: Vec<&str> = input.stories.iter().map(String::as_str).collect();

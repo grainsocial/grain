@@ -154,7 +154,7 @@ async fn apns_is_sent_an_alert_signed_by_the_team() {
     let jwt = bearer(first);
     let (signed, sig) = jwt.rsplit_once('.').unwrap();
     let sig = URL_SAFE_NO_PAD.decode(sig).unwrap();
-    public.verify(signed.as_bytes(), &sig).unwrap();
+    assert!(public.verify(signed.as_bytes(), &sig));
     let (header, claims) = grain::crypto::jwt_parts(&jwt).unwrap();
     assert_eq!(claims["iss"], "TEAM456");
     assert!(claims["iat"].as_u64().unwrap() > 0);
@@ -563,7 +563,7 @@ const BOB: &str = "did:plc:bob";
 const CAROL: &str = "did:plc:carol";
 
 fn cid(of: &str) -> String {
-    grain::drisl::cid_text(&grain::drisl::cid(of.as_bytes()))
+    atproto::Cid::of_cbor(of.as_bytes()).to_string()
 }
 
 /// Puts `record` of `collection` at `did`'s `rkey`, made now unless it

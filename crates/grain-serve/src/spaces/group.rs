@@ -416,7 +416,7 @@ pub(super) async fn views(
 /// Refuses `group` unless it is a group's DID, before its host is looked
 /// for or anything is written.
 fn a_group(app: &App, group: &str) -> Result<(), Failure> {
-    let did = grain::lexicon::valid_did(group);
+    let did = atproto::syntax::is_did(group);
     match did && is_group(app, group)? {
         true => Ok(()),
         false => Err(Failure::invalid("group must be a group's did")),
@@ -502,7 +502,7 @@ pub async fn list_groups(
     let params = Params(params);
     let limit = params.limit(50, 100)?;
     let gallery = params.get("gallery");
-    if gallery.is_some_and(|g| !grain::lexicon::valid_at_uri(g)) {
+    if gallery.is_some_and(|g| !atproto::lexicon::is_at_uri(g)) {
         return Err(Failure::invalid("gallery must be a valid at-uri"));
     }
     let index = support::index(app)?;
@@ -546,7 +546,7 @@ pub async fn get_submissions(
     let app: &App = &app;
     let params = Params(params);
     let group = params.required("group")?;
-    if !grain::lexicon::valid_did(group) {
+    if !atproto::syntax::is_did(group) {
         return Err(Failure::invalid("group must be a valid did"));
     }
     let limit = params.limit(30, 100)?;

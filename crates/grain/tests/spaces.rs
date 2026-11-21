@@ -137,8 +137,5 @@ async fn a_pools_members_write_their_own_repos_and_read_each_others() {
     // checked against the reader's key.
     let token = space::delegation(&ctx, &outsider, &pool).await.unwrap();
     let found = auth::verify_delegation(&ctx, &token).await.unwrap();
-    assert_eq!(
-        (found.did, found.space),
-        (outsider.did.clone(), pool.clone())
-    );
+    assert_eq!((found.iss, found.sub), (outsider.did.clone(), pool.clone()));
 }

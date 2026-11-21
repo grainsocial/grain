@@ -407,7 +407,7 @@ pub fn bridged(db: &Connection, did: &str) -> rusqlite::Result<bool> {
 /// Whether `doc`, a DID document, names Bridgy Fed's PDS, which hosts
 /// every account it bridges in.
 pub fn bridged_host(doc: &Value) -> bool {
-    let pds = grain::identity::service(doc, "#atproto_pds").unwrap_or_default();
+    let pds = atproto::did::pds(doc).unwrap_or_default();
     let host = pds.split("://").nth(1).unwrap_or_default();
     let host = host.split(['/', ':']).next().unwrap_or_default();
     host == "brid.gy" || host.ends_with(".brid.gy")

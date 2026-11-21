@@ -41,12 +41,16 @@ pub const POOL: &str = "social.grain.group";
 /// for it is how a group's host says someone is in it.
 pub const MEMBERS: &str = "fyi.opensocial.members";
 
-/// The signature's label and tag, as the alpha names a credential's use.
-const LABEL: &str = "atproto-space-credential";
-
 /// The header a query carries a delegation token in, from the asker's own
 /// PDS for a space, for an appview to exchange as the asker would.
 pub const DELEGATION_HEADER: &str = "atproto-space-delegation";
+
+/// The label a request's signature goes under, as its tag. The alpha of
+/// October 29 reads a signature under this label alone; later ones read one
+/// under any label with this tag, and sign under `sig`, as the `atproto`
+/// crate's `space_auth::sign_request` does. Signed as here, a request is
+/// read by a host on either.
+const LABEL: &str = "atproto-space-credential";
 
 /// The space of type `kind` keyed `skey` on `authority`.
 pub fn uri(authority: &str, kind: &str, skey: &str) -> String {
@@ -116,7 +120,7 @@ impl Credential {
 }
 
 /// RFC 9421 message signature headers over `authorization`, a space
-/// credential's, and the audience it is used for, as the alpha signs them.
+/// credential's, and the audience it is used for, under [`LABEL`].
 pub fn signed(key: &P256Key, authorization: &str, audience: &str) -> Vec<(String, String)> {
     use base64::Engine;
     let params = format!(r#"("authorization" "atproto-space-audience");tag="{LABEL}""#);
@@ -163,7 +167,7 @@ pub async fn exchange(ctx: &Ctx, space: &str, reader: &str, token: &str) -> Resu
     let key = P256Key::generate();
     let body = json!({
         "space": space,
-        "credentialKid": key.public().to_did_key(),
+        "credentialKid": key.public().did_key(),
         "delegationToken": token,
     });
     let out: Out = Xrpc::new(ctx.guarded.clone(), &host)
@@ -593,8 +597,6 @@ pub fn of_kind(space: &str, kind: &str) -> Result<Named> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::Engine;
-    use base64::engine::general_purpose::STANDARD;
 
     #[test]
     fn spaces_are_named_and_read() {
@@ -655,19 +657,17 @@ mod tests {
             headers[1],
             ("atproto-space-audience".into(), "did:plc:m".into())
         );
-        let params = r#"("authorization" "atproto-space-audience");tag="atproto-space-credential""#;
-        assert_eq!(headers[2].1, format!("atproto-space-credential={params}"));
-        let sig = headers[3]
-            .1
-            .strip_prefix("atproto-space-credential=:")
-            .and_then(|s| s.strip_suffix(':'))
-            .unwrap();
-        let base = format!(
-            "\"authorization\": Atproto-Space-Credential cred\n\"atproto-space-audience\": did:plc:m\n\"@signature-params\": {params}"
-        );
-        public
-            .verify(base.as_bytes(), &STANDARD.decode(sig).unwrap())
-            .unwrap();
+        // Under the label the alpha of October 29 reads, and checked as the
+        // `atproto` crate checks a request, as later alphas do.
+        assert!(headers[2].1.starts_with("atproto-space-credential=("));
+        assert!(headers[3].1.starts_with("atproto-space-credential=:"));
+        let header = |name: &str| {
+            let found = headers.iter().find(|(k, _)| k == name);
+            found.map(|(_, v)| v.as_str())
+        };
+        atproto::space_auth::verify_request(header, &public.did_key()).unwrap();
+        let other = P256Key::generate().public().did_key();
+        assert!(atproto::space_auth::verify_request(header, &other).is_err());
         let ending = Credential {
             expires: keys::now_secs() + 30,
             ..credential
