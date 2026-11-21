@@ -1,7 +1,8 @@
-//! `social.grain.sync.indexRecords` against the reference PDS: an account
+//! `social.grain.sync.indexRecords`, deprecated for `refreshRecords` and
+//! answered from the same read-back, against the reference PDS: an account
 //! writes grain's records to its own PDS, asks that PDS for a service token
 //! for grain-serve, and names the records, which grain-serve reads back
-//! from the PDS into its index.
+//! from the PDS, proved, into its index.
 //!
 //! The reference PDS resolves no lexicon over the network: it validates a
 //! record only against the schemas it bundles, and keeps one of a `$type`
@@ -23,7 +24,7 @@ use grain::xrpc::Xrpc;
 use grain_serve::App;
 use grain_serve::index::Index;
 use grain_serve::index::records::{Follow, Gallery};
-use grain_serve::sync::{LXM, ReadBackError, read_back};
+use grain_serve::sync::{INDEX_LXM as LXM, Method, ReadBackError, Repo, named, read_back};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -353,17 +354,15 @@ async fn a_server_with_no_index_or_did_does_not_serve_it() {
 async fn a_pds_that_does_not_answer_fails_the_read_back() {
     let c = caller().await;
     let (uri, _) = c.write("social.grain.gallery", gallery("Elsewhere")).await;
-    let nowhere = "http://127.0.0.1:1";
-    let failed = read_back(
-        &c.ctx,
-        &c.index,
-        &c.me.did,
-        nowhere,
-        std::slice::from_ref(&uri),
-    )
-    .await;
+    let repo = Repo {
+        pds: "http://127.0.0.1:1".into(),
+        ..Repo::of(&c.ctx, &c.me.did).await.unwrap()
+    };
+    let uris = std::slice::from_ref(&uri);
+    let named = named(&c.me.did, uris, Method::Index).unwrap();
+    let failed = read_back(&c.ctx, &c.index, &repo, &named, Method::Index).await;
     match failed {
-        Err(ReadBackError::Pds { uri: failed, .. }) => assert_eq!(failed, uri),
+        Err(ReadBackError::Unreachable { uri: failed, .. }) => assert_eq!(failed, uri),
         other => panic!("{other:?}"),
     }
 }
@@ -389,7 +388,18 @@ async fn a_caller_whose_pds_is_not_public_is_refused() {
     let dir = tempfile::tempdir().unwrap();
     let guarded = net::ctx(dir.path(), &[("GRAIN_ALLOW_PRIVATE", "0")]);
     let uris = std::slice::from_ref(&uri);
-    let read = |pds: &'static str| read_back(&guarded, &c.index, &c.me.did, pds, uris);
+    let named = named(&c.me.did, uris, Method::Index).unwrap();
+    let read = |pds: &'static str| {
+        let c = &c;
+        let (guarded, named) = (&guarded, &named);
+        async move {
+            let repo = Repo {
+                pds: pds.into(),
+                ..Repo::of(&c.ctx, &c.me.did).await.unwrap()
+            };
+            read_back(guarded, &c.index, &repo, named, Method::Index).await
+        }
+    };
     match read("https://127.0.0.1:2583").await {
         Err(ReadBackError::Unaskable(why)) => assert_eq!(
             why.to_string(),
@@ -398,7 +408,7 @@ async fn a_caller_whose_pds_is_not_public_is_refused() {
         other => panic!("{other:?}"),
     }
     match read("https://localhost:2583").await {
-        Err(ReadBackError::Pds { error, .. }) => {
+        Err(ReadBackError::Unreachable { error, .. }) => {
             let why = format!("{error:?}");
             assert!(why.contains("localhost has no public address"), "{why}");
         }

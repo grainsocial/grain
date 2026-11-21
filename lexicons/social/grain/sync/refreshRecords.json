@@ -1,0 +1,62 @@
+{
+  "lexicon": 1,
+  "id": "social.grain.sync.refreshRecords",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Read records of the caller's own again from their own PDS, proved (com.atproto.sync.getRecord: the commit signed by the account's key, the record reached from the tree it signed), and keep each, or its absence, at that commit's revision wherever the index keeps its collection: what a client just wrote or deleted shows at once, rather than when the network brings it, and the network's copy of the same revision or an older one changes nothing. A record of a collection grain does not index, or that does not fit its lexicon, is left alone. Requires service auth, or the web's session cookie from a page of the site.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["uris"],
+          "properties": {
+            "uris": {
+              "type": "array",
+              "maxLength": 25,
+              "items": { "type": "string", "format": "at-uri" },
+              "description": "Records in the caller's own repo, just created, updated or deleted."
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["records"],
+          "properties": {
+            "records": {
+              "type": "array",
+              "items": { "type": "ref", "ref": "#recordView" },
+              "description": "Each record named, once, as its PDS proved it."
+            }
+          }
+        }
+      },
+      "errors": [
+        {
+          "name": "NotYours",
+          "description": "A URI names a record in a repo other than the caller's."
+        },
+        {
+          "name": "Unreachable",
+          "description": "The caller's PDS did not answer for a record, or did not prove what it answered."
+        }
+      ]
+    },
+    "recordView": {
+      "type": "object",
+      "description": "A record as it is now.",
+      "required": ["uri"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": {
+          "type": "string",
+          "format": "cid",
+          "description": "Its CID as it is now; left out once it is gone."
+        }
+      }
+    }
+  }
+}

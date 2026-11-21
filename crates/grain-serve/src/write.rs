@@ -13,8 +13,8 @@
 //! account's repo is not taken.
 //!
 //! Only the web calls them, by its cookie, from a page of the site: the
-//! apps and the command line write to their own PDS and call
-//! `social.grain.sync.indexRecords`, and a service token here is refused.
+//! apps write to their own PDS and call `social.grain.sync.refreshRecords`,
+//! and a service token here is refused.
 //!
 //! A PDS refusing the access token has it refreshed and is asked once
 //! more; refusing it again ends the session. One refusing for want of
@@ -67,7 +67,7 @@ const PASSED: &[&str] = &[
 pub async fn writer(app: &App, headers: &HeaderMap, lxm: &str) -> Result<String, Failure> {
     if headers.contains_key(header::AUTHORIZATION) {
         let why = "a service token writes to its own PDS, then calls \
-                   social.grain.sync.indexRecords";
+                   social.grain.sync.refreshRecords";
         return Err(Failure::new(StatusCode::FORBIDDEN, "Forbidden", why));
     }
     crate::viewer::writer(app, headers, lxm).await
@@ -246,14 +246,27 @@ fn written<'a>(did: &str, collection: &str, out: &'a Value) -> Result<(&'a str, 
     }
 }
 
-/// Puts `record` in the index, as written to the PDS. A failure is the
-/// index's, not the write's, which stands: Jetstream brings it after.
-fn keep(app: &App, did: &str, uri: &str, cid: &str, record: &Value) {
+/// The revision of the commit a PDS answered a write with, if it names
+/// one, as `com.atproto.repo`'s writes answer `commit`.
+pub(crate) fn rev_of(out: &Value) -> Option<&str> {
+    let rev = out["commit"]["rev"].as_str();
+    rev.filter(|rev| atproto::syntax::is_tid(rev))
+}
+
+/// Puts `record` in the index, as written to the PDS at the revision
+/// `rev`, or now if the PDS named none ([`crate::index::Index::put_rev`]),
+/// so that Jetstream bringing an older version late changes nothing. A
+/// failure is the index's, not the write's, which stands: Jetstream
+/// brings it after.
+fn keep(app: &App, did: &str, uri: &str, cid: &str, record: &Value, rev: Option<&str>) {
     let index = index(app);
     let kept = index
         .track(did)
         .map_err(PutError::Db)
-        .and_then(|_| index.put(uri, cid, record));
+        .and_then(|_| match rev {
+            Some(rev) => index.put_rev(uri, cid, record, rev),
+            None => index.put(uri, cid, record),
+        });
     match kept {
         Ok(Applied::Created) => index.arrived(uri),
         Ok(_) => {}
@@ -261,8 +274,14 @@ fn keep(app: &App, did: &str, uri: &str, cid: &str, record: &Value) {
     }
 }
 
-fn forget(app: &App, uri: &str) {
-    if let Err(e) = index(app).delete(uri) {
+/// Deletes `uri` from the index, as deleted at the revision `rev`, or now.
+fn forget(app: &App, uri: &str, rev: Option<&str>) {
+    let index = index(app);
+    let forgot = match rev {
+        Some(rev) => index.delete_rev(uri, rev),
+        None => index.delete(uri),
+    };
+    if let Err(e) = forgot {
         tracing::warn!(%uri, error = %e, "unindexing a web delete");
     }
 }
@@ -320,7 +339,7 @@ pub async fn create(
     let nsid = "com.atproto.repo.createRecord";
     let out = call(app, did, nsid, Input::Json(&body)).await?;
     let (uri, cid) = written(did, collection, &out)?;
-    keep(app, did, uri, cid, &value);
+    keep(app, did, uri, cid, &value, rev_of(&out));
     Ok((uri.to_string(), cid.to_string()))
 }
 
@@ -380,7 +399,7 @@ pub async fn put(
     );
     let out = call(app, did, "com.atproto.repo.putRecord", Input::Json(&body)).await?;
     let (uri, cid) = written(did, collection, &out)?;
-    keep(app, did, uri, cid, &value);
+    keep(app, did, uri, cid, &value, rev_of(&out));
     Ok((uri.to_string(), cid.to_string()))
 }
 
@@ -412,8 +431,8 @@ pub async fn delete_record(
         }),
     );
     let nsid = "com.atproto.repo.deleteRecord";
-    call(&app, &did, nsid, Input::Json(&body)).await?;
-    forget(&app, &uri);
+    let out = call(&app, &did, nsid, Input::Json(&body)).await?;
+    forget(&app, &uri, rev_of(&out));
     Ok(Json(json!({})))
 }
 
@@ -475,7 +494,9 @@ struct Write {
 /// makes them, each one's result in the place of its write. The PDS has
 /// made them all by the time its answer is read, so a result that does not
 /// hold answers 502 with the ones before it indexed and the rest left to
-/// Jetstream.
+/// Jetstream. They are one commit, at one revision, so the index is told
+/// only the last write to each record, as the commit leaves it: one before
+/// it, at the same revision, would leave it stale.
 pub async fn apply_writes(
     State(app): State<Arc<App>>,
     headers: HeaderMap,
@@ -538,22 +559,42 @@ pub async fn apply_writes(
             why,
         ));
     };
-    let mut results = Vec::new();
+    let rev = rev_of(&out);
+    // Each record written, and its CID and value, none if deleted.
+    let mut done: Vec<(&str, Option<(&str, &Value)>)> = Vec::new();
+    let (mut results, mut failed) = (Vec::new(), None);
     for ((kind, collection, kept), out) in made.iter().zip(answered) {
         let result = match kept {
-            Ok(value) => {
-                let (uri, cid) = written(&did, collection, out)?;
-                keep(&app, &did, uri, cid, value);
-                json!({ "$type": format!("{APPLY}#{kind}Result"), "uri": uri, "cid": cid })
-            }
+            Ok(value) => match written(&did, collection, out) {
+                Ok((uri, cid)) => {
+                    done.push((uri, Some((cid, value))));
+                    json!({ "$type": format!("{APPLY}#{kind}Result"), "uri": uri, "cid": cid })
+                }
+                Err(e) => {
+                    failed = Some(e);
+                    break;
+                }
+            },
             Err(uri) => {
-                forget(&app, uri);
+                done.push((uri.as_str(), None));
                 json!({ "$type": format!("{APPLY}#deleteResult") })
             }
         };
         results.push(result);
     }
-    Ok(Json(json!({ "results": results })))
+    for (i, (uri, write)) in done.iter().enumerate() {
+        if done[i + 1..].iter().any(|(later, _)| later == uri) {
+            continue;
+        }
+        match write {
+            Some((cid, value)) => keep(&app, &did, uri, cid, value, rev),
+            None => forget(&app, uri, rev),
+        }
+    }
+    match failed {
+        Some(e) => Err(e),
+        None => Ok(Json(json!({ "results": results }))),
+    }
 }
 
 /// `social.grain.repo.uploadBlob`: the body, of the type its
@@ -628,8 +669,14 @@ mod tests {
         let uri = "at://did:plc:a/social.grain.graph.follow/3l3";
         let record = json!({ "$type": "social.grain.graph.follow", "subject": "did:plc:b",
             "createdAt": "2026-10-31T12:00:00.000Z" });
-        keep(&app, "did:plc:a", uri, "bafy", &record);
-        forget(&app, uri);
+        for rev in [None, Some("3l3qo2vuowo2a")] {
+            keep(&app, "did:plc:a", uri, "bafy", &record, rev);
+            forget(&app, uri, rev);
+        }
+        let answered = json!({ "uri": uri, "commit": { "cid": "bafy", "rev": "3l3qo2vuowo2a" } });
+        assert_eq!(rev_of(&answered), Some("3l3qo2vuowo2a"));
+        assert_eq!(rev_of(&json!({ "commit": { "rev": "now" } })), None);
+        assert_eq!(rev_of(&json!({})), None);
     }
 
     #[test]

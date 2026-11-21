@@ -1,6 +1,7 @@
 //! grain's server. It answers atproto's health check and its DID
 //! document ([`did`]),
-//! `social.grain.sync.indexRecords` ([`sync`]), the queries that read
+//! `social.grain.sync.refreshRecords` and its deprecated
+//! `indexRecords` ([`sync`]), the queries that read
 //! the index alone ([`read`]), what an account has seen of its
 //! notifications ([`notification`]) and the devices they are pushed to
 //! ([`push`]), the stories it watched ([`story`]), muting ([`graph`]),
@@ -384,8 +385,9 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/_status", get(status::status))
         .route("/xrpc/_health", get(health))
         .route(did::PATH, get(did::did_document))
+        .route(&format!("/xrpc/{}", sync::LXM), post(sync::refresh_records))
         .route(
-            "/xrpc/social.grain.sync.indexRecords",
+            &format!("/xrpc/{}", sync::INDEX_LXM),
             post(sync::index_records),
         )
         .route(

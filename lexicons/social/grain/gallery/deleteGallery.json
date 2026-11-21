@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Delete one of the logged-in account's galleries with what hangs off it: its items, the photos they place that no other of the account's galleries does, those photos' EXIF, and the account's own favorite of it and comments on it, children first, at the account's PDS and from the index before answering. What others wrote about it stays theirs. For the web, by its session cookie, from a page of the site; a service token is refused (the apps delete at their own PDS, then call social.grain.sync.indexRecords).",
+      "description": "Delete one of the logged-in account's galleries with what hangs off it: its items, the photos they place that no other of the account's galleries does, those photos' EXIF, and the account's own favorite of it and comments on it, children first, at the account's PDS and from the index before answering. What others wrote about it stays theirs. For the web, by its session cookie, from a page of the site; a service token is refused (the apps delete at their own PDS, then call social.grain.sync.refreshRecords).",
       "input": {
         "encoding": "application/json",
         "schema": {

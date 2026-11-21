@@ -11,7 +11,7 @@
 //! no gallery.
 //!
 //! Only the web calls it, by its cookie, from a page of the site: the apps
-//! delete at their own PDS and call `social.grain.sync.indexRecords`, and
+//! delete at their own PDS and call `social.grain.sync.refreshRecords`, and
 //! a service token here is refused.
 
 use crate::App;
@@ -70,7 +70,7 @@ pub async fn delete_gallery(
     };
     if headers.contains_key(header::AUTHORIZATION) {
         let why = "a service token deletes at its own PDS, then calls \
-                   social.grain.sync.indexRecords";
+                   social.grain.sync.refreshRecords";
         return Err(Failure::new(StatusCode::FORBIDDEN, "Forbidden", why));
     }
     let did = crate::viewer::writer(&app, &headers, DELETE_GALLERY).await?;
@@ -109,9 +109,16 @@ pub async fn delete_gallery(
         .zip(going.chunks(crate::write::MOST_WRITES))
     {
         let body = json!({ "repo": did, "writes": chunk });
-        crate::write::at_pds(&app, &did, "com.atproto.repo.applyWrites", &body).await?;
-        // What the index fails to drop, Jetstream drops as the PDS says.
-        missed.extend(uris.iter().filter_map(|uri| index.delete(uri).err()));
+        let out = crate::write::at_pds(&app, &did, "com.atproto.repo.applyWrites", &body).await?;
+        // Deleted as of the commit's revision, so the stream bringing an
+        // older write late puts nothing back. What the index fails to drop,
+        // Jetstream drops as the PDS says.
+        let rev = crate::write::rev_of(&out);
+        let dropped = |uri: &String| match rev {
+            Some(rev) => index.delete_rev(uri, rev),
+            None => index.delete(uri),
+        };
+        missed.extend(uris.iter().filter_map(|uri| dropped(uri).err()));
     }
     let records = going.len();
     tracing::info!(%did, %gallery, records, unindexed = ?missed, "deleted a gallery");

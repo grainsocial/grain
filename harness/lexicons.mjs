@@ -79,6 +79,12 @@ const closed = new Set([
   "social.grain.repo.applyWrites#main.output.results[]",
 ]);
 
+// Arrays of bare values kept on purpose: refreshRecords takes `uris` as
+// opensocial's fyi.opensocial.refreshRecords does, so a client such as
+// HUD, whose app file names the method to call after a write, calls
+// either host alike. A record's URI is all it ever names.
+const bareKept = new Set(["social.grain.sync.refreshRecords#main.input.uris"]);
+
 // What this branch has that the guide would have otherwise, not yet
 // published (none of it is on main), each to be fixed before it is, or
 // to come out of here with a reason to keep it. Once fixed, an entry
@@ -322,7 +328,7 @@ if (base) {
         const param = path.includes(".parameters.");
         const bare =
           s.type === "array" && !param && !["object", "ref", "union"].includes(s.items?.type);
-        if (bare && !paths.has(path))
+        if (bare && !paths.has(path) && !bareKept.has(path))
           say(path, "an array holds objects, which can grow, not bare values");
       });
     }

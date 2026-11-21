@@ -1,7 +1,7 @@
 //! What the classifiers ([`crate::classify`]) read and keep in the index.
 //!
 //! The paths that put what accounts write as they write it (the stream,
-//! `indexRecords` and the web's writes) say which records were new to
+//! `refreshRecords` and the web's writes) say which records were new to
 //! the index ([`Index::arrived`]), for the classifiers to score. Backfill
 //! does not: what it puts is not new.
 //!

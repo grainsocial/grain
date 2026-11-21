@@ -10,11 +10,16 @@
 //! read a piece at a time and fed to the crate, and a CAR's blocks kept in
 //! a spill file, a few bytes of each held in memory, until its tree is
 //! walked from its commit (`atproto::mst::Walk`).
+//!
+//! One record is proved by the CAR `com.atproto.sync.getRecord` answers
+//! ([`prove`]): its commit, and the tree's nodes from the root the commit
+//! signed down to where the record's key is, or would be.
 
 use crate::crypto::PublicKey;
 use anyhow::{Context, Result, ensure};
 use atproto::car::{self, Item};
-use atproto::mst::{Step, Walk};
+use atproto::drisl::{self, Value};
+use atproto::mst::{self, Step, Walk};
 use atproto::star_lite::{self, MAX_RECORD};
 use atproto::{Cid, Commit};
 use std::collections::HashMap;
@@ -245,6 +250,112 @@ impl Car {
     }
 }
 
+/// The most a record's proof may be: the record, its commit and the few
+/// nodes above it.
+pub const MAX_PROOF: usize = 2 * MAX_RECORD;
+
+/// One record of a repo, as its commit proves it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Proved {
+    /// The commit, checked: the repo at its revision.
+    pub commit: Commit,
+    /// The record at the key, its CID and its DRISL; none where the repo
+    /// has no record there.
+    pub record: Option<(Cid, Vec<u8>)>,
+}
+
+/// The record at `key`, `collection/rkey`, in `did`'s repo, from `proof`,
+/// a CAR naming a commit `signer` signed, as `com.atproto.sync.getRecord`
+/// answers. Each node on the way down is held to the CID the one above
+/// names, from the root the commit signed, its keys in order and each at
+/// its layer, below the layer above: the record found at its key is the
+/// one the repo has at that revision, and a key the walk finds no entry
+/// for is one the repo does not have. A node the walk needs and the proof
+/// lacks fails it, never answers that there is none.
+pub fn prove(proof: &[u8], did: &str, signer: &PublicKey, key: &str) -> Result<Proved> {
+    ensure!(
+        proof.len() <= MAX_PROOF,
+        "a proof of more than {MAX_PROOF} bytes"
+    );
+    let car = car::read(proof)?;
+    let get = |cid: &Cid| {
+        let what = || format!("a proof without the block {cid}");
+        car.blocks.get(cid).with_context(what)
+    };
+    let root = car.roots.first().context("a CAR with no root")?;
+    let commit = Commit::verified(get(root)?, did, signer)?;
+    let (mut at, mut above) = (commit.data, u32::MAX);
+    let record = loop {
+        let (left, entries) =
+            node(get(&at)?).with_context(|| format!("{at} is not a tree node"))?;
+        ensure!(
+            entries.windows(2).all(|w| w[0].0 < w[1].0),
+            "a tree node whose keys are out of order"
+        );
+        if let Some((first, _, _)) = entries.first() {
+            let layer = mst::depth(first.as_bytes());
+            let held = entries
+                .iter()
+                .all(|(k, _, _)| mst::depth(k.as_bytes()) == layer);
+            ensure!(
+                held && layer < above,
+                "a tree node of keys out of their layer"
+            );
+            above = layer;
+        }
+        let i = entries.partition_point(|(k, _, _)| k.as_str() < key);
+        if let Some((_, value, _)) = entries.get(i).filter(|(k, _, _)| k == key) {
+            break Some((*value, get(value)?.clone()));
+        }
+        let below = match i {
+            0 => left,
+            _ => entries[i - 1].2,
+        };
+        match below {
+            Some(cid) => at = cid,
+            None => break None,
+        }
+    };
+    Ok(Proved { commit, record })
+}
+
+/// A tree node's keys, each with its record's CID and the subtree right of
+/// it.
+type Entries = Vec<(String, Cid, Option<Cid>)>;
+
+/// The node `bytes` hold: the subtree left of its first key, and its keys,
+/// each written as how much of the key before it it shares and the rest.
+fn node(bytes: &[u8]) -> Option<(Option<Cid>, Entries)> {
+    let link = |v: &Value| match v {
+        Value::Null => Some(None),
+        Value::Link(cid) => Some(Some(*cid)),
+        _ => None,
+    };
+    let Value::Map(map) = drisl::decode(bytes).ok()? else {
+        return None;
+    };
+    let (Value::Array(written), left) = (map.get("e")?, link(map.get("l")?)?) else {
+        return None;
+    };
+    let (mut entries, mut last) = (Vec::with_capacity(written.len()), Vec::new());
+    for entry in written {
+        let Value::Map(e) = entry else {
+            return None;
+        };
+        let (Value::Integer(shared), Value::Bytes(rest), Value::Link(value)) =
+            (e.get("p")?, e.get("k")?, e.get("v")?)
+        else {
+            return None;
+        };
+        let shared = usize::try_from(*shared).ok().filter(|&n| n <= last.len())?;
+        last.truncate(shared);
+        last.extend_from_slice(rest);
+        let key = String::from_utf8(last.clone()).ok()?;
+        entries.push((key, *value, link(e.get("t")?)?));
+    }
+    Some((left, entries))
+}
+
 #[cfg(test)]
 mod tests {
     //! Repos made and signed here, read back as STAR-lite and as CARs,
@@ -440,6 +551,166 @@ mod tests {
                 let body = Fails(std::io::Cursor::new(whole[..cut].to_vec()));
                 assert_eq!(error(read(body, &public)), "went quiet", "cut at {cut}");
             }
+        }
+    }
+
+    /// A CAR naming `commit`, its block first, then `blocks`, as a PDS's
+    /// `com.atproto.sync.getRecord` answers.
+    fn proof_car(commit: &Commit, blocks: impl IntoIterator<Item = (Cid, Vec<u8>)>) -> Vec<u8> {
+        let mut all = vec![(commit.cid(), commit.to_bytes())];
+        all.extend(blocks);
+        car::write(&[commit.cid()], all.iter().map(|(c, b)| (c, b.as_slice())))
+    }
+
+    impl Repo {
+        /// `key`'s proof, as a PDS answers it, less the blocks in `less`.
+        fn proof(&self, key: &str, less: &[Cid]) -> Vec<u8> {
+            let mut blocks: Vec<(Cid, Vec<u8>)> =
+                self.tree.covering_proof(key).into_iter().collect();
+            let record = self.records.iter().filter(|(k, _)| k == key);
+            blocks.extend(record.map(|(_, r)| (Cid::of_cbor(r), r.clone())));
+            blocks.retain(|(cid, _)| !less.contains(cid));
+            proof_car(&self.commit, blocks)
+        }
+    }
+
+    /// A tree node of `keys`, each written whole, with `value` as each
+    /// one's record, and no subtrees.
+    fn node_of(keys: &[&str], value: Cid) -> Vec<u8> {
+        let entry = |key: &&str| {
+            Value::Map(BTreeMap::from([
+                ("k".into(), Value::Bytes(key.as_bytes().to_vec())),
+                ("p".into(), Value::Integer(0)),
+                ("t".into(), Value::Null),
+                ("v".into(), Value::Link(value)),
+            ]))
+        };
+        drisl::encode(&Value::Map(BTreeMap::from([
+            ("e".into(), Value::Array(keys.iter().map(entry).collect())),
+            ("l".into(), Value::Null),
+        ])))
+    }
+
+    #[test]
+    fn a_record_is_proved_where_it_is_and_where_it_is_not() {
+        let empty = repo(0);
+        let repo = repo(300);
+        let public = repo.key.public();
+        for (key, record) in &repo.records {
+            let proved = prove(&repo.proof(key, &[]), DID, &public, key).unwrap();
+            assert_eq!(proved.commit, repo.commit);
+            let found = Some((Cid::of_cbor(record), record.clone()));
+            assert_eq!(proved.record, found, "{key}");
+        }
+        // Keys it has not: before, between and after the ones it has.
+        for key in [
+            "app.a/0",
+            "app.x/0000a",
+            "app.x/0150a",
+            "app.x/9999",
+            "app.z/0",
+        ] {
+            let proved = prove(&repo.proof(key, &[]), DID, &public, key).unwrap();
+            assert_eq!(proved.record, None, "{key}");
+        }
+        // A repo with no records: its root alone says so.
+        let proved = prove(
+            &empty.proof("app.x/0", &[]),
+            DID,
+            &empty.key.public(),
+            "app.x/0",
+        );
+        assert_eq!(proved.unwrap().record, None);
+    }
+
+    #[test]
+    fn a_proof_that_does_not_hold_is_refused() {
+        let repo = repo(300);
+        let public = repo.key.public();
+        let refused = |proof: Vec<u8>, key: &str| error(prove(&proof, DID, &public, key));
+        let (key, record) = &repo.records[150];
+        // A block on the way left out: the record, or a node.
+        let held = Cid::of_cbor(record);
+        let root = repo.tree.root();
+        for less in [held, root] {
+            assert_eq!(
+                refused(repo.proof(key, &[less]), key),
+                format!("a proof without the block {less}")
+            );
+        }
+        // A commit the account's key did not sign, or with no tree.
+        let other = Keypair::generate(Curve::K256);
+        let forged = Commit::sign(DID, root, REV, &other);
+        let blocks = repo.tree.covering_proof(key);
+        assert_eq!(
+            refused(proof_car(&forged, blocks), key),
+            "a commit the account's key did not sign"
+        );
+        let no_tree = Commit::sign(DID, held, REV, &repo.key);
+        assert_eq!(
+            refused(proof_car(&no_tree, [(held, record.clone())]), key),
+            format!("{held} is not a tree node")
+        );
+        // A node whose keys go backwards, or sit at other layers.
+        let depth = |k: &str| mst::depth(k.as_bytes());
+        let mut low = repo
+            .records
+            .iter()
+            .map(|(k, _)| k.as_str())
+            .filter(|k| depth(k) == 0);
+        let (first, second) = (low.next().unwrap(), low.next().unwrap());
+        let high = repo
+            .records
+            .iter()
+            .map(|(k, _)| k.as_str())
+            .find(|k| depth(k) > 0);
+        let mut mixed = [first, high.unwrap()];
+        mixed.sort();
+        for (keys, why) in [
+            ([second, first], "a tree node whose keys are out of order"),
+            (mixed, "a tree node of keys out of their layer"),
+        ] {
+            let node = node_of(&keys, held);
+            let commit = Commit::sign(DID, Cid::of_cbor(&node), REV, &repo.key);
+            let proof = proof_car(&commit, [(Cid::of_cbor(&node), node)]);
+            assert_eq!(refused(proof, first), why);
+        }
+        assert_eq!(
+            refused(vec![0; MAX_PROOF + 1], key),
+            format!("a proof of more than {MAX_PROOF} bytes")
+        );
+    }
+
+    #[test]
+    fn what_is_not_a_tree_node_is_not_read_as_one() {
+        let cid = Cid::of_cbor(b"\xa0");
+        let map = |pairs: Vec<(&str, Value)>| {
+            Value::Map(pairs.into_iter().map(|(k, v)| (k.into(), v)).collect())
+        };
+        let entry = |p: i64, k: &[u8]| {
+            map(vec![
+                ("k", Value::Bytes(k.to_vec())),
+                ("p", Value::Integer(p)),
+                ("t", Value::Null),
+                ("v", Value::Link(cid)),
+            ])
+        };
+        let with = |e: Value, l: Value| drisl::encode(&map(vec![("e", e), ("l", l)]));
+        let entries = |e: Vec<Value>| with(Value::Array(e), Value::Null);
+        let read = entries(vec![entry(0, &b"a/b"[..]), entry(2, &b"c"[..])]);
+        let both = vec![("a/b".into(), cid, None), ("a/c".into(), cid, None)];
+        assert_eq!(node(&read), Some((None, both)));
+        for bad in [
+            b"\xff".to_vec(),
+            drisl::encode(&Value::Array(vec![])),
+            with(Value::Array(vec![]), Value::Integer(1)),
+            with(Value::Null, Value::Null),
+            entries(vec![Value::Null]),
+            entries(vec![map(vec![("k", Value::Null)])]),
+            entries(vec![entry(1, &b"a"[..])]),
+            entries(vec![entry(0, &b"\xff"[..])]),
+        ] {
+            assert_eq!(node(&bad), None, "{bad:?}");
         }
     }
 }

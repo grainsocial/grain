@@ -3,15 +3,15 @@
 //! preferences and the rest). One SQLite file in WAL mode, written through
 //! one connection, so writes take turns. [`schema`] says what is in it.
 //!
-//! A record is put by its URI and CID: the same record delivered twice, by
-//! `social.grain.sync.indexRecords` reading it back and then by Jetstream,
-//! is applied once, and one deleted from its PDS is deleted here. Each is
-//! checked against its lexicon first ([`grain::lexicon`]), and refused if
-//! it does not fit.
-//!
-//! Each write keeps the revision it was made at ([`schema`]'s
-//! `record_rev`): backfill writes at the revision of the repo it read, and
-//! leaves alone what the index has from a later one ([`Applied::Stale`]).
+//! A record is put by its URI and CID, at the revision of the repo it was
+//! read from ([`schema`]'s `record_rev`): the same record delivered twice,
+//! by `social.grain.sync.refreshRecords` reading it back proved and then
+//! by Jetstream, is applied once, and a write or a deletion from an older
+//! revision than the index has changes nothing ([`Applied::Stale`]), so a
+//! deletion read back stands against an older write the stream brings
+//! late. Backfill writes at the revision of the repo it read. A write that
+//! names no revision is stamped with now. Each record is checked against
+//! its lexicon first ([`grain::lexicon`]), and refused if it does not fit.
 
 pub mod backfill;
 pub mod classify;

@@ -484,13 +484,16 @@ async fn an_app_logs_in_at_its_pds_and_calls_through_it() {
     let uri = wrote["uri"].as_str().unwrap();
     let told: Value = through
         .procedure(
-            "social.grain.sync.indexRecords",
+            "social.grain.sync.refreshRecords",
             Some(&json!({ "uris": [uri] })),
             Some(&auth),
         )
         .await
         .unwrap();
-    assert_eq!(told, json!({"indexed": [uri], "notFound": []}));
+    assert_eq!(
+        told,
+        json!({"records": [{"uri": uri, "cid": wrote["cid"]}]})
+    );
 
     let prefs: Value = through
         .query("social.grain.actor.getPreferences", &[], Some(&auth))

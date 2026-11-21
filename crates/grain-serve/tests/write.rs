@@ -391,6 +391,32 @@ async fn what_a_pds_answers_is_taken_only_as_far_as_it_holds() {
     pds.answers(200, json!({ "results": [] }));
     let (status, _) = call(&site, &headers, "applyWrites", apply).await;
     assert_eq!(status, 502);
+    // A result that does not hold after one that does: 502, the one before
+    // it indexed, as of now, as the PDS names no commit.
+    let mine = format!("at://{}/{follow}/3l3qo2vuowo2b", a.did);
+    let one = json!({
+        "$type": "social.grain.repo.applyWrites#create", "collection": follow, "value": record,
+    });
+    pds.answers(
+        200,
+        json!({ "results": [
+            { "uri": mine, "cid": made["cid"] },
+            { "uri": elsewhere, "cid": made["cid"] },
+        ]}),
+    );
+    let twice = json!({ "writes": [one, one] });
+    let (status, _) = call(&site, &headers, "applyWrites", twice).await;
+    assert_eq!(status, 502);
+    assert_eq!(
+        indexed(&site, "follow", &mine).as_deref(),
+        made["cid"].as_str()
+    );
+    // Deleted with no commit named: as of now.
+    pds.answers(200, json!({}));
+    let delete = json!({ "collection": follow, "rkey": "3l3qo2vuowo2b" });
+    let (status, _) = call(&site, &headers, "deleteRecord", delete).await;
+    assert_eq!(status, 200);
+    assert_eq!(indexed(&site, "follow", &mine), None);
     pds.answers(200, json!({}));
     let mut with_type = refs(&headers);
     with_type.push(("content-type", "image/png"));

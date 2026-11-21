@@ -4,7 +4,7 @@
 //! account's devices. Nothing rebuilds them from the network.
 //!
 //! The paths that put what accounts write as they write it (the stream,
-//! `indexRecords` and the web's writes) say which records were new to the
+//! `refreshRecords` and the web's writes) say which records were new to the
 //! index ([`Index::arrived`]), for the sender ([`crate::push::send`]) to
 //! push. Backfill does not: what it puts is old news.
 

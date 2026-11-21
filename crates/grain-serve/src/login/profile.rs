@@ -18,7 +18,7 @@
 use crate::App;
 use crate::xrpc::Failure;
 use grain::keys;
-use grain::xrpc::Xrpc;
+use grain::xrpc::{Xrpc, XrpcError};
 use serde_json::{Value, json};
 use std::sync::Arc;
 
@@ -57,12 +57,12 @@ pub fn seed(app: &Arc<App>, did: &str) -> tokio::task::JoinHandle<()> {
 pub async fn seeded(app: &App, did: &str) -> anyhow::Result<Seeded> {
     let session = super::session(app, did).await.map_err(failed)?;
     let pds = Xrpc::new(app.ctx.guarded.clone(), &session.service);
-    let grain = crate::sync::get_record(&pds, did, GRAIN, SELF).await?;
+    let grain = get_record(&pds, did, GRAIN, SELF).await?;
     let named = |g: &Value| g["displayName"].as_str().is_some_and(|n| !n.is_empty());
     if grain.as_ref().is_some_and(|(_, g)| named(g)) {
         return Ok(Seeded::Named);
     }
-    let bsky = crate::sync::get_record(&pds, did, BSKY, SELF).await?;
+    let bsky = get_record(&pds, did, BSKY, SELF).await?;
     let record = match (&bsky, &grain) {
         (None, Some(_)) => return Ok(Seeded::NoBluesky),
         (None, None) => from_bluesky(&json!({}), None),
@@ -101,6 +101,30 @@ pub fn from_bluesky(bsky: &Value, grain: Option<&Value>) -> Value {
 
 fn failed(f: Failure) -> anyhow::Error {
     anyhow::anyhow!("{}: {}", f.error, f.message)
+}
+
+/// The record at `did`/`collection`/`rkey` as its PDS has it, with its
+/// CID; none if the PDS says it has no such record.
+async fn get_record(
+    pds: &Xrpc,
+    did: &str,
+    collection: &str,
+    rkey: &str,
+) -> anyhow::Result<Option<(String, Value)>> {
+    #[derive(serde::Deserialize)]
+    struct Out {
+        cid: String,
+        value: Value,
+    }
+    let params = [("repo", did), ("collection", collection), ("rkey", rkey)];
+    let out: Out = match pds.query("com.atproto.repo.getRecord", &params, None).await {
+        Ok(out) => out,
+        Err(e) if XrpcError::of(&e).is_some_and(|e| e.error == "RecordNotFound") => {
+            return Ok(None);
+        }
+        Err(e) => return Err(e),
+    };
+    Ok(Some((out.cid, out.value)))
 }
 
 #[cfg(test)]
